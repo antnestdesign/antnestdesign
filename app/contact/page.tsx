@@ -31,33 +31,39 @@ export default function ContactPage() {
   ];
 
   const contactInfo = (
-    <div className="space-y-3 md:space-y-3">
-      <div className="border-t border-neutral-300 pt-3">
+    <div className="space-y-3 md:space-y-[clamp(10px,1.3vh,16px)]">
+      <div className="border-t border-neutral-300 pt-3 md:pt-[clamp(8px,1.1vh,12px)]">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Phone
         </p>
-        <a href="tel:0323216909" className="text-xl md:text-2xl font-light">
+
+        <a
+          href="tel:0323216909"
+          className="text-xl md:text-[clamp(20px,2.4vw,28px)] font-light"
+        >
           032.321.6909
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3">
+      <div className="border-t border-neutral-300 pt-3 md:pt-[clamp(8px,1.1vh,12px)]">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Email
         </p>
+
         <a
           href="mailto:antnestdesign@naver.com"
-          className="text-lg md:text-xl font-light"
+          className="text-lg md:text-[clamp(18px,2vw,24px)] font-light"
         >
           antnestdesign@naver.com
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3">
+      <div className="border-t border-neutral-300 pt-3 md:pt-[clamp(8px,1.1vh,12px)]">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Location
         </p>
-        <p className="text-[12px] md:text-sm leading-6 text-neutral-600 break-keep">
+
+        <p className="text-[12px] md:text-[clamp(12px,1vw,14px)] leading-6 md:leading-[1.55] text-neutral-600 break-keep">
           인천 서구 중봉대로 612번길 10-20
           <br />
           청라프라자1 506호
@@ -67,72 +73,78 @@ export default function ContactPage() {
   );
 
   return (
-    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen overflow-y-auto">
+    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen overflow-y-auto md:h-screen md:overflow-hidden">
       <Header />
 
-      <section className="min-h-screen max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-20 pb-14 md:pb-8">
-        <div className="grid md:grid-cols-12 gap-9 md:gap-16">
-          <div className="md:col-span-5">
-            <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-3 md:mb-3">
-              Contact
-            </p>
+      <section className="min-h-screen md:h-screen max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-14 md:pb-0">
+        <div className="md:h-full md:pt-20 md:pb-8 flex items-start md:items-center">
+          <div className="grid md:grid-cols-12 gap-9 md:gap-16 w-full">
+            <div className="md:col-span-5">
+              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-3 md:mb-[clamp(10px,1.2vh,16px)]">
+                Contact
+              </p>
 
-            <h1 className="text-[28px] md:text-[48px] font-light leading-[1.05] break-keep mb-4 md:mb-4">
-              공간에 대한
-              <br />
-              고민을 함께
-              <br />
-              나누어 보세요
-            </h1>
+              <h1 className="text-[28px] md:text-[clamp(40px,4.2vw,56px)] font-light leading-[1.05] break-keep mb-4 md:mb-[clamp(12px,1.5vh,20px)]">
+                공간에 대한
+                <br />
+                고민을 함께
+                <br />
+                나누어 보세요
+              </h1>
 
-            <p className="text-[12px] md:text-[13px] leading-6 md:leading-6 text-neutral-600 break-keep max-w-lg mb-7 md:mb-7">
-              주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
-              나누고 가장 적합한 방향을 제안합니다.
-            </p>
+              <p className="text-[12px] md:text-[clamp(13px,1.1vw,15px)] leading-6 md:leading-[1.7] text-neutral-600 break-keep max-w-lg mb-7 md:mb-[clamp(18px,2vh,28px)]">
+                주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
+                나누고 가장 적합한 방향을 제안합니다.
+              </p>
 
-            <div className="hidden md:block">{contactInfo}</div>
-          </div>
+              <div className="hidden md:block">{contactInfo}</div>
+            </div>
 
-          <div className="md:col-span-6 md:col-start-7 md:pt-3">
-            <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-4 md:mb-4">
-              Process
-            </p>
+            <div className="md:col-span-6 md:col-start-7">
+              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-4 md:mb-[clamp(10px,1.3vh,16px)]">
+                Process
+              </p>
 
-            <div className="space-y-3 md:space-y-2">
-              {process.map(([num, title, description]) => (
-                <div key={num} className="border-t border-neutral-300 pt-3 md:pt-2.5">
-                  <div className="grid grid-cols-[42px_1fr] md:grid-cols-[48px_1fr] gap-3 md:gap-4">
-                    <p className="text-2xl md:text-[27px] font-light leading-none">
-                      {num}
-                    </p>
-
-                    <div>
-                      <h2 className="text-[14px] md:text-[16px] font-light mb-1 break-keep">
-                        {title}
-                      </h2>
-                      <p className="text-[11px] md:text-[12px] leading-5 md:leading-[1.45] text-neutral-600 break-keep">
-                        {description}
+              <div className="space-y-3 md:space-y-[clamp(6px,0.9vh,12px)]">
+                {process.map(([num, title, description]) => (
+                  <div
+                    key={num}
+                    className="border-t border-neutral-300 pt-3 md:pt-[clamp(8px,1vh,12px)]"
+                  >
+                    <div className="grid grid-cols-[42px_1fr] md:grid-cols-[clamp(42px,4vw,58px)_1fr] gap-3 md:gap-[clamp(12px,1.4vw,22px)]">
+                      <p className="text-2xl md:text-[clamp(24px,2.6vw,36px)] font-light leading-none">
+                        {num}
                       </p>
+
+                      <div>
+                        <h2 className="text-[14px] md:text-[clamp(15px,1.5vw,20px)] font-light mb-1 md:mb-[clamp(3px,0.5vh,8px)] break-keep">
+                          {title}
+                        </h2>
+
+                        <p className="text-[11px] md:text-[clamp(11px,1vw,13px)] leading-5 md:leading-[1.45] text-neutral-600 break-keep">
+                          {description}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className="mt-7 md:mt-5 flex justify-center md:block">
-              <Link
-                href="/consultation"
-                className="inline-flex items-center justify-center px-7 md:px-8 py-4 md:py-3.5 text-xs md:text-[12px] tracking-[0.2em]"
-                style={{
-                  backgroundColor: "#4A433D",
-                  color: "#F3F0EB",
-                }}
-              >
-                프로젝트 상담 신청
-              </Link>
-            </div>
+              <div className="mt-7 md:mt-[clamp(16px,2vh,28px)] flex justify-center md:block">
+                <Link
+                  href="/consultation"
+                  className="inline-flex items-center justify-center px-7 md:px-[clamp(28px,3vw,36px)] py-4 md:py-[clamp(12px,1.5vh,18px)] text-xs md:text-[clamp(12px,1vw,14px)] tracking-[0.2em]"
+                  style={{
+                    backgroundColor: "#4A433D",
+                    color: "#F3F0EB",
+                  }}
+                >
+                  프로젝트 상담 신청
+                </Link>
+              </div>
 
-            <div className="block md:hidden mt-10">{contactInfo}</div>
+              <div className="block md:hidden mt-10">{contactInfo}</div>
+            </div>
           </div>
         </div>
       </section>
