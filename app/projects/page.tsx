@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
 
@@ -64,15 +64,24 @@ const projects = [
 ];
 
 export default function ProjectsPage() {
-  const [active, setActive] = useState(projects[0]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = projects[activeIndex];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % projects.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <main className="bg-[#F3F0EB] text-[#4A433D] h-screen overflow-hidden flex flex-col">
+    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen md:h-screen md:overflow-hidden flex flex-col">
       <Header />
 
-      <section className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 md:px-16 pt-24 md:pt-28 pb-4">
-        <div className="grid md:grid-cols-[0.88fr_1.12fr] gap-8 md:gap-16 h-full min-h-0">
-          <div className="flex flex-col min-h-0">
+      <section className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 md:px-16 pt-24 md:pt-28 pb-8 md:pb-4">
+        <div className="grid md:grid-cols-[0.82fr_1.18fr] gap-6 md:gap-16 h-full min-h-0">
+          <div className="flex flex-col min-h-0 order-2 md:order-1">
             <div className="mb-5 md:mb-6">
               <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-2">
                 Projects
@@ -85,21 +94,22 @@ export default function ProjectsPage() {
 
             <div className="flex-1 min-h-0">
               {projects.map((project, index) => {
-                const isActive = active.slug === project.slug;
+                const isActive = activeIndex === index;
 
                 return (
                   <Link
                     key={project.slug}
                     href={`/projects/${project.slug}`}
-                    onMouseEnter={() => setActive(project)}
-                    onFocus={() => setActive(project)}
-                    className="group grid grid-cols-[28px_1fr_auto] md:grid-cols-[42px_1fr_auto] gap-4 items-center border-b border-neutral-300 py-2.5 md:py-3"
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onFocus={() => setActiveIndex(index)}
+                    onTouchStart={() => setActiveIndex(index)}
+                    className="group grid grid-cols-[26px_1fr_auto] md:grid-cols-[42px_1fr_auto] gap-3 md:gap-4 items-center border-b border-neutral-300 py-2 md:py-3"
                   >
                     <span
                       className={
                         isActive
-                          ? "text-xs md:text-sm text-[#4A433D]"
-                          : "text-xs md:text-sm text-neutral-400"
+                          ? "text-[10px] md:text-sm text-[#4A433D]"
+                          : "text-[10px] md:text-sm text-neutral-400"
                       }
                     >
                       {String(index + 1).padStart(2, "0")}
@@ -108,25 +118,23 @@ export default function ProjectsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={
-                            isActive
-                              ? "w-1.5 h-1.5 rounded-full bg-[#4A433D] opacity-100 transition"
-                              : "w-1.5 h-1.5 rounded-full bg-[#4A433D] opacity-0 transition group-hover:opacity-100"
-                          }
+                          className={`block h-px transition-all duration-500 ${
+                            isActive ? "w-7 bg-[#4A433D]" : "w-2 bg-neutral-300"
+                          }`}
                         />
 
                         <h2
                           className={
                             isActive
-                              ? "text-base md:text-xl font-light translate-x-1 transition duration-500"
-                              : "text-base md:text-xl font-light transition duration-500 group-hover:translate-x-1"
+                              ? "text-[13px] md:text-xl font-light translate-x-1 transition duration-500"
+                              : "text-[13px] md:text-xl font-light transition duration-500 group-hover:translate-x-1"
                           }
                         >
                           {project.title}
                         </h2>
                       </div>
 
-                      <p className="text-[9px] md:text-[10px] uppercase tracking-[0.25em] text-neutral-500 mt-1 ml-3.5">
+                      <p className="text-[8px] md:text-[10px] uppercase tracking-[0.22em] text-neutral-500 mt-1 ml-9">
                         {project.type}
                       </p>
                     </div>
@@ -134,8 +142,8 @@ export default function ProjectsPage() {
                     <span
                       className={
                         isActive
-                          ? "text-[10px] md:text-xs text-[#4A433D]"
-                          : "text-[10px] md:text-xs text-neutral-400"
+                          ? "text-[9px] md:text-xs text-[#4A433D]"
+                          : "text-[9px] md:text-xs text-neutral-400"
                       }
                     >
                       {project.year}
@@ -146,43 +154,51 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-col min-h-0">
+          <div className="flex flex-col min-h-0 order-1 md:order-2">
             <Link
               href={`/projects/${active.slug}`}
-              className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
+              className="group relative h-[310px] md:flex-1 md:min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
-              <Image
-                key={active.image}
-                src={active.image}
-                alt={active.title}
-                fill
-                priority
-                className="object-cover transition-all duration-700 ease-out group-hover:scale-105"
-              />
+              {projects.map((project, index) => (
+                <Image
+                  key={project.image}
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  priority={index === 0}
+                  className={`object-cover transition-all duration-[600ms] ease-in-out ${
+                    activeIndex === index
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-[1.02]"
+                  } group-hover:scale-105`}
+                />
+              ))}
 
               <div className="absolute inset-0 bg-black/20" />
 
-              <div className="absolute left-8 top-8 right-8 flex justify-between text-white/75 text-[11px] tracking-[0.25em] uppercase">
+              <div className="absolute left-5 md:left-8 top-5 md:top-8 right-5 md:right-8 flex justify-between text-white/75 text-[9px] md:text-[11px] tracking-[0.25em] uppercase">
                 <span>{active.category}</span>
                 <span>{active.area}</span>
               </div>
 
-              <div className="absolute left-8 bottom-8 text-white">
-                <p className="uppercase tracking-[0.3em] text-[10px] mb-3 text-white/70">
+              <div className="absolute left-5 md:left-8 bottom-5 md:bottom-8 text-white">
+                <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] mb-2 md:mb-3 text-white/70">
                   Current Selection
                 </p>
 
-                <h3 className="text-4xl font-light mb-3">{active.title}</h3>
+                <h3 className="text-2xl md:text-4xl font-light mb-2 md:mb-3">
+                  {active.title}
+                </h3>
 
-                <div className="flex gap-6 text-sm text-white/75">
+                <div className="flex gap-4 md:gap-6 text-xs md:text-sm text-white/75">
                   <span>{active.type}</span>
                   <span>{active.year}</span>
                 </div>
               </div>
             </Link>
 
-            <div className="pt-3 flex justify-between text-xs text-neutral-500 tracking-[0.25em] uppercase">
-              <span>Hover to Preview</span>
+            <div className="pt-3 flex justify-between text-[9px] md:text-xs text-neutral-500 tracking-[0.25em] uppercase">
+              <span>Auto Preview</span>
               <span>Click to Open</span>
             </div>
           </div>

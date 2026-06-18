@@ -54,9 +54,10 @@ export default function Header() {
   }, [pathname]);
 
   const logoColor = isHeroState ? "#F3F0EB" : "#4A433D";
-  const subColor = isHeroState ? "rgba(243,240,235,0.72)" : "rgba(74,67,61,0.62)";
+  const subColor = isHeroState
+    ? "rgba(243,240,235,0.72)"
+    : "rgba(74,67,61,0.62)";
   const menuColor = isHeroState ? "#F3F0EB" : "#4A433D";
-  const showTextLogo = isHome;
 
   return (
     <header className="fixed top-0 left-0 z-50 w-full">
@@ -70,21 +71,57 @@ export default function Header() {
 
       <div className="relative max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
         <Link href="/" className="shrink-0" onClick={() => setMenuOpen(false)}>
-          {showTextLogo ? (
-            <div className="flex flex-col items-center leading-none">
-              <span
-                className="text-2xl md:text-3xl font-light tracking-[0.24em] transition-colors duration-500"
-                style={{ color: logoColor }}
+          {isHome ? (
+            <>
+              <div
+                className={`md:hidden transition-all duration-500 ${
+                  isHeroState
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-95 absolute pointer-events-none"
+                }`}
               >
-                AND
-              </span>
-              <span
-                className="mt-1 text-[7px] md:text-[9px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
-                style={{ color: subColor }}
-              >
-                ANTNEST DESIGN
-              </span>
-            </div>
+                <div className="flex flex-col items-center leading-none">
+                  <span
+                    className="text-2xl font-light tracking-[0.24em] transition-colors duration-500"
+                    style={{ color: logoColor }}
+                  >
+                    AND
+                  </span>
+                  <span
+                    className="mt-1 text-[7px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
+                    style={{ color: subColor }}
+                  >
+                    ANTNEST DESIGN
+                  </span>
+                </div>
+              </div>
+
+              <Image
+                src="/logo.png"
+                alt="ANTNEST DESIGN"
+                width={420}
+                height={120}
+                priority
+                className={`md:hidden w-[92px] h-auto transition-all duration-500 ${
+                  isHeroState ? "opacity-0 scale-95" : "opacity-100 scale-100"
+                }`}
+              />
+
+              <div className="hidden md:flex flex-col items-center leading-none">
+                <span
+                  className="text-3xl font-light tracking-[0.24em] transition-colors duration-500"
+                  style={{ color: logoColor }}
+                >
+                  AND
+                </span>
+                <span
+                  className="mt-1 text-[9px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
+                  style={{ color: subColor }}
+                >
+                  ANTNEST DESIGN
+                </span>
+              </div>
+            </>
           ) : (
             <Image
               src="/logo.png"

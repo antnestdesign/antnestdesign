@@ -67,14 +67,8 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <span className="text-white/65 text-[10px] md:text-xs tracking-[0.45em]">
-          SCROLL
-        </span>
-
-        <div className="mt-3 text-white/75 text-3xl md:text-4xl font-extralight leading-none animate-scroll-down">
-          ∨
-        </div>
+      <div className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2">
+        <div className="scroll-line-indicator scroll-line-indicator-light" />
       </div>
     </section>
   );

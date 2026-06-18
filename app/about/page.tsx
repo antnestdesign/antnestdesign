@@ -54,6 +54,10 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+
+        <div className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2">
+          <div className="scroll-line-indicator scroll-line-indicator-dark" />
+        </div>
       </section>
 
       <section className="h-[100svh] snap-start overflow-hidden flex flex-col px-6 md:px-16 pt-20 md:pt-28 border-t border-neutral-300">

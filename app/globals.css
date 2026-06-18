@@ -44,19 +44,66 @@ select {
   font: inherit;
 }
 
-@keyframes scroll-down {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.75;
-  }
-
-  50% {
-    transform: translateY(7px);
-    opacity: 1;
-  }
+.scroll-line-indicator {
+  position: relative;
+  width: 1px;
+  height: 58px;
+  overflow: hidden;
 }
 
-.animate-scroll-down {
-  animation: scroll-down 1.8s ease-in-out infinite;
+.scroll-line-indicator::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  opacity: 0.32;
+}
+
+.scroll-line-indicator::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 2px;
+  height: 18px;
+  transform: translateX(-50%);
+  animation: scroll-light-line 2.4s ease-in-out infinite;
+}
+
+.scroll-line-indicator-light::before {
+  background: rgba(243, 240, 235, 0.72);
+}
+
+.scroll-line-indicator-light::after {
+  background: rgba(243, 240, 235, 0.95);
+  box-shadow: 0 0 12px rgba(243, 240, 235, 0.75);
+}
+
+.scroll-line-indicator-dark::before {
+  background: rgba(74, 67, 61, 0.28);
+}
+
+.scroll-line-indicator-dark::after {
+  background: rgba(74, 67, 61, 0.78);
+  box-shadow: 0 0 10px rgba(74, 67, 61, 0.28);
+}
+
+@keyframes scroll-light-line {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  72% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, 84px);
+    opacity: 0;
+  }
 }

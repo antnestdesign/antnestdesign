@@ -8,7 +8,7 @@ export default function MiniFooter() {
           </h3>
 
           <p className="hidden md:block text-sm text-neutral-500 mt-1">
-            Architecture of Everyday Life.
+            주식회사 앤트네스트디자인 · 사업자등록번호 : 149-85-03105
           </p>
         </div>
 
