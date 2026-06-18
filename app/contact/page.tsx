@@ -73,18 +73,18 @@ export default function ContactPage() {
   );
 
   return (
-    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen overflow-y-auto md:h-screen md:overflow-hidden">
+    <main className="h-[100svh] overflow-y-auto scroll-smooth snap-y snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
       <Header />
 
-      <section className="min-h-screen md:h-screen max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-14 md:pb-0">
-        <div className="md:h-full md:pt-20 md:pb-8 flex items-start md:items-center">
-          <div className="grid md:grid-cols-12 gap-9 md:gap-16 w-full">
+      <section className="h-[100svh] snap-start overflow-hidden max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-8 md:pb-0">
+        <div className="h-full md:pt-20 md:pb-8 flex items-center">
+          <div className="grid md:grid-cols-12 gap-7 md:gap-16 w-full">
             <div className="md:col-span-5">
               <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-3 md:mb-[clamp(10px,1.2vh,16px)]">
                 Contact
               </p>
 
-              <h1 className="text-[28px] md:text-[clamp(40px,4.2vw,56px)] font-light leading-[1.05] break-keep mb-4 md:mb-[clamp(12px,1.5vh,20px)]">
+              <h1 className="text-[26px] md:text-[clamp(40px,4.2vw,56px)] font-light leading-[1.05] break-keep mb-4 md:mb-[clamp(12px,1.5vh,20px)]">
                 공간에 대한
                 <br />
                 고민을 함께
@@ -92,7 +92,7 @@ export default function ContactPage() {
                 나누어 보세요
               </h1>
 
-              <p className="text-[12px] md:text-[clamp(13px,1.1vw,15px)] leading-6 md:leading-[1.7] text-neutral-600 break-keep max-w-lg mb-7 md:mb-[clamp(18px,2vh,28px)]">
+              <p className="text-[12px] md:text-[clamp(13px,1.1vw,15px)] leading-6 md:leading-[1.7] text-neutral-600 break-keep max-w-lg mb-6 md:mb-[clamp(18px,2vh,28px)]">
                 주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
                 나누고 가장 적합한 방향을 제안합니다.
               </p>
@@ -101,27 +101,27 @@ export default function ContactPage() {
             </div>
 
             <div className="md:col-span-6 md:col-start-7">
-              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-4 md:mb-[clamp(10px,1.3vh,16px)]">
+              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-3 md:mb-[clamp(10px,1.3vh,16px)]">
                 Process
               </p>
 
-              <div className="space-y-3 md:space-y-[clamp(6px,0.9vh,12px)]">
+              <div className="space-y-2 md:space-y-[clamp(6px,0.9vh,12px)]">
                 {process.map(([num, title, description]) => (
                   <div
                     key={num}
-                    className="border-t border-neutral-300 pt-3 md:pt-[clamp(8px,1vh,12px)]"
+                    className="border-t border-neutral-300 pt-2.5 md:pt-[clamp(8px,1vh,12px)]"
                   >
-                    <div className="grid grid-cols-[42px_1fr] md:grid-cols-[clamp(42px,4vw,58px)_1fr] gap-3 md:gap-[clamp(12px,1.4vw,22px)]">
-                      <p className="text-2xl md:text-[clamp(24px,2.6vw,36px)] font-light leading-none">
+                    <div className="grid grid-cols-[38px_1fr] md:grid-cols-[clamp(42px,4vw,58px)_1fr] gap-3 md:gap-[clamp(12px,1.4vw,22px)]">
+                      <p className="text-[22px] md:text-[clamp(24px,2.6vw,36px)] font-light leading-none">
                         {num}
                       </p>
 
                       <div>
-                        <h2 className="text-[14px] md:text-[clamp(15px,1.5vw,20px)] font-light mb-1 md:mb-[clamp(3px,0.5vh,8px)] break-keep">
+                        <h2 className="text-[13px] md:text-[clamp(15px,1.5vw,20px)] font-light mb-1 md:mb-[clamp(3px,0.5vh,8px)] break-keep">
                           {title}
                         </h2>
 
-                        <p className="text-[11px] md:text-[clamp(11px,1vw,13px)] leading-5 md:leading-[1.45] text-neutral-600 break-keep">
+                        <p className="text-[10px] md:text-[clamp(11px,1vw,13px)] leading-[1.55] md:leading-[1.45] text-neutral-600 break-keep">
                           {description}
                         </p>
                       </div>
@@ -130,10 +130,10 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              <div className="mt-7 md:mt-[clamp(16px,2vh,28px)] flex justify-center md:block">
+              <div className="mt-5 md:mt-[clamp(16px,2vh,28px)] flex justify-center md:block">
                 <Link
                   href="/consultation"
-                  className="inline-flex items-center justify-center px-7 md:px-[clamp(28px,3vw,36px)] py-4 md:py-[clamp(12px,1.5vh,18px)] text-xs md:text-[clamp(12px,1vw,14px)] tracking-[0.2em]"
+                  className="inline-flex items-center justify-center px-7 md:px-[clamp(28px,3vw,36px)] py-3.5 md:py-[clamp(12px,1.5vh,18px)] text-[11px] md:text-[clamp(12px,1vw,14px)] tracking-[0.2em]"
                   style={{
                     backgroundColor: "#4A433D",
                     color: "#F3F0EB",
@@ -143,7 +143,7 @@ export default function ContactPage() {
                 </Link>
               </div>
 
-              <div className="block md:hidden mt-10">{contactInfo}</div>
+              <div className="block md:hidden mt-6">{contactInfo}</div>
             </div>
           </div>
         </div>

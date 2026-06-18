@@ -11,43 +11,43 @@ import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen md:h-screen overflow-y-auto md:overflow-y-scroll scroll-smooth md:snap-y md:snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
+    <main className="h-[100svh] overflow-y-auto scroll-smooth snap-y snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
       <Header />
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start">
+      <section className="h-[100svh] snap-start overflow-hidden">
         <Hero />
       </section>
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start flex items-start md:items-center">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-20 md:pb-0 w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-32">
+      <section className="h-[100svh] snap-start overflow-hidden flex items-center">
+        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 md:pt-0 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-32">
             <Approach />
             <Manifesto />
           </div>
         </div>
       </section>
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start bg-white">
-        <div className="h-full flex items-start md:items-center pt-20 md:pt-0 pb-20 md:pb-0">
+      <section className="h-[100svh] snap-start overflow-hidden bg-white">
+        <div className="h-full flex items-center">
           <Residential />
         </div>
       </section>
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start flex items-center">
+      <section className="h-[100svh] snap-start overflow-hidden flex items-center">
         <Architecture />
       </section>
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start flex items-start md:items-center bg-white">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-20 md:pb-0 w-full">
-          <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-10 md:gap-24">
+      <section className="h-[100svh] snap-start overflow-hidden flex items-center bg-white">
+        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 md:pt-0 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-7 md:gap-24">
             <Experience />
             <Process />
           </div>
         </div>
       </section>
 
-      <section className="min-h-[100svh] md:h-screen md:snap-start flex flex-col">
-        <div className="flex-1 flex items-center justify-center pt-14 md:pt-0">
+      <section className="h-[100svh] snap-start overflow-hidden flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
           <Contact />
         </div>
         <Footer />
