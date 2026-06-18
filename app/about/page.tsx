@@ -4,10 +4,10 @@ import MiniFooter from "../components/MiniFooter";
 
 export default function AboutPage() {
   return (
-    <main className="h-screen overflow-y-scroll scroll-smooth snap-y snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
+    <main className="min-h-screen md:h-screen overflow-y-auto md:overflow-y-scroll scroll-smooth md:snap-y md:snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
       <Header />
 
-      <section className="relative min-h-[100svh] md:h-screen snap-start flex flex-col px-6 md:px-16 pt-24 md:pt-28 pb-8 md:pb-10 overflow-hidden">
+      <section className="relative min-h-[100svh] md:h-screen md:snap-start flex flex-col px-6 md:px-16 pt-24 md:pt-28 pb-20 md:pb-10">
         <div className="flex-1 flex items-start md:items-center pt-4 md:pt-0">
           <div className="max-w-7xl mx-auto w-full">
             <div className="grid md:grid-cols-12 gap-6 md:gap-12 items-center">
@@ -54,20 +54,10 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-
-        <div className="absolute bottom-7 md:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <span className="text-[#4A433D]/40 text-[10px] md:text-xs tracking-[0.45em]">
-            SCROLL
-          </span>
-
-          <div className="mt-2 md:mt-3 text-[#4A433D]/40 text-3xl md:text-4xl font-extralight leading-none animate-scroll-down">
-            ∨
-          </div>
-        </div>
       </section>
 
-      <section className="min-h-[100svh] md:h-screen snap-start flex flex-col px-6 md:px-16 pt-20 md:pt-28 border-t border-neutral-300 overflow-hidden">
-        <div className="flex-1 flex items-start md:items-center pb-5 md:pb-10">
+      <section className="min-h-[100svh] md:h-screen md:snap-start flex flex-col px-6 md:px-16 pt-20 md:pt-28 border-t border-neutral-300">
+        <div className="flex-1 flex items-start md:items-center pb-8 md:pb-10">
           <div className="max-w-7xl mx-auto w-full">
             <div className="grid md:grid-cols-12 gap-7 md:gap-20 items-center">
               <div className="md:col-span-5 flex flex-col items-center md:items-start">
