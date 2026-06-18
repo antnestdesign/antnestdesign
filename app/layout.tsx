@@ -46,6 +46,40 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "ANTNEST DESIGN",
+  alternateName: "앤트네스트디자인",
+  url: "https://antnestdesign.vercel.app",
+  image: "https://antnestdesign.vercel.app/og-image.png",
+  logo: "https://antnestdesign.vercel.app/logo.png",
+  description:
+    "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계하는 인테리어·건축 디자인 스튜디오입니다.",
+  telephone: "+82-32-321-6909",
+  email: "antnestdesign@naver.com",
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "KR",
+    addressRegion: "인천광역시",
+    addressLocality: "서구 청라동",
+    streetAddress: "중봉대로 612번길 10-20 청라프라자1 506호",
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "대한민국",
+  },
+  serviceType: [
+    "주거 인테리어",
+    "아파트 인테리어",
+    "건축 설계",
+    "시공 관리",
+    "상가주택 설계",
+    "단독주택 설계",
+  ],
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -53,7 +87,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd),
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
