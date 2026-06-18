@@ -36,39 +36,39 @@ export default function ContactPage() {
   ];
 
   const contactInfo = (
-    <div className="space-y-3 md:space-y-5">
-      <div className="border-t border-neutral-300 pt-3 md:pt-4">
-        <p className="uppercase tracking-[0.3em] text-[9px] md:text-xs text-neutral-500 mb-1 md:mb-2">
+    <div className="space-y-3 md:space-y-4">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
+        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1 md:mb-1.5">
           Phone
         </p>
 
         <a
           href="tel:0323216909"
-          className="text-xl md:text-3xl font-light hover:opacity-60 transition"
+          className="text-xl md:text-2xl font-light hover:opacity-60 transition"
         >
           032.321.6909
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3 md:pt-4">
-        <p className="uppercase tracking-[0.3em] text-[9px] md:text-xs text-neutral-500 mb-1 md:mb-2">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
+        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1 md:mb-1.5">
           Email
         </p>
 
         <a
           href="mailto:antnestdesign@naver.com"
-          className="text-lg md:text-2xl font-light hover:opacity-60 transition"
+          className="text-lg md:text-xl font-light hover:opacity-60 transition"
         >
           antnestdesign@naver.com
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3 md:pt-4">
-        <p className="uppercase tracking-[0.3em] text-[9px] md:text-xs text-neutral-500 mb-1 md:mb-2">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
+        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1 md:mb-1.5">
           Location
         </p>
 
-        <p className="text-[12px] md:text-base leading-6 md:leading-7 text-neutral-600 break-keep">
+        <p className="text-[12px] md:text-sm leading-6 md:leading-6 text-neutral-600 break-keep">
           인천 서구 중봉대로 612번길 10-20
           <br />
           청라프라자1 506호
@@ -81,15 +81,15 @@ export default function ContactPage() {
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen md:h-screen overflow-y-auto md:overflow-hidden">
       <Header />
 
-      <section className="min-h-screen md:h-full max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-28 pb-10 md:pb-8 flex flex-col">
-        <div className="flex-1 flex items-start pt-3 md:pt-10">
+      <section className="min-h-screen md:h-full max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-24 pb-10 md:pb-5 flex flex-col">
+        <div className="flex-1 flex items-start pt-3 md:pt-6">
           <div className="grid md:grid-cols-12 gap-8 md:gap-20 w-full">
             <div className="md:col-span-5">
-              <p className="uppercase tracking-[0.35em] text-[9px] md:text-xs text-neutral-500 mb-3 md:mb-5">
+              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-3 md:mb-4">
                 Contact
               </p>
 
-              <h1 className="text-[28px] md:text-6xl font-light leading-[1.05] md:leading-[1.08] break-keep mb-4 md:mb-6">
+              <h1 className="text-[28px] md:text-5xl font-light leading-[1.05] md:leading-[1.05] break-keep mb-4 md:mb-5">
                 공간에 대한
                 <br />
                 고민을 함께
@@ -97,7 +97,7 @@ export default function ContactPage() {
                 나누어 보세요
               </h1>
 
-              <p className="text-[12px] md:text-base leading-6 md:leading-8 text-neutral-600 break-keep max-w-lg mb-7 md:mb-10">
+              <p className="text-[12px] md:text-[15px] leading-6 md:leading-7 text-neutral-600 break-keep max-w-lg mb-7 md:mb-8">
                 주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
                 나누고 가장 적합한 방향을 제안합니다.
               </p>
@@ -105,28 +105,28 @@ export default function ContactPage() {
               <div className="hidden md:block">{contactInfo}</div>
             </div>
 
-            <div className="md:col-span-6 md:col-start-7 md:pt-10">
-              <p className="uppercase tracking-[0.35em] text-[9px] md:text-xs text-neutral-500 mb-4 md:mb-6">
+            <div className="md:col-span-6 md:col-start-7 md:pt-6">
+              <p className="uppercase tracking-[0.35em] text-[9px] md:text-[10px] text-neutral-500 mb-4 md:mb-5">
                 Process
               </p>
 
-              <div className="space-y-3 md:space-y-5">
+              <div className="space-y-3 md:space-y-3">
                 {process.map((item) => (
                   <div
                     key={item.num}
-                    className="border-t border-neutral-300 pt-3 md:pt-5"
+                    className="border-t border-neutral-300 pt-3 md:pt-3"
                   >
-                    <div className="grid grid-cols-[42px_1fr] md:grid-cols-[64px_1fr] gap-3 md:gap-6">
-                      <p className="text-2xl md:text-4xl font-light leading-none">
+                    <div className="grid grid-cols-[42px_1fr] md:grid-cols-[56px_1fr] gap-3 md:gap-5">
+                      <p className="text-2xl md:text-3xl font-light leading-none">
                         {item.num}
                       </p>
 
                       <div>
-                        <h2 className="text-[14px] md:text-xl font-light mb-1 md:mb-2 break-keep">
+                        <h2 className="text-[14px] md:text-lg font-light mb-1 md:mb-1.5 break-keep">
                           {item.title}
                         </h2>
 
-                        <p className="text-[11px] md:text-sm leading-5 md:leading-6 text-neutral-600 break-keep">
+                        <p className="text-[11px] md:text-[13px] leading-5 md:leading-5 text-neutral-600 break-keep">
                           {item.description}
                         </p>
                       </div>
@@ -135,10 +135,10 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              <div className="mt-7 md:mt-10 flex justify-center md:block">
+              <div className="mt-7 md:mt-7 flex justify-center md:block">
                 <Link
                   href="/consultation"
-                  className="inline-flex items-center justify-center px-7 md:px-9 py-4 md:py-5 text-xs md:text-sm tracking-[0.2em] transition duration-500"
+                  className="inline-flex items-center justify-center px-7 md:px-8 py-4 md:py-4 text-xs md:text-[13px] tracking-[0.2em] transition duration-500"
                   style={{
                     backgroundColor: "#4A433D",
                     color: "#F3F0EB",

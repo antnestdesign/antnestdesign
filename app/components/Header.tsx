@@ -35,11 +35,9 @@ export default function Header() {
   }, [pathname]);
 
   const logoColor = darkHeader ? "#4A433D" : "#FFFFFF";
-
   const subColor = darkHeader
     ? "rgba(74,67,61,0.6)"
     : "rgba(255,255,255,0.85)";
-
   const menuColor = darkHeader ? "#4A433D" : "#FFFFFF";
 
   const navItems = [
@@ -83,7 +81,7 @@ export default function Header() {
               width={420}
               height={120}
               priority
-              className="w-[82px] md:w-[104px] h-auto transition-all duration-500"
+              className="w-[92px] md:w-[118px] h-auto transition-all duration-500"
             />
           )}
         </Link>
