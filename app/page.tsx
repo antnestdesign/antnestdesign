@@ -18,8 +18,8 @@ export default function Home() {
         <Hero />
       </section>
 
-      <section className="h-screen snap-start flex items-center overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-14 md:pt-0 w-full">
+      <section className="min-h-[100svh] md:h-screen snap-start flex items-center overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 md:pt-0 w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-32">
             <Approach />
             <Manifesto />
@@ -27,18 +27,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="h-screen snap-start bg-white overflow-hidden">
+      <section className="min-h-[100svh] md:h-screen snap-start bg-white overflow-hidden">
         <div className="h-full flex items-start md:items-center pt-20 md:pt-0">
           <Residential />
         </div>
       </section>
 
-      <section className="h-screen snap-start flex items-center overflow-hidden">
+      <section className="min-h-[100svh] md:h-screen snap-start flex items-center overflow-hidden">
         <Architecture />
       </section>
 
-      <section className="h-screen snap-start flex items-center bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-14 md:pt-0 w-full">
+      <section className="min-h-[100svh] md:h-screen snap-start flex items-start md:items-center bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-0 pb-8 md:pb-0 w-full">
           <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-8 md:gap-24">
             <Experience />
             <Process />
