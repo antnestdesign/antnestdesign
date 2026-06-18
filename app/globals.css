@@ -1,0 +1,62 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+@import "tailwindcss";
+
+:root {
+  --background: #f3f0eb;
+  --foreground: #4a433d;
+}
+
+html {
+  font-family: "Pretendard", sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Pretendard", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+  word-break: keep-all;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@keyframes scroll-down {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.75;
+  }
+
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+
+.animate-scroll-down {
+  animation: scroll-down 1.8s ease-in-out infinite;
+}
