@@ -18,37 +18,53 @@ export default function Home() {
         <Hero />
       </section>
 
-      <section className="h-[100svh] snap-start overflow-hidden flex items-center">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 md:pt-0 w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-32">
-            <Approach />
-            <Manifesto />
+      <section className="h-[100svh] snap-start overflow-hidden">
+        <div className="h-full pt-[76px] md:pt-[84px]">
+          <div className="h-full flex items-center">
+            <div className="max-w-7xl mx-auto px-6 md:px-16 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-32">
+                <Approach />
+                <Manifesto />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="h-[100svh] snap-start overflow-hidden bg-white">
-        <div className="h-full flex items-center">
-          <Residential />
+        <div className="h-full pt-[76px] md:pt-[84px]">
+          <div className="h-full flex items-center">
+            <Residential />
+          </div>
         </div>
       </section>
 
-      <section className="h-[100svh] snap-start overflow-hidden flex items-center">
-        <Architecture />
+      <section className="h-[100svh] snap-start overflow-hidden">
+        <div className="h-full pt-[76px] md:pt-[84px]">
+          <div className="h-full flex items-center">
+            <Architecture />
+          </div>
+        </div>
       </section>
 
-      <section className="h-[100svh] snap-start overflow-hidden flex items-center bg-white">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 md:pt-0 w-full">
-          <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-7 md:gap-24">
-            <Experience />
-            <Process />
+      <section className="h-[100svh] snap-start overflow-hidden bg-white">
+        <div className="h-full pt-[76px] md:pt-[84px]">
+          <div className="h-full flex items-center">
+            <div className="max-w-7xl mx-auto px-6 md:px-16 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-7 md:gap-24">
+                <Experience />
+                <Process />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="h-[100svh] snap-start overflow-hidden flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <Contact />
+        <div className="flex-1 pt-[76px] md:pt-[84px]">
+          <div className="h-full flex items-center justify-center">
+            <Contact />
+          </div>
         </div>
         <Footer />
       </section>
