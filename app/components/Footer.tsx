@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-[#2E2A26] text-white">
@@ -17,6 +19,13 @@ export default function Footer() {
           <p>주식회사 앤트네스트디자인</p>
           <p>대표자 : 이민영</p>
           <p>사업자등록번호 : 149-85-03105</p>
+
+          <Link
+            href="/privacy"
+            className="inline-block mt-2 text-white/55 hover:text-white transition"
+          >
+            개인정보처리방침
+          </Link>
         </div>
 
         <div className="text-xs md:text-sm text-white/70 leading-7">

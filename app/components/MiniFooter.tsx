@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function MiniFooter() {
   return (
     <footer className="border-t border-neutral-300 bg-[#F3F0EB] text-[#4A433D]">
@@ -12,9 +14,13 @@ export default function MiniFooter() {
           </p>
         </div>
 
-        <p className="text-[9px] md:text-xs tracking-[0.18em] text-neutral-500 whitespace-nowrap">
-          © 2026 ANTNEST DESIGN
-        </p>
+        <div className="flex items-center gap-3 md:gap-5 text-[9px] md:text-xs tracking-[0.18em] text-neutral-500 whitespace-nowrap">
+          <Link href="/privacy" className="hover:text-[#4A433D] transition">
+            개인정보처리방침
+          </Link>
+
+          <p>© 2026 ANTNEST DESIGN</p>
+        </div>
       </div>
     </footer>
   );
