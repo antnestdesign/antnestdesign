@@ -10,6 +10,19 @@ export default function Footer() {
           <p className="text-white/60 text-sm">
             Architecture of Everyday Life
           </p>
+
+          <div className="mt-5 text-xs md:text-sm leading-6">
+            <Link
+              href="/privacy"
+              className="block text-white/70 hover:text-white transition"
+            >
+              개인정보처리방침
+            </Link>
+
+            <p className="text-white/45 mt-1">
+              © 2026 ANTNEST DESIGN
+            </p>
+          </div>
         </div>
 
         <div className="text-xs md:text-sm text-white/70 leading-7">
@@ -19,13 +32,6 @@ export default function Footer() {
           <p>주식회사 앤트네스트디자인</p>
           <p>대표자 : 이민영</p>
           <p>사업자등록번호 : 149-85-03105</p>
-
-          <Link
-            href="/privacy"
-            className="inline-block mt-2 text-white/55 hover:text-white transition"
-          >
-            개인정보처리방침
-          </Link>
         </div>
 
         <div className="text-xs md:text-sm text-white/70 leading-7">
