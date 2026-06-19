@@ -74,7 +74,7 @@ export default function Header() {
           {isHome ? (
             <>
               <div
-                className={`md:hidden transition-all duration-500 ${
+                className={`transition-all duration-500 ${
                   isHeroState
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-95 absolute pointer-events-none"
@@ -82,13 +82,13 @@ export default function Header() {
               >
                 <div className="flex flex-col items-center leading-none">
                   <span
-                    className="text-2xl font-light tracking-[0.24em] transition-colors duration-500"
+                    className="text-2xl md:text-3xl font-light tracking-[0.24em] transition-colors duration-500"
                     style={{ color: logoColor }}
                   >
                     AND
                   </span>
                   <span
-                    className="mt-1 text-[7px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
+                    className="mt-1 text-[7px] md:text-[9px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
                     style={{ color: subColor }}
                   >
                     ANTNEST DESIGN
@@ -102,25 +102,10 @@ export default function Header() {
                 width={420}
                 height={120}
                 priority
-                className={`md:hidden w-[92px] h-auto transition-all duration-500 ${
+                className={`w-[92px] md:w-[118px] h-auto transition-all duration-500 ${
                   isHeroState ? "opacity-0 scale-95" : "opacity-100 scale-100"
                 }`}
               />
-
-              <div className="hidden md:flex flex-col items-center leading-none">
-                <span
-                  className="text-3xl font-light tracking-[0.24em] transition-colors duration-500"
-                  style={{ color: logoColor }}
-                >
-                  AND
-                </span>
-                <span
-                  className="mt-1 text-[9px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
-                  style={{ color: subColor }}
-                >
-                  ANTNEST DESIGN
-                </span>
-              </div>
             </>
           ) : (
             <Image

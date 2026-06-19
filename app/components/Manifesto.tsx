@@ -5,7 +5,7 @@ export default function Manifesto() {
         Philosophy
       </p>
 
-      <h2 className="text-[44px] md:text-[130px] font-light leading-none tracking-[-0.06em] mb-4 md:mb-8">
+      <h2 className="text-[40px] md:text-[112px] font-normal leading-none tracking-[-0.05em] mb-4 md:mb-8">
         COMFORT
       </h2>
 

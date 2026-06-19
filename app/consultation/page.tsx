@@ -53,6 +53,7 @@ export default function ConsultationPage() {
 
             <p className="text-[13px] md:text-lg leading-7 md:leading-9 text-neutral-600 break-keep max-w-md">
               남겨주신 내용을 확인한 뒤,
+              <br />
               프로젝트 성격에 맞는 상담 방향을 안내드립니다.
             </p>
           </div>
