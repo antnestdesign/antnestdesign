@@ -124,7 +124,7 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              <div className="mt-5 md:mt-8 flex justify-center md:block">
+              <div className="mt-8 md:mt-14 flex justify-center">
                 <Link
                   href="/consultation"
                   className="inline-flex items-center justify-center px-7 md:px-9 py-3.5 md:py-4 text-[11px] md:text-sm tracking-[0.2em]"
