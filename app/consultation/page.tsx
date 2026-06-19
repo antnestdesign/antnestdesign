@@ -1,6 +1,37 @@
+"use client";
+
+import { useEffect } from "react";
 import Header from "../components/Header";
 
+declare global {
+  interface Window {
+    Tally?: {
+      loadEmbeds: () => void;
+    };
+  }
+}
+
 export default function ConsultationPage() {
+  useEffect(() => {
+    const existingScript = document.querySelector(
+      'script[src="https://tally.so/widgets/embed.js"]'
+    );
+
+    if (existingScript) {
+      window.Tally?.loadEmbeds();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://tally.so/widgets/embed.js";
+    script.async = true;
+    script.onload = () => {
+      window.Tally?.loadEmbeds();
+    };
+
+    document.body.appendChild(script);
+  }, []);
+
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
       <Header />
@@ -28,10 +59,15 @@ export default function ConsultationPage() {
 
           <div className="relative bg-transparent md:bg-white/35 md:border md:border-neutral-200 overflow-visible">
             <iframe
-              src="https://tally.so/r/obxPqb?transparentBackground=1&hideTitle=1"
-              className="block w-full h-[1900px] md:h-[1400px] border-0"
+              data-tally-src="https://tally.so/embed/obxPqb?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+              loading="lazy"
+              width="100%"
+              height="1200"
+              frameBorder="0"
+              marginHeight={0}
+              marginWidth={0}
               title="AND 프로젝트 상담 신청"
-              scrolling="no"
+              className="block w-full border-0"
             />
           </div>
         </div>
