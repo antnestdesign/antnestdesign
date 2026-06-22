@@ -49,7 +49,7 @@ export default function Residential() {
             </p>
 
             <h3 className="text-base md:text-2xl font-light">
-              준공 28년차 아파트 A
+              수원 살구골 현대7단지 아파트
             </h3>
           </div>
         </Link>
@@ -73,7 +73,7 @@ export default function Residential() {
             </p>
 
             <h3 className="text-sm md:text-xl font-light">
-              9년차 아파트 B
+              화성 동탄역 모아미래도 아파트
             </h3>
           </div>
         </Link>
