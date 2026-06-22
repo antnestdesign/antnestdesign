@@ -27,7 +27,7 @@ const projects = [
   },
   {
     slug: "luxury-house",
-    title: "고급주택 신축공사",
+    title: "화성 만세구 고급주택 신축공사",
     category: "Architecture",
     type: "Luxury House",
     year: "2022",
@@ -36,7 +36,7 @@ const projects = [
   },
   {
     slug: "private-house",
-    title: "단독주택 신축공사",
+    title: "인천 청라 단독주택 신축공사",
     category: "Architecture",
     type: "Private House",
     year: "2018",
@@ -45,7 +45,7 @@ const projects = [
   },
   {
     slug: "commercial-house",
-    title: "상가주택 신축공사",
+    title: "화성 병점구 상가주택 신축공사",
     category: "Architecture",
     type: "Commercial House",
     year: "2017",
@@ -54,7 +54,7 @@ const projects = [
   },
   {
     slug: "officetel",
-    title: "오피스텔 + 상가 신축공사",
+    title: "인천 청라 오피스텔 + 상가 신축공사",
     category: "Architecture",
     type: "Mixed-use Development",
     year: "2013",
