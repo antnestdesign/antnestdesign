@@ -9,7 +9,7 @@ import MiniFooter from "../components/MiniFooter";
 const projects = [
   {
     slug: "apartment-a",
-    title: "준공 28년차 아파트 A",
+    title: "수원 살구골 현대7단지 37평",
     category: "Residential",
     type: "Apartment Renovation",
     year: "2026",
@@ -18,7 +18,7 @@ const projects = [
   },
   {
     slug: "apartment-b",
-    title: "9년차 아파트 B",
+    title: "화성 동탄역 모아미래도 34평",
     category: "Residential",
     type: "Apartment Renovation",
     year: "2025",
