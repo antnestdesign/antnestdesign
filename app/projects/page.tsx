@@ -1,213 +1,222 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { projects } from "../../data/projects";
+import { useEffect, useRef, useState } from "react";
+import Header from "../components/Header";
+import MiniFooter from "../components/MiniFooter";
 
-export default async function ProjectPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
+const projects = [
+  {
+    slug: "apartment-a",
+    title: "수원 살구골 현대7단지 37평",
+    category: "Residential",
+    type: "Apartment Renovation",
+    year: "2026",
+    area: "37평형",
+    image: "/home/apartment-a.jpg",
+  },
+  {
+    slug: "apartment-b",
+    title: "화성 동탄역 모아미래도 34평",
+    category: "Residential",
+    type: "Apartment Renovation",
+    year: "2025",
+    area: "34평형",
+    image: "/home/apartment-b.jpg",
+  },
+  {
+    slug: "luxury-house",
+    title: "화성 만세구 고급주택 신축공사",
+    category: "Architecture",
+    type: "Luxury House",
+    year: "2022",
+    area: "600㎡",
+    image: "/home/luxury-house.jpg",
+  },
+  {
+    slug: "private-house",
+    title: "인천 청라 단독주택 신축공사",
+    category: "Architecture",
+    type: "Private House",
+    year: "2018",
+    area: "390㎡",
+    image: "/home/private-house.jpg",
+  },
+  {
+    slug: "commercial-house",
+    title: "화성 병점구 상가주택 신축공사",
+    category: "Architecture",
+    type: "Commercial House",
+    year: "2017",
+    area: "983㎡",
+    image: "/home/commercial-house.jpg",
+  },
+  {
+    slug: "officetel",
+    title: "인천 청라 오피스텔 + 상가 신축공사",
+    category: "Architecture",
+    type: "Mixed-use Development",
+    year: "2013",
+    area: "20,497㎡",
+    image: "/home/officetel.jpg",
+  },
+];
 
-  const project =
-    projects[slug as keyof typeof projects];
+export default function ProjectsPage() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pausedRef = useRef(false);
+  const active = projects[activeIndex];
 
-  if (!project) {
-    notFound();
-  }
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (pausedRef.current) return;
+
+      setActiveIndex((prev) => (prev + 1) % projects.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
+    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen md:h-screen md:overflow-hidden flex flex-col">
+      <Header />
 
-      {/* Header */}
+      <section
+        onMouseEnter={() => {
+          pausedRef.current = true;
+        }}
+        onMouseLeave={() => {
+          pausedRef.current = false;
+        }}
+        className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 md:px-16 pt-24 md:pt-28 pb-8 md:pb-4"
+      >
+        <div className="grid md:grid-cols-[0.82fr_1.18fr] gap-6 md:gap-16 h-full min-h-0">
+          <div className="flex flex-col min-h-0 order-2 md:order-1">
+            <div className="mb-5 md:mb-6">
+              <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-2">
+                Projects
+              </p>
 
-      <header className="pt-10">
-        <div className="max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-center">
-
-          <Link
-            href="/projects"
-            className="tracking-[0.25em] text-sm"
-          >
-            ← PROJECTS
-          </Link>
-
-          <Link
-            href="/"
-            className="tracking-[0.25em] text-lg"
-          >
-            AND
-          </Link>
-
-        </div>
-      </header>
-
-      {/* Intro */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 pt-24 pb-24">
-
-        <p className="uppercase tracking-[0.4em] text-xs text-neutral-500 mb-6">
-          {project.category}
-        </p>
-
-        <h1 className="text-5xl md:text-8xl font-light leading-none mb-10">
-          {project.title}
-        </h1>
-
-        <div className="flex gap-10 text-neutral-500">
-          <span>{project.area}</span>
-          <span>{project.year}</span>
-        </div>
-
-      </section>
-
-      {/* Hero */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[16/9] bg-[#d8d2cb] flex items-center justify-center">
-          HERO IMAGE
-        </div>
-
-      </section>
-
-      {/* Overview */}
-
-      <section className="max-w-4xl mx-auto px-8 md:px-16 mb-48">
-
-        <p className="text-xl leading-[2.2] text-neutral-700">
-          {project.overview}
-        </p>
-
-      </section>
-
-      {/* IMAGE 01 */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[16/10] bg-[#d8d2cb] flex items-center justify-center">
-          IMAGE 01
-        </div>
-
-      </section>
-
-      {/* IMAGE 02 */}
-
-      <section className="max-w-5xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-          IMAGE 02
-        </div>
-
-      </section>
-
-      {/* IMAGE 03 + 04 */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="grid md:grid-cols-2 gap-10">
-
-          <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-            IMAGE 03
-          </div>
-
-          <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-            IMAGE 04
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* IMAGE 05 */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[16/10] bg-[#d8d2cb] flex items-center justify-center">
-          IMAGE 05
-        </div>
-
-      </section>
-
-      {/* IMAGE 06 */}
-
-      <section className="max-w-4xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-          IMAGE 06
-        </div>
-
-      </section>
-
-      {/* IMAGE 07 */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
-
-        <div className="aspect-[16/10] bg-[#d8d2cb] flex items-center justify-center">
-          IMAGE 07
-        </div>
-
-      </section>
-
-      {/* IMAGE 08 + 09 */}
-
-      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-48">
-
-        <div className="grid md:grid-cols-2 gap-10">
-
-          <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-            IMAGE 08
-          </div>
-
-          <div className="aspect-[4/5] bg-[#d3ccc5] flex items-center justify-center">
-            IMAGE 09
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* Project Information */}
-
-      <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-40">
-
-        <div className="grid md:grid-cols-2 gap-16">
-
-          <div>
-
-            <p className="uppercase tracking-[0.3em] text-xs">
-              Project Information
-            </p>
-
-          </div>
-
-          <div className="space-y-6">
-
-            <div className="flex justify-between">
-              <span>Type</span>
-              <span>{project.category}</span>
+              <h1 className="text-3xl md:text-5xl font-light leading-none">
+                Selected Works
+              </h1>
             </div>
 
-            <div className="flex justify-between">
-              <span>Area</span>
-              <span>{project.area}</span>
-            </div>
+            <div className="flex-1 min-h-0">
+              {projects.map((project, index) => {
+                const isActive = activeIndex === index;
 
-            <div className="flex justify-between">
-              <span>Year</span>
-              <span>{project.year}</span>
-            </div>
+                return (
+                  <Link
+                    key={project.slug}
+                    href={`/projects/${project.slug}`}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onFocus={() => setActiveIndex(index)}
+                    onTouchStart={() => setActiveIndex(index)}
+                    className="group grid grid-cols-[26px_1fr_auto] md:grid-cols-[42px_1fr_auto] gap-3 md:gap-4 items-center border-b border-neutral-300 py-2 md:py-3"
+                  >
+                    <span
+                      className={
+                        isActive
+                          ? "text-[10px] md:text-sm text-[#4A433D]"
+                          : "text-[10px] md:text-sm text-neutral-400"
+                      }
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
 
-            <div className="flex justify-between">
-              <span>Status</span>
-              <span>Completed</span>
-            </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`block h-px transition-all duration-500 ${
+                            isActive ? "w-7 bg-[#4A433D]" : "w-2 bg-neutral-300"
+                          }`}
+                        />
 
+                        <h2
+                          className={
+                            isActive
+                              ? "text-[13px] md:text-xl font-light translate-x-1 transition duration-500"
+                              : "text-[13px] md:text-xl font-light transition duration-500 group-hover:translate-x-1"
+                          }
+                        >
+                          {project.title}
+                        </h2>
+                      </div>
+
+                      <p className="text-[8px] md:text-[10px] uppercase tracking-[0.22em] text-neutral-500 mt-1 ml-9">
+                        {project.type}
+                      </p>
+                    </div>
+
+                    <span
+                      className={
+                        isActive
+                          ? "text-[9px] md:text-xs text-[#4A433D]"
+                          : "text-[9px] md:text-xs text-neutral-400"
+                      }
+                    >
+                      {project.year}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
-        </div>
+          <div className="flex flex-col min-h-0 order-1 md:order-2">
+            <Link
+              href={`/projects/${active.slug}`}
+              className="group relative h-[310px] md:flex-1 md:min-h-0 overflow-hidden bg-[#d8d1ca]"
+            >
+              {projects.map((project, index) => (
+                <Image
+                  key={project.image}
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  priority={index === 0}
+                  className={`object-cover transition-all duration-[600ms] ease-in-out ${
+                    activeIndex === index
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-[1.02]"
+                  } group-hover:scale-105`}
+                />
+              ))}
 
+              <div className="absolute inset-0 bg-black/20" />
+
+              <div className="absolute left-5 md:left-8 top-5 md:top-8 right-5 md:right-8 flex justify-between text-white/75 text-[9px] md:text-[11px] tracking-[0.25em] uppercase">
+                <span>{active.category}</span>
+                <span>{active.area}</span>
+              </div>
+
+              <div className="absolute left-5 md:left-8 bottom-5 md:bottom-8 text-white">
+                <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] mb-2 md:mb-3 text-white/70">
+                  Current Selection
+                </p>
+
+                <h3 className="text-2xl md:text-4xl font-light mb-2 md:mb-3">
+                  {active.title}
+                </h3>
+
+                <div className="flex gap-4 md:gap-6 text-xs md:text-sm text-white/75">
+                  <span>{active.type}</span>
+                  <span>{active.year}</span>
+                </div>
+              </div>
+            </Link>
+
+            <div className="pt-3 flex justify-between text-[9px] md:text-xs text-neutral-500 tracking-[0.25em] uppercase">
+              <span>Auto Preview</span>
+              <span>Click to Open</span>
+            </div>
+          </div>
+        </div>
       </section>
 
+      <MiniFooter />
     </main>
   );
 }
