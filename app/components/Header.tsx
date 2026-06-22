@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 
 const navItems = [
   { label: "ABOUT", href: "/about" },
@@ -18,6 +18,28 @@ export default function Header() {
 
   const isHome = pathname === "/";
   const isHeroState = isHome && !scrolled && !menuOpen;
+
+  const handleLogoClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    setMenuOpen(false);
+
+    if (!isHome) return;
+
+    event.preventDefault();
+
+    const main = document.querySelector("main");
+
+    if (main && main.scrollHeight > main.clientHeight) {
+      main.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useEffect(() => {
     const findScrollContainer = () => {
@@ -55,6 +77,10 @@ export default function Header() {
     setMenuOpen(false);
   }, [pathname]);
 
+  const logoColor = isHeroState ? "#F3F0EB" : "#4A433D";
+  const subColor = isHeroState
+    ? "rgba(243,240,235,0.72)"
+    : "rgba(74,67,61,0.62)";
   const menuColor = isHeroState ? "#F3F0EB" : "#4A433D";
 
   return (
@@ -68,21 +94,31 @@ export default function Header() {
       />
 
       <div className="relative max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
-        <Link href="/" className="shrink-0" onClick={() => setMenuOpen(false)}>
+        <Link href="/" className="shrink-0" onClick={handleLogoClick}>
           {isHome ? (
             <>
-              <Image
-                src="/logo-hero-white.png"
-                alt="ANTNEST DESIGN"
-                width={620}
-                height={180}
-                priority
-                className={`w-[150px] md:w-[220px] h-auto transition-all duration-500 ${
+              <div
+                className={`transition-all duration-500 ${
                   isHeroState
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-95 absolute pointer-events-none"
                 }`}
-              />
+              >
+                <div className="flex flex-col items-center leading-none">
+                  <span
+                    className="text-2xl md:text-3xl font-light tracking-[0.24em] transition-colors duration-500"
+                    style={{ color: logoColor }}
+                  >
+                    AND
+                  </span>
+                  <span
+                    className="mt-1 text-[7px] md:text-[9px] tracking-[0.28em] transition-colors duration-500 whitespace-nowrap"
+                    style={{ color: subColor }}
+                  >
+                    ANTNEST DESIGN
+                  </span>
+                </div>
+              </div>
 
               <Image
                 src="/logo.png"
@@ -91,9 +127,7 @@ export default function Header() {
                 height={120}
                 priority
                 className={`w-[92px] md:w-[118px] h-auto transition-all duration-500 ${
-                  isHeroState
-                    ? "opacity-0 scale-95 absolute pointer-events-none"
-                    : "opacity-100 scale-100"
+                  isHeroState ? "opacity-0 scale-95" : "opacity-100 scale-100"
                 }`}
               />
             </>
