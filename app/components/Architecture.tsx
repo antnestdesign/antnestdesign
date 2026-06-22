@@ -6,25 +6,25 @@ import { useEffect, useState } from "react";
 
 const projects = [
   {
-    title: "고급주택 신축공사",
+    title: "화성 만세구 고급주택 신축공사",
     href: "/projects/luxury-house",
     image: "/home/luxury-house.jpg",
     meta: "600㎡ · 2022",
   },
   {
-    title: "단독주택 신축공사",
+    title: "인천 청라 단독주택 신축공사",
     href: "/projects/private-house",
     image: "/home/private-house.jpg",
     meta: "390㎡ · 2018",
   },
   {
-    title: "상가주택 신축공사",
+    title: "화성 병점구 상가주택 신축공사",
     href: "/projects/commercial-house",
     image: "/home/commercial-house.jpg",
     meta: "983㎡ · 2017",
   },
   {
-    title: "오피스텔 + 상가 신축공사",
+    title: "인천 청라 오피스텔 + 상가 신축공사",
     href: "/projects/officetel",
     image: "/home/officetel.jpg",
     meta: "20,497㎡ · 2013",
@@ -33,15 +33,18 @@ const projects = [
 
 export default function Architecture() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const active = projects[activeIndex];
 
   useEffect(() => {
+    if (isPaused) return;
+
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % projects.length);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-16 pt-6 md:pt-0 w-full">
@@ -65,7 +68,14 @@ export default function Architecture() {
           </p>
         </div>
 
-        <Link href={active.href} className="group block md:pl-4">
+        <Link
+          href={active.href}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={() => setIsPaused(false)}
+          className="group block md:pl-4"
+        >
           <div className="relative h-[180px] md:h-[520px] overflow-hidden bg-[#d8d1ca]">
             {projects.map((project, index) => (
               <Image
@@ -93,8 +103,16 @@ export default function Architecture() {
             <Link
               key={project.title}
               href={project.href}
-              onMouseEnter={() => setActiveIndex(index)}
-              onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => {
+                setIsPaused(true);
+                setActiveIndex(index);
+              }}
+              onMouseLeave={() => setIsPaused(false)}
+              onFocus={() => {
+                setIsPaused(true);
+                setActiveIndex(index);
+              }}
+              onBlur={() => setIsPaused(false)}
               onTouchStart={() => setActiveIndex(index)}
               className="group border-b border-neutral-300 py-2 md:py-0 md:pb-5"
             >
