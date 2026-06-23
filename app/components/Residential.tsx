@@ -22,12 +22,11 @@ export default function Residential() {
           </h2>
 
           <p className="text-xs md:text-base leading-6 md:leading-7 text-neutral-600">
-            가족의 생활 방식과 수납, 동선을 중심으로
-            오래 머물고 싶은 주거 공간을 설계합니다.
+            가족의 생활 방식과 수납, 동선을 중심으로 오래 머물고 싶은 주거
+            공간을 설계합니다.
           </p>
         </div>
 
-        {/* 모바일에서 텍스트와 이미지 간격 확보 */}
         <div className="col-span-12 h-4 md:hidden" />
 
         <Link
@@ -36,8 +35,8 @@ export default function Residential() {
         >
           <div className="relative h-[260px] md:h-[540px] overflow-hidden bg-[#d8d1ca]">
             <Image
-              src="/home/apartment-a.jpg"
-              alt="준공 28년차 아파트 A"
+              src="/projects/apartment-a/01-hero.jpg"
+              alt="수원 살구골 현대7단지 37평"
               fill
               className="object-cover transition duration-700 group-hover:scale-105"
             />
@@ -61,7 +60,7 @@ export default function Residential() {
           <div className="relative h-[170px] md:h-[330px] overflow-hidden bg-[#d8d1ca]">
             <Image
               src="/home/apartment-b.jpg"
-              alt="9년차 아파트 B"
+              alt="화성 동탄역 모아미래도 34평"
               fill
               className="object-cover transition duration-700 group-hover:scale-105"
             />
