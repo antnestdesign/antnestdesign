@@ -6,7 +6,7 @@ const siteUrl = "https://www.antnestdesign.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
-  title: "ANTNEST DESIGN | Architecture of Everyday Life",
+  title: "ANTNEST DESIGN | 앤트네스트디자인",
 
   description:
     "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다. 삶의 방식에 맞는 공간, 오래 머물고 싶은 공간을 만듭니다.",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "ANTNEST DESIGN | Architecture of Everyday Life",
+    title: "ANTNEST DESIGN | 앤트네스트디자인",
     description:
       "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다.",
     url: siteUrl,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "ANTNEST DESIGN | Architecture of Everyday Life",
+    title: "ANTNEST DESIGN | 앤트네스트디자인",
     description:
       "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다.",
     images: ["/og-image.png"],
