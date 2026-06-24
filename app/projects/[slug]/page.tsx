@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackToTop from "../../components/BackToTop";
 import { projects } from "../../data/projects";
 
 export default async function ProjectPage({
@@ -312,6 +313,8 @@ export default async function ProjectPage({
           </div>
         </div>
       </section>
+
+      <BackToTop />
     </main>
   );
 }
