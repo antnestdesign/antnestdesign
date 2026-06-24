@@ -32,36 +32,54 @@ export default function ContactPage() {
   ];
 
   const contactInfo = (
-    <div className="space-y-4 md:space-y-5">
-      <div className="border-t border-neutral-300 pt-4">
+    <div className="space-y-3 md:space-y-3.5">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Phone
         </p>
-        <a href="tel:0323216909" className="text-xl md:text-3xl font-light">
+        <a href="tel:0323216909" className="text-xl md:text-2xl font-light">
           032.321.6909
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-4">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
+        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
+          Fax
+        </p>
+        <p className="text-lg md:text-xl font-light">032.321.6895</p>
+      </div>
+
+      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Email
         </p>
         <a
           href="mailto:antnestdesign@naver.com"
-          className="text-lg md:text-2xl font-light"
+          className="text-base md:text-xl font-light break-all"
         >
           antnestdesign@naver.com
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-4">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Location
         </p>
         <p className="text-[12px] md:text-sm leading-6 text-neutral-600 break-keep">
           인천 서구 중봉대로 612번길 10-20
           <br />
-          청라프라자1 506호
+          506호 (청라동, 청라프라자1)
+        </p>
+      </div>
+
+      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
+        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
+          Company
+        </p>
+        <p className="text-[12px] md:text-sm leading-6 text-neutral-600 break-keep">
+          주식회사 앤트네스트디자인
+          <br />
+          대표자 이민영 · 사업자등록번호 149-85-03105
         </p>
       </div>
     </div>
@@ -79,7 +97,7 @@ export default function ContactPage() {
                 Contact
               </p>
 
-              <h1 className="text-[26px] md:text-[56px] font-light leading-[1.08] break-keep mb-4 md:mb-6">
+              <h1 className="text-[26px] md:text-[56px] font-light leading-[1.08] break-keep mb-4 md:mb-5">
                 공간에 대한
                 <br />
                 고민을 함께
@@ -87,7 +105,7 @@ export default function ContactPage() {
                 나누어 보세요
               </h1>
 
-              <p className="text-[12px] md:text-[15px] leading-6 md:leading-7 text-neutral-600 break-keep max-w-lg mb-6 md:mb-8">
+              <p className="text-[12px] md:text-[15px] leading-6 md:leading-7 text-neutral-600 break-keep max-w-lg mb-6 md:mb-7">
                 주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
                 나누고 가장 적합한 방향을 제안합니다.
               </p>
