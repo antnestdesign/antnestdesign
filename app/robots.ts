@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
     },
 
-    sitemap: "https://antnestdesign.vercel.app/sitemap.xml",
+    sitemap: "https://www.antnestdesign.com/sitemap.xml",
   };
 }

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { projectList } from "./data/projects";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://antnestdesign.vercel.app";
+  const baseUrl = "https://www.antnestdesign.com";
 
-  return [
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -16,6 +17,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+
+    {
+      url: `${baseUrl}/projects`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
 
     {
@@ -33,10 +41,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
 
     {
-      url: `${baseUrl}/projects`,
+      url: `${baseUrl}/privacy`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
+      changeFrequency: "yearly",
+      priority: 0.4,
     },
   ];
+
+  const projectRoutes: MetadataRoute.Sitemap = projectList.map((project) => ({
+    url: `${baseUrl}/projects/${project.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: project.projectGroup === "Residential" ? 0.85 : 0.75,
+  }));
+
+  return [...staticRoutes, ...projectRoutes];
 }

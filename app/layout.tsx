@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const siteUrl = "https://www.antnestdesign.com";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://antnestdesign.vercel.app"),
+  metadataBase: new URL(siteUrl),
 
   title: "ANTNEST DESIGN | Architecture of Everyday Life",
 
   description:
     "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다. 삶의 방식에 맞는 공간, 오래 머물고 싶은 공간을 만듭니다.",
 
+  alternates: {
+    canonical: "/",
+  },
+
   openGraph: {
     title: "ANTNEST DESIGN | Architecture of Everyday Life",
     description:
       "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다.",
-    url: "https://antnestdesign.vercel.app",
+    url: siteUrl,
     siteName: "ANTNEST DESIGN",
     locale: "ko_KR",
     type: "website",
@@ -49,11 +55,12 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
+  "@id": `${siteUrl}/#organization`,
   name: "ANTNEST DESIGN",
   alternateName: "앤트네스트디자인",
-  url: "https://antnestdesign.vercel.app",
-  image: "https://antnestdesign.vercel.app/og-image.png",
-  logo: "https://antnestdesign.vercel.app/logo.png",
+  url: siteUrl,
+  image: `${siteUrl}/og-image.png`,
+  logo: `${siteUrl}/logo.png`,
   description:
     "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계하는 인테리어·건축 디자인 스튜디오입니다.",
   telephone: "+82-32-321-6909",
