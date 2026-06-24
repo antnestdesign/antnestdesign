@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackToTop from "../../components/BackToTop";
-import { projects } from "../../data/projects";
+import { projectList, projects } from "../../data/projects";
 
 export default async function ProjectPage({
   params,
@@ -19,6 +19,29 @@ export default async function ProjectPage({
 
   const gallery = project.gallery ?? [];
   const beforeImages = project.beforeImages ?? [];
+
+  const currentProjectIndex = projectList.findIndex(
+    (item) => item.slug === slug
+  );
+
+  const hasProjectNavigation =
+    currentProjectIndex >= 0 && projectList.length > 1;
+
+  const previousProject = hasProjectNavigation
+    ? projectList[
+        currentProjectIndex === 0
+          ? projectList.length - 1
+          : currentProjectIndex - 1
+      ]
+    : null;
+
+  const nextProject = hasProjectNavigation
+    ? projectList[
+        currentProjectIndex === projectList.length - 1
+          ? 0
+          : currentProjectIndex + 1
+      ]
+    : null;
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
@@ -282,7 +305,7 @@ export default async function ProjectPage({
         </section>
       )}
 
-      <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-40">
+      <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-24 md:pb-28">
         <div className="grid md:grid-cols-2 gap-16">
           <div>
             <p className="uppercase tracking-[0.3em] text-xs">
@@ -313,6 +336,99 @@ export default async function ProjectPage({
           </div>
         </div>
       </section>
+
+      {previousProject && nextProject && (
+        <section className="max-w-7xl mx-auto px-8 md:px-16 pb-40 md:pb-48">
+          <div className="border-t border-neutral-300 pt-12 md:pt-16 mb-8 md:mb-10">
+            <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+              Explore More
+            </p>
+
+            <h2 className="text-3xl md:text-5xl font-light leading-[1.15] break-keep">
+              다른 프로젝트 보기
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 md:gap-10">
+            <Link
+              href={`/projects/${previousProject.slug}`}
+              className="group block"
+            >
+              <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden mb-4 md:mb-5">
+                <Image
+                  src={previousProject.heroImage}
+                  alt={previousProject.title}
+                  fill
+                  className="object-cover transition duration-700 group-hover:scale-105"
+                />
+
+                <div className="absolute inset-0 bg-black/25 transition duration-500 group-hover:bg-black/15" />
+
+                <div className="absolute left-5 md:left-6 top-5 md:top-6 text-white/75 text-[9px] md:text-[10px] tracking-[0.3em] uppercase">
+                  Previous Project
+                </div>
+
+                <div className="absolute left-5 md:left-6 bottom-5 md:bottom-6 text-white">
+                  <span className="text-xl md:text-3xl font-light">←</span>
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[10px] md:text-xs uppercase tracking-[0.25em] text-neutral-500 mb-2">
+                    {previousProject.type}
+                  </p>
+
+                  <h3 className="text-xl md:text-3xl font-light leading-[1.2] break-keep">
+                    {previousProject.title}
+                  </h3>
+                </div>
+
+                <p className="text-sm text-neutral-500 pt-1 whitespace-nowrap">
+                  {previousProject.year}
+                </p>
+              </div>
+            </Link>
+
+            <Link href={`/projects/${nextProject.slug}`} className="group block">
+              <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden mb-4 md:mb-5">
+                <Image
+                  src={nextProject.heroImage}
+                  alt={nextProject.title}
+                  fill
+                  className="object-cover transition duration-700 group-hover:scale-105"
+                />
+
+                <div className="absolute inset-0 bg-black/25 transition duration-500 group-hover:bg-black/15" />
+
+                <div className="absolute left-5 md:left-6 top-5 md:top-6 text-white/75 text-[9px] md:text-[10px] tracking-[0.3em] uppercase">
+                  Next Project
+                </div>
+
+                <div className="absolute right-5 md:right-6 bottom-5 md:bottom-6 text-white">
+                  <span className="text-xl md:text-3xl font-light">→</span>
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[10px] md:text-xs uppercase tracking-[0.25em] text-neutral-500 mb-2">
+                    {nextProject.type}
+                  </p>
+
+                  <h3 className="text-xl md:text-3xl font-light leading-[1.2] break-keep">
+                    {nextProject.title}
+                  </h3>
+                </div>
+
+                <p className="text-sm text-neutral-500 pt-1 whitespace-nowrap">
+                  {nextProject.year}
+                </p>
+              </div>
+            </Link>
+          </div>
+        </section>
+      )}
 
       <BackToTop />
     </main>
