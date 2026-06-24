@@ -32,54 +32,61 @@ export default function ContactPage() {
   ];
 
   const contactInfo = (
-    <div className="space-y-3 md:space-y-3.5">
-      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
-        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
-          Phone
-        </p>
-        <a href="tel:0323216909" className="text-xl md:text-2xl font-light">
-          032.321.6909
-        </a>
+    <div className="space-y-3 md:space-y-2.5">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
+              Phone
+            </p>
+            <a
+              href="tel:0323216909"
+              className="text-lg md:text-[22px] font-light"
+            >
+              032.321.6909
+            </a>
+          </div>
+
+          <div>
+            <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
+              Fax
+            </p>
+            <p className="text-lg md:text-[22px] font-light">032.321.6895</p>
+          </div>
+        </div>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
-        <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
-          Fax
-        </p>
-        <p className="text-lg md:text-xl font-light">032.321.6895</p>
-      </div>
-
-      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Email
         </p>
         <a
           href="mailto:antnestdesign@naver.com"
-          className="text-base md:text-xl font-light break-all"
+          className="text-base md:text-[19px] font-light break-all"
         >
           antnestdesign@naver.com
         </a>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Location
         </p>
-        <p className="text-[12px] md:text-sm leading-6 text-neutral-600 break-keep">
+        <p className="text-[12px] md:text-[13px] leading-5 md:leading-[1.65] text-neutral-600 break-keep">
           인천 서구 중봉대로 612번길 10-20
           <br />
           506호 (청라동, 청라프라자1)
         </p>
       </div>
 
-      <div className="border-t border-neutral-300 pt-3 md:pt-3.5">
+      <div className="border-t border-neutral-300 pt-3 md:pt-3">
         <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-500 mb-1">
           Company
         </p>
-        <p className="text-[12px] md:text-sm leading-6 text-neutral-600 break-keep">
-          주식회사 앤트네스트디자인
+        <p className="text-[12px] md:text-[13px] leading-5 md:leading-[1.6] text-neutral-600 break-keep">
+          주식회사 앤트네스트디자인 · 대표자 이민영
           <br />
-          대표자 이민영 · 사업자등록번호 149-85-03105
+          사업자등록번호 149-85-03105
         </p>
       </div>
     </div>
@@ -97,7 +104,7 @@ export default function ContactPage() {
                 Contact
               </p>
 
-              <h1 className="text-[26px] md:text-[56px] font-light leading-[1.08] break-keep mb-4 md:mb-5">
+              <h1 className="text-[26px] md:text-[54px] font-light leading-[1.08] break-keep mb-4 md:mb-5">
                 공간에 대한
                 <br />
                 고민을 함께
@@ -105,7 +112,7 @@ export default function ContactPage() {
                 나누어 보세요
               </h1>
 
-              <p className="text-[12px] md:text-[15px] leading-6 md:leading-7 text-neutral-600 break-keep max-w-lg mb-6 md:mb-7">
+              <p className="text-[12px] md:text-[14px] leading-6 md:leading-7 text-neutral-600 break-keep max-w-lg mb-6 md:mb-6">
                 주거 인테리어부터 건축 프로젝트까지, 공간에 대한 고민을 함께
                 나누고 가장 적합한 방향을 제안합니다.
               </p>
