@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Header from "../components/Header";
+import BackToTop from "../components/BackToTop";
 
 export default function ContactPage() {
   const process = [
@@ -142,6 +143,8 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      <BackToTop />
     </main>
   );
 }

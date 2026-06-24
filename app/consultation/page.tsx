@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Header from "../components/Header";
+import BackToTop from "../components/BackToTop";
 
 declare global {
   interface Window {
@@ -73,6 +74,8 @@ export default function ConsultationPage() {
           </div>
         </div>
       </section>
+
+      <BackToTop />
     </main>
   );
 }

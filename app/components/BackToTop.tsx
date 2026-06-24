@@ -2,24 +2,63 @@
 
 import { useEffect, useState } from "react";
 
-export default function BackToTop() {
+type BackToTopProps = {
+  targetId?: string;
+  threshold?: number;
+};
+
+export default function BackToTop({
+  targetId,
+  threshold = 500,
+}: BackToTopProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    const targetElement = targetId ? document.getElementById(targetId) : null;
+
+    const getScrollTop = () => {
+      if (targetElement) {
+        return targetElement.scrollTop;
+      }
+
+      return window.scrollY;
+    };
+
     const handleScroll = () => {
-      setVisible(window.scrollY > 500);
+      setVisible(getScrollTop() > threshold);
     };
 
     handleScroll();
+
+    if (targetElement) {
+      targetElement.addEventListener("scroll", handleScroll, {
+        passive: true,
+      });
+
+      return () => {
+        targetElement.removeEventListener("scroll", handleScroll);
+      };
+    }
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [targetId, threshold]);
 
   const scrollToTop = () => {
+    const targetElement = targetId ? document.getElementById(targetId) : null;
+
+    if (targetElement) {
+      targetElement.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
     window.scrollTo({
       top: 0,
       behavior: "smooth",

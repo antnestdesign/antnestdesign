@@ -1,10 +1,14 @@
 import Image from "next/image";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
+import BackToTop from "../components/BackToTop";
 
 export default function AboutPage() {
   return (
-    <main className="h-[100svh] overflow-y-auto scroll-smooth snap-y snap-mandatory bg-[#F3F0EB] text-[#4A433D]">
+    <main
+      id="about-scroll-container"
+      className="h-[100svh] overflow-y-auto scroll-smooth snap-y snap-mandatory bg-[#F3F0EB] text-[#4A433D]"
+    >
       <Header />
 
       <section className="relative h-[100svh] snap-start overflow-hidden flex flex-col px-6 md:px-16 pt-24 md:pt-28 pb-8 md:pb-10">
@@ -129,6 +133,8 @@ export default function AboutPage() {
 
         <MiniFooter />
       </section>
+
+      <BackToTop targetId="about-scroll-container" />
     </main>
   );
 }
