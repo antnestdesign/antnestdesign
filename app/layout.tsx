@@ -15,6 +15,13 @@ export const metadata: Metadata = {
     canonical: "/",
   },
 
+  verification: {
+    other: {
+      "naver-site-verification":
+        "c85c4250bab6b25337397d0773ec2c7880a066ce",
+    },
+  },
+
   openGraph: {
     title: "ANTNEST DESIGN | Architecture of Everyday Life",
     description:
