@@ -1,7 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
+import { residentialProjects } from "../data/projects";
 
 export default function Residential() {
+  const mainProject = residentialProjects[0];
+  const subProject = residentialProjects[1];
+
+  if (!mainProject || !subProject) {
+    return null;
+  }
+
   return (
     <div
       id="residential"
@@ -30,13 +38,13 @@ export default function Residential() {
         <div className="col-span-12 h-4 md:hidden" />
 
         <Link
-          href="/projects/apartment-a"
+          href={`/projects/${mainProject.slug}`}
           className="group col-span-7 md:col-span-5"
         >
           <div className="relative h-[260px] md:h-[540px] overflow-hidden bg-[#d8d1ca]">
             <Image
-              src="/projects/apartment-a/01-hero.jpg"
-              alt="수원 살구골 현대7단지 37평"
+              src={mainProject.heroImage}
+              alt={mainProject.title}
               fill
               className="object-cover transition duration-700 group-hover:scale-105"
             />
@@ -44,23 +52,23 @@ export default function Residential() {
 
           <div className="mt-3 md:mt-4">
             <p className="text-[11px] md:text-sm text-neutral-500 mb-1">
-              37평형 · 2026
+              {mainProject.area} · {mainProject.year}
             </p>
 
             <h3 className="text-base md:text-2xl font-light">
-              수원 살구골 현대7단지 아파트
+              {mainProject.cardTitle}
             </h3>
           </div>
         </Link>
 
         <Link
-          href="/projects/apartment-b"
+          href={`/projects/${subProject.slug}`}
           className="group col-span-5 md:col-span-3 self-end"
         >
           <div className="relative h-[170px] md:h-[330px] overflow-hidden bg-[#d8d1ca]">
             <Image
-              src="/home/apartment-b.jpg"
-              alt="화성 동탄역 모아미래도 34평"
+              src={subProject.heroImage}
+              alt={subProject.title}
               fill
               className="object-cover transition duration-700 group-hover:scale-105"
             />
@@ -68,11 +76,11 @@ export default function Residential() {
 
           <div className="mt-3 md:mt-4">
             <p className="text-[11px] md:text-sm text-neutral-500 mb-1">
-              34평형 · 2025
+              {subProject.area} · {subProject.year}
             </p>
 
             <h3 className="text-sm md:text-xl font-light">
-              화성 동탄역 모아미래도 아파트
+              {subProject.cardTitle}
             </h3>
           </div>
         </Link>

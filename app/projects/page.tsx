@@ -5,67 +5,12 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
-
-const projects = [
-  {
-    slug: "apartment-a",
-    title: "수원 살구골 현대7단지 37평",
-    category: "Residential",
-    type: "Apartment Renovation",
-    year: "2026",
-    area: "37평형",
-    image: "/projects/apartment-a/01-hero.jpg",
-  },
-  {
-    slug: "apartment-b",
-    title: "화성 동탄역 모아미래도 34평",
-    category: "Residential",
-    type: "Apartment Renovation",
-    year: "2025",
-    area: "34평형",
-    image: "/home/apartment-b.jpg",
-  },
-  {
-    slug: "luxury-house",
-    title: "화성 만세구 고급주택 신축공사",
-    category: "Architecture",
-    type: "Luxury House",
-    year: "2022",
-    area: "600㎡",
-    image: "/home/luxury-house.jpg",
-  },
-  {
-    slug: "private-house",
-    title: "인천 청라 단독주택 신축공사",
-    category: "Architecture",
-    type: "Private House",
-    year: "2018",
-    area: "390㎡",
-    image: "/home/private-house.jpg",
-  },
-  {
-    slug: "commercial-house",
-    title: "화성 병점구 상가주택 신축공사",
-    category: "Architecture",
-    type: "Commercial House",
-    year: "2017",
-    area: "983㎡",
-    image: "/home/commercial-house.jpg",
-  },
-  {
-    slug: "officetel",
-    title: "인천 청라 오피스텔 + 상가 신축공사",
-    category: "Architecture",
-    type: "Mixed-use Development",
-    year: "2013",
-    area: "20,497㎡",
-    image: "/home/officetel.jpg",
-  },
-];
+import { featuredProjects } from "../data/projects";
 
 export default function ProjectsPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const pausedRef = useRef(false);
+  const projects = featuredProjects;
   const active = projects[activeIndex];
 
   useEffect(() => {
@@ -76,7 +21,11 @@ export default function ProjectsPage() {
     }, 3000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [projects.length]);
+
+  if (!active) {
+    return null;
+  }
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen md:h-screen md:overflow-hidden flex flex-col">
@@ -172,8 +121,8 @@ export default function ProjectsPage() {
             >
               {projects.map((project, index) => (
                 <Image
-                  key={project.image}
-                  src={project.image}
+                  key={`${project.slug}-${project.heroImage}`}
+                  src={project.heroImage}
                   alt={project.title}
                   fill
                   priority={index === 0}
@@ -188,7 +137,7 @@ export default function ProjectsPage() {
               <div className="absolute inset-0 bg-black/20" />
 
               <div className="absolute left-5 md:left-8 top-5 md:top-8 right-5 md:right-8 flex justify-between text-white/75 text-[9px] md:text-[11px] tracking-[0.25em] uppercase">
-                <span>{active.category}</span>
+                <span>{active.projectGroup}</span>
                 <span>{active.area}</span>
               </div>
 
