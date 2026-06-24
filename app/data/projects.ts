@@ -79,8 +79,8 @@ export const projects: Record<string, Project> = {
   },
 
   "luxury-house": {
-    title: "화성 만세구 고급주택 신축공사",
-    cardTitle: "화성 만세구 고급주택 신축공사",
+    title: "화성 효행구 고급주택 신축공사",
+    cardTitle: "화성 효행구 고급주택 신축공사",
     category: "Architecture",
     projectGroup: "Architecture",
     type: "Luxury House",
