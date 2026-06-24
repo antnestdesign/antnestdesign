@@ -14,7 +14,7 @@ const projects = [
     type: "Apartment Renovation",
     year: "2026",
     area: "37평형",
-    image: "/home/apartment-a.jpg",
+    image: "/projects/apartment-a/01-hero.jpg",
   },
   {
     slug: "apartment-b",
