@@ -9,14 +9,40 @@ import { featuredProjects } from "../data/projects";
 
 const MOBILE_PROJECTS_PER_PAGE = 6;
 
-export default function ProjectsPage() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(false);
+function useProjectLayoutMode() {
+  const [mode, setMode] = useState<"mobile" | "desktop" | null>(null);
+
+  useEffect(() => {
+    const resolveMode = () => {
+      const desktopWidth = window.matchMedia("(min-width: 1024px)").matches;
+      const finePointer = window.matchMedia("(pointer: fine)").matches;
+      const hoverAvailable = window.matchMedia("(hover: hover)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+      const shouldUseDesktop =
+        desktopWidth && finePointer && hoverAvailable && !coarsePointer;
+
+      setMode(shouldUseDesktop ? "desktop" : "mobile");
+    };
+
+    resolveMode();
+
+    window.addEventListener("resize", resolveMode);
+    window.addEventListener("orientationchange", resolveMode);
+
+    return () => {
+      window.removeEventListener("resize", resolveMode);
+      window.removeEventListener("orientationchange", resolveMode);
+    };
+  }, []);
+
+  return mode;
+}
+
+function MobileProjects() {
   const [mobilePage, setMobilePage] = useState(1);
-  const pausedRef = useRef(false);
 
   const projects = featuredProjects;
-  const active = projects[activeIndex];
 
   const totalMobilePages = Math.ceil(
     projects.length / MOBILE_PROJECTS_PER_PAGE
@@ -29,44 +55,11 @@ export default function ProjectsPage() {
     return projects.slice(startIndex, endIndex);
   }, [projects, mobilePage]);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-
-    const handleChange = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    handleChange();
-
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop || projects.length <= 1) return;
-
-    const timer = setInterval(() => {
-      if (pausedRef.current) return;
-
-      setActiveIndex((prev) => (prev + 1) % projects.length);
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [isDesktop, projects.length]);
-
-  if (!active) {
-    return null;
-  }
-
   return (
-    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen md:h-screen md:overflow-hidden flex flex-col">
+    <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen flex flex-col">
       <Header />
 
-      {/* Mobile Layout */}
-      <section className="md:hidden flex-1 max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
+      <section className="flex-1 max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
         <div className="mb-7">
           <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
             Projects
@@ -88,9 +81,9 @@ export default function ProjectsPage() {
                   alt={project.title}
                   fill
                   priority={mobilePage === 1 && index < 2}
-                  quality={70}
+                  quality={68}
                   sizes="50vw"
-                  className="object-cover transition duration-500 group-active:scale-105"
+                  className="object-cover"
                 />
 
                 <div className="absolute inset-0 bg-black/10" />
@@ -126,7 +119,10 @@ export default function ProjectsPage() {
                 <button
                   key={page}
                   type="button"
-                  onClick={() => setMobilePage(page)}
+                  onClick={() => {
+                    setMobilePage(page);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   className={`h-8 w-8 border text-[11px] transition ${
                     isActive
                       ? "border-[#4A433D] bg-[#4A433D] text-[#F3F0EB]"
@@ -147,7 +143,38 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      {/* Desktop Layout */}
+      <MiniFooter />
+    </main>
+  );
+}
+
+function DesktopProjects() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pausedRef = useRef(false);
+
+  const projects = featuredProjects;
+  const active = projects[activeIndex];
+
+  useEffect(() => {
+    if (projects.length <= 1) return;
+
+    const timer = setInterval(() => {
+      if (pausedRef.current) return;
+
+      setActiveIndex((prev) => (prev + 1) % projects.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [projects.length]);
+
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <main className="bg-[#F3F0EB] text-[#4A433D] h-screen overflow-hidden flex flex-col">
+      <Header />
+
       <section
         onMouseEnter={() => {
           pausedRef.current = true;
@@ -155,9 +182,9 @@ export default function ProjectsPage() {
         onMouseLeave={() => {
           pausedRef.current = false;
         }}
-        className="hidden md:block flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4"
+        className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4"
       >
-        <div className="grid md:grid-cols-[0.82fr_1.18fr] gap-16 h-full min-h-0">
+        <div className="grid grid-cols-[0.82fr_1.18fr] gap-16 h-full min-h-0">
           <div className="flex flex-col min-h-0 order-1">
             <div className="mb-6">
               <p className="uppercase tracking-[0.35em] text-xs text-neutral-500 mb-2">
@@ -278,4 +305,28 @@ export default function ProjectsPage() {
       <MiniFooter />
     </main>
   );
+}
+
+export default function ProjectsPage() {
+  const mode = useProjectLayoutMode();
+
+  if (mode === null) {
+    return (
+      <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
+        <Header />
+        <section className="max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
+          <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
+            Projects
+          </p>
+          <h1 className="text-3xl font-light leading-none">Selected Works</h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "desktop") {
+    return <DesktopProjects />;
+  }
+
+  return <MobileProjects />;
 }
