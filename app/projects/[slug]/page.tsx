@@ -68,248 +68,180 @@ export default async function ProjectPage({
 
       {gallery.length > 0 ? (
         <>
-          {gallery.slice(1).map((image, index) => {
-            const number = index + 2;
+          {gallery[1] && (
+            <section className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                <Image
+                  src={gallery[1]}
+                  alt={`${project.title} 거실 이미지`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
 
-            if (number === 2) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+          {gallery[2] && (
+            <section className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                <Image
+                  src={gallery[2]}
+                  alt={`${project.title} 거실 디테일`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
+
+          {(gallery[3] || gallery[4]) && (
+            <section className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                {gallery[3] && (
+                  <div className="relative aspect-[16/11] bg-[#d8d2cb] overflow-hidden">
                     <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
+                      src={gallery[3]}
+                      alt={`${project.title} 주방 이미지 1`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                </section>
-              );
-            }
+                )}
 
-            if (number === 3) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
+                {gallery[4] && (
+                  <div className="relative aspect-[16/11] bg-[#d8d2cb] overflow-hidden">
+                    <Image
+                      src={gallery[4]}
+                      alt={`${project.title} 주방 이미지 2`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {gallery[5] && (
+            <section className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                <Image
+                  src={gallery[5]}
+                  alt={`${project.title} 팬트리 이미지`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
+
+          {gallery[6] && (
+            <section className="max-w-4xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                <Image
+                  src={gallery[6]}
+                  alt={`${project.title} 주방 발코니 이미지`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
+
+          {gallery[7] && (
+            <section className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                <Image
+                  src={gallery[7]}
+                  alt={`${project.title} 주방 디테일 이미지`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
+
+          {(gallery[8] || gallery[9]) && (
+            <section className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                {gallery[8] && (
                   <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
                     <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
+                      src={gallery[8]}
+                      alt={`${project.title} 주방 디테일 이미지 2`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                </section>
-              );
-            }
+                )}
 
-            if (number === 4) {
-              const nextImage = gallery[index + 2];
-
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="grid md:grid-cols-2 gap-8 md:gap-10">
-                    <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`${project.title} 이미지 ${number}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-
-                    {nextImage && (
-                      <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                        <Image
-                          src={nextImage}
-                          alt={`${project.title} 이미지 ${number + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </section>
-              );
-            }
-
-            if (number === 5) {
-              return null;
-            }
-
-            if (number === 6) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
-                    <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </section>
-              );
-            }
-
-            if (number === 7) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-4xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
+                {gallery[9] && (
                   <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
                     <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
+                      src={gallery[9]}
+                      alt={`${project.title} 드레스룸 이미지 1`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                </section>
-              );
-            }
+                )}
+              </div>
+            </section>
+          )}
 
-            if (number === 8) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
-                    <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </section>
-              );
-            }
+          {gallery[10] && (
+            <section className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                <Image
+                  src={gallery[10]}
+                  alt={`${project.title} 드레스룸 이미지 2`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
 
-            if (number === 9) {
-              const nextImage = gallery[index + 2];
+          {gallery[11] && (
+            <section className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32">
+              <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                <Image
+                  src={gallery[11]}
+                  alt={`${project.title} 욕실 이미지`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </section>
+          )}
 
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="grid md:grid-cols-2 gap-8 md:gap-10">
-                    <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`${project.title} 이미지 ${number}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-
-                    {nextImage && (
-                      <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                        <Image
-                          src={nextImage}
-                          alt={`${project.title} 이미지 ${number + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </section>
-              );
-            }
-
-            if (number === 10) {
-              return null;
-            }
-
-            if (number === 11) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-5xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
+          {(gallery[12] || gallery[13]) && (
+            <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
+              <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                {gallery[12] && (
                   <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
                     <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
+                      src={gallery[12]}
+                      alt={`${project.title} 현관 이미지 1`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                </section>
-              );
-            }
+                )}
 
-            if (number === 12) {
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-24 md:mb-32"
-                >
-                  <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                {gallery[13] && (
+                  <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
                     <Image
-                      src={image}
-                      alt={`${project.title} 이미지 ${number}`}
+                      src={gallery[13]}
+                      alt={`${project.title} 현관 이미지 2`}
                       fill
                       className="object-cover"
                     />
                   </div>
-                </section>
-              );
-            }
-
-            if (number === 13) {
-              const nextImage = gallery[index + 2];
-
-              return (
-                <section
-                  key={image}
-                  className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48"
-                >
-                  <div className="grid md:grid-cols-2 gap-8 md:gap-10">
-                    <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`${project.title} 이미지 ${number}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-
-                    {nextImage && (
-                      <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
-                        <Image
-                          src={nextImage}
-                          alt={`${project.title} 이미지 ${number + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </section>
-              );
-            }
-
-            if (number === 14) {
-              return null;
-            }
-
-            return null;
-          })}
+                )}
+              </div>
+            </section>
+          )}
         </>
       ) : (
         <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32">
