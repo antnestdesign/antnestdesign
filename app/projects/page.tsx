@@ -14,6 +14,8 @@ export default function ProjectsPage() {
   const active = projects[activeIndex];
 
   useEffect(() => {
+    if (projects.length <= 1) return;
+
     const timer = setInterval(() => {
       if (pausedRef.current) return;
 
@@ -119,20 +121,16 @@ export default function ProjectsPage() {
               href={`/projects/${active.slug}`}
               className="group relative h-[310px] md:flex-1 md:min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
-              {projects.map((project, index) => (
-                <Image
-                  key={`${project.slug}-${project.heroImage}`}
-                  src={project.heroImage}
-                  alt={project.title}
-                  fill
-                  priority={index === 0}
-                  className={`object-cover transition-all duration-[600ms] ease-in-out ${
-                    activeIndex === index
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-[1.02]"
-                  } group-hover:scale-105`}
-                />
-              ))}
+              <Image
+                key={`${active.slug}-${active.heroImage}`}
+                src={active.heroImage}
+                alt={active.title}
+                fill
+                priority={activeIndex === 0}
+                quality={78}
+                sizes="(max-width: 768px) 100vw, 58vw"
+                className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+              />
 
               <div className="absolute inset-0 bg-black/20" />
 
