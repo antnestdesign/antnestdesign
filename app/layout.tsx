@@ -3,6 +3,9 @@ import "./globals.css";
 
 const siteUrl = "https://www.antnestdesign.com";
 
+const siteDescription =
+  "앤트네스트디자인은 인천 청라를 기반으로 송도, 검단, 동탄, 수원, 영통, 광교, 강남까지 주거 인테리어와 건축 프로젝트를 설계하는 디자인 스튜디오입니다.";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -14,8 +17,7 @@ export const metadata: Metadata = {
 
   title: "ANTNEST DESIGN | 앤트네스트디자인",
 
-  description:
-    "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다. 삶의 방식에 맞는 공간, 오래 머물고 싶은 공간을 만듭니다.",
+  description: siteDescription,
 
   alternates: {
     canonical: "/",
@@ -30,8 +32,7 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: "ANTNEST DESIGN | 앤트네스트디자인",
-    description:
-      "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다.",
+    description: siteDescription,
     url: siteUrl,
     siteName: "ANTNEST DESIGN",
     locale: "ko_KR",
@@ -49,8 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "ANTNEST DESIGN | 앤트네스트디자인",
-    description:
-      "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계합니다.",
+    description: siteDescription,
     images: ["/og-image.png"],
   },
 
@@ -74,8 +74,7 @@ const jsonLd = {
   url: siteUrl,
   image: `${siteUrl}/og-image.png`,
   logo: `${siteUrl}/logo.png`,
-  description:
-    "건축적 사고와 시공 경험을 바탕으로 주거 인테리어와 건축 프로젝트를 설계하는 인테리어·건축 디자인 스튜디오입니다.",
+  description: siteDescription,
   telephone: "+82-32-321-6909",
   email: "antnestdesign@naver.com",
   address: {
@@ -85,13 +84,49 @@ const jsonLd = {
     addressLocality: "서구 청라동",
     streetAddress: "중봉대로 612번길 10-20 청라프라자1 506호",
   },
-  areaServed: {
-    "@type": "Country",
-    name: "대한민국",
-  },
+  areaServed: [
+    {
+      "@type": "Place",
+      name: "인천 청라",
+    },
+    {
+      "@type": "Place",
+      name: "송도",
+    },
+    {
+      "@type": "Place",
+      name: "검단",
+    },
+    {
+      "@type": "Place",
+      name: "동탄",
+    },
+    {
+      "@type": "Place",
+      name: "수원",
+    },
+    {
+      "@type": "Place",
+      name: "영통",
+    },
+    {
+      "@type": "Place",
+      name: "광교",
+    },
+    {
+      "@type": "Place",
+      name: "강남",
+    },
+  ],
   serviceType: [
     "주거 인테리어",
     "아파트 인테리어",
+    "아파트 리모델링",
+    "청라 인테리어",
+    "송도 인테리어",
+    "동탄 인테리어",
+    "수원 인테리어",
+    "광교 인테리어",
     "건축 설계",
     "시공 관리",
     "상가주택 설계",
