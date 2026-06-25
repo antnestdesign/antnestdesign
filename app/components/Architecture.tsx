@@ -56,13 +56,13 @@ export default function Architecture() {
       }}
       className="max-w-7xl mx-auto px-6 md:px-16 pt-6 md:pt-0 w-full"
     >
-      <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-5 md:gap-28 items-center">
-        <div className="md:pr-10">
-          <p className="uppercase tracking-[0.32em] text-[9px] md:text-xs mb-3 md:mb-8">
+      <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-5 md:gap-[clamp(3rem,6vw,5rem)] items-center">
+        <div className="md:pr-6">
+          <p className="uppercase tracking-[0.32em] text-[9px] md:text-xs mb-3 md:mb-[clamp(1rem,3svh,1.5rem)]">
             Architecture Experience
           </p>
 
-          <h2 className="text-2xl md:text-6xl font-light leading-[1.1] mb-4 md:mb-10 break-keep tracking-[-0.02em]">
+          <h2 className="text-2xl md:text-[clamp(2.65rem,4.8vw,3.75rem)] font-light leading-[1.08] mb-4 md:mb-[clamp(1rem,3svh,2rem)] break-keep tracking-[-0.02em]">
             건축 경험은
             <br />
             공간을 바라보는
@@ -70,14 +70,14 @@ export default function Architecture() {
             깊이를 만듭니다
           </h2>
 
-          <p className="hidden md:block text-lg leading-9 text-neutral-600 max-w-md break-keep">
+          <p className="hidden md:block text-[clamp(1rem,1.35vw,1.125rem)] leading-[1.8] text-neutral-600 max-w-md break-keep">
             주택, 상가주택, 복합건축물 시공 경험을 바탕으로 공간을 더 깊이
             이해하고 설계합니다.
           </p>
         </div>
 
-        <Link href={active.href} className="group block md:pl-4">
-          <div className="relative h-[180px] md:h-[520px] overflow-hidden bg-[#d8d1ca]">
+        <Link href={active.href} className="group block md:pl-2">
+          <div className="relative h-[180px] md:h-[clamp(300px,43svh,440px)] overflow-hidden bg-[#d8d1ca]">
             {projects.map((project, index) => (
               <Image
                 key={project.image}
@@ -85,6 +85,8 @@ export default function Architecture() {
                 alt={project.title}
                 fill
                 priority={index === 0}
+                sizes="(max-width: 768px) 100vw, 55vw"
+                quality={78}
                 className={`object-cover transition-all duration-[600ms] ease-in-out ${
                   activeIndex === index
                     ? "opacity-100 scale-100"
@@ -96,7 +98,7 @@ export default function Architecture() {
         </Link>
       </div>
 
-      <div className="mt-4 md:mt-12 grid grid-cols-1 md:grid-cols-4 gap-0 md:gap-10">
+      <div className="mt-4 md:mt-[clamp(0.875rem,2.4svh,2rem)] grid grid-cols-1 md:grid-cols-4 gap-0 md:gap-[clamp(1.25rem,3vw,2rem)]">
         {projects.map((project, index) => {
           const isActive = activeIndex === index;
 
@@ -107,13 +109,15 @@ export default function Architecture() {
               onMouseEnter={() => setActiveIndex(index)}
               onFocus={() => setActiveIndex(index)}
               onTouchStart={() => setActiveIndex(index)}
-              className="group border-b border-neutral-300 py-2 md:py-0 md:pb-5"
+              className="group border-b border-neutral-300 py-2 md:py-0 md:pb-[clamp(0.5rem,1.6svh,0.875rem)]"
             >
-              <div className="hidden md:block relative h-24 overflow-hidden bg-[#d8d1ca] mb-4">
+              <div className="hidden md:block relative md:h-[clamp(52px,7.5svh,80px)] overflow-hidden bg-[#d8d1ca] mb-[clamp(0.5rem,1.5svh,0.75rem)]">
                 <Image
                   src={project.image}
                   alt={project.title}
                   fill
+                  sizes="25vw"
+                  quality={70}
                   className="object-cover transition duration-700 group-hover:scale-105"
                 />
               </div>
@@ -126,12 +130,12 @@ export default function Architecture() {
                 />
 
                 <div>
-                  <span className="block text-[10px] md:text-sm text-neutral-500 mb-0.5 md:mb-3">
+                  <span className="block text-[10px] md:text-xs text-neutral-500 mb-0.5 md:mb-[clamp(0.25rem,0.9svh,0.5rem)]">
                     {project.meta}
                   </span>
 
                   <span
-                    className={`block text-[11px] md:text-xl font-light leading-snug transition break-keep ${
+                    className={`block text-[11px] md:text-[clamp(0.9rem,1.25vw,1.125rem)] font-light leading-snug transition break-keep ${
                       isActive ? "text-[#4A433D]" : "text-[#4A433D]/65"
                     }`}
                   >
