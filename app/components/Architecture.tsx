@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 const projects = [
   {
-    title: "화성 만세구 고급주택 신축공사",
+    title: "화성 효행구 고급주택 신축공사",
     href: "/projects/luxury-house",
     image: "/home/luxury-house.jpg",
     meta: "600㎡ · 2022",
