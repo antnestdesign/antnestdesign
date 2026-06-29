@@ -1,5 +1,23 @@
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
+function SmallBefore({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  return (
+    <div className="max-w-sm mt-8 md:mt-10">
+      <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-400 mb-3">
+        Before
+      </p>
+
+      <ProjectImage src={src} alt={alt} ratio="aspect-[4/3]" quality={72} />
+    </div>
+  );
+}
+
 export default function ApartmentB() {
   return (
     <>
@@ -22,25 +40,62 @@ export default function ApartmentB() {
 
       <section className="mb-28 md:mb-40">
         <SectionHeading
+          eyebrow="Entrance / Corridor"
+          title="경계를 지우고 시선을 연결하다"
+          description="기존 중문을 과감히 철거해 현관과 복도의 경계를 없앴습니다. 닫혀 있던 시선은 거실까지 길게 이어지고, 실제 면적의 변화 없이도 집 전체가 한층 넓고 여유롭게 느껴지는 공간을 만들었습니다."
+        />
+
+        <div className="max-w-7xl mx-auto px-8 md:px-16">
+          <ProjectImage
+            src="/projects/apartment-b/07-entrance.webp"
+            alt="동탄역 모아미래도 현관"
+            ratio="aspect-[16/10]"
+            className="mb-8 md:mb-10"
+          />
+
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+            <ProjectImage
+              src="/projects/apartment-b/08-corridor-view-01.webp"
+              alt="동탄역 모아미래도 복도 거실 방향"
+              ratio="aspect-[4/5]"
+            />
+
+            <ProjectImage
+              src="/projects/apartment-b/09-corridor-view-02.webp"
+              alt="동탄역 모아미래도 복도 현관 방향"
+              ratio="aspect-[4/5]"
+              className="md:translate-y-12"
+            />
+          </div>
+
+          <SmallBefore
+            src="/projects/apartment-b/06-construction.webp"
+            alt="동탄역 모아미래도 현관과 복도 시공 전"
+          />
+
+          <div className="max-w-4xl ml-auto mt-12 md:mt-16">
+            <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+              복도는 더 이상 방을 연결하는 단순한 통로가 아니라, 집 전체의
+              흐름을 이어주는 하나의 공간으로 계획했습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-28 md:mb-40">
+        <SectionHeading
           eyebrow="Living Room"
           title="같은 공간, 달라진 가족의 시간"
           description="거실은 가장 넓은 공간이 아니라 가족이 가장 오래 함께 머무는 공간이어야 한다고 생각했습니다. 활용도가 낮았던 팬트리를 비워내고, 거실과 주방이 하나로 이어지는 시야를 만들었습니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-[0.9fr_1.1fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
-            <ProjectImage
-              src="/projects/apartment-b/01-before-living.webp"
-              alt="동탄역 모아미래도 거실 시공 전"
-              ratio="aspect-[4/5]"
-            />
-
-            <ProjectImage
-              src="/projects/apartment-b/10-living-room-overview.webp"
-              alt="동탄역 모아미래도 거실 시공 후"
-              ratio="aspect-[16/10]"
-            />
-          </div>
+          <ProjectImage
+            src="/projects/apartment-b/10-living-room-overview.webp"
+            alt="동탄역 모아미래도 거실 시공 후"
+            ratio="aspect-[16/10]"
+            className="mb-8 md:mb-10"
+          />
 
           <ProjectImage
             src="/projects/apartment-b/11-living-room-evening.webp"
@@ -48,7 +103,12 @@ export default function ApartmentB() {
             ratio="aspect-[16/9]"
           />
 
-          <div className="max-w-4xl ml-auto mt-10 md:mt-14">
+          <SmallBefore
+            src="/projects/apartment-b/01-before-living.webp"
+            alt="동탄역 모아미래도 거실 시공 전"
+          />
+
+          <div className="max-w-4xl ml-auto mt-12 md:mt-16">
             <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
               이번 프로젝트에서 가장 크게 달라진 것은 면적이 아닙니다. 같은
               공간 안에서 가족이 함께 보내는 시간이 달라졌습니다.
@@ -65,21 +125,18 @@ export default function ApartmentB() {
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
-            <ProjectImage
-              src="/projects/apartment-b/02-before-kitchen.webp"
-              alt="동탄역 모아미래도 주방 시공 전"
-              ratio="aspect-[4/5]"
-            />
+          <ProjectImage
+            src="/projects/apartment-b/12-kitchen-front.webp"
+            alt="동탄역 모아미래도 주방 시공 후"
+            ratio="aspect-[16/10]"
+          />
 
-            <ProjectImage
-              src="/projects/apartment-b/12-kitchen-front.webp"
-              alt="동탄역 모아미래도 주방 시공 후"
-              ratio="aspect-[16/10]"
-            />
-          </div>
+          <SmallBefore
+            src="/projects/apartment-b/02-before-kitchen.webp"
+            alt="동탄역 모아미래도 주방 시공 전"
+          />
 
-          <div className="max-w-4xl ml-auto space-y-5 md:space-y-6">
+          <div className="max-w-4xl ml-auto mt-12 md:mt-16 space-y-5 md:space-y-6">
             <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
               조리와 식사, 대화와 아이들의 숙제까지. 아일랜드는 단순한
               조리대가 아니라 가족이 가장 오래 머무는 공간이 되었습니다.
@@ -90,52 +147,6 @@ export default function ApartmentB() {
               분산하여 생활감은 줄이고 사용성은 높였습니다. 기존 주방 일부는
               보조주방으로 분리해 냄새가 강한 음식이나 많은 조리가 필요한
               요리를 해결할 수 있도록 했습니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-28 md:mb-40">
-        <SectionHeading
-          eyebrow="Entrance / Corridor"
-          title="경계를 지우고 시선을 연결하다"
-          description="기존 중문을 과감히 철거해 현관과 복도의 경계를 없앴습니다. 닫혀 있던 시선은 거실까지 길게 이어지고, 실제 면적의 변화 없이도 집 전체가 한층 넓고 여유롭게 느껴지는 공간을 만들었습니다."
-        />
-
-        <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <ProjectImage
-            src="/projects/apartment-b/07-entrance.webp"
-            alt="동탄역 모아미래도 현관"
-            ratio="aspect-[16/10]"
-            className="mb-8 md:mb-10"
-          />
-
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            <ProjectImage
-              src="/projects/apartment-b/08-corridor-view-01.webp"
-              alt="동탄역 모아미래도 복도 거실 방향"
-              ratio="aspect-[4/5]"
-            />
-
-            <ProjectImage
-              src="/projects/apartment-b/09-corridor-view-02.webp"
-              alt="동탄역 모아미래도 복도 현관 방향"
-              ratio="aspect-[4/5]"
-              className="md:translate-y-10"
-            />
-
-            <ProjectImage
-              src="/projects/apartment-b/06-construction.webp"
-              alt="동탄역 모아미래도 현관과 복도 시공 전"
-              ratio="aspect-[4/5]"
-              className="md:translate-y-20"
-            />
-          </div>
-
-          <div className="max-w-4xl ml-auto mt-20 md:mt-28">
-            <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-              복도는 더 이상 방을 연결하는 단순한 통로가 아니라, 집 전체의
-              흐름을 이어주는 하나의 공간으로 계획했습니다.
             </p>
           </div>
         </div>
@@ -172,22 +183,14 @@ export default function ApartmentB() {
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-10 mb-8 md:mb-10">
-            <ProjectImage
-              src="/projects/apartment-b/14-master-entry.webp"
-              alt="동탄역 모아미래도 안방 입구 시공 후"
-              ratio="aspect-[4/5]"
-            />
+          <ProjectImage
+            src="/projects/apartment-b/14-master-entry.webp"
+            alt="동탄역 모아미래도 안방 입구 시공 후"
+            ratio="aspect-[16/10]"
+            className="mb-8 md:mb-10"
+          />
 
-            <ProjectImage
-              src="/projects/apartment-b/05-before-master-entry.webp"
-              alt="동탄역 모아미래도 안방 입구 시공 전"
-              ratio="aspect-[4/5]"
-              className="md:translate-y-12"
-            />
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-end mt-16 md:mt-24">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-end">
             <ProjectImage
               src="/projects/apartment-b/13-master-bedroom.webp"
               alt="동탄역 모아미래도 안방"
@@ -202,7 +205,12 @@ export default function ApartmentB() {
             />
           </div>
 
-          <div className="max-w-4xl ml-auto mt-16 md:mt-24">
+          <SmallBefore
+            src="/projects/apartment-b/05-before-master-entry.webp"
+            alt="동탄역 모아미래도 안방 입구 시공 전"
+          />
+
+          <div className="max-w-4xl ml-auto mt-12 md:mt-16">
             <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
               침실은 휴식에만 집중할 수 있는 더욱 내밀한 공간이 되었고,
               드레스룸은 여유로운 수납과 편리한 동선을 갖춘 독립적인 공간으로
@@ -222,28 +230,25 @@ export default function ApartmentB() {
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-8 md:gap-10 items-end">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-end">
             <ProjectImage
-              src="/projects/apartment-b/04-before-common-bathroom.webp"
-              alt="동탄역 모아미래도 공용 욕실 시공 전"
+              src="/projects/apartment-b/16-master-bathroom.webp"
+              alt="동탄역 모아미래도 욕실"
               ratio="aspect-[4/5]"
             />
 
-            <div className="grid md:grid-cols-2 gap-8 md:gap-10">
-              <ProjectImage
-                src="/projects/apartment-b/16-master-bathroom.webp"
-                alt="동탄역 모아미래도 욕실"
-                ratio="aspect-[4/5]"
-              />
-
-              <ProjectImage
-                src="/projects/apartment-b/17-common-bathroom.webp"
-                alt="동탄역 모아미래도 공용 욕실"
-                ratio="aspect-[4/5]"
-                className="md:translate-y-12"
-              />
-            </div>
+            <ProjectImage
+              src="/projects/apartment-b/17-common-bathroom.webp"
+              alt="동탄역 모아미래도 공용 욕실"
+              ratio="aspect-[4/5]"
+              className="md:translate-y-12"
+            />
           </div>
+
+          <SmallBefore
+            src="/projects/apartment-b/04-before-common-bathroom.webp"
+            alt="동탄역 모아미래도 공용 욕실 시공 전"
+          />
         </div>
       </section>
 
