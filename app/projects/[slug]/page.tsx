@@ -52,13 +52,20 @@ export default async function ProjectPage({
   const gallery = project.gallery ?? [];
   const beforeImages = project.beforeImages ?? [];
   const isApartmentA = slug === "apartment-a";
+  const isLuxuryHouse = slug === "luxury-house";
 
   const overviewParagraphs = isApartmentA
     ? [
         "부부와 초등학생 자녀가 거주하는 37평형 아파트로, 2베이 구조가 가진 수납과 동선의 한계를 정리하는 데 중점을 둔 프로젝트입니다.",
         "기존 공간에서 턱없이 부족했던 수납을 보완하기 위해 주방, 현관, 안방의 기능을 다시 나누고, 가족의 일상이 더 단정하게 유지될 수 있는 구조로 계획했습니다.",
       ]
-    : [project.overview];
+    : isLuxuryHouse
+      ? [
+          "대지 위에 주거, 휴식, 취미 공간이 함께 구성된 고급주택 신축 프로젝트입니다.",
+          "넓은 외부 매스와 높은 층고의 내부 공간, 대형 주방과 거실, 수영장과 스크린골프장 등 복합적인 프로그램을 하나의 주거 안에 담아냈습니다.",
+          "단순히 규모가 큰 주택이 아니라, 가족의 생활 방식과 여가, 접객, 휴식을 함께 고려한 주거 건축으로 계획되었습니다.",
+        ]
+      : [project.overview];
 
   const livingOverview = gallery[1];
   const livingDetail = gallery[2];
@@ -78,6 +85,11 @@ export default async function ProjectPage({
 
   const entranceOverview = gallery[12];
   const entranceDetail = gallery[13];
+
+  const luxuryExterior = gallery[0];
+  const luxuryHall = gallery[1];
+  const luxuryLiving = gallery[2];
+  const luxuryKitchen = gallery[3];
 
   const currentProjectIndex = projectList.findIndex(
     (item) => item.slug === slug
@@ -230,7 +242,164 @@ export default async function ProjectPage({
         </section>
       )}
 
-      {isApartmentA && gallery.length > 0 ? (
+      {isLuxuryHouse && gallery.length > 0 ? (
+        <>
+          {luxuryExterior && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Exterior"
+                title="묵직한 재료감과 투명한 개방감"
+                description="외부는 조적타일, 현무암, 유리난간이 조합된 입면으로 구성되었습니다. 묵직한 재료감과 수평으로 긴 매스, 외부 테라스와 난간의 투명감이 함께 어우러지며 주택의 규모감과 개방감을 동시에 만듭니다."
+              />
+
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                  <Image
+                    src={luxuryExterior}
+                    alt={`${project.title} 외부 이미지`}
+                    fill
+                    quality={84}
+                    sizes="(max-width: 768px) 100vw, 1120px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {luxuryLiving && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Living Room"
+                title="높은 층고와 초대형 샹들리에"
+                description="거실은 높은 층고와 대형 창, 초대형 샹들리에가 중심이 되는 공간입니다. 대형 박판타일로 구성된 메인 월은 공간의 수직적 규모감을 강조하고, 넓은 바닥 면적과 높은 천장이 함께 어우러져 고급주택의 중심 공간다운 인상을 만듭니다."
+              />
+
+              <div className="max-w-6xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                  <Image
+                    src={luxuryLiving}
+                    alt={`${project.title} 거실 이미지`}
+                    fill
+                    quality={82}
+                    sizes="(max-width: 768px) 100vw, 760px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {luxuryKitchen && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Kitchen"
+                title="훈증무늬목으로 완성한 주방"
+                description="주방은 훈증무늬목을 중심으로 한 깊은 우드톤 마감과 대형 아일랜드가 중심이 되는 공간입니다. 서브제로 냉장고 세트, 팔맥 후드, 넓은 수납 구성과 함께 대형 아일랜드 상판은 칸스톤으로 마감하여 조리와 접객이 동시에 가능한 주방으로 완성했습니다."
+              />
+
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                  <Image
+                    src={luxuryKitchen}
+                    alt={`${project.title} 주방 이미지`}
+                    fill
+                    quality={84}
+                    sizes="(max-width: 768px) 100vw, 1120px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {luxuryHall && (
+            <section className="mb-28 md:mb-40">
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="border-t border-neutral-300 pt-8 md:pt-10">
+                  <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+                    Hall / Corridor
+                  </p>
+
+                  <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-center">
+                    <div className="md:col-span-5">
+                      <h2 className="text-3xl md:text-5xl font-light leading-[1.12] break-keep mb-6 md:mb-8">
+                        공간을 연결하는
+                        <br />
+                        내부 시퀀스
+                      </h2>
+
+                      <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                        복도와 연결 공간은 단순한 이동 통로가 아니라, 거실과 각
+                        실을 연결하는 시퀀스로 구성되었습니다. 밝은 바닥 마감과
+                        목재 디테일, 길게 이어지는 시야축을 통해 내부 공간의
+                        깊이와 방향성이 드러나도록 했습니다.
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-6 md:col-start-7">
+                      <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                        <Image
+                          src={luxuryHall}
+                          alt={`${project.title} 홀 이미지`}
+                          fill
+                          quality={82}
+                          sizes="(max-width: 768px) 100vw, 560px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
+            <div className="border-t border-neutral-300 pt-10 md:pt-12">
+              <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+                Project Point
+              </p>
+
+              <div className="grid md:grid-cols-12 gap-8 md:gap-12">
+                <div className="md:col-span-5">
+                  <h2 className="text-3xl md:text-5xl font-light leading-[1.12] break-keep">
+                    고급주택 신축에서
+                    <br />
+                    요구되는 종합성
+                  </h2>
+                </div>
+
+                <div className="md:col-span-6 md:col-start-7">
+                  <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep mb-8">
+                    이 프로젝트는 단독주택 신축에서 요구되는 구조, 마감, 설비,
+                    외부 공간, 특수 프로그램을 종합적으로 다룬 사례입니다.
+                    조적타일, 현무암, 유리난간으로 구성된 외부와 높은 층고의
+                    거실, 훈증무늬목 주방, 대형 아일랜드, 특수 설비가 함께
+                    구성된 복합적인 고급주택으로, 시공 경험과 공간 이해가 함께
+                    요구되는 프로젝트였습니다.
+                  </p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      "조적타일",
+                      "현무암",
+                      "유리난간",
+                      "훈증무늬목",
+                    ].map((item) => (
+                      <div key={item} className="border-t border-neutral-300 pt-3">
+                        <p className="text-[11px] md:text-sm text-neutral-600 break-keep">
+                          {item}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : isApartmentA && gallery.length > 0 ? (
         <>
           {(livingOverview || livingDetail) && (
             <section className="mb-28 md:mb-40">
