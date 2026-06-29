@@ -1,12 +1,6 @@
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
-function SmallBefore({
-  src,
-  alt,
-}: {
-  src: string;
-  alt: string;
-}) {
+function SmallBefore({ src, alt }: { src: string; alt: string }) {
   return (
     <div className="max-w-sm mt-8 md:mt-10">
       <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-400 mb-3">
@@ -127,7 +121,14 @@ export default function ApartmentB() {
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectImage
             src="/projects/apartment-b/12-kitchen-front.webp"
-            alt="동탄역 모아미래도 주방 시공 후"
+            alt="동탄역 모아미래도 주방 전경"
+            ratio="aspect-[16/10]"
+            className="mb-8 md:mb-10"
+          />
+
+          <ProjectImage
+            src="/projects/apartment-b/19-kitchen-island.webp"
+            alt="동탄역 모아미래도 대형 아일랜드"
             ratio="aspect-[16/10]"
           />
 

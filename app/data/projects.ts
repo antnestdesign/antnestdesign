@@ -66,7 +66,7 @@ export const projects: Record<string, Project> = {
     type: "Apartment Renovation",
     year: "2025",
     area: "34평형",
-    images: 18,
+    images: 19,
     heroImage: "/projects/apartment-b/12-kitchen-front.webp",
     overview:
       "부부와 어린 두 아이의 생활을 중심으로 주방, 거실, 서재, 안방 동선을 다시 설계한 가족 중심 리모델링 프로젝트입니다.",
@@ -77,6 +77,7 @@ export const projects: Record<string, Project> = {
       "/projects/apartment-b/10-living-room-overview.webp",
       "/projects/apartment-b/11-living-room-evening.webp",
       "/projects/apartment-b/12-kitchen-front.webp",
+      "/projects/apartment-b/19-kitchen-island.webp",
       "/projects/apartment-b/18-study-homebar.webp",
       "/projects/apartment-b/13-master-bedroom.webp",
       "/projects/apartment-b/14-master-entry.webp",
