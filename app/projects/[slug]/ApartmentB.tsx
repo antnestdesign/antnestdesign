@@ -22,28 +22,75 @@ export default function ApartmentB() {
 
       <section className="mb-28 md:mb-40">
         <SectionHeading
-          eyebrow="Before"
-          title="이전 공간의 조건"
-          description="기존 공간은 거실 중앙의 팬트리, 분리된 주방, 닫힌 복도, 안방 내부에 묶여 있던 욕실과 드레스룸으로 인해 가족의 생활 흐름이 자연스럽게 이어지기 어려운 구조였습니다."
+          eyebrow="Living Room"
+          title="같은 공간, 달라진 가족의 시간"
+          description="거실은 가장 넓은 공간이 아니라 가족이 가장 오래 함께 머무는 공간이어야 한다고 생각했습니다. 활용도가 낮았던 팬트리를 비워내고, 거실과 주방이 하나로 이어지는 시야를 만들었습니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid md:grid-cols-[0.9fr_1.1fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
             <ProjectImage
               src="/projects/apartment-b/01-before-living.webp"
               alt="동탄역 모아미래도 거실 시공 전"
               ratio="aspect-[4/5]"
             />
+
+            <ProjectImage
+              src="/projects/apartment-b/10-living-room-overview.webp"
+              alt="동탄역 모아미래도 거실 시공 후"
+              ratio="aspect-[16/10]"
+            />
+          </div>
+
+          <ProjectImage
+            src="/projects/apartment-b/11-living-room-evening.webp"
+            alt="동탄역 모아미래도 거실 야간 조명"
+            ratio="aspect-[16/9]"
+          />
+
+          <div className="max-w-4xl ml-auto mt-10 md:mt-14">
+            <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+              이번 프로젝트에서 가장 크게 달라진 것은 면적이 아닙니다. 같은
+              공간 안에서 가족이 함께 보내는 시간이 달라졌습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-28 md:mb-40">
+        <SectionHeading
+          eyebrow="Kitchen"
+          title="주방은 가족이 머무는 중심이 되었습니다"
+          description="기존 주방은 조리 공간과 수납이 모두 부족했고, 거실에는 활용도가 낮은 팬트리가 자리하고 있었습니다. 우리는 팬트리를 과감히 비우고 주방의 중심에 3m 풀사이즈 아일랜드를 계획했습니다."
+        />
+
+        <div className="max-w-7xl mx-auto px-8 md:px-16">
+          <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
             <ProjectImage
               src="/projects/apartment-b/02-before-kitchen.webp"
               alt="동탄역 모아미래도 주방 시공 전"
               ratio="aspect-[4/5]"
             />
+
             <ProjectImage
-              src="/projects/apartment-b/03-before-corridor.webp"
-              alt="동탄역 모아미래도 복도 시공 전"
-              ratio="aspect-[4/5]"
+              src="/projects/apartment-b/12-kitchen-front.webp"
+              alt="동탄역 모아미래도 주방 시공 후"
+              ratio="aspect-[16/10]"
             />
+          </div>
+
+          <div className="max-w-4xl ml-auto space-y-5 md:space-y-6">
+            <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+              조리와 식사, 대화와 아이들의 숙제까지. 아일랜드는 단순한
+              조리대가 아니라 가족이 가장 오래 머무는 공간이 되었습니다.
+            </p>
+
+            <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+              부족했던 수납은 아일랜드 하부, 냉장고 옆 키큰장, 홈바장으로
+              분산하여 생활감은 줄이고 사용성은 높였습니다. 기존 주방 일부는
+              보조주방으로 분리해 냄새가 강한 음식이나 많은 조리가 필요한
+              요리를 해결할 수 있도록 했습니다.
+            </p>
           </div>
         </div>
       </section>
@@ -63,78 +110,32 @@ export default function ApartmentB() {
             className="mb-8 md:mb-10"
           />
 
-          <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             <ProjectImage
               src="/projects/apartment-b/08-corridor-view-01.webp"
               alt="동탄역 모아미래도 복도 거실 방향"
               ratio="aspect-[4/5]"
             />
+
             <ProjectImage
               src="/projects/apartment-b/09-corridor-view-02.webp"
               alt="동탄역 모아미래도 복도 현관 방향"
               ratio="aspect-[4/5]"
-              className="md:translate-y-12"
+              className="md:translate-y-10"
             />
-          </div>
-        </div>
-      </section>
 
-      <section className="mb-28 md:mb-40">
-        <SectionHeading
-          eyebrow="Living Room"
-          title="같은 공간, 달라진 가족의 시간"
-          description="거실은 가장 넓은 공간이 아니라 가족이 가장 오래 함께 머무는 공간이어야 한다고 생각했습니다. 활용도가 낮았던 팬트리를 비워내고, 거실과 주방이 하나로 이어지는 시야를 만들었습니다."
-        />
-
-        <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-[0.9fr_1.1fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
             <ProjectImage
-              src="/projects/apartment-b/01-before-living.webp"
-              alt="동탄역 모아미래도 거실 시공 전"
+              src="/projects/apartment-b/06-construction.webp"
+              alt="동탄역 모아미래도 현관과 복도 시공 전"
               ratio="aspect-[4/5]"
-            />
-            <ProjectImage
-              src="/projects/apartment-b/10-living-room-overview.webp"
-              alt="동탄역 모아미래도 거실 시공 후"
-              ratio="aspect-[16/10]"
+              className="md:translate-y-20"
             />
           </div>
 
-          <ProjectImage
-            src="/projects/apartment-b/11-living-room-evening.webp"
-            alt="동탄역 모아미래도 거실 야간 조명"
-            ratio="aspect-[16/9]"
-          />
-        </div>
-      </section>
-
-      <section className="mb-28 md:mb-40">
-        <SectionHeading
-          eyebrow="Kitchen"
-          title="주방은 가족이 머무는 중심이 되었습니다"
-          description="기존 주방은 조리 공간과 수납이 모두 부족했고, 거실에는 활용도가 낮은 팬트리가 자리하고 있었습니다. 우리는 팬트리를 과감히 비우고 주방의 중심에 3m 풀사이즈 아일랜드를 계획했습니다."
-        />
-
-        <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-8 md:gap-10 items-end mb-8 md:mb-10">
-            <ProjectImage
-              src="/projects/apartment-b/02-before-kitchen.webp"
-              alt="동탄역 모아미래도 주방 시공 전"
-              ratio="aspect-[4/5]"
-            />
-            <ProjectImage
-              src="/projects/apartment-b/12-kitchen-front.webp"
-              alt="동탄역 모아미래도 주방 시공 후"
-              ratio="aspect-[16/10]"
-            />
-          </div>
-
-          <div className="max-w-4xl ml-auto">
+          <div className="max-w-4xl ml-auto mt-20 md:mt-28">
             <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-              조리와 식사, 대화와 아이들의 숙제까지. 아일랜드는 단순한
-              조리대가 아니라 가족이 가장 오래 머무는 공간이 되었습니다.
-              부족했던 수납은 아일랜드 하부, 냉장고 옆 키큰장, 홈바장으로
-              분산하여 생활감은 줄이고 사용성은 높였습니다.
+              복도는 더 이상 방을 연결하는 단순한 통로가 아니라, 집 전체의
+              흐름을 이어주는 하나의 공간으로 계획했습니다.
             </p>
           </div>
         </div>
@@ -149,8 +150,8 @@ export default function ApartmentB() {
 
         <div className="max-w-6xl mx-auto px-8 md:px-16">
           <ProjectImage
-            src="/projects/apartment-b/05-before-master-entry.webp"
-            alt="동탄역 모아미래도 구조 변경 과정"
+            src="/projects/apartment-b/18-study-homebar.webp"
+            alt="동탄역 모아미래도 서재와 홈바"
             ratio="aspect-[16/10]"
             className="mb-8 md:mb-10"
           />
@@ -171,30 +172,28 @@ export default function ApartmentB() {
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-10">
-            <ProjectImage
-              src="/projects/apartment-b/05-before-master-entry.webp"
-              alt="동탄역 모아미래도 안방 입구 시공 전"
-              ratio="aspect-[4/5]"
-            />
-            <ProjectImage
-              src="/projects/apartment-b/06-construction.webp"
-              alt="동탄역 모아미래도 안방 구조 변경 공사"
-              ratio="aspect-[4/5]"
-            />
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 mb-8 md:mb-10">
             <ProjectImage
               src="/projects/apartment-b/14-master-entry.webp"
               alt="동탄역 모아미래도 안방 입구 시공 후"
               ratio="aspect-[4/5]"
             />
+
+            <ProjectImage
+              src="/projects/apartment-b/05-before-master-entry.webp"
+              alt="동탄역 모아미래도 안방 입구 시공 전"
+              ratio="aspect-[4/5]"
+              className="md:translate-y-12"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-end">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-end mt-16 md:mt-24">
             <ProjectImage
               src="/projects/apartment-b/13-master-bedroom.webp"
               alt="동탄역 모아미래도 안방"
               ratio="aspect-[4/5]"
             />
+
             <ProjectImage
               src="/projects/apartment-b/15-dressing-room.webp"
               alt="동탄역 모아미래도 드레스룸"
@@ -229,12 +228,14 @@ export default function ApartmentB() {
               alt="동탄역 모아미래도 공용 욕실 시공 전"
               ratio="aspect-[4/5]"
             />
+
             <div className="grid md:grid-cols-2 gap-8 md:gap-10">
               <ProjectImage
                 src="/projects/apartment-b/16-master-bathroom.webp"
                 alt="동탄역 모아미래도 욕실"
                 ratio="aspect-[4/5]"
               />
+
               <ProjectImage
                 src="/projects/apartment-b/17-common-bathroom.webp"
                 alt="동탄역 모아미래도 공용 욕실"
