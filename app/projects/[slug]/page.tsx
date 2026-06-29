@@ -371,7 +371,7 @@ export default async function ProjectPage({
                 </div>
 
                 <div className="md:col-span-6 md:col-start-7">
-                  <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep mb-8">
+                  <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                     이 프로젝트는 단독주택 신축에서 요구되는 구조, 마감, 설비,
                     외부 공간, 특수 프로그램을 종합적으로 다룬 사례입니다.
                     조적타일, 현무암, 유리난간으로 구성된 외부와 높은 층고의
@@ -379,21 +379,6 @@ export default async function ProjectPage({
                     구성된 복합적인 고급주택으로, 시공 경험과 공간 이해가 함께
                     요구되는 프로젝트였습니다.
                   </p>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      "조적타일",
-                      "현무암",
-                      "유리난간",
-                      "훈증무늬목",
-                    ].map((item) => (
-                      <div key={item} className="border-t border-neutral-300 pt-3">
-                        <p className="text-[11px] md:text-sm text-neutral-600 break-keep">
-                          {item}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
