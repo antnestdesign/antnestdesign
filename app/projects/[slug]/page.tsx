@@ -53,6 +53,7 @@ export default async function ProjectPage({
   const beforeImages = project.beforeImages ?? [];
   const isApartmentA = slug === "apartment-a";
   const isLuxuryHouse = slug === "luxury-house";
+  const isPrivateHouse = slug === "private-house";
 
   const overviewParagraphs = isApartmentA
     ? [
@@ -65,7 +66,13 @@ export default async function ProjectPage({
           "넓은 외부 매스와 높은 층고의 내부 공간, 대형 주방과 거실, 수영장과 스크린골프장 등 복합적인 프로그램을 하나의 주거 안에 담아냈습니다.",
           "단순히 규모가 큰 주택이 아니라, 가족의 생활 방식과 여가, 접객, 휴식을 함께 고려한 주거 건축으로 계획되었습니다.",
         ]
-      : [project.overview];
+      : isPrivateHouse
+        ? [
+            "붉은 벽돌 외관과 웨인스코팅 중심의 클래식한 실내 디테일이 조화를 이루는 단독주택 신축 프로젝트입니다.",
+            "실내는 웨인스코팅 벽면과 계단실, 밝은 바닥 마감, 클래식한 조명 계획을 중심으로 구성했고, 주방은 한샘 키친바흐를 적용해 가족의 일상과 접객이 자연스럽게 이어지는 공간으로 완성했습니다.",
+            "아트월과 외벽에는 석재패널을 사용해 주택의 중심 공간과 입면에 묵직한 재료감을 더했습니다.",
+          ]
+        : [project.overview];
 
   const livingOverview = gallery[1];
   const livingDetail = gallery[2];
@@ -90,6 +97,14 @@ export default async function ProjectPage({
   const luxuryHall = gallery[1];
   const luxuryLiving = gallery[2];
   const luxuryKitchen = gallery[3];
+
+  const privateExterior = gallery[0];
+  const privateStair = gallery[1];
+  const privateHall = gallery[2];
+  const privateLiving = gallery[3];
+  const privateWindow = gallery[4];
+  const privateArtWall = gallery[5];
+  const privateKitchen = gallery[6];
 
   const currentProjectIndex = projectList.findIndex(
     (item) => item.slug === slug
@@ -378,6 +393,216 @@ export default async function ProjectPage({
                     거실, 훈증무늬목 주방, 대형 아일랜드, 특수 설비가 함께
                     구성된 복합적인 고급주택으로, 시공 경험과 공간 이해가 함께
                     요구되는 프로젝트였습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : isPrivateHouse && gallery.length > 0 ? (
+        <>
+          {privateExterior && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Exterior"
+                title="붉은 벽돌과 석재패널의 입면"
+                description="외부는 붉은 벽돌과 석재패널, 정원과 외부 조명이 함께 어우러진 단독주택으로 구성되었습니다. 도로에서 바라보는 첫인상은 안정감 있고 따뜻하게 느껴지도록 계획했으며, 정원과 진입 동선이 함께 이어지며 단독주택다운 여유를 만듭니다."
+              />
+
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                  <Image
+                    src={privateExterior}
+                    alt={`${project.title} 외부 이미지`}
+                    fill
+                    quality={84}
+                    sizes="(max-width: 768px) 100vw, 1120px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateStair && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Stair Hall"
+                title="웨인스코팅이 만드는 첫 장면"
+                description="계단실은 이 주택의 클래식한 분위기를 가장 선명하게 보여주는 공간입니다. 웨인스코팅 벽면과 우드 계단, 클래식한 조명, 난간 디테일이 함께 구성되며 층간 이동 공간을 단순한 통로가 아닌 하나의 장면으로 완성했습니다."
+              />
+
+              <div className="max-w-6xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                  <Image
+                    src={privateStair}
+                    alt={`${project.title} 계단실 이미지`}
+                    fill
+                    quality={82}
+                    sizes="(max-width: 768px) 100vw, 760px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateHall && (
+            <section className="mb-28 md:mb-40">
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="border-t border-neutral-300 pt-8 md:pt-10">
+                  <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+                    Hall
+                  </p>
+
+                  <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-center">
+                    <div className="md:col-span-5">
+                      <h2 className="text-3xl md:text-5xl font-light leading-[1.12] break-keep mb-6 md:mb-8">
+                        공간을 이어주는
+                        <br />
+                        클래식한 내부 동선
+                      </h2>
+
+                      <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                        홀과 연결 공간은 각 실을 자연스럽게 이어주는 내부 동선의
+                        중심입니다. 밝은 바닥 마감과 웨인스코팅 벽면 디테일을
+                        통해 공간의 깊이감을 만들고, 주택 내부의 분위기가
+                        끊기지 않고 이어지도록 계획했습니다.
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-6 md:col-start-7">
+                      <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                        <Image
+                          src={privateHall}
+                          alt={`${project.title} 홀 이미지`}
+                          fill
+                          quality={82}
+                          sizes="(max-width: 768px) 100vw, 560px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateLiving && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Living Room"
+                title="정원과 연결되는 거실"
+                description="거실은 정원과 내부 공간이 시각적으로 연결되는 중심 공간입니다. 넓은 창을 통해 자연광이 깊게 들어오고, 밝은 마감과 정돈된 벽면 구성이 어우러져 가족이 함께 머무는 공간의 안정감을 만듭니다."
+              />
+
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                  <Image
+                    src={privateLiving}
+                    alt={`${project.title} 거실 이미지`}
+                    fill
+                    quality={84}
+                    sizes="(max-width: 768px) 100vw, 1120px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateWindow && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Window / Garden View"
+                title="정원을 실내로 들이는 창"
+                description="큰 창은 실내와 외부 정원을 연결하는 중요한 장치로 계획되었습니다. 창을 통해 들어오는 빛과 정원의 풍경이 실내 분위기를 부드럽게 만들며, 단독주택이 가진 여유로운 생활감을 공간 안으로 끌어들입니다."
+              />
+
+              <div className="max-w-6xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                  <Image
+                    src={privateWindow}
+                    alt={`${project.title} 창과 정원 이미지`}
+                    fill
+                    quality={82}
+                    sizes="(max-width: 768px) 100vw, 760px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateArtWall && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Art Wall"
+                title="석재패널로 정리한 중심 벽면"
+                description="아트월은 공간의 시선을 정리하는 중심 요소로 구성되었습니다. 석재패널의 묵직한 재료감과 벽면의 비례, 조명의 분위기를 중심으로 계획해 클래식한 주택의 분위기를 차분하게 이어줍니다."
+              />
+
+              <div className="max-w-6xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[4/5] bg-[#d3ccc5] overflow-hidden">
+                  <Image
+                    src={privateArtWall}
+                    alt={`${project.title} 아트월 이미지`}
+                    fill
+                    quality={82}
+                    sizes="(max-width: 768px) 100vw, 760px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {privateKitchen && (
+            <section className="mb-28 md:mb-40">
+              <SectionHeading
+                eyebrow="Kitchen"
+                title="한샘 키친바흐로 완성한 주방"
+                description="주방은 가족의 일상적인 식사와 조리, 수납이 편안하게 이루어질 수 있도록 구성되었습니다. 한샘 키친바흐를 적용해 클래식한 주택의 분위기와 어울리는 주방으로 완성했고, 넓은 작업 동선과 수납 계획을 통해 일상과 접객이 자연스럽게 이어지도록 했습니다."
+              />
+
+              <div className="max-w-7xl mx-auto px-8 md:px-16">
+                <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden">
+                  <Image
+                    src={privateKitchen}
+                    alt={`${project.title} 주방 이미지`}
+                    fill
+                    quality={84}
+                    sizes="(max-width: 768px) 100vw, 1120px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
+            <div className="border-t border-neutral-300 pt-10 md:pt-12">
+              <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+                Project Point
+              </p>
+
+              <div className="grid md:grid-cols-12 gap-8 md:gap-12">
+                <div className="md:col-span-5">
+                  <h2 className="text-3xl md:text-5xl font-light leading-[1.12] break-keep">
+                    클래식한 분위기와
+                    <br />
+                    가족 중심의 주거 동선
+                  </h2>
+                </div>
+
+                <div className="md:col-span-6 md:col-start-7">
+                  <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                    이 프로젝트는 외관, 정원, 계단실, 거실, 주방이 하나의 주거
+                    분위기로 이어지는 단독주택 사례입니다. 웨인스코팅을 중심으로
+                    한 실내 디테일과 석재패널 아트월, 한샘 키친바흐 주방이 함께
+                    구성되며, 단독주택 신축에서 필요한 공간 구성과 마감 완성도를
+                    보여줍니다.
                   </p>
                 </div>
               </div>
