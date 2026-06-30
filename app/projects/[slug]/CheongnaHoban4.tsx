@@ -10,6 +10,7 @@ const images = {
   dressingDetail: "/projects/cheongna-hoban-4-33a/07-dressing-detail.jpg",
   vanity: "/projects/cheongna-hoban-4-33a/08-vanity.jpg",
   bathroom: "/projects/cheongna-hoban-4-33a/09-bathroom.jpg",
+  kitchen: "/projects/cheongna-hoban-4-33a/10-kitchen.jpg",
 };
 
 export default function CheongnaHoban4() {
@@ -19,8 +20,8 @@ export default function CheongnaHoban4() {
         <div className="space-y-6">
           {[
             "인천 청라 호반4차 33A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다.",
-            "기존 구조에서 부족하게 느껴질 수 있는 안방 수납과 드레스룸 영역을 중심으로 공간을 다시 검토했습니다. 안방 일부를 장으로 분할해 침실과 수납 영역의 경계를 만들고, 드레스룸 공간을 기존보다 넓게 사용할 수 있도록 계획했습니다.",
-            "거실과 주방, 복도, 안방, 드레스룸, 욕실까지 차분한 우드톤과 그레이지 마감으로 연결해 전체 공간이 하나의 흐름으로 읽히도록 구성했습니다.",
+            "거실과 주방은 하나의 열린 생활 공간으로 계획하고, 안방은 장을 이용해 침실과 드레스룸 영역을 분리했습니다. 기존 구조 안에서 수납량과 생활 동선을 함께 개선하는 데 중점을 두었습니다.",
+            "차분한 우드톤, 그레이지 계열의 벽면, 석재 질감, 낮은 조도의 간접조명을 중심으로 구성해 전체 공간이 하나의 흐름으로 이어지도록 제안했습니다.",
           ].map((paragraph) => (
             <p
               key={paragraph}
@@ -35,8 +36,8 @@ export default function CheongnaHoban4() {
       <section className="mb-28 md:mb-40">
         <SectionHeading
           eyebrow="Living Area"
-          title="차분한 우드톤으로 정리한 거실"
-          description="거실은 대형 창을 통해 들어오는 자연광과 아파트 단지의 풍경을 적극적으로 받아들이는 공간으로 계획했습니다. 우드 마감의 TV 월과 낮은 조도의 간접조명을 통해 시선이 머무는 중심 벽면을 만들고, 가족이 오래 머물러도 편안한 분위기가 유지되도록 구성했습니다."
+          title="거실과 주방이 이어지는 열린 생활 공간"
+          description="거실은 대형 창을 통해 들어오는 자연광과 아파트 단지의 풍경을 적극적으로 받아들이는 공간으로 계획했습니다. 우드 마감의 TV 월과 낮은 조도의 간접조명을 통해 시선이 머무는 중심 벽면을 만들고, 주방과 자연스럽게 연결되는 넓은 생활 공간으로 구성했습니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
@@ -50,15 +51,31 @@ export default function CheongnaHoban4() {
 
       <section className="mb-28 md:mb-40">
         <SectionHeading
-          eyebrow="Kitchen & Dining"
-          title="거실과 이어지는 오픈형 주방"
-          description="주방은 거실과 자연스럽게 연결되는 오픈형 구조로 제안했습니다. 대형 아일랜드와 벽면 수납을 중심으로 조리, 식사, 수납 동선이 함께 정리되도록 구성했고, 밝은 상판과 차분한 우드 마감이 대비되며 공간의 중심감을 만들도록 했습니다."
+          eyebrow="Living & Kitchen"
+          title="하나의 장면으로 연결한 거실과 주방"
+          description="거실과 주방은 별개의 공간처럼 나뉘기보다 하나의 큰 장면으로 읽히도록 구성했습니다. TV 월, 소파, 아일랜드, 후면 주방 수납벽이 같은 축 안에서 연결되도록 계획해 가족의 생활과 식사, 휴식이 자연스럽게 이어지도록 했습니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectImage
             src={images.livingKitchen}
             alt="청라 호반4차 33A 거실과 주방 렌더링"
+            ratio="aspect-[16/9]"
+          />
+        </div>
+      </section>
+
+      <section className="mb-28 md:mb-40">
+        <SectionHeading
+          eyebrow="Kitchen"
+          title="수납 벽면과 아일랜드로 정리한 주방"
+          description="주방은 거실과 자연스럽게 이어지는 오픈형 구조 안에서 수납과 조리 동선을 명확하게 정리했습니다. 후면에는 우드톤 수납 벽면을 길게 구성해 가전과 수납을 하나의 면으로 정돈하고, 중앙에는 곡선형 다리의 아일랜드를 배치해 조리, 식사, 대화가 함께 이루어지는 중심 공간으로 계획했습니다."
+        />
+
+        <div className="max-w-7xl mx-auto px-8 md:px-16">
+          <ProjectImage
+            src={images.kitchen}
+            alt="청라 호반4차 33A 주방 렌더링"
             ratio="aspect-[16/9]"
           />
         </div>
@@ -80,7 +97,7 @@ export default function CheongnaHoban4() {
                 </h2>
 
                 <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                  복도와 수납 공간은 단순한 이동 동선이 아니라, 집의 분위기가
+                  복도와 수납 공간은 단순한 이동 동선이 아니라 집의 분위기가
                   이어지는 시퀀스로 계획했습니다. 벽면과 수납장을 최대한
                   단정하게 정리하고, 우드톤 바닥과 밝은 벽면 마감이 거실,
                   안방, 드레스룸까지 자연스럽게 이어지도록 구성했습니다.
@@ -134,8 +151,8 @@ export default function CheongnaHoban4() {
 
             <ProjectImage
               src={images.dressingDetail}
-              alt="청라 호반4차 33A 드레스룸 디테일 렌더링"
-              ratio="aspect-[16/10]"
+              alt="청라 호반4차 33A 드레스룸 화장대 렌더링"
+              ratio="aspect-[4/3]"
               className="md:translate-y-12"
               quality={82}
             />
@@ -196,9 +213,10 @@ export default function CheongnaHoban4() {
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                 이 프로젝트는 실제 청라 호반4차 33A 평면을 기준으로, 기존
                 구조 안에서 수납과 생활 동선을 어떻게 개선할 수 있는지 검토한
-                디자인 제안입니다. 특히 안방 일부를 장으로 분할해 드레스룸
-                공간을 확장한 점이 핵심입니다. 단순히 마감 이미지를 제안하는
-                것이 아니라, 가족의 생활 물건과 수납 방식, 침실의 정돈감을
+                디자인 제안입니다. 특히 안방 일부를 장으로 분할해 침실과
+                드레스룸의 경계를 만들고, 드레스룸 공간을 확장한 점이
+                핵심입니다. 단순히 마감 이미지를 제안하는 것이 아니라 가족의
+                생활 물건과 수납 방식, 침실의 정돈감, 거실과 주방의 연결감을
                 함께 고려한 공간 재구성안입니다.
               </p>
             </div>
