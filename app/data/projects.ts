@@ -113,7 +113,7 @@ export const projects: Record<string, Project> = {
     images: 10,
     heroImage: "/projects/cheongna-hoban-4-33a/01-hero.jpg",
     overview:
-      "인천 청라 호반4차 33A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다. 거실과 주방을 하나의 열린 생활 공간으로 정리하고, 안방 일부를 장으로 분할해 드레스룸 공간을 확장한 것이 핵심입니다.",
+      "인천 청라 호반4차 33A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다. 거실과 주방을 하나의 열린 생활 공간으로 정리하고, 현관은 신발장과 팬트리 영역을 확장해 벤치가 있는 수납공간으로 구성했으며, 안방은 장으로 분할해 드레스룸 공간을 확장했습니다.",
     gallery: [
       "/projects/cheongna-hoban-4-33a/01-hero.jpg",
       "/projects/cheongna-hoban-4-33a/02-living-room.jpg",
@@ -121,8 +121,8 @@ export const projects: Record<string, Project> = {
       "/projects/cheongna-hoban-4-33a/04-corridor.jpg",
       "/projects/cheongna-hoban-4-33a/05-master-room.jpg",
       "/projects/cheongna-hoban-4-33a/06-dressing-room.jpg",
-      "/projects/cheongna-hoban-4-33a/07-dressing-detail.jpg",
-      "/projects/cheongna-hoban-4-33a/08-vanity.jpg",
+      "/projects/cheongna-hoban-4-33a/07-dressing-detail.png",
+      "/projects/cheongna-hoban-4-33a/08-entry-storage.jpg",
       "/projects/cheongna-hoban-4-33a/09-bathroom.jpg",
       "/projects/cheongna-hoban-4-33a/10-kitchen.jpg",
     ],
