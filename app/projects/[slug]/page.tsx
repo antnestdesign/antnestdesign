@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
+import CheongnaHoban4 from "./CheongnaHoban4";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
 
@@ -17,11 +18,18 @@ export default async function ProjectPage({
     notFound();
   }
 
+  const hasCustomPage =
+    slug === "apartment-a" ||
+    slug === "apartment-b" ||
+    slug === "cheongna-hoban-4-33a";
+
   return (
     <ProjectLayout slug={slug} project={project}>
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
-      {slug !== "apartment-a" && slug !== "apartment-b" && (
+      {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
+
+      {!hasCustomPage && (
         <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
           <div className="border-t border-neutral-300 pt-12 md:pt-16 mb-10 md:mb-14">
             <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">

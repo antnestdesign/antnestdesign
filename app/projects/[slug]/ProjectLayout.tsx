@@ -55,7 +55,9 @@ export function ProjectImage({
   quality?: number;
 }) {
   return (
-    <div className={`relative ${ratio} bg-[#d8d2cb] overflow-hidden ${className}`}>
+    <div
+      className={`relative ${ratio} bg-[#d8d2cb] overflow-hidden ${className}`}
+    >
       <Image
         src={src}
         alt={alt}
@@ -73,7 +75,9 @@ export default function ProjectLayout({
   project,
   children,
 }: ProjectLayoutProps) {
-  const currentProjectIndex = projectList.findIndex((item) => item.slug === slug);
+  const currentProjectIndex = projectList.findIndex(
+    (item) => item.slug === slug
+  );
 
   const previousProject =
     currentProjectIndex >= 0
@@ -164,7 +168,7 @@ export default function ProjectLayout({
 
             <div className="flex justify-between gap-8">
               <span>Status</span>
-              <span className="text-right">Completed</span>
+              <span className="text-right">{project.status}</span>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ export type Project = {
   beforeImages: string[];
   featured: boolean;
   featuredOrder: number;
+  status: string;
   residentialFeatured?: boolean;
   residentialOrder?: number;
 };
@@ -54,6 +55,7 @@ export const projects: Record<string, Project> = {
     ],
     featured: true,
     featuredOrder: 1,
+    status: "Completed",
     residentialFeatured: true,
     residentialOrder: 1,
   },
@@ -95,8 +97,40 @@ export const projects: Record<string, Project> = {
     ],
     featured: true,
     featuredOrder: 2,
+    status: "Completed",
     residentialFeatured: true,
     residentialOrder: 2,
+  },
+
+  "cheongna-hoban-4-33a": {
+    title: "인천 청라 호반4차 33A 인테리어 제안",
+    cardTitle: "청라 호반4차 33A 인테리어 제안",
+    category: "Residential Interior",
+    projectGroup: "Residential",
+    type: "Design Proposal",
+    year: "2026",
+    area: "33A",
+    images: 9,
+    heroImage: "/projects/cheongna-hoban-4-33a/01-hero.jpg",
+    overview:
+      "인천 청라 호반4차 33A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다. 안방 일부를 장으로 분할해 드레스룸 공간을 확장하고, 거실과 주방, 안방, 욕실까지 차분한 우드톤과 그레이지 마감으로 연결했습니다.",
+    gallery: [
+      "/projects/cheongna-hoban-4-33a/01-hero.jpg",
+      "/projects/cheongna-hoban-4-33a/02-living-room.jpg",
+      "/projects/cheongna-hoban-4-33a/03-living-kitchen.jpg",
+      "/projects/cheongna-hoban-4-33a/04-corridor.jpg",
+      "/projects/cheongna-hoban-4-33a/05-master-room.jpg",
+      "/projects/cheongna-hoban-4-33a/06-dressing-room.jpg",
+      "/projects/cheongna-hoban-4-33a/07-dressing-detail.jpg",
+      "/projects/cheongna-hoban-4-33a/08-vanity.jpg",
+      "/projects/cheongna-hoban-4-33a/09-bathroom.jpg",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 3,
+    status: "Rendering Proposal",
+    residentialFeatured: true,
+    residentialOrder: 3,
   },
 
   "luxury-house": {
@@ -119,7 +153,8 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 3,
+    featuredOrder: 4,
+    status: "Completed",
   },
 
   "private-house": {
@@ -145,7 +180,8 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
+    status: "Completed",
   },
 
   "commercial-house": {
@@ -163,7 +199,8 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
+    status: "Completed",
   },
 
   officetel: {
@@ -181,7 +218,8 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
+    status: "Completed",
   },
 };
 
