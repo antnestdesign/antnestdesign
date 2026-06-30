@@ -7,7 +7,7 @@ import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
 import { featuredProjects } from "../data/projects";
 
-const MOBILE_PROJECTS_PER_PAGE = 6;
+const PROJECTS_PER_PAGE = 5;
 
 function useProjectLayoutMode() {
   const [mode, setMode] = useState<"mobile" | "desktop" | null>(null);
@@ -39,21 +39,59 @@ function useProjectLayoutMode() {
   return mode;
 }
 
+function Pagination({
+  currentPage,
+  totalPages,
+  onChange,
+  className = "",
+}: {
+  currentPage: number;
+  totalPages: number;
+  onChange: (page: number) => void;
+  className?: string;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {Array.from({ length: totalPages }).map((_, index) => {
+        const page = index + 1;
+        const isActive = currentPage === page;
+
+        return (
+          <button
+            key={page}
+            type="button"
+            onClick={() => onChange(page)}
+            className={`h-8 w-8 border text-[11px] transition ${
+              isActive
+                ? "border-[#4A433D] bg-[#4A433D] text-[#F3F0EB]"
+                : "border-neutral-300 text-neutral-500 hover:border-[#4A433D] hover:text-[#4A433D]"
+            }`}
+            aria-label={`Go to project page ${page}`}
+          >
+            {page}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function MobileProjects() {
-  const [mobilePage, setMobilePage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const projects = featuredProjects;
+  const totalPages = Math.ceil(projects.length / PROJECTS_PER_PAGE);
 
-  const totalMobilePages = Math.ceil(
-    projects.length / MOBILE_PROJECTS_PER_PAGE
-  );
-
-  const mobileProjects = useMemo(() => {
-    const startIndex = (mobilePage - 1) * MOBILE_PROJECTS_PER_PAGE;
-    const endIndex = startIndex + MOBILE_PROJECTS_PER_PAGE;
+  const pagedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
 
     return projects.slice(startIndex, endIndex);
-  }, [projects, mobilePage]);
+  }, [projects, currentPage]);
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen flex flex-col">
@@ -69,7 +107,7 @@ function MobileProjects() {
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-          {mobileProjects.map((project, index) => (
+          {pagedProjects.map((project, index) => (
             <Link
               key={project.slug}
               href={`/projects/${project.slug}`}
@@ -80,7 +118,7 @@ function MobileProjects() {
                   src={project.heroImage}
                   alt={project.title}
                   fill
-                  priority={mobilePage === 1 && index < 2}
+                  priority={currentPage === 1 && index < 2}
                   quality={68}
                   sizes="50vw"
                   className="object-cover"
@@ -109,37 +147,21 @@ function MobileProjects() {
           ))}
         </div>
 
-        {totalMobilePages > 1 && (
-          <div className="flex justify-center gap-2 mt-10">
-            {Array.from({ length: totalMobilePages }).map((_, index) => {
-              const page = index + 1;
-              const isActive = mobilePage === page;
-
-              return (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => {
-                    setMobilePage(page);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className={`h-8 w-8 border text-[11px] transition ${
-                    isActive
-                      ? "border-[#4A433D] bg-[#4A433D] text-[#F3F0EB]"
-                      : "border-neutral-300 text-neutral-500"
-                  }`}
-                  aria-label={`Go to project page ${page}`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onChange={(page) => {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="justify-center mt-10"
+        />
 
         <div className="mt-10 flex justify-between text-[9px] text-neutral-500 tracking-[0.25em] uppercase">
           <span>Portfolio</span>
-          <span>Tap to Open</span>
+          <span>
+            Page {currentPage} / {totalPages}
+          </span>
         </div>
       </section>
 
@@ -149,23 +171,37 @@ function MobileProjects() {
 }
 
 function DesktopProjects() {
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const pausedRef = useRef(false);
 
   const projects = featuredProjects;
-  const active = projects[activeIndex];
+  const totalPages = Math.ceil(projects.length / PROJECTS_PER_PAGE);
+
+  const pagedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
+
+    return projects.slice(startIndex, endIndex);
+  }, [projects, currentPage]);
+
+  const active = pagedProjects[activeIndex];
 
   useEffect(() => {
-    if (projects.length <= 1) return;
+    setActiveIndex(0);
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (pagedProjects.length <= 1) return;
 
     const timer = setInterval(() => {
       if (pausedRef.current) return;
 
-      setActiveIndex((prev) => (prev + 1) % projects.length);
+      setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [projects.length]);
+  }, [pagedProjects.length]);
 
   if (!active) {
     return null;
@@ -197,8 +233,10 @@ function DesktopProjects() {
             </div>
 
             <div className="flex-1 min-h-0">
-              {projects.map((project, index) => {
+              {pagedProjects.map((project, index) => {
                 const isActive = activeIndex === index;
+                const displayNumber =
+                  (currentPage - 1) * PROJECTS_PER_PAGE + index + 1;
 
                 return (
                   <Link
@@ -215,7 +253,7 @@ function DesktopProjects() {
                           : "text-sm text-neutral-400"
                       }
                     >
-                      {String(index + 1).padStart(2, "0")}
+                      {String(displayNumber).padStart(2, "0")}
                     </span>
 
                     <div>
@@ -229,8 +267,8 @@ function DesktopProjects() {
                         <h2
                           className={
                             isActive
-                              ? "text-xl font-light translate-x-1 transition duration-500"
-                              : "text-xl font-light transition duration-500 group-hover:translate-x-1"
+                              ? "text-xl font-light translate-x-1 transition duration-500 break-keep"
+                              : "text-xl font-light transition duration-500 group-hover:translate-x-1 break-keep"
                           }
                         >
                           {project.title}
@@ -255,6 +293,20 @@ function DesktopProjects() {
                 );
               })}
             </div>
+
+            <div className="pt-5 flex items-center justify-between">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onChange={(page) => {
+                  setCurrentPage(page);
+                }}
+              />
+
+              <p className="text-[10px] text-neutral-500 tracking-[0.25em] uppercase">
+                Page {currentPage} / {totalPages}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col min-h-0 order-2">
@@ -267,7 +319,7 @@ function DesktopProjects() {
                 src={active.heroImage}
                 alt={active.title}
                 fill
-                priority={activeIndex === 0}
+                priority={currentPage === 1 && activeIndex === 0}
                 quality={78}
                 sizes="58vw"
                 className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
@@ -285,7 +337,9 @@ function DesktopProjects() {
                   Current Selection
                 </p>
 
-                <h3 className="text-4xl font-light mb-3">{active.title}</h3>
+                <h3 className="text-4xl font-light mb-3 break-keep">
+                  {active.title}
+                </h3>
 
                 <div className="flex gap-6 text-sm text-white/75">
                   <span>{active.type}</span>
