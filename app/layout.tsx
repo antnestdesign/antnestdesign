@@ -6,12 +6,11 @@ const siteUrl = "https://www.antnestdesign.com";
 const siteTitle = "ANTNEST DESIGN | 앤트네스트디자인";
 
 const siteDescription =
-  "앤트네스트디자인은 청라를 기반으로 송도, 검단, 동탄, 수원, 광교 등 수도권에서 주거 인테리어와 건축 프로젝트를 설계·시공하는 디자인 스튜디오입니다.";
+  "주거 인테리어와 건축을 설계·시공하는 앤트네스트디자인. 청라를 기반으로 수도권 프로젝트를 진행합니다.";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
@@ -72,7 +71,6 @@ export const metadata: Metadata = {
     siteName: "ANTNEST DESIGN",
     locale: "ko_KR",
     type: "website",
-
     images: [
       {
         url: "/og-image.png",
