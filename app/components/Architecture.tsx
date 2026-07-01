@@ -8,25 +8,25 @@ const projects = [
   {
     title: "화성 효행구 고급주택 신축공사",
     href: "/projects/luxury-house",
-    image: "/home/luxury-house.jpg",
+    image: "/home/luxury-house.webp",
     meta: "600㎡ · 2022",
   },
   {
     title: "인천 청라 단독주택 신축공사",
     href: "/projects/private-house",
-    image: "/home/private-house.jpg",
+    image: "/home/private-house.webp",
     meta: "390㎡ · 2018",
   },
   {
     title: "화성 병점구 상가주택 신축공사",
     href: "/projects/commercial-house",
-    image: "/home/commercial-house.jpg",
+    image: "/home/commercial-house.webp",
     meta: "983㎡ · 2017",
   },
   {
     title: "인천 청라 오피스텔 + 상가 신축공사",
     href: "/projects/officetel",
-    image: "/home/officetel.jpg",
+    image: "/home/officetel.webp",
     meta: "20,497㎡ · 2013",
   },
 ];
