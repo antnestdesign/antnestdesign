@@ -1,6 +1,30 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "../components/Header";
 import BackToTop from "../components/BackToTop";
+
+export const metadata: Metadata = {
+  title: "Contact | ANTNEST DESIGN",
+  description:
+    "ANTNEST DESIGN에 주거 인테리어와 건축 프로젝트 상담을 문의하세요. 청라를 기반으로 송도, 검단, 동탄, 수원, 광교 등 수도권 프로젝트를 함께 검토합니다.",
+  alternates: {
+    canonical: "/contact",
+  },
+  openGraph: {
+    title: "Contact | ANTNEST DESIGN",
+    description:
+      "주거 인테리어와 건축 프로젝트 상담 문의. 앤트네스트디자인의 상담 절차와 연락처를 확인하세요.",
+    url: "https://www.antnestdesign.com/contact",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ANTNEST DESIGN Contact",
+      },
+    ],
+  },
+};
 
 export default function ContactPage() {
   const process = [
