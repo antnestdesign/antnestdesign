@@ -19,7 +19,7 @@ export function SectionHeading({
   description?: string;
 }) {
   return (
-    <div className="max-w-7xl mx-auto px-5 md:px-16 mb-8 md:mb-12">
+    <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-12">
       <div className="border-t border-neutral-300 pt-8 md:pt-10">
         <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
           {eyebrow}
@@ -46,6 +46,7 @@ export function ProjectImage({
   alt,
   ratio = "aspect-[16/10]",
   className = "",
+  quality = 84,
 }: {
   src: string;
   alt: string;
@@ -57,12 +58,13 @@ export function ProjectImage({
     <div
       className={`relative ${ratio} bg-[#d8d2cb] overflow-hidden ${className}`}
     >
-      <img
+      <Image
         src={src}
         alt={alt}
-        loading="lazy"
-        decoding="async"
-        className="absolute inset-0 h-full w-full object-cover"
+        fill
+        quality={quality}
+        sizes="(max-width: 768px) 100vw, 1120px"
+        className="object-cover"
       />
     </div>
   );
@@ -97,66 +99,58 @@ export default function ProjectLayout({
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
-      <header className="pt-7 md:pt-10">
-        <div className="max-w-7xl mx-auto px-5 md:px-16 flex justify-between items-center">
-          <Link
-            href="/projects"
-            className="tracking-[0.25em] text-[11px] md:text-sm text-[#4A433D]"
-          >
+      <header className="pt-10">
+        <div className="max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-center">
+          <Link href="/projects" className="tracking-[0.25em] text-sm">
             ← PROJECTS
           </Link>
 
-          <Link href="/" className="shrink-0" aria-label="ANTNEST DESIGN Home">
-            <Image
-              src="/logo.png"
-              alt="ANTNEST DESIGN"
-              width={420}
-              height={120}
-              priority
-              className="w-[82px] md:w-[118px] h-auto"
-            />
+          <Link href="/" className="tracking-[0.25em] text-lg">
+            AND
           </Link>
         </div>
       </header>
 
-      <section className="max-w-7xl mx-auto px-5 md:px-16 pt-20 md:pt-24 pb-14 md:pb-24">
-        <p className="uppercase tracking-[0.35em] md:tracking-[0.4em] text-[10px] md:text-xs text-neutral-500 mb-5 md:mb-6">
+      <section className="max-w-7xl mx-auto px-8 md:px-16 pt-24 pb-20 md:pb-24">
+        <p className="uppercase tracking-[0.4em] text-xs text-neutral-500 mb-6">
           {project.category}
         </p>
 
-        <h1 className="text-[34px] md:text-8xl font-light leading-[1.08] md:leading-none mb-7 md:mb-10 break-keep">
+        <h1 className="text-4xl md:text-8xl font-light leading-[1.08] md:leading-none mb-10 break-keep">
           {project.title}
         </h1>
 
-        <div className="flex gap-8 md:gap-10 text-sm md:text-base text-neutral-500">
+        <div className="flex gap-10 text-neutral-500">
           <span>{project.area}</span>
           <span>{project.year}</span>
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-5 md:px-16 mb-20 md:mb-32">
-        <div className="relative aspect-[16/10] md:aspect-[16/9] bg-[#d8d2cb] overflow-hidden">
-          <img
+      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-28 md:mb-32">
+        <div className="relative aspect-[16/9] bg-[#d8d2cb] overflow-hidden">
+          <Image
             src={project.heroImage}
             alt={project.title}
-            loading="eager"
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            priority
+            quality={86}
+            sizes="(max-width: 768px) 100vw, 1120px"
+            className="object-cover"
           />
         </div>
       </section>
 
       {children}
 
-      <section className="max-w-5xl mx-auto px-5 md:px-16 border-t border-neutral-300 pt-14 md:pt-20 pb-20 md:pb-28">
-        <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+      <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-24 md:pb-28">
+        <div className="grid md:grid-cols-2 gap-16">
           <div>
-            <p className="uppercase tracking-[0.3em] text-[10px] md:text-xs">
+            <p className="uppercase tracking-[0.3em] text-xs">
               Project Information
             </p>
           </div>
 
-          <div className="space-y-5 md:space-y-6 text-sm md:text-base">
+          <div className="space-y-6">
             <div className="flex justify-between gap-8">
               <span>Type</span>
               <span className="text-right">{project.category}</span>
@@ -181,7 +175,7 @@ export default function ProjectLayout({
       </section>
 
       {previousProject && nextProject && (
-        <section className="max-w-7xl mx-auto px-5 md:px-16 pb-32 md:pb-48">
+        <section className="max-w-7xl mx-auto px-8 md:px-16 pb-40 md:pb-48">
           <div className="border-t border-neutral-300 pt-12 md:pt-16 mb-8 md:mb-10">
             <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
               Explore More
@@ -192,7 +186,7 @@ export default function ProjectLayout({
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-9 md:gap-10">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-10">
             {[previousProject, nextProject].map((item, index) => (
               <Link
                 key={item.slug}
@@ -200,12 +194,13 @@ export default function ProjectLayout({
                 className="group block"
               >
                 <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden mb-4 md:mb-5">
-                  <img
+                  <Image
                     src={item.heroImage}
                     alt={item.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    fill
+                    quality={78}
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    className="object-cover transition duration-700 group-hover:scale-105"
                   />
 
                   <div className="absolute inset-0 bg-black/25 transition duration-500 group-hover:bg-black/15" />

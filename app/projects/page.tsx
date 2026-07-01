@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Header from "../components/Header";
@@ -7,6 +8,36 @@ import MiniFooter from "../components/MiniFooter";
 import { featuredProjects } from "../data/projects";
 
 const PROJECTS_PER_PAGE = 5;
+
+function useProjectLayoutMode() {
+  const [mode, setMode] = useState<"mobile" | "desktop" | null>(null);
+
+  useEffect(() => {
+    const resolveMode = () => {
+      const desktopWidth = window.matchMedia("(min-width: 1024px)").matches;
+      const finePointer = window.matchMedia("(pointer: fine)").matches;
+      const hoverAvailable = window.matchMedia("(hover: hover)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+      const shouldUseDesktop =
+        desktopWidth && finePointer && hoverAvailable && !coarsePointer;
+
+      setMode(shouldUseDesktop ? "desktop" : "mobile");
+    };
+
+    resolveMode();
+
+    window.addEventListener("resize", resolveMode);
+    window.addEventListener("orientationchange", resolveMode);
+
+    return () => {
+      window.removeEventListener("resize", resolveMode);
+      window.removeEventListener("orientationchange", resolveMode);
+    };
+  }, []);
+
+  return mode;
+}
 
 function Pagination({
   currentPage,
@@ -19,7 +50,9 @@ function Pagination({
   onChange: (page: number) => void;
   className?: string;
 }) {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1) {
+    return null;
+  }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -55,14 +88,16 @@ function MobileProjects() {
 
   const pagedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return projects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
+
+    return projects.slice(startIndex, endIndex);
   }, [projects, currentPage]);
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen flex flex-col">
       <Header />
 
-      <section className="flex-1 max-w-7xl mx-auto w-full px-5 pt-24 pb-10">
+      <section className="flex-1 max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
         <div className="mb-7">
           <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
             Projects
@@ -71,7 +106,7 @@ function MobileProjects() {
           <h1 className="text-3xl font-light leading-none">Selected Works</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-3 gap-y-8">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8">
           {pagedProjects.map((project, index) => (
             <Link
               key={project.slug}
@@ -79,23 +114,25 @@ function MobileProjects() {
               className="group block"
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d1ca] mb-3">
-                <img
+                <Image
                   src={project.heroImage}
                   alt={project.title}
-                  loading={currentPage === 1 && index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover"
+                  fill
+                  priority={currentPage === 1 && index < 2}
+                  quality={68}
+                  sizes="50vw"
+                  className="object-cover"
                 />
 
                 <div className="absolute inset-0 bg-black/10" />
 
-                <div className="absolute left-3 top-3 right-3 flex justify-between text-white/75 text-[8px] tracking-[0.18em] uppercase">
+                <div className="absolute left-3 top-3 right-3 flex justify-between text-white/75 text-[8px] tracking-[0.22em] uppercase">
                   <span>{project.projectGroup}</span>
                   <span>{project.year}</span>
                 </div>
               </div>
 
-              <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500 mb-1">
+              <p className="text-[9px] uppercase tracking-[0.22em] text-neutral-500 mb-1">
                 {project.type}
               </p>
 
@@ -143,7 +180,9 @@ function DesktopProjects() {
 
   const pagedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return projects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
+
+    return projects.slice(startIndex, endIndex);
   }, [projects, currentPage]);
 
   const active = pagedProjects[activeIndex];
@@ -155,15 +194,18 @@ function DesktopProjects() {
   useEffect(() => {
     if (pagedProjects.length <= 1) return;
 
-    const timer = window.setInterval(() => {
+    const timer = setInterval(() => {
       if (pausedRef.current) return;
-      setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
-    }, 3500);
 
-    return () => window.clearInterval(timer);
+      setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
   }, [pagedProjects.length]);
 
-  if (!active) return null;
+  if (!active) {
+    return null;
+  }
 
   return (
     <main className="bg-[#F3F0EB] text-[#4A433D] h-screen overflow-hidden flex flex-col">
@@ -256,7 +298,9 @@ function DesktopProjects() {
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onChange={(page) => setCurrentPage(page)}
+                onChange={(page) => {
+                  setCurrentPage(page);
+                }}
               />
 
               <p className="text-[10px] text-neutral-500 tracking-[0.25em] uppercase">
@@ -270,13 +314,15 @@ function DesktopProjects() {
               href={`/projects/${active.slug}`}
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
-              <img
+              <Image
                 key={`${active.slug}-${active.heroImage}`}
                 src={active.heroImage}
                 alt={active.title}
-                loading={currentPage === 1 && activeIndex === 0 ? "eager" : "lazy"}
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+                fill
+                priority={currentPage === 1 && activeIndex === 0}
+                quality={78}
+                sizes="58vw"
+                className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
               />
 
               <div className="absolute inset-0 bg-black/20" />
@@ -316,15 +362,25 @@ function DesktopProjects() {
 }
 
 export default function ProjectsPage() {
-  return (
-    <>
-      <div className="lg:hidden">
-        <MobileProjects />
-      </div>
+  const mode = useProjectLayoutMode();
 
-      <div className="hidden lg:block">
-        <DesktopProjects />
-      </div>
-    </>
-  );
+  if (mode === null) {
+    return (
+      <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
+        <Header />
+        <section className="max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
+          <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
+            Projects
+          </p>
+          <h1 className="text-3xl font-light leading-none">Selected Works</h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "desktop") {
+    return <DesktopProjects />;
+  }
+
+  return <MobileProjects />;
 }
