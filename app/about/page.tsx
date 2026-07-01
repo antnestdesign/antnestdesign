@@ -1,7 +1,31 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
 import BackToTop from "../components/BackToTop";
+
+export const metadata: Metadata = {
+  title: "About | ANTNEST DESIGN",
+  description:
+    "ANTNEST DESIGN은 건축적 사고와 시공 경험을 바탕으로 삶의 방식에 맞는 주거 인테리어와 공간 설계를 제안하는 디자인 스튜디오입니다.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About | ANTNEST DESIGN",
+    description:
+      "건축과 인테리어, 설계와 시공, 공간과 사람을 연결하는 앤트네스트디자인의 브랜드 이야기.",
+    url: "https://www.antnestdesign.com/about",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ANTNEST DESIGN About",
+      },
+    ],
+  },
+};
 
 export default function AboutPage() {
   return (
