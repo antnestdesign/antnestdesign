@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MouseEvent, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { MouseEvent, useEffect, useState } from "react";
 
 const navItems = [
   { label: "ABOUT", href: "/about" },
@@ -18,7 +18,6 @@ export default function Header() {
 
   const isHome = pathname === "/";
   const isHeroState = isHome && !scrolled && !menuOpen;
-  const menuColor = isHeroState ? "#F3F0EB" : "#4A433D";
 
   const handleLogoClick = (event: MouseEvent<HTMLAnchorElement>) => {
     setMenuOpen(false);
@@ -26,21 +25,50 @@ export default function Header() {
     if (!isHome) return;
 
     event.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const main = document.querySelector("main");
+
+    if (main && main.scrollHeight > main.clientHeight) {
+      main.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   useEffect(() => {
+    const findScrollContainer = () => {
+      const main = document.querySelector("main");
+
+      if (main && main.scrollHeight > main.clientHeight) {
+        return main;
+      }
+
+      return window;
+    };
+
+    const scrollTarget = findScrollContainer();
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      if (scrollTarget instanceof Window) {
+        setScrolled(window.scrollY > 20);
+      } else {
+        setScrolled(scrollTarget.scrollTop > 20);
+      }
     };
 
     handleScroll();
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    scrollTarget.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      scrollTarget.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
   }, [pathname]);
@@ -49,20 +77,22 @@ export default function Header() {
     setMenuOpen(false);
   }, [pathname]);
 
+  const menuColor = isHeroState ? "#F3F0EB" : "#4A433D";
+
   return (
     <header className="fixed top-0 left-0 z-50 w-full">
       <div
         className={
           isHeroState
             ? "absolute inset-0 bg-transparent transition-all duration-500"
-            : "absolute inset-0 bg-[#F3F0EB]/90 backdrop-blur-md border-b border-black/5 transition-all duration-500"
+            : "absolute inset-0 bg-[#F3F0EB]/88 backdrop-blur-md border-b border-black/5 transition-all duration-500"
         }
       />
 
       <div className="relative max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
-        <Link href="/" className="shrink-0 block" onClick={handleLogoClick}>
+        <Link href="/" className="shrink-0" onClick={handleLogoClick}>
           {isHome ? (
-            <span className="relative block">
+            <>
               <Image
                 src="/logo-hero-white.png"
                 alt="ANTNEST DESIGN"
@@ -72,7 +102,7 @@ export default function Header() {
                 className={`w-[150px] md:w-[220px] h-auto transition-all duration-500 ${
                   isHeroState
                     ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95 absolute left-0 top-0 pointer-events-none"
+                    : "opacity-0 scale-95 absolute pointer-events-none"
                 }`}
               />
 
@@ -84,11 +114,11 @@ export default function Header() {
                 priority
                 className={`w-[92px] md:w-[118px] h-auto transition-all duration-500 ${
                   isHeroState
-                    ? "opacity-0 scale-95 absolute left-0 top-0 pointer-events-none"
+                    ? "opacity-0 scale-95 absolute pointer-events-none"
                     : "opacity-100 scale-100"
                 }`}
               />
-            </span>
+            </>
           ) : (
             <Image
               src="/logo.png"
