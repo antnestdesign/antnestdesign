@@ -105,8 +105,15 @@ export default function ProjectLayout({
             ← PROJECTS
           </Link>
 
-          <Link href="/" className="tracking-[0.25em] text-lg">
-            AND
+          <Link href="/" className="shrink-0" aria-label="ANTNEST DESIGN Home">
+            <Image
+              src="/logo.png"
+              alt="ANTNEST DESIGN"
+              width={420}
+              height={120}
+              priority
+              className="w-[82px] md:w-[118px] h-auto"
+            />
           </Link>
         </div>
       </header>
