@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
@@ -5,11 +6,67 @@ import CheongnaHoban4 from "./CheongnaHoban4";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
 
-export default async function ProjectPage({
-  params,
-}: {
+const siteUrl = "https://www.antnestdesign.com";
+
+type ProjectPageParams = {
   params: Promise<{ slug: string }>;
-}) {
+};
+
+export async function generateMetadata({
+  params,
+}: ProjectPageParams): Promise<Metadata> {
+  const { slug } = await params;
+
+  const project = projects[slug as keyof typeof projects];
+
+  if (!project) {
+    return {
+      title: "Project Not Found",
+    };
+  }
+
+  const title = `${project.title} | ANTNEST DESIGN`;
+  const description =
+    project.overview ||
+    `${project.title} 프로젝트입니다. ANTNEST DESIGN의 ${project.category} 포트폴리오를 확인해보세요.`;
+
+  const projectUrl = `${siteUrl}/projects/${slug}`;
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: `/projects/${slug}`,
+    },
+
+    openGraph: {
+      title,
+      description,
+      url: projectUrl,
+      siteName: "ANTNEST DESIGN",
+      locale: "ko_KR",
+      type: "article",
+      images: [
+        {
+          url: project.heroImage,
+          width: 1200,
+          height: 800,
+          alt: project.title,
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [project.heroImage],
+    },
+  };
+}
+
+export default async function ProjectPage({ params }: ProjectPageParams) {
   const { slug } = await params;
 
   const project = projects[slug as keyof typeof projects];
