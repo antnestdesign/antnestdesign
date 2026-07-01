@@ -128,41 +128,43 @@ export default function LuxuryHouse({ project }: { project: Project }) {
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
-          <ProjectImage
-            src="/projects/luxury-house/05-living-room.webp"
-            alt={`${project.title} 8m 층고 거실`}
-            ratio="aspect-[16/9]"
-            className="mb-12 md:mb-16"
-          />
-
-          <div className="grid md:grid-cols-12 gap-10 md:gap-14">
-            <div className="md:col-span-7">
-              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                거실 중심을 이루는 대형 박판타일 벽면은 공간에 깊이감과
-                묵직한 존재감을 더하고, 대형 샹들리에와 벽난로, 전면 통창으로
-                유입되는 자연광이 어우러져 시간의 흐름에 따라 다양한 표정을
-                만들어냅니다.
-              </p>
-
-              <p className="mt-5 md:mt-6 text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                이 거실은 단순히 넓은 공간이 아니라, 부모님과 자녀, 손주까지
-                온 가족이 함께 모여 일상을 나누고 추억을 쌓을 수 있도록 계획된
-                집의 중심입니다.
-              </p>
+          <div className="grid md:grid-cols-12 gap-10 md:gap-14 items-start">
+            <div className="md:col-span-6 lg:col-span-5">
+              <ProjectImage
+                src="/projects/luxury-house/05-living-room.webp"
+                alt={`${project.title} 8m 층고 거실`}
+                ratio="aspect-[3/4]"
+              />
             </div>
 
-            <div className="md:col-span-4 md:col-start-9">
-              <FeatureList
-                title="Key Features"
-                items={[
-                  "8m 층고",
-                  "대형 박판타일 벽면",
-                  "대형 샹들리에",
-                  "벽난로",
-                  "전면 통창",
-                  "자연광 중심 설계",
-                ]}
-              />
+            <div className="md:col-span-6 lg:col-span-6 lg:col-start-7">
+              <div className="space-y-5 md:space-y-6">
+                <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                  거실 중심을 이루는 대형 박판타일 벽면은 공간에 깊이감과
+                  묵직한 존재감을 더합니다. 대형 샹들리에와 벽난로는 8m
+                  층고의 스케일을 더욱 강조하고, 시간에 따라 변화하는 자연광은
+                  공간에 다양한 표정을 만들어냅니다.
+                </p>
+
+                <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                  이 거실은 단순히 넓은 공간이 아니라, 부모님과 자녀, 손주까지
+                  온 가족이 함께 모여 일상을 나누고 추억을 쌓을 수 있도록
+                  계획된 집의 중심입니다.
+                </p>
+              </div>
+
+              <div className="mt-12 md:mt-16">
+                <FeatureList
+                  title="Key Features"
+                  items={[
+                    "8m 층고",
+                    "대형 박판타일 벽면",
+                    "대형 샹들리에",
+                    "벽난로",
+                    "자연광 중심 설계",
+                  ]}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -171,14 +173,14 @@ export default function LuxuryHouse({ project }: { project: Project }) {
       <section className="mb-28 md:mb-44">
         <SectionHeading
           eyebrow="Kitchen"
-          title="하이엔드 사양으로 완성한 중심 주방"
+          title="Kitchen"
           description="주방은 단순히 조리를 위한 공간이 아니라, 가족이 하루 중 가장 오래 머무는 공간으로 계획했습니다. 훈증무늬목의 깊은 질감과 맞춤 제작된 풀사이즈 아일랜드를 중심으로 디자인과 사용성을 함께 고려했습니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectImage
             src="/projects/luxury-house/04-kitchen.webp"
-            alt={`${project.title} 하이엔드 주방`}
+            alt={`${project.title} 주방`}
             ratio="aspect-[16/10]"
             className="mb-12 md:mb-16"
           />
@@ -240,7 +242,7 @@ export default function LuxuryHouse({ project }: { project: Project }) {
         <SectionHeading
           eyebrow="Private Leisure"
           title="집 안에서 누리는 여유"
-          description="생활과 휴식은 분리되지 않습니다. 지하에는 프라이빗 스크린골프장을, 실내에는 사계절 이용 가능한 수영장을 계획했습니다. 운동과 휴식이 일상 속으로 자연스럽게 이어지는 공간입니다."
+          description="생활과 휴식은 분리되지 않습니다. 지하에는 프라이빗 스크린골프장을, 실외에는 가족과 함께 시간을 보낼 수 있는 프라이빗 수영장을 계획했습니다. 운동과 휴식이 일상 속으로 자연스럽게 이어지는 공간입니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
@@ -253,7 +255,7 @@ export default function LuxuryHouse({ project }: { project: Project }) {
 
           <ProjectImage
             src="/projects/luxury-house/09-swimming-pool.webp"
-            alt={`${project.title} 실내 수영장`}
+            alt={`${project.title} 실외 수영장`}
             ratio="aspect-[16/9]"
           />
 
