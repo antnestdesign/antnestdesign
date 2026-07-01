@@ -9,36 +9,6 @@ import { featuredProjects } from "../data/projects";
 
 const PROJECTS_PER_PAGE = 5;
 
-function useProjectLayoutMode() {
-  const [mode, setMode] = useState<"mobile" | "desktop" | null>(null);
-
-  useEffect(() => {
-    const resolveMode = () => {
-      const desktopWidth = window.matchMedia("(min-width: 1024px)").matches;
-      const finePointer = window.matchMedia("(pointer: fine)").matches;
-      const hoverAvailable = window.matchMedia("(hover: hover)").matches;
-      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-
-      const shouldUseDesktop =
-        desktopWidth && finePointer && hoverAvailable && !coarsePointer;
-
-      setMode(shouldUseDesktop ? "desktop" : "mobile");
-    };
-
-    resolveMode();
-
-    window.addEventListener("resize", resolveMode);
-    window.addEventListener("orientationchange", resolveMode);
-
-    return () => {
-      window.removeEventListener("resize", resolveMode);
-      window.removeEventListener("orientationchange", resolveMode);
-    };
-  }, []);
-
-  return mode;
-}
-
 function Pagination({
   currentPage,
   totalPages,
@@ -111,6 +81,7 @@ function MobileProjects() {
             <Link
               key={project.slug}
               href={`/projects/${project.slug}`}
+              prefetch={false}
               className="group block"
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d1ca] mb-3">
@@ -242,6 +213,7 @@ function DesktopProjects() {
                   <Link
                     key={project.slug}
                     href={`/projects/${project.slug}`}
+                    prefetch={false}
                     onMouseEnter={() => setActiveIndex(index)}
                     onFocus={() => setActiveIndex(index)}
                     className="group grid grid-cols-[42px_1fr_auto] gap-4 items-center border-b border-neutral-300 py-3"
@@ -312,6 +284,7 @@ function DesktopProjects() {
           <div className="flex flex-col min-h-0 order-2">
             <Link
               href={`/projects/${active.slug}`}
+              prefetch={false}
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
               <Image
@@ -361,26 +334,16 @@ function DesktopProjects() {
   );
 }
 
-export default function ProjectsPage() {
-  const mode = useProjectLayoutMode();
+export default function ProjectsClient() {
+  return (
+    <>
+      <div className="hidden lg:block">
+        <DesktopProjects />
+      </div>
 
-  if (mode === null) {
-    return (
-      <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
-        <Header />
-        <section className="max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
-          <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
-            Projects
-          </p>
-          <h1 className="text-3xl font-light leading-none">Selected Works</h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (mode === "desktop") {
-    return <DesktopProjects />;
-  }
-
-  return <MobileProjects />;
+      <div className="block lg:hidden">
+        <MobileProjects />
+      </div>
+    </>
+  );
 }
