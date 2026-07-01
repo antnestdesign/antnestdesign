@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Header from "../components/Header";
@@ -80,14 +79,12 @@ function MobileProjects() {
               className="group block"
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d1ca] mb-3">
-                <Image
+                <img
                   src={project.heroImage}
                   alt={project.title}
-                  fill
-                  priority={currentPage === 1 && index === 0}
-                  quality={62}
-                  sizes="50vw"
-                  className="object-cover"
+                  loading={currentPage === 1 && index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
 
                 <div className="absolute inset-0 bg-black/10" />
@@ -273,15 +270,13 @@ function DesktopProjects() {
               href={`/projects/${active.slug}`}
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
-              <Image
+              <img
                 key={`${active.slug}-${active.heroImage}`}
                 src={active.heroImage}
                 alt={active.title}
-                fill
-                priority={currentPage === 1 && activeIndex === 0}
-                quality={72}
-                sizes="58vw"
-                className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+                loading={currentPage === 1 && activeIndex === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
               />
 
               <div className="absolute inset-0 bg-black/20" />

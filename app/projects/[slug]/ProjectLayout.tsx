@@ -46,7 +46,6 @@ export function ProjectImage({
   alt,
   ratio = "aspect-[16/10]",
   className = "",
-  quality = 74,
 }: {
   src: string;
   alt: string;
@@ -58,13 +57,12 @@ export function ProjectImage({
     <div
       className={`relative ${ratio} bg-[#d8d2cb] overflow-hidden ${className}`}
     >
-      <Image
+      <img
         src={src}
         alt={alt}
-        fill
-        quality={quality}
-        sizes="(max-width: 768px) 100vw, 1120px"
-        className="object-cover"
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 h-full w-full object-cover"
       />
     </div>
   );
@@ -114,6 +112,7 @@ export default function ProjectLayout({
               alt="ANTNEST DESIGN"
               width={420}
               height={120}
+              priority
               className="w-[82px] md:w-[118px] h-auto"
             />
           </Link>
@@ -137,14 +136,12 @@ export default function ProjectLayout({
 
       <section className="max-w-7xl mx-auto px-5 md:px-16 mb-20 md:mb-32">
         <div className="relative aspect-[16/10] md:aspect-[16/9] bg-[#d8d2cb] overflow-hidden">
-          <Image
+          <img
             src={project.heroImage}
             alt={project.title}
-            fill
-            priority
-            quality={78}
-            sizes="(max-width: 768px) 100vw, 1120px"
-            className="object-cover"
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
       </section>
@@ -203,13 +200,12 @@ export default function ProjectLayout({
                 className="group block"
               >
                 <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden mb-4 md:mb-5">
-                  <Image
+                  <img
                     src={item.heroImage}
                     alt={item.title}
-                    fill
-                    quality={72}
-                    sizes="(max-width: 768px) 100vw, 560px"
-                    className="object-cover transition duration-700 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
 
                   <div className="absolute inset-0 bg-black/25 transition duration-500 group-hover:bg-black/15" />
