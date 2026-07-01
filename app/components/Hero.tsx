@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section className="relative h-screen overflow-hidden">
       <Image
-        src="/home/hero.jpg"
+        src="/home/hero.webp"
         alt="AND main interior"
         fill
         priority
