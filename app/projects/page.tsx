@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +8,36 @@ import MiniFooter from "../components/MiniFooter";
 import { featuredProjects } from "../data/projects";
 
 const PROJECTS_PER_PAGE = 5;
+
+function useProjectLayoutMode() {
+  const [mode, setMode] = useState<"mobile" | "desktop" | null>(null);
+
+  useEffect(() => {
+    const resolveMode = () => {
+      const desktopWidth = window.matchMedia("(min-width: 1024px)").matches;
+      const finePointer = window.matchMedia("(pointer: fine)").matches;
+      const hoverAvailable = window.matchMedia("(hover: hover)").matches;
+      const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+      const shouldUseDesktop =
+        desktopWidth && finePointer && hoverAvailable && !coarsePointer;
+
+      setMode(shouldUseDesktop ? "desktop" : "mobile");
+    };
+
+    resolveMode();
+
+    window.addEventListener("resize", resolveMode);
+    window.addEventListener("orientationchange", resolveMode);
+
+    return () => {
+      window.removeEventListener("resize", resolveMode);
+      window.removeEventListener("orientationchange", resolveMode);
+    };
+  }, []);
+
+  return mode;
+}
 
 function Pagination({
   currentPage,
@@ -58,7 +88,9 @@ function MobileProjects() {
 
   const pagedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return projects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
+
+    return projects.slice(startIndex, endIndex);
   }, [projects, currentPage]);
 
   return (
@@ -79,7 +111,6 @@ function MobileProjects() {
             <Link
               key={project.slug}
               href={`/projects/${project.slug}`}
-              prefetch={false}
               className="group block"
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d1ca] mb-3">
@@ -149,27 +180,28 @@ function DesktopProjects() {
 
   const pagedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    return projects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
+    const endIndex = startIndex + PROJECTS_PER_PAGE;
+
+    return projects.slice(startIndex, endIndex);
   }, [projects, currentPage]);
 
   const active = pagedProjects[activeIndex];
 
   useEffect(() => {
     setActiveIndex(0);
-    pausedRef.current = false;
   }, [currentPage]);
 
   useEffect(() => {
     if (pagedProjects.length <= 1) return;
 
-    const timer = window.setInterval(() => {
+    const timer = setInterval(() => {
       if (pausedRef.current) return;
 
       setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
     }, 3000);
 
-    return () => window.clearInterval(timer);
-  }, [pagedProjects.length, currentPage]);
+    return () => clearInterval(timer);
+  }, [pagedProjects.length]);
 
   if (!active) {
     return null;
@@ -179,7 +211,15 @@ function DesktopProjects() {
     <main className="bg-[#F3F0EB] text-[#4A433D] h-screen overflow-hidden flex flex-col">
       <Header />
 
-      <section className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4">
+      <section
+        onMouseEnter={() => {
+          pausedRef.current = true;
+        }}
+        onMouseLeave={() => {
+          pausedRef.current = false;
+        }}
+        className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4"
+      >
         <div className="grid grid-cols-[0.82fr_1.18fr] gap-16 h-full min-h-0">
           <div className="flex flex-col min-h-0 order-1">
             <div className="mb-6">
@@ -192,15 +232,7 @@ function DesktopProjects() {
               </h1>
             </div>
 
-            <div
-              className="flex-1 min-h-0"
-              onMouseEnter={() => {
-                pausedRef.current = true;
-              }}
-              onMouseLeave={() => {
-                pausedRef.current = false;
-              }}
-            >
+            <div className="flex-1 min-h-0">
               {pagedProjects.map((project, index) => {
                 const isActive = activeIndex === index;
                 const displayNumber =
@@ -210,7 +242,6 @@ function DesktopProjects() {
                   <Link
                     key={project.slug}
                     href={`/projects/${project.slug}`}
-                    prefetch={false}
                     onMouseEnter={() => setActiveIndex(index)}
                     onFocus={() => setActiveIndex(index)}
                     className="group grid grid-cols-[42px_1fr_auto] gap-4 items-center border-b border-neutral-300 py-3"
@@ -268,7 +299,6 @@ function DesktopProjects() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onChange={(page) => {
-                  pausedRef.current = false;
                   setCurrentPage(page);
                 }}
               />
@@ -282,13 +312,6 @@ function DesktopProjects() {
           <div className="flex flex-col min-h-0 order-2">
             <Link
               href={`/projects/${active.slug}`}
-              prefetch={false}
-              onMouseEnter={() => {
-                pausedRef.current = true;
-              }}
-              onMouseLeave={() => {
-                pausedRef.current = false;
-              }}
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
               <Image
@@ -339,15 +362,25 @@ function DesktopProjects() {
 }
 
 export default function ProjectsPage() {
-  return (
-    <>
-      <div className="hidden lg:block">
-        <DesktopProjects />
-      </div>
+  const mode = useProjectLayoutMode();
 
-      <div className="block lg:hidden">
-        <MobileProjects />
-      </div>
-    </>
-  );
+  if (mode === null) {
+    return (
+      <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
+        <Header />
+        <section className="max-w-7xl mx-auto w-full px-6 pt-24 pb-10">
+          <p className="uppercase tracking-[0.35em] text-[10px] text-neutral-500 mb-2">
+            Projects
+          </p>
+          <h1 className="text-3xl font-light leading-none">Selected Works</h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "desktop") {
+    return <DesktopProjects />;
+  }
+
+  return <MobileProjects />;
 }
