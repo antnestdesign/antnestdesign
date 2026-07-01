@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
 import CheongnaHoban4 from "./CheongnaHoban4";
+import LuxuryHouse from "./LuxuryHouse";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
 
@@ -78,13 +79,15 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
   const hasCustomPage =
     slug === "apartment-a" ||
     slug === "apartment-b" ||
-    slug === "cheongna-hoban-4-33a";
+    slug === "cheongna-hoban-4-33a" ||
+    slug === "luxury-house";
 
   return (
     <ProjectLayout slug={slug} project={project}>
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
       {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
+      {slug === "luxury-house" && <LuxuryHouse project={project} />}
 
       {!hasCustomPage && (
         <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
