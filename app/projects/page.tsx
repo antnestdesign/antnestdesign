@@ -9,28 +9,6 @@ import { featuredProjects } from "../data/projects";
 
 const PROJECTS_PER_PAGE = 5;
 
-function useProjectLayoutMode() {
-  const [mode, setMode] = useState<"mobile" | "desktop">("mobile");
-
-  useEffect(() => {
-    const resolveMode = () => {
-      setMode(window.innerWidth >= 1024 ? "desktop" : "mobile");
-    };
-
-    resolveMode();
-
-    window.addEventListener("resize", resolveMode, { passive: true });
-    window.addEventListener("orientationchange", resolveMode);
-
-    return () => {
-      window.removeEventListener("resize", resolveMode);
-      window.removeEventListener("orientationchange", resolveMode);
-    };
-  }, []);
-
-  return mode;
-}
-
 function Pagination({
   currentPage,
   totalPages,
@@ -106,8 +84,8 @@ function MobileProjects() {
                   src={project.heroImage}
                   alt={project.title}
                   fill
-                  priority={currentPage === 1 && index < 2}
-                  quality={68}
+                  priority={currentPage === 1 && index === 0}
+                  quality={62}
                   sizes="50vw"
                   className="object-cover"
                 />
@@ -180,12 +158,12 @@ function DesktopProjects() {
   useEffect(() => {
     if (pagedProjects.length <= 1) return;
 
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       if (pausedRef.current) return;
       setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
-    }, 3000);
+    }, 3500);
 
-    return () => clearInterval(timer);
+    return () => window.clearInterval(timer);
   }, [pagedProjects.length]);
 
   if (!active) return null;
@@ -301,7 +279,7 @@ function DesktopProjects() {
                 alt={active.title}
                 fill
                 priority={currentPage === 1 && activeIndex === 0}
-                quality={78}
+                quality={72}
                 sizes="58vw"
                 className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
               />
@@ -343,11 +321,15 @@ function DesktopProjects() {
 }
 
 export default function ProjectsPage() {
-  const mode = useProjectLayoutMode();
+  return (
+    <>
+      <div className="lg:hidden">
+        <MobileProjects />
+      </div>
 
-  if (mode === "desktop") {
-    return <DesktopProjects />;
-  }
-
-  return <MobileProjects />;
+      <div className="hidden lg:block">
+        <DesktopProjects />
+      </div>
+    </>
+  );
 }

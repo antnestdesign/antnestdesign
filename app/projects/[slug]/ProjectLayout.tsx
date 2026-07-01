@@ -46,7 +46,7 @@ export function ProjectImage({
   alt,
   ratio = "aspect-[16/10]",
   className = "",
-  quality = 84,
+  quality = 74,
 }: {
   src: string;
   alt: string;
@@ -114,7 +114,6 @@ export default function ProjectLayout({
               alt="ANTNEST DESIGN"
               width={420}
               height={120}
-              priority
               className="w-[82px] md:w-[118px] h-auto"
             />
           </Link>
@@ -143,7 +142,7 @@ export default function ProjectLayout({
             alt={project.title}
             fill
             priority
-            quality={86}
+            quality={78}
             sizes="(max-width: 768px) 100vw, 1120px"
             className="object-cover"
           />
@@ -208,7 +207,7 @@ export default function ProjectLayout({
                     src={item.heroImage}
                     alt={item.title}
                     fill
-                    quality={78}
+                    quality={72}
                     sizes="(max-width: 768px) 100vw, 560px"
                     className="object-cover transition duration-700 group-hover:scale-105"
                   />

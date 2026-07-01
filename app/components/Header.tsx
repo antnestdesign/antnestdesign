@@ -55,7 +55,7 @@ export default function Header() {
         className={
           isHeroState
             ? "absolute inset-0 bg-transparent transition-all duration-500"
-            : "absolute inset-0 bg-[#F3F0EB]/90 backdrop-blur-md border-b border-black/5 transition-all duration-500"
+            : "absolute inset-0 bg-[#F3F0EB]/92 backdrop-blur-md border-b border-black/5 transition-all duration-500"
         }
       />
 
@@ -81,7 +81,6 @@ export default function Header() {
                 alt="ANTNEST DESIGN"
                 width={420}
                 height={120}
-                priority
                 className={`w-[92px] md:w-[118px] h-auto transition-all duration-500 ${
                   isHeroState
                     ? "opacity-0 scale-95 absolute left-0 top-0 pointer-events-none"
@@ -95,7 +94,6 @@ export default function Header() {
               alt="ANTNEST DESIGN"
               width={420}
               height={120}
-              priority
               className="w-[92px] md:w-[118px] h-auto transition-all duration-500"
             />
           )}
@@ -140,8 +138,8 @@ export default function Header() {
       <div
         className={
           menuOpen
-            ? "md:hidden absolute top-full left-0 w-full bg-[#F3F0EB]/96 backdrop-blur-md border-t border-black/5 transition-all duration-500 opacity-100 translate-y-0"
-            : "md:hidden absolute top-full left-0 w-full bg-[#F3F0EB]/96 backdrop-blur-md border-t border-black/5 transition-all duration-500 opacity-0 -translate-y-3 pointer-events-none"
+            ? "md:hidden absolute top-full left-0 w-full bg-[#F3F0EB]/98 backdrop-blur-md border-t border-black/5 transition-all duration-500 opacity-100 translate-y-0"
+            : "md:hidden absolute top-full left-0 w-full bg-[#F3F0EB]/98 backdrop-blur-md border-t border-black/5 transition-all duration-500 opacity-0 -translate-y-3 pointer-events-none"
         }
       >
         <nav className="px-6 py-7">
