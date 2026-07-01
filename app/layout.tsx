@@ -3,8 +3,10 @@ import "./globals.css";
 
 const siteUrl = "https://www.antnestdesign.com";
 
+const siteTitle = "ANTNEST DESIGN | 앤트네스트디자인";
+
 const siteDescription =
-  "앤트네스트디자인은 인천 청라를 기반으로 송도, 검단, 동탄, 수원, 영통, 광교, 강남까지 주거 인테리어와 건축 프로젝트를 설계하는 디자인 스튜디오입니다.";
+  "앤트네스트디자인는 청라를 기반으로 송도, 검단, 동탄, 수원, 광교 등 수도권에서 주거 인테리어와 건축 프로젝트를 설계·시공하는 디자인 스튜디오입니다.";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -15,12 +17,45 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
-  title: "ANTNEST DESIGN | 앤트네스트디자인",
+  title: {
+    default: siteTitle,
+    template: "%s | ANTNEST DESIGN",
+  },
 
   description: siteDescription,
 
+  keywords: [
+    "앤트네스트디자인",
+    "ANTNEST DESIGN",
+    "청라인테리어",
+    "송도인테리어",
+    "검단인테리어",
+    "동탄인테리어",
+    "수원인테리어",
+    "광교인테리어",
+    "아파트인테리어",
+    "주거인테리어",
+    "아파트리모델링",
+    "단독주택",
+    "상가주택",
+    "건축설계",
+    "인테리어디자인",
+  ],
+
   alternates: {
     canonical: "/",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 
   verification: {
@@ -31,12 +66,13 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "ANTNEST DESIGN | 앤트네스트디자인",
+    title: siteTitle,
     description: siteDescription,
     url: siteUrl,
     siteName: "ANTNEST DESIGN",
     locale: "ko_KR",
     type: "website",
+
     images: [
       {
         url: "/og-image.png",
@@ -49,89 +85,90 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "ANTNEST DESIGN | 앤트네스트디자인",
+    title: siteTitle,
     description: siteDescription,
     images: ["/og-image.png"],
   },
 
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+      {
+        url: "/favicon.ico",
+      },
+      {
+        url: "/icon.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
     ],
+
     apple: [
-      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/apple-icon.png",
+        sizes: "180x180",
+      },
     ],
   },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
+
   "@type": "LocalBusiness",
+
   "@id": `${siteUrl}/#organization`,
+
   name: "ANTNEST DESIGN",
+
   alternateName: "앤트네스트디자인",
+
   url: siteUrl,
+
   image: `${siteUrl}/og-image.png`,
+
   logo: `${siteUrl}/logo.png`,
+
   description: siteDescription,
+
   telephone: "+82-32-321-6909",
+
   email: "antnestdesign@naver.com",
+
+  priceRange: "$$$",
+
   address: {
     "@type": "PostalAddress",
+
     addressCountry: "KR",
+
     addressRegion: "인천광역시",
+
     addressLocality: "서구 청라동",
+
     streetAddress: "중봉대로 612번길 10-20 청라프라자1 506호",
   },
+
   areaServed: [
-    {
-      "@type": "Place",
-      name: "인천 청라",
-    },
-    {
-      "@type": "Place",
-      name: "송도",
-    },
-    {
-      "@type": "Place",
-      name: "검단",
-    },
-    {
-      "@type": "Place",
-      name: "동탄",
-    },
-    {
-      "@type": "Place",
-      name: "수원",
-    },
-    {
-      "@type": "Place",
-      name: "영통",
-    },
-    {
-      "@type": "Place",
-      name: "광교",
-    },
-    {
-      "@type": "Place",
-      name: "강남",
-    },
+    "청라",
+    "송도",
+    "검단",
+    "동탄",
+    "수원",
+    "영통",
+    "광교",
+    "강남",
   ],
+
   serviceType: [
     "주거 인테리어",
     "아파트 인테리어",
     "아파트 리모델링",
-    "청라 인테리어",
-    "송도 인테리어",
-    "동탄 인테리어",
-    "수원 인테리어",
-    "광교 인테리어",
     "건축 설계",
     "시공 관리",
-    "상가주택 설계",
-    "단독주택 설계",
+    "단독주택",
+    "상가주택",
   ],
+
   sameAs: [],
 };
 
