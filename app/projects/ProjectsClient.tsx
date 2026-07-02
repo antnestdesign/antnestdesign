@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
 import { featuredProjects } from "../data/projects";
@@ -123,7 +123,7 @@ function MobileProjects() {
           totalPages={totalPages}
           onChange={(page) => {
             setCurrentPage(page);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: "auto" });
           }}
           className="justify-center mt-10"
         />
@@ -144,7 +144,6 @@ function MobileProjects() {
 function DesktopProjects() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
-  const pausedRef = useRef(false);
 
   const projects = featuredProjects;
   const totalPages = Math.ceil(projects.length / PROJECTS_PER_PAGE);
@@ -162,18 +161,6 @@ function DesktopProjects() {
     setActiveIndex(0);
   }, [currentPage]);
 
-  useEffect(() => {
-    if (pagedProjects.length <= 1) return;
-
-    const timer = setInterval(() => {
-      if (pausedRef.current) return;
-
-      setActiveIndex((prev) => (prev + 1) % pagedProjects.length);
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [pagedProjects.length]);
-
   if (!active) {
     return null;
   }
@@ -182,15 +169,7 @@ function DesktopProjects() {
     <main className="bg-[#F3F0EB] text-[#4A433D] h-screen overflow-hidden flex flex-col">
       <Header />
 
-      <section
-        onMouseEnter={() => {
-          pausedRef.current = true;
-        }}
-        onMouseLeave={() => {
-          pausedRef.current = false;
-        }}
-        className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4"
-      >
+      <section className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4">
         <div className="grid grid-cols-[0.82fr_1.18fr] gap-16 h-full min-h-0">
           <div className="flex flex-col min-h-0 order-1">
             <div className="mb-6">
@@ -288,7 +267,6 @@ function DesktopProjects() {
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
               <Image
-                key={`${active.slug}-${active.heroImage}`}
                 src={active.heroImage}
                 alt={active.title}
                 fill
@@ -322,7 +300,7 @@ function DesktopProjects() {
             </Link>
 
             <div className="pt-3 flex justify-between text-xs text-neutral-500 tracking-[0.25em] uppercase">
-              <span>Auto Preview</span>
+              <span>Preview</span>
               <span>Click to Open</span>
             </div>
           </div>
@@ -335,15 +313,29 @@ function DesktopProjects() {
 }
 
 export default function ProjectsClient() {
-  return (
-    <>
-      <div className="hidden lg:block">
-        <DesktopProjects />
-      </div>
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-      <div className="block lg:hidden">
-        <MobileProjects />
-      </div>
-    </>
-  );
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+
+    const update = () => {
+      setIsDesktop(query.matches);
+      setMounted(true);
+    };
+
+    update();
+
+    query.addEventListener("change", update);
+
+    return () => {
+      query.removeEventListener("change", update);
+    };
+  }, []);
+
+  if (!mounted) {
+    return <MobileProjects />;
+  }
+
+  return isDesktop ? <DesktopProjects /> : <MobileProjects />;
 }
