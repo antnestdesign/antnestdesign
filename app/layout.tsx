@@ -6,7 +6,7 @@ const siteUrl = "https://www.antnestdesign.com";
 const siteTitle = "ANTNEST DESIGN | 앤트네스트디자인";
 
 const siteDescription =
-  "주거 인테리어와 건축을 설계·시공하는 앤트네스트디자인. 청라를 기반으로 수도권 프로젝트를 진행합니다.";
+  "앤드(AND) · ANTNEST DESIGN은 주거 인테리어와 건축을 설계·시공하는 디자인 스튜디오입니다. 청라를 기반으로 수도권 프로젝트를 진행합니다.";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -26,6 +26,12 @@ export const metadata: Metadata = {
   keywords: [
     "앤트네스트디자인",
     "ANTNEST DESIGN",
+    "AND",
+    "앤드",
+    "앤드인테리어",
+    "앤드 인테리어",
+    "앤드디자인",
+    "앤드 디자인",
     "청라인테리어",
     "송도인테리어",
     "검단인테리어",
@@ -99,7 +105,6 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
-
     apple: [
       {
         url: "/apple-icon.png",
@@ -111,14 +116,21 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-
   "@type": "LocalBusiness",
-
   "@id": `${siteUrl}/#organization`,
 
   name: "ANTNEST DESIGN",
 
-  alternateName: "앤트네스트디자인",
+  alternateName: [
+    "AND",
+    "앤드",
+    "앤드 인테리어",
+    "앤드 디자인",
+    "앤트네스트디자인",
+    "주식회사 앤트네스트디자인",
+  ],
+
+  legalName: "주식회사 앤트네스트디자인",
 
   url: siteUrl,
 
@@ -136,13 +148,9 @@ const jsonLd = {
 
   address: {
     "@type": "PostalAddress",
-
     addressCountry: "KR",
-
     addressRegion: "인천광역시",
-
     addressLocality: "서구 청라동",
-
     streetAddress: "중봉대로 612번길 10-20 청라프라자1 506호",
   },
 
@@ -155,6 +163,9 @@ const jsonLd = {
     "영통",
     "광교",
     "강남",
+    "화성",
+    "용인",
+    "수도권",
   ],
 
   serviceType: [
@@ -165,6 +176,18 @@ const jsonLd = {
     "시공 관리",
     "단독주택",
     "상가주택",
+    "고급주택",
+  ],
+
+  knowsAbout: [
+    "주거 인테리어",
+    "아파트 리모델링",
+    "고급주택 신축",
+    "상가주택 신축",
+    "단독주택 신축",
+    "건축 설계",
+    "인테리어 시공",
+    "시공 관리",
   ],
 
   sameAs: [],

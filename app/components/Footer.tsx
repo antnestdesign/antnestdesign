@@ -26,6 +26,7 @@ export default function Footer() {
               Company
             </p>
 
+            <p>AND · ANTNEST DESIGN</p>
             <p>주식회사 앤트네스트디자인</p>
             <p>대표자 이민영</p>
             <p>사업자등록번호 149-85-03105</p>

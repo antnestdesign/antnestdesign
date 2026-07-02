@@ -7,14 +7,14 @@ import BackToTop from "../components/BackToTop";
 export const metadata: Metadata = {
   title: "About | ANTNEST DESIGN",
   description:
-    "ANTNEST DESIGN은 건축적 사고와 시공 경험을 바탕으로 삶의 방식에 맞는 주거 인테리어와 공간 설계를 제안하는 디자인 스튜디오입니다.",
+    "앤드(AND) · ANTNEST DESIGN은 건축적 사고와 시공 경험을 바탕으로 삶의 방식에 맞는 주거 인테리어와 공간 설계를 제안하는 디자인 스튜디오입니다.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
     title: "About | ANTNEST DESIGN",
     description:
-      "건축과 인테리어, 설계와 시공, 공간과 사람을 연결하는 앤트네스트디자인의 브랜드 이야기.",
+      "건축과 인테리어, 설계와 시공, 공간과 사람을 연결하는 앤드 · 앤트네스트디자인의 브랜드 이야기.",
     url: "https://www.antnestdesign.com/about",
     images: [
       {
@@ -71,8 +71,8 @@ export default function AboutPage() {
                   </p>
 
                   <p className="text-[12px] md:text-lg leading-6 md:leading-9 text-neutral-600 break-keep">
-                    앤트네스트디자인은 인테리어를 건축과 분리해서 생각하지
-                    않습니다.
+                    앤드(AND) · 앤트네스트디자인은 인테리어를 건축과 분리해서
+                    생각하지 않습니다.
                     <br />
                     단독주택부터 상가주택, 연면적 20,000㎡ 규모의 복합건축
                     프로젝트까지 공간을 보다 입체적으로 바라보고 설계합니다.
@@ -142,6 +142,9 @@ export default function AboutPage() {
 
                     <p className="text-[12px] md:text-lg leading-6 md:leading-9 text-neutral-600 break-keep">
                       AND는 연결을 의미합니다.
+                      <br />
+                      ANTNEST DESIGN은 고객에게 AND, 그리고 앤드라는 이름으로
+                      기억되고자 합니다.
                       <br />
                       건축과 인테리어, 설계와 시공, 공간과 사람.
                       <br />
