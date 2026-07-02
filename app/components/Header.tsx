@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -71,10 +71,6 @@ export default function Header() {
       scrollTarget.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [pathname]);
-
-  useEffect(() => {
-    setMenuOpen(false);
   }, [pathname]);
 
   const menuColor = isHeroState ? "#F3F0EB" : "#4A433D";

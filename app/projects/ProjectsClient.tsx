@@ -157,10 +157,6 @@ function DesktopProjects() {
 
   const active = pagedProjects[activeIndex];
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [currentPage]);
-
   if (!active) {
     return null;
   }
@@ -250,6 +246,7 @@ function DesktopProjects() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onChange={(page) => {
+                  setActiveIndex(0);
                   setCurrentPage(page);
                 }}
               />
