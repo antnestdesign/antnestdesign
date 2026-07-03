@@ -3,10 +3,10 @@ import "./globals.css";
 
 const siteUrl = "https://www.antnestdesign.com";
 
-const siteTitle = "ANTNEST DESIGN | 앤트네스트디자인";
+const siteTitle = "ANTNEST DESIGN | 앤트네스트디자인 · AND 앤드";
 
 const siteDescription =
-  "앤드(AND) · ANTNEST DESIGN은 주거 인테리어와 건축을 설계·시공하는 디자인 스튜디오입니다. 청라를 기반으로 수도권 프로젝트를 진행합니다.";
+  "앤트네스트디자인(ANTNEST DESIGN)은 AND(앤드)라는 이름으로도 기억되는 주거 인테리어와 건축 설계·시공 스튜디오입니다. 청라를 기반으로 수도권 프로젝트를 진행합니다.";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -25,7 +25,11 @@ export const metadata: Metadata = {
 
   keywords: [
     "앤트네스트디자인",
+    "앤트네스트",
+    "앤트네스트 디자인",
     "ANTNEST DESIGN",
+    "ANTNEST",
+    "Antnest",
     "AND",
     "앤드",
     "앤드인테리어",
@@ -124,6 +128,10 @@ const jsonLd = {
   alternateName: [
     "AND",
     "앤드",
+    "ANTNEST",
+    "Antnest",
+    "앤트네스트",
+    "앤트네스트 디자인",
     "앤드 인테리어",
     "앤드 디자인",
     "앤트네스트디자인",
