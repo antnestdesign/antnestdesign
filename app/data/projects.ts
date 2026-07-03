@@ -169,7 +169,7 @@ export const projects: Record<string, Project> = {
     images: 7,
     heroImage: "/projects/private-house/01-hero.webp",
     overview:
-      "두 아이와 아내를 둔 한 아빠가 청라에 정착하기 위해 지은 첫 단독주택입니다. 북미 유학생활을 했던 아내의 취향을 반영해 클래식한 비례와 웨인스코팅, 높은 층고의 거실, 살라맨더 시스템창호와 벽난로를 중심으로 계획했습니다.",
+      "두 아이와 아내를 둔 한 아빠가 청라에 정착하기 위해 지은 첫 단독주택입니다. 북미 유학생활을 했던 아내의 취향을 반영해 클래식한 비례와 웨인스코팅, 높은 층고의 거실, 살라만더 시스템창호와 벽난로를 중심으로 계획했습니다.",
     gallery: [
       "/projects/private-house/01-hero.webp",
       "/projects/private-house/02-stair.webp",

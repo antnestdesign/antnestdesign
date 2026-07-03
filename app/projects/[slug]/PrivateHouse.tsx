@@ -126,7 +126,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
           <SectionHeading
             eyebrow="Living Room"
             title="높은 층고와 큰 창이 만드는 가족의 중심"
-            description="거실은 넓은 면적과 높은 층고를 바탕으로 가족이 함께 머무는 중심 공간으로 계획했습니다. 큰 창에는 살라맨더 시스템창호를 적용해 개방감과 단열 성능을 함께 고려했습니다."
+            description="거실은 넓은 면적과 높은 층고를 바탕으로 가족이 함께 머무는 중심 공간으로 계획했습니다. 큰 창에는 살라만더 시스템창호를 적용해 개방감과 단열 성능을 함께 고려했습니다."
           />
 
           <div className="max-w-7xl mx-auto px-8 md:px-16">
@@ -159,7 +159,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
 
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                 큰 창은 집의 인상을 만드는 요소이지만, 단독주택에서는 단열과
-                기밀 성능이 함께 따라와야 합니다. 살라맨더 시스템창호는 넓은
+                기밀 성능이 함께 따라와야 합니다. 살라만더 시스템창호는 넓은
                 개구부를 유지하면서 겨울철 실내 환경을 안정적으로 만드는
                 중요한 선택이었습니다.
               </p>
@@ -192,7 +192,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
           <SectionHeading
             eyebrow="Kitchen"
             title="보이는 것은 덜고, 보조주방의 역할은 키운 주방"
-            description="주방은 밖으로 드러나는 요소를 꼭 필요한 것만 남기고 정리했습니다. 조리와 수납의 일부 기능은 보조주방으로 나누어, 메인 주방과 다이닝 공간이 단정하게 유지되도록 계획했습니다."
+            description="주방은 밖으로 드러나는 요소를 꼭 필요한 것만 남기고 정리했습니다. 거실과 주방 사이에는 단차이를 두어 열린 구조 안에서도 공간의 성격이 자연스럽게 구획되도록 했고, 조리와 수납의 일부 기능은 보조주방으로 나누어 메인 주방과 다이닝 공간이 단정하게 유지되도록 계획했습니다."
           />
 
           <div className="max-w-7xl mx-auto px-8 md:px-16">
@@ -256,7 +256,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
               </p>
 
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                살라맨더 시스템창호, 키친바흐 주방가구, 서브제로 냉장고처럼
+                살라만더 시스템창호, 키친바흐 주방가구, 서브제로 냉장고처럼
                 직접 사용하는 제품들은 집의 분위기뿐 아니라 일상의 편안함과
                 유지 관리까지 고려해 선정했습니다.
               </p>
@@ -269,7 +269,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
               items={["석재패널", "징크 지붕", "대리석 바닥", "해링본 타일", "웨인스코팅"]}
             />
 
-            <FeatureList title="Comfort" items={["벽난로", "살라맨더 시스템창호"]} />
+            <FeatureList title="Comfort" items={["벽난로", "살라만더 시스템창호"]} />
 
             <FeatureList
               title="Kitchen"
