@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ConsultationClient from "./ConsultationClient";
 
 export const metadata: Metadata = {
-  title: "프로젝트 상담 신청 | ANTNEST DESIGN",
+  title: "프로젝트 상담 신청",
   description:
     "ANTNEST DESIGN에 주거 인테리어와 건축 프로젝트 상담을 신청하세요. 공간의 성격, 예산, 일정, 생활방식에 맞는 상담 방향을 안내드립니다.",
   alternates: {

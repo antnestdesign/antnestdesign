@@ -27,7 +27,8 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${project.title} | ANTNEST DESIGN`;
+  const title = project.title;
+  const brandedTitle = `${project.title} | ANTNEST DESIGN`;
   const description =
     project.overview ||
     `${project.title} 프로젝트입니다. ANTNEST DESIGN의 ${project.category} 포트폴리오를 확인해보세요.`;
@@ -43,7 +44,7 @@ export async function generateMetadata({
     },
 
     openGraph: {
-      title,
+      title: brandedTitle,
       description,
       url: projectUrl,
       siteName: "ANTNEST DESIGN",
@@ -61,7 +62,7 @@ export async function generateMetadata({
 
     twitter: {
       card: "summary_large_image",
-      title,
+      title: brandedTitle,
       description,
       images: [project.heroImage],
     },

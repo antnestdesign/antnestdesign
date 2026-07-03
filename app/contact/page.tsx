@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import BackToTop from "../components/BackToTop";
 
 export const metadata: Metadata = {
-  title: "Contact | ANTNEST DESIGN",
+  title: "Contact",
   description:
     "ANTNEST DESIGN에 주거 인테리어와 건축 프로젝트 상담을 문의하세요. 청라를 기반으로 송도, 검단, 동탄, 수원, 광교 등 수도권 프로젝트를 함께 검토합니다.",
   alternates: {

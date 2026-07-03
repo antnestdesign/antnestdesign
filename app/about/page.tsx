@@ -5,7 +5,7 @@ import MiniFooter from "../components/MiniFooter";
 import BackToTop from "../components/BackToTop";
 
 export const metadata: Metadata = {
-  title: "About | ANTNEST DESIGN",
+  title: "About",
   description:
     "앤드(AND) · ANTNEST DESIGN은 건축적 사고와 시공 경험을 바탕으로 삶의 방식에 맞는 주거 인테리어와 공간 설계를 제안하는 디자인 스튜디오입니다.",
   alternates: {

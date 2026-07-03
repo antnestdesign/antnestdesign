@@ -2,7 +2,7 @@
 import ProjectsClient from "./ProjectsClient";
 
 export const metadata: Metadata = {
-  title: "Projects | ANTNEST DESIGN",
+  title: "Projects",
 
   description:
     "ANTNEST DESIGN의 주거 인테리어와 건축 프로젝트 포트폴리오를 확인해보세요. 아파트 리모델링, 단독주택, 상가주택 등 다양한 프로젝트를 소개합니다.",
