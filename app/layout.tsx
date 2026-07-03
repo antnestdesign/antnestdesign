@@ -190,7 +190,7 @@ const jsonLd = {
     "시공 관리",
   ],
 
-  sameAs: [],
+  sameAs: ["https://blog.naver.com/antnestdesign"],
 };
 
 export default function RootLayout({
