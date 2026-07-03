@@ -74,6 +74,12 @@ function MobileProjects() {
           </p>
 
           <h1 className="text-3xl font-light leading-none">Selected Works</h1>
+
+          <p className="mt-4 max-w-[28rem] text-[13px] leading-6 text-neutral-500 break-keep">
+            앤트네스트디자인은 청라를 기반으로 아파트 리모델링, 단독주택,
+            상가주택 등 삶의 방식에 맞춘 주거 공간과 건축 프로젝트를
+            진행합니다.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-8">
@@ -113,6 +119,10 @@ function MobileProjects() {
 
               <p className="text-[11px] text-neutral-500 mt-1">
                 {project.area}
+              </p>
+
+              <p className="mt-2 text-[11px] leading-5 text-neutral-500 break-keep">
+                {project.overview}
               </p>
             </Link>
           ))}
@@ -176,6 +186,12 @@ function DesktopProjects() {
               <h1 className="text-5xl font-light leading-none">
                 Selected Works
               </h1>
+
+              <p className="mt-5 max-w-[32rem] text-sm leading-7 text-neutral-500 break-keep">
+                앤트네스트디자인은 청라를 기반으로 아파트 리모델링,
+                단독주택, 상가주택 등 삶의 방식에 맞춘 주거 공간과 건축
+                프로젝트를 진행합니다.
+              </p>
             </div>
 
             <div className="flex-1 min-h-0">
@@ -224,6 +240,10 @@ function DesktopProjects() {
 
                       <p className="text-[10px] uppercase tracking-[0.22em] text-neutral-500 mt-1 ml-9">
                         {project.type}
+                      </p>
+
+                      <p className="mt-2 ml-9 text-xs leading-5 text-neutral-500 line-clamp-2 break-keep">
+                        {project.overview}
                       </p>
                     </div>
 
@@ -293,6 +313,10 @@ function DesktopProjects() {
                   <span>{active.type}</span>
                   <span>{active.year}</span>
                 </div>
+
+                <p className="mt-4 max-w-[34rem] text-sm leading-6 text-white/75 break-keep">
+                  {active.overview}
+                </p>
               </div>
             </Link>
 
