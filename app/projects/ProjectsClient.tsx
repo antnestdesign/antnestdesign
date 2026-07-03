@@ -121,9 +121,6 @@ function MobileProjects() {
                 {project.area}
               </p>
 
-              <p className="mt-2 text-[11px] leading-5 text-neutral-500 break-keep">
-                {project.overview}
-              </p>
             </Link>
           ))}
         </div>
@@ -178,7 +175,7 @@ function DesktopProjects() {
       <section className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-16 pt-28 pb-4">
         <div className="grid grid-cols-[0.82fr_1.18fr] gap-16 h-full min-h-0">
           <div className="flex flex-col min-h-0 order-1">
-            <div className="mb-6">
+            <div className="mb-5">
               <p className="uppercase tracking-[0.35em] text-xs text-neutral-500 mb-2">
                 Projects
               </p>
@@ -187,7 +184,7 @@ function DesktopProjects() {
                 Selected Works
               </h1>
 
-              <p className="mt-5 max-w-[32rem] text-sm leading-7 text-neutral-500 break-keep">
+              <p className="mt-4 max-w-[31rem] text-[13px] leading-6 text-neutral-500 break-keep">
                 앤트네스트디자인은 청라를 기반으로 아파트 리모델링,
                 단독주택, 상가주택 등 삶의 방식에 맞춘 주거 공간과 건축
                 프로젝트를 진행합니다.
@@ -242,9 +239,6 @@ function DesktopProjects() {
                         {project.type}
                       </p>
 
-                      <p className="mt-2 ml-9 text-xs leading-5 text-neutral-500 line-clamp-2 break-keep">
-                        {project.overview}
-                      </p>
                     </div>
 
                     <span
