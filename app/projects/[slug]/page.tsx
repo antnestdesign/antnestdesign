@@ -4,6 +4,7 @@ import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
 import CheongnaHoban4 from "./CheongnaHoban4";
 import LuxuryHouse from "./LuxuryHouse";
+import PrivateHouse from "./PrivateHouse";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
 
@@ -80,7 +81,8 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     slug === "apartment-a" ||
     slug === "apartment-b" ||
     slug === "cheongna-hoban-4-33a" ||
-    slug === "luxury-house";
+    slug === "luxury-house" ||
+    slug === "private-house";
 
   return (
     <ProjectLayout slug={slug} project={project}>
@@ -88,6 +90,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       {slug === "apartment-b" && <ApartmentB />}
       {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
       {slug === "luxury-house" && <LuxuryHouse project={project} />}
+      {slug === "private-house" && <PrivateHouse project={project} />}
 
       {!hasCustomPage && (
         <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
