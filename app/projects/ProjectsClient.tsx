@@ -255,7 +255,7 @@ function DesktopProjects() {
               })}
             </div>
 
-            <div className="pt-5 flex items-center justify-between">
+            <div className="pt-8 flex items-center justify-between">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
