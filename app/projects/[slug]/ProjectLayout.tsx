@@ -101,10 +101,6 @@ export default function ProjectLayout({
     <main className="bg-[#F3F0EB] text-[#4A433D] min-h-screen">
       <header className="pt-10">
         <div className="max-w-7xl mx-auto px-8 md:px-16 flex justify-between items-center">
-          <Link href="/projects" className="tracking-[0.25em] text-sm">
-            ← PROJECTS
-          </Link>
-
           <Link href="/" className="shrink-0" aria-label="ANTNEST DESIGN Home">
             <Image
               src="/logo.png"
@@ -114,6 +110,10 @@ export default function ProjectLayout({
               priority
               className="w-[82px] md:w-[118px] h-auto"
             />
+          </Link>
+
+          <Link href="/projects" className="tracking-[0.25em] text-sm">
+            ← PROJECTS
           </Link>
         </div>
       </header>
