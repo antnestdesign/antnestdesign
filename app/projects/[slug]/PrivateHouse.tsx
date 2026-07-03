@@ -111,9 +111,10 @@ export default function PrivateHouse({ project }: { project: Project }) {
 
             <div className="max-w-4xl ml-auto mt-16 md:mt-24">
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                높은 벽면의 웨인스코팅, 우드 계단, 헤링본 바닥은 북미 주거
-                공간의 클래식한 분위기를 차분하게 담아냅니다. 장식은 과하게
-                드러내기보다 벽면의 비례와 동선의 질서 안에서 정리했습니다.
+                높은 벽면의 웨인스코팅과 우드 계단, 해링본 타일은 북미 주거
+                공간의 클래식한 분위기를 차분하게 담아냅니다. 바닥은 오래
+                지속되고 관리가 쉬운 재질을 중심으로 구성해, 장식성과 생활의
+                편안함이 함께 유지되도록 정리했습니다.
               </p>
             </div>
           </div>
@@ -172,13 +173,13 @@ export default function PrivateHouse({ project }: { project: Project }) {
           <SectionHeading
             eyebrow="Fireplace"
             title="높은 거실을 따뜻하게 만드는 벽난로"
-            description="거실에는 석재 타일로 마감한 벽난로를 계획했습니다. 높은 층고의 단독주택에서도 겨울의 생활감이 차갑게 느껴지지 않도록, 시각적인 중심과 난방의 보조 기능을 함께 고려했습니다."
+            description="거실에는 석재패널로 마감한 벽난로를 계획했습니다. 높은 층고의 단독주택에서도 겨울의 생활감이 차갑게 느껴지지 않도록, 시각적인 중심과 난방의 보조 기능을 함께 고려했습니다."
           />
 
           <div className="max-w-5xl mx-auto px-8 md:px-16">
             <ProjectImage
               src={fireplace}
-              alt={`${project.title} 벽난로와 석재 타일`}
+              alt={`${project.title} 벽난로와 석재패널`}
               ratio="aspect-[4/5]"
               quality={82}
             />
@@ -249,9 +250,9 @@ export default function PrivateHouse({ project }: { project: Project }) {
             <div className="md:col-span-6 md:col-start-7 space-y-5 md:space-y-6">
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                 이 집의 재료는 장식보다 생활의 지속성을 기준으로 선택했습니다.
-                석재 타일과 대리석 바닥, 징크 지붕은 단독주택의 구조적
-                인상을 만들고, 웨인스코팅과 벽난로는 가족이 머무는 실내에
-                차분한 클래식함을 더합니다.
+                석재패널과 대리석 바닥, 징크 지붕은 단독주택의 구조적
+                인상을 만들고, 해링본 타일과 웨인스코팅, 벽난로는 가족이
+                머무는 실내에 차분한 클래식함을 더합니다.
               </p>
 
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
@@ -265,7 +266,7 @@ export default function PrivateHouse({ project }: { project: Project }) {
           <div className="grid md:grid-cols-3 gap-8 md:gap-10">
             <FeatureList
               title="Material"
-              items={["석재 타일", "징크 지붕", "대리석 바닥", "웨인스코팅"]}
+              items={["석재패널", "징크 지붕", "대리석 바닥", "해링본 타일", "웨인스코팅"]}
             />
 
             <FeatureList title="Comfort" items={["벽난로", "살라맨더 시스템창호"]} />
