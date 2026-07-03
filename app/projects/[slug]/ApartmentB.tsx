@@ -256,6 +256,62 @@ export default function ApartmentB() {
       <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
         <div className="border-t border-neutral-300 pt-10 md:pt-12">
           <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
+            Material / Detail
+          </p>
+
+          <div className="grid md:grid-cols-12 gap-8 md:gap-12">
+            <div className="md:col-span-5">
+              <h2 className="text-3xl md:text-5xl font-light leading-[1.12] break-keep">
+                오래 머무는 일상을 위한
+                <br />
+                마감과 디테일
+              </h2>
+            </div>
+
+            <div className="md:col-span-6 md:col-start-7 space-y-5 md:space-y-6">
+              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                오래 머무는 가족의 일상을 위해 마감은 화려함보다 안정감과
+                관리의 편안함을 기준으로 정리했습니다. 바닥은 나투스강
+                스퀘어를 적용해 거실과 주방, 복도까지 하나의 흐름으로
+                이어지도록 계획했습니다.
+              </p>
+
+              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                벽과 천장은 LX 디아망으로 마감해 밝고 차분한 바탕을 만들고,
+                라운드 아치와 간접조명이 부드럽게 이어질 수 있도록 전체 톤을
+                맞췄습니다.
+              </p>
+
+              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                주방은 제작가구를 중심으로 구성했습니다. 메인 주방의 3m
+                풀사이즈 아일랜드는 조리와 정리, 가족의 생활이 함께 이루어지는
+                중심 가구로 계획했고, 상판은 현대 L&amp;C 칸스톤을
+                적용했습니다. 보조주방과 홈바 상판은 LX 하이막스로 마감해 사용
+                빈도가 높은 공간의 관리성을 높였습니다.
+              </p>
+
+              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                아일랜드에는 깜포르테 싱크수전과 라우체 피오 수전을 적용하고,
+                삼성 인피니트 인덕션과 삼성 비스포크 식기세척기를 함께
+                구성했습니다. 직배수 로보락 청소기는 매립 방식으로 정리해 생활
+                동선 안에서 필요한 기능은 유지하되, 공간에 드러나는 요소는
+                최소화했습니다.
+              </p>
+
+              <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+                욕실은 벽체 1200x600 포세린 타일, 바닥 600각 포세린 타일로
+                정리했습니다. 현관 바닥 역시 600각 포세린 타일을 적용해
+                외부에서 내부로 들어오는 첫 구간의 내구성과 관리성을 함께
+                고려했습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-7xl mx-auto px-8 md:px-16 mb-32 md:mb-48">
+        <div className="border-t border-neutral-300 pt-10 md:pt-12">
+          <p className="uppercase tracking-[0.35em] text-[10px] md:text-xs text-neutral-500 mb-4">
             Lighting
           </p>
 
