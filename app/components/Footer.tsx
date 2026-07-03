@@ -37,7 +37,7 @@ export default function Footer() {
               Contact
             </p>
 
-            <p>TEL 032.321.6909</p>
+            <p>TEL 032.321.6722</p>
             <p>FAX 032.321.6895</p>
             <a
               href="mailto:antnestdesign@naver.com"

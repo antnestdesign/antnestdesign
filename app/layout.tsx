@@ -140,7 +140,7 @@ const jsonLd = {
 
   description: siteDescription,
 
-  telephone: "+82-32-321-6909",
+  telephone: "+82-32-321-6722",
 
   email: "antnestdesign@naver.com",
 

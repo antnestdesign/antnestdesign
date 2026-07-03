@@ -64,10 +64,10 @@ export default function ContactPage() {
               Phone
             </p>
             <a
-              href="tel:0323216909"
+              href="tel:0323216722"
               className="text-lg md:text-[22px] font-light"
             >
-              032.321.6909
+              032.321.6722
             </a>
           </div>
 

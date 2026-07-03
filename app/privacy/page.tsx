@@ -90,7 +90,7 @@ export default function PrivacyPage() {
             <div className="mt-5 border-t border-neutral-300 pt-5 text-neutral-600">
               <p>주식회사 앤트네스트디자인</p>
               <p>대표자 : 이민영</p>
-              <p>전화 : 032-321-6909</p>
+              <p>전화 : 032-321-6722</p>
               <p>이메일 : antnestdesign@naver.com</p>
             </div>
           </section>
