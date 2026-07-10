@@ -1,1027 +1,1211 @@
 <!doctype html>
 <html lang="ko">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="noindex,nofollow" name="robots"/>
-<title>AND OS</title>
-<link href="./styles.css?v=and-os-5" rel="stylesheet"/>
-</head>
-<body>
-<section class="login-screen" id="loginScreen">
-<form class="login-card" id="loginForm">
-<p class="eyebrow">ANTNEST DESIGN</p>
-<h1>AND OS</h1>
-<p>ANTNEST DESIGN Operating System</p>
-<label>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>AND OS</title>
+    <link rel="stylesheet" href="./styles.css?v=and-os-5" />
+  </head>
+  <body>
+    <section id="loginScreen" class="login-screen">
+      <form id="loginForm" class="login-card">
+        <p class="eyebrow">ANTNEST DESIGN</p>
+        <h1>AND OS</h1>
+        <p>ANTNEST DESIGN Operating System</p>
+        <label>
           아이디
-          <input autocomplete="username" id="loginEmail" required="" type="email"/>
-</label>
-<label>
+          <input id="loginEmail" type="email" autocomplete="username" required />
+        </label>
+        <label>
           비밀번호
-          <input autocomplete="current-password" id="loginPassword" required="" type="password"/>
-</label>
-<button class="primary-action" type="submit">로그인</button>
-<p aria-live="polite" class="status-text" id="loginStatus"></p>
-</form>
-</section>
-<main class="app-shell app-locked" id="appShell">
-<section class="workspace">
-<header class="topbar">
-<div>
-<p class="eyebrow">ANTNEST DESIGN</p>
-<h1>AND OS</h1>
-</div>
-<div class="project-strip top-search-strip">
-<label>
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="primary-action">로그인</button>
+        <p id="loginStatus" class="status-text" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <main id="appShell" class="app-shell app-locked">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">ANTNEST DESIGN</p>
+            <h1>AND OS</h1>
+          </div>
+          <div class="project-strip top-search-strip">
+            <label>
               프로젝트 검색
-              <input id="projectSearch" placeholder="프로젝트명 또는 고객명" type="search"/>
-</label>
-<label>
+              <input id="projectSearch" type="search" placeholder="프로젝트명 또는 고객명" />
+            </label>
+            <label>
               불러오기
               <select id="projectSearchResults">
-<option value="">검색 후 선택</option>
-</select>
-</label>
-<button id="loadProjectButton" type="button">불러오기</button>
-</div>
-<div class="auth-strip">
-<strong>AND OS</strong>
-<span id="currentUserLabel">-</span>
-<button id="logoutButton" type="button">로그아웃</button>
-</div>
-</header>
-<nav aria-label="견적 화면" class="tabs">
-<button class="tab-button active" data-tab="client">고객상담</button>
-<button class="tab-button" data-tab="quote">상세견적</button>
-<button class="tab-button" data-tab="admin">관리</button>
-</nav>
-<section class="tab-panel active" id="client">
-<div class="panel-grid">
-<section class="option-panel">
-<div class="section-heading">
-<h2>고객상담 입력</h2>
-<p>프로젝트 정보와 공정 선택값을 입력합니다.</p>
-</div>
-<div class="control-grid project-info-grid">
-<label>프로젝트명
-<input id="projectName" type="text" value="84형 아파트 리모델링"/>
-</label>
-<label>평형
-<input id="areaPyeong" max="80" min="10" step="1" type="number" value="34"/>
-</label>
-<label>고객성명
-<input id="clientName" type="text"/>
-</label>
-<label>연락처
-<input id="clientPhone" type="tel"/>
-</label>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionDemolitionEnabled" type="checkbox"/><span>철거 및 인허가</span></label>
-<p>바닥, 화장실, 가구, 천장 철거와 인허가 항목을 선택합니다.</p></div>
-<div class="furniture-block">
-<div class="demolition-layout">
-<div class="demo-unit">
-<label class="inline-check">
-<input id="demolitionFloorEnabled" type="checkbox"/>
-<span>바닥</span></label>
-<label>바닥 재질
-<select id="demolitionFloorMaterial">
-<option selected="" value="wood">마루</option></select>
-</label>
-</div>
-<div class="demo-unit">
-<label class="inline-check">
-<input id="demolitionBathroomEnabled" type="checkbox"/>
-<span>화장실</span></label>
-<label>화장실 개소
-<input id="demolitionBathroomUnits" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-<div class="demo-unit">
-<label class="inline-check">
-<input id="demolitionFurnitureEnabled" type="checkbox"/>
-<span>가구</span></label>
-<label>길이(mm)
-<input id="demolitionFurnitureM" min="0" step="100" type="number" value="0"/>
-</label>
-</div>
-<div class="demo-unit">
-<label class="inline-check">
-<input id="demolitionCeilingEnabled" type="checkbox"/>
-<span>천장</span></label>
-<div class="auto-note"></div>
-</div>
-</div>
-<div class="demolition-extra">
-<label class="inline-check">
-<input id="demolitionElevatorProtectEnabled" type="checkbox"/>
-<span>E/V 보양</span></label>
-<label class="inline-check">
-<input id="demolitionElevatorProtectRemovalEnabled" type="checkbox"/>
-<span>E/V 보양 철거</span></label>
-<label class="inline-check">
-<input id="demolitionPermitEnabled" type="checkbox"/>
-<span>행위허가</span>
-</label>
-<label class="inline-check">
-<input id="demolitionConsentEnabled" type="checkbox"/>
-<span>동의서</span></label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionElectricalEnabled" type="checkbox"/><span>전기</span></label>
-<p>전기 시공과 AND표준 조명을 선택합니다.</p></div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="electricalEnabled" type="checkbox"/>
-<span>전기 공정</span></label>
-<div class="control-grid compact-grid">
-<label>준공 연식
-<select id="electricalAgeType">
-<option selected="" value="under10">준공 10년 이하</option>
-<option value="over10">준공 10년 이상</option>
-</select>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="standardLightingEnabled" type="checkbox"/>
-<span>AND표준 조명</span></label>
-<div class="control-grid">
-<label>다운라이트
-<input id="standardDownlightUnits" min="0" step="1" type="number" value="65"/>
-</label>
-<label>사각매입등
-<input id="standardSquareLightUnits" min="0" step="1" type="number" value="8"/>
-</label>
-<label>실린더등
-<input id="standardCylinderLightUnits" min="0" step="1" type="number" value="4"/>
-</label>
-<label>간접조명(T3) 길이(m)
-<input id="standardT3M" min="0" step="0.1" type="number" value="20"/>
-</label>
-<label class="inline-check">
-<input id="standardBedWallLightEnabled" type="checkbox"/>
-<span>침대 벽등</span></label>
-<label class="inline-check">
-<input id="standardSwitchEnabled" type="checkbox"/>
-<span>AND표준 콘센트·스위치(르그랑급)</span>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionBathroomEnabled" type="checkbox"/><span>욕실</span></label>
-<p>욕실 공사와 AND표준 포세린 타일을 선택합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid">
-<label class="inline-check">
-<input id="tileEnabled" type="checkbox"/>
-<span>AND표준 포세린 타일</span>
-</label>
-<label class="inline-check">
-<input id="tileGroutEnabled" type="checkbox"/>
-<span>줄눈 포함</span></label>
-<label>욕실 칸
-<input id="bathroomUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>환풍기
-<select id="bathroomFanType">
-<option selected="" value="normal">일반 환풍기</option></select>
-</label>
-<label>욕조
-<input id="bathroomBathtubUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>유리부스
-<input id="bathroomGlassBoothUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>유리파티션
-<input id="bathroomGlassPartitionUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>조적벽
-<input id="bathroomMasonryWallUnits" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionWallpaperEnabled" type="checkbox"/><span>도배</span></label>
-<p>도배 기준과 자재 등급을 선택합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
-<label>기준
-<select id="wallpaperPreset">
-<option selected="" value="p20">20평대</option>
-<option value="p30">30평대</option>
-<option value="p40">40평대</option>
-<option value="p50">50평 이상</option>
-</select>
-</label>
-<label class="inline-check">
-<input id="wallpaperBaseCoatEnabled" type="checkbox"/>
-<span>초배 포함</span></label>
-<label>자재 등급
-<select id="wallpaperMaterialGrade">
-<option selected="" value="diamant">디아망급</option></select>
-</label>
-<label>벽 길이(mm)
-<input id="wallpaperWallLengthM" min="0" step="100" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionFilmEnabled" type="checkbox"/><span>필름</span></label>
-<p>필름 기준과 시공 범위를 선택합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
-<label>기준
-<select id="filmPreset">
-<option selected="" value="p20">20평대</option>
-<option value="p30">30평대</option>
-<option value="p40">40평대</option>
-<option value="p50">50평 이상</option>
-</select>
-</label>
-<label>필름 길이(mm)
-<input id="filmMaterialLengthM" min="0" step="100" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionFlooringEnabled" type="checkbox"/><span>바닥</span></label>
-<p>바닥(마루 : LX에디톤급) 시공 면적을 입력합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
-<label>면적(평)
-<input id="flooringArea" min="0" step="0.5" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionCarpentryEnabled" type="checkbox"/><span>목공</span></label>
-<p>천장, 간접, 벽체, 도어 목공 항목을 입력합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid">
-<label>커튼박스 신설(개소)
-<input id="carpentryCurtainBoxUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>우물천장
-<select id="carpentryCofferType">
-<option selected="" value="none">없음</option>
-<option value="new">신설</option>
-<option value="change">변경</option></select>
-</label>
-<label>단내림 개소
-<input id="carpentryDropCeilingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접등 개소
-<input id="carpentryIndirectLightUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>실링팬 개수
-<input id="carpentryCeilingFanUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>천장 라인조명 길이(mm)
-<input id="carpentryLineLightM" min="0" step="100" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<div class="check-title">
-<span>항목</span></div>
-<div class="control-grid">
-<label>목공벽/아트월/가벽/파티션 길이(mm)
-<input id="carpentryArtwallM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>히든도어 개소
-<input id="carpentryHiddenDoorUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>천장고(mm)
-<input id="carpentryCeilingHeight" min="0" step="10" type="number" value="2400"/>
-</label>
-<label>벽걸이 TV 보강
-<input id="carpentryTvUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>중문
-<input id="middleDoorUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>일반도어
-<input id="standardDoorUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>슬라이딩도어
-<input id="slidingDoorUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label class="inline-check">
-<input id="windowNoticeEnabled" type="checkbox"/>
-<span>창호 별도 실측 후 견적</span>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
-<label class="inline-check">
-<input id="carpentryMoldingEnabled" type="checkbox"/>
-<span>몰딩</span></label>
-<label class="inline-check">
-<input id="carpentryBaseboardEnabled" type="checkbox"/>
-<span>걸레받이</span>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionFurnitureEnabled" type="checkbox"/><span>가구</span></label>
-<p>가구를 mm 단위로 입력하고 옵션을 선택합니다.</p></div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="baseEnabled" type="checkbox"/>
-<span>상하부장</span></label>
-<div class="control-grid">
-<label>하부장 길이(mm)
-<input id="lowerCabinetM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>상부장 길이(mm)
-<input id="upperCabinetM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>키큰장 길이(mm)
-<input id="tallCabinetM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>밥솥장
-<select id="riceCabinetUnits">
-<option selected="" value="0">없음</option>
-<option value="1">600mm 1통</option></select>
-</label>
-<label>EP판
-<select id="baseEndPanels">
-<option selected="" value="0">없음</option>
-<option value="1">1장</option></select>
-</label>
-<label>EP 깊이
-<select id="baseEpDepth">
-<option selected="" value="deep">400mm 초과</option></select>
-</label>
-<label>라인조명 통수
-<input id="baseLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="baseT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="islandEnabled" type="checkbox"/>
-<span>아일랜드</span>
-</label>
-<div class="control-grid island-grid">
-<label>가로길이(mm)
-<input id="islandM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>세로길이(mm)
-<input id="islandDepthMm" min="0" step="10" type="number" value="0"/>
-</label>
-<label>상판
-<select id="islandCountertop">
-<option selected="" value="himacs">하이막스</option></select>
-</label>
-<label>좌우마감재
-<select id="islandSideFinish">
-<option selected="" value="epPanel">EP판</option></select>
-</label>
-<label>좌우마감재 수량
-<input id="islandSideFinishCount" max="2" min="0" step="1" type="number" value="0"/>
-</label>
-<label>서랍
-<input id="islandDrawers" min="0" step="1" type="number" value="0"/>
-</label>
-<label class="inline-check">
-<input id="islandRiceCabinetEnabled" type="checkbox"/>
-<span>밥솥장 추가</span>
-</label>
-<label class="inline-check">
-<input id="islandBachmannOutletEnabled" type="checkbox"/>
-<span>바흐만 2구 콘센트</span></label>
-<label>라인조명 통수
-<input id="islandLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="islandT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="kitchenEnabled" type="checkbox"/>
-<span>주방설비</span>
-</label>
-<div class="control-grid">
-<label>싱크볼
-<input id="kitchenSinkBowlUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>싱크수전
-<input id="kitchenFaucetUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>후드
-<input id="kitchenHoodUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label class="inline-check">
-<input id="kitchenStandardInstallEnabled" type="checkbox"/>
-<span>AND표준 주방 설비 시공</span>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="homebarEnabled" type="checkbox"/>
-<span>홈바장</span></label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="homebarM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>상판
-<select id="homebarCountertop">
-<option selected="" value="himacs">하이막스</option></select>
-</label>
-<label>미드웨이
-<select id="homebarMidway">
-<option value="none">없음</option>
-<option selected="" value="epPanel">EP판</option></select>
-</label>
-<label>서랍
-<input id="homebarDrawers" min="0" step="1" type="number" value="0"/>
-</label>
-<label>EP판
-<input id="homebarEndPanels" min="0" step="1" type="number" value="0"/>
-</label>
-<label>EP 깊이
-<select id="homebarEpDepth">
-<option selected="" value="deep">400mm 초과</option></select>
-</label>
-<label>라인조명 통수
-<input id="homebarLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="homebarT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="shoeEnabled" type="checkbox"/>
-<span>신발장</span></label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="shoeM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>깊이
-<select id="shoeDepth">
-<option selected="" value="shallow">400mm 이하</option>
-<option value="deep">400mm 초과</option></select>
-</label>
-<label>EP판
-<input id="shoeEndPanels" min="0" step="1" type="number" value="0"/>
-</label>
-<label>라인조명 통수
-<input id="shoeLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="shoeT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="fridgeLaundryEnabled" type="checkbox"/>
-<span>냉장고 및 세탁기장</span></label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="fridgeLaundryM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>깊이
-<select id="fridgeLaundryDepth">
-<option selected="" value="deep">400mm 초과</option></select>
-</label>
-<label>EP판
-<input id="fridgeLaundryEndPanels" min="0" step="1" type="number" value="0"/>
-</label>
-<label>라인조명 통수
-<input id="fridgeLaundryLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="fridgeLaundryT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="pantryEnabled" type="checkbox"/>
-<span>팬트리장</span></label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="pantryM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>깊이
-<select id="pantryDepth">
-<option selected="" value="shallow">400mm 이하</option>
-<option value="deep">400mm 초과</option></select>
-</label>
-<label>EP판
-<input id="pantryEndPanels" min="0" step="1" type="number" value="0"/>
-</label>
-<label>하부서랍장
-<input id="pantryDrawerUnits" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="builtInEnabled" type="checkbox"/>
-<span>옷장(붙박이장)</span>
-</label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="builtInM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>깊이
-<select id="builtInDepth">
-<option selected="" value="deep">400mm 초과</option></select>
-</label>
-<label>EP판
-<input id="builtInEndPanels" min="0" step="1" type="number" value="0"/>
-</label>
-<label>라인조명 통수
-<input id="builtInLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="builtInT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="furniture-block">
-<label class="check-title">
-<input id="hangerEnabled" type="checkbox"/>
-<span>옷장(헹거장)</span>
-</label>
-<div class="control-grid island-grid">
-<label>길이(mm)
-<input id="hangerM" min="0" step="100" type="number" value="0"/>
-</label>
-<label>깊이
-<select id="hangerDepth">
-<option selected="" value="deep">400mm 초과</option></select>
-</label>
-<label>라인조명 통수
-<input id="hangerLightingUnits" min="0" step="1" type="number" value="0"/>
-</label>
-<label>간접조명(T3) 라인
-<input id="hangerT3Units" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-<div class="section-heading sub-heading">
-<label class="section-toggle"><input id="sectionFinishEnabled" type="checkbox"/><span>마감</span></label>
-<p>폐기물, 보양, 청소, 실리콘, 탄성 항목을 선택합니다.</p>
-</div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
-<label class="inline-check">
-<input id="generalWasteEnabled" type="checkbox"/>
-<span>일반 폐기물</span></label>
-<label class="inline-check">
-<input id="interiorProtectionEnabled" type="checkbox"/>
-<span>세대 내 보양비</span></label>
-<label class="inline-check">
-<input id="moveInCleaningEnabled" type="checkbox"/>
-<span>입주청소</span></label>
-<label class="inline-check">
-<input id="siliconeEnabled" type="checkbox"/>
-<span>실리콘</span></label>
-<label class="inline-check">
-<input id="elasticEnabled" type="checkbox"/>
-<span>탄성(기본 2개소)</span>
-</label>
-<label>탄성 추가 개소
-<input id="elasticExtraRooms" min="0" step="1" type="number" value="0"/>
-</label>
-</div>
-</div>
-</section>
-<aside aria-live="polite" class="live-summary">
-<div class="summary-title">
-<span class="dot"></span>
-<div>
-<p>선택 항목을 확인합니다.</p>
-<strong id="selectionCount">포함되지 않은 공정</strong></div>
-</div>
-<dl class="summary-list">
-<div>
-<dt>항목<dd id="cabinetSummary">-</dd>
-</dt></div>
-<div>
-<dt>아일랜드</dt>
-<dd id="islandSummary">-</dd>
-</div>
-<div>
-<dt>항목<dd id="homebarSummary">-</dd>
-</dt></div>
-<div>
-<dt>항목<dd id="shoeSummary">-</dd>
-</dt></div>
-<div>
-<dt>항목<dd id="fridgeLaundrySummary">-</dd>
-</dt></div>
-<div>
-<dt>항목<dd id="pantrySummary">-</dd>
-</dt></div>
-<div>
-<dt>옷장(붙박이장)</dt>
-<dd id="builtInSummary">-</dd>
-</div>
-<div>
-<dt>옷장(헹거장)</dt>
-<dd id="hangerSummary">-</dd>
-</div>
-<div>
-<dt>항목<dd id="demolitionSummary">-</dd>
-</dt></div>
-<div>
-<dt>항목<dd id="electricalSummary">-</dd>
-<dt>鈺곌퀡梨?/dt&gt;
+                <option value="">검색 후 선택</option>
+              </select>
+            </label>
+            <button id="loadProjectButton" type="button">불러오기</button>
+          </div>
+          <div class="auth-strip">
+            <strong>AND OS</strong>
+            <span id="currentUserLabel">-</span>
+            <button id="logoutButton" type="button">로그아웃</button>
+          </div>
+        </header>
+
+        <nav class="tabs" aria-label="견적 화면">
+          <button class="tab-button active" data-tab="client">고객상담</button>
+          <button class="tab-button" data-tab="quote">상세견적</button>
+          <button class="tab-button" data-tab="admin">관리</button>
+        </nav>
+
+
+        <section id="client" class="tab-panel active">
+          <div class="panel-grid">
+            <section class="option-panel">
+              <div class="section-heading">
+                <h2>?⑤벊???醫뤾문</h2>
+                <p>?袁⑹뒄?????됵쭕?筌ｋ똾寃??랁?燁살꼷?붺몴???낆젾</p>
+              </div>
+              <div class="control-grid project-info-grid">
+                <label>
+                  ?袁⑥쨮??븍뱜筌?                  <input id="projectName" type="text" value="" />
+                </label>
+                <label>
+                  ??뀁굨
+                  <input id="areaPyeong" type="number" min="10" max="80" step="1" value="34" />
+                </label>
+                <label>
+                  ?⑥쥒而?源낆구
+                  <input id="clientName" type="text" />
+                </label>
+                <label>
+                  ?怨뺤뵭筌?                  <input id="clientPhone" type="tel" />
+                </label>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionDemolitionEnabled" type="checkbox" /><span>筌ｌ쥒援?獄??紐낅?揶쎛</span></label>
+                <p>獄쏅뗀?? ?遺우삢?? 揶쎛?? 筌ｌ뮇?ｆ??袁⑹삢 ??깆젟 ????/p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="demolition-layout">
+                  <div class="demo-unit">
+                    <label class="inline-check">
+                      <input id="demolitionFloorEnabled" type="checkbox" />
+                      <span>獄쏅뗀??/span>
+                    </label>
+                    <label>
+                      ??彛?
+                      <select id="demolitionFloorMaterial">
+                        <option value="wood" selected>筌띾뜄竊?/option>
+                        <option value="vinyl">?館??/option>
+                        <option value="decoTile">?怨쀭맜????/option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="demo-unit">
+                    <label class="inline-check">
+                      <input id="demolitionBathroomEnabled" type="checkbox" />
+                      <span>?遺우삢??/span>
+                    </label>
+                    <label>
+                      揶쏆뮇??
+                      <input id="demolitionBathroomUnits" type="number" min="0" step="1" value="0" />
+                    </label>
+                  </div>
+                  <div class="demo-unit">
+                    <label class="inline-check">
+                      <input id="demolitionFurnitureEnabled" type="checkbox" />
+                      <span>揶쎛??/span>
+                    </label>
+                    <label>
+                      疫뀀챷??mm)
+                      <input id="demolitionFurnitureM" type="number" min="0" step="100" value="0" />
+                    </label>
+                  </div>
+                  <div class="demo-unit">
+                    <label class="inline-check">
+                      <input id="demolitionCeilingEnabled" type="checkbox" />
+                      <span>筌ｌ뮇??/span>
+                    </label>
+                    <div class="auto-note">?怨룸뼊 ??뀁굨 ?癒?짗 ?怨몄뒠</div>
+                  </div>
+                </div>
+                <div class="demolition-extra">
+                  <label class="inline-check">
+                    <input id="demolitionElevatorProtectEnabled" type="checkbox" />
+                    <span>E/V 癰귣똻堉?/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="demolitionElevatorProtectRemovalEnabled" type="checkbox" />
+                    <span>E/V 癰귣똻堉?筌ｌ쥒援?/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="demolitionPermitEnabled" type="checkbox" />
+                    <span>??깆맄???</span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="demolitionConsentEnabled" type="checkbox" />
+                    <span>??덉벥??/span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionElectricalEnabled" type="checkbox" /><span>?袁㏓┛</span></label>
+                <p>?袁㏓┛ ?硫멸탷??쑴? 獄쏄퀣苑묌뜮?/p>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="electricalEnabled" type="checkbox" />
+                  <span>?袁㏓┛ ?⑤벊??/span>
+                </label>
+                <div class="control-grid compact-grid">
+                  <label>
+                    餓Β???怨쀫뻼
+                    <select id="electricalAgeType">
+                      <option value="under10" selected>餓Β??10????꾨릭</option>
+                      <option value="over10">餓Β??10????곴맒</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="standardLightingEnabled" type="checkbox" />
+                  <span>AND??? 鈺곌퀡梨?/span>
+                </label>
+                <div class="control-grid">
+                  <label>
+                    ??쇱뒲??깆뵠??                    <input id="standardDownlightUnits" type="number" min="0" step="1" value="65" />
+                  </label>
+                  <label>
+                    ??而뽳쭕?쇱뿯??                    <input id="standardSquareLightUnits" type="number" min="0" step="1" value="8" />
+                  </label>
+                  <label>
+                    ??삘뵛?遺얜쾻
+                    <input id="standardCylinderLightUnits" type="number" min="0" step="1" value="4" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) 疫뀀챷??m)
+                    <input id="standardT3M" type="number" min="0" step="0.1" value="20" />
+                  </label>
+                  <label class="inline-check">
+                    <input id="standardBedWallLightEnabled" type="checkbox" />
+                    <span>燁삘뫀? 甕곗럥踰?/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="standardSwitchEnabled" type="checkbox" />
+                    <span>AND ??? ?꾩꼷苑????쇱맄燁??쒕떯???疫?</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionBathroomEnabled" type="checkbox" /><span>?類ㅻ뼄</span></label>
+                <p>?類ㅻ뼄 疫꿸퀡???紐낅뱜?? ??????볥궗</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid">
+                  <label class="inline-check">
+                    <input id="tileEnabled" type="checkbox" />
+                    <span>????AND??? ??苑?뵳?</span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="tileGroutEnabled" type="checkbox" />
+                    <span>筌롫뗄? ??釉?/span>
+                  </label>
+                  <label>
+                    ?類ㅻ뼄 燁?                    <input id="bathroomUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??묐?疫?                    <select id="bathroomFanType">
+                      <option value="normal" selected>??곗뺘 ??묐?疫?/option>
+                      <option value="hugent">??곸젴??/option>
+                    </select>
+                  </label>
+                  <label>
+                    ?類ㅲ?
+                    <input id="bathroomBathtubUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?醫듼봺?봔??                    <input id="bathroomGlassBoothUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?醫듼봺??곕뼒??                    <input id="bathroomGlassPartitionUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    鈺곌퀣?삭린?                    <input id="bathroomMasonryWallUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionWallpaperEnabled" type="checkbox" /><span>?袁④컳</span></label>
+                <p>?袁④컳 ?硫멸탷??쑴? ?癒?삺 ?怨쀭뀱</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid compact-row-grid">
+                  <label>
+                    疫꿸퀣?
+                    <select id="wallpaperPreset">
+                      <option value="p20" selected>20???</option>
+                      <option value="p30">30???</option>
+                      <option value="p40">40???</option>
+                      <option value="p50">50????곴맒</option>
+                    </select>
+                  </label>
+                  <label class="inline-check">
+                    <input id="wallpaperBaseCoatEnabled" type="checkbox" />
+                    <span>?λ뜄媛???釉?/span>
+                  </label>
+                  <label>
+                    ?癒?삺 ?源껎닋
+                    <select id="wallpaperMaterialGrade">
+                      <option value="diamant" selected>?遺용툡筌띿빓??/option>
+                      <option value="fortis">?遺용툡筌??????블닋</option>
+                    </select>
+                  </label>
+                  <label>
+                    甕?疫뀀챷??mm)
+                    <input id="wallpaperWallLengthM" type="number" min="0" step="100" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionFilmEnabled" type="checkbox" /><span>?袁⑥カ</span></label>
+                <p>?袁⑥カ ?硫멸탷??쑴? ?癒?삺 ?怨쀭뀱</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid compact-row-grid">
+                  <label>
+                    疫꿸퀣?
+                    <select id="filmPreset">
+                      <option value="p20" selected>20???</option>
+                      <option value="p30">30???</option>
+                      <option value="p40">40???</option>
+                      <option value="p50">50????곴맒</option>
+                    </select>
+                  </label>
+                  <label>
+                    ?袁⑥カ 疫뀀챷??mm)
+                    <input id="filmMaterialLengthM" type="number" min="0" step="100" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionFlooringEnabled" type="checkbox" /><span>獄쏅뗀??/span></label>
+                <p>筌띾뜄竊???볥궗 筌롫똻??疫꿸퀣? ?怨쀭뀱</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid compact-row-grid">
+                  <label>
+                    筌롫똻????
+                    <input id="flooringArea" type="number" min="0" step="0.5" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionCarpentryEnabled" type="checkbox" /><span>筌뤴뫕??/span></label>
+                <p>?⑥쥒而??遺얇늺?? ????餓λ쵐?? ??? ?怨멸쉭????됰땾?? ?癒?삺 ?癒?짗 ?怨쀭뀱</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid">
+                  <label>
+                    ?뚣끋?됭쳸類ㅻ뮞 ?醫롪퐬(揶쏆뮇??
+                    <input id="carpentryCurtainBoxUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?怨빿わ㎗?뽰삢
+                    <select id="carpentryCofferType">
+                      <option value="none" selected>??곸벉</option>
+                      <option value="new">?醫롪퐬</option>
+                      <option value="change">癰궰野?/option>
+                    </select>
+                  </label>
+                  <label>
+                    ??ㅺ땀??揶쏆뮇??
+                    <input id="carpentryDropCeilingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴???揶쏆뮇??
+                    <input id="carpentryIndirectLightUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??살춦??揶쏆뮇??
+                    <input id="carpentryCeilingFanUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    筌ｌ뮇????깆뵥鈺곌퀡梨?疫뀀챷??mm)
+                    <input id="carpentryLineLightM" type="number" min="0" step="100" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <div class="check-title">
+                  <span>甕곗럩猿??袁⑸선 筌뤴뫕??/span>
+                </div>
+                <div class="control-grid">
+                  <label>
+                    筌뤴뫕?ц린??袁る뱜??揶쎛甕???곕뼒??疫뀀챷??mm)
+                    <input id="carpentryArtwallM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    ??덈군?袁⑸선 揶쏆뮇??
+                    <input id="carpentryHiddenDoorUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    筌ｌ뮇?ｆ?mm)
+                    <input id="carpentryCeilingHeight" type="number" min="0" step="10" value="2400" />
+                  </label>
+                  <label>
+                    甕곗럡援??TV 癰귣떯而?
+                    <input id="carpentryTvUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    餓λ쵎揆
+                    <input id="middleDoorUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??곗뺘?袁⑸선
+                    <input id="standardDoorUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?????逾?袁⑸선
+                    <input id="slidingDoorUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label class="inline-check">
+                    <input id="windowNoticeEnabled" type="checkbox" />
+                    <span>筌≪???癰귢쑬猷???쇰? ??野꺫딆읅</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid compact-row-grid">
+                  <label class="inline-check">
+                    <input id="carpentryMoldingEnabled" type="checkbox" />
+                    <span>筌뤾퀡逾?/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="carpentryBaseboardEnabled" type="checkbox" />
+                    <span>椰꾨챶?낁쳸?놁뵠</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionFurnitureEnabled" type="checkbox" /><span>揶쎛??/span></label>
+                <p>燁살꼷???mm ??μ맄, 疫뀀뜆釉??怨쀭뀱?? ????μ맄 ????/p>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="baseEnabled" type="checkbox" />
+                  <span>?怨밸릭?봔??/span>
+                </label>
+                <div class="control-grid">
+                  <label>
+                    ?????疫뀀챷??mm)
+                    <input id="lowerCabinetM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    ?怨???疫뀀챷??mm)
+                    <input id="upperCabinetM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    ??쎄쿃??疫뀀챷??mm)
+                    <input id="tallCabinetM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    獄쎧쇰꽒??                    <select id="riceCabinetUnits">
+                      <option value="0" selected>??곸벉</option>
+                      <option value="1">600mm 1??/option>
+                      <option value="2">600mm 2??/option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <select id="baseEndPanels">
+                      <option value="0" selected>??곸벉</option>
+                      <option value="1">1??/option>
+                      <option value="2">2??/option>
+                      <option value="3">3??/option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 繹먮봿??
+                    <select id="baseEpDepth">
+                      <option value="deep" selected>400mm ?λ뜃??/option>
+                      <option value="shallow">400mm ??꾨릭</option>
+                    </select>
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="baseLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="baseT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="islandEnabled" type="checkbox" />
+                  <span>?袁⑹뵬??뺣굡</span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    揶쎛嚥≪뮄留??mm)
+                    <input id="islandM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    ?紐껋쨮疫뀀챷??mm)
+                    <input id="islandDepthMm" type="number" min="0" step="10" value="0" />
+                  </label>
+                  <label>
+                    ?怨밸솇
+                    <select id="islandCountertop">
+                      <option value="himacs" selected>??륁뵠筌띾맩??/option>
+                      <option value="khanstone">燁삳챷???/option>
+                      <option value="ceramic">?紐껋뵬沃?/option>
+                      <option value="epPanel">EP??/option>
+                    </select>
+                  </label>
+                  <label>
+                    ?ル슣??쭕?뉗빵??                    <select id="islandSideFinish">
+                      <option value="epPanel" selected>EP??/option>
+                      <option value="himacs">??륁뵠筌띾맩??/option>
+                      <option value="khanstone">燁삳챷???/option>
+                      <option value="ceramic">?紐껋뵬沃?/option>
+                    </select>
+                  </label>
+                  <label>
+                    ?ル슣??쭕?뉗빵????롮쎗
+                    <input id="islandSideFinishCount" type="number" min="0" max="2" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??뺤뿻
+                    <input id="islandDrawers" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label class="inline-check">
+                    <input id="islandRiceCabinetEnabled" type="checkbox" />
+                    <span>獄쎧쇰꽒???곕떽?</span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="islandBachmannOutletEnabled" type="checkbox" />
+                    <span>獄쏅??뀐쭕?2???꾩꼷苑??/span>
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="islandLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="islandT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="kitchenEnabled" type="checkbox" />
+                  <span>雅뚯눖媛??삵돩</span>
+                </label>
+                <div class="control-grid">
+                  <label>
+                    ?源딄쾿癰?                    <input id="kitchenSinkBowlUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?源딄쾿??륁읈
+                    <input id="kitchenFaucetUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?袁⑤굡
+                    <input id="kitchenHoodUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label class="inline-check">
+                    <input id="kitchenStandardInstallEnabled" type="checkbox" />
+                    <span>AND ?????삵돩 ??쇳뒄</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="homebarEnabled" type="checkbox" />
+                  <span>??덉뺍??/span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="homebarM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    ?怨밸솇
+                    <select id="homebarCountertop">
+                      <option value="himacs" selected>??륁뵠筌띾맩??/option>
+                      <option value="khanstone">燁삳챷???/option>
+                      <option value="ceramic">?紐껋뵬沃?/option>
+                      <option value="epPanel">EP??/option>
+                    </select>
+                  </label>
+                  <label>
+                    沃섎챶諭??μ뵠
+                    <select id="homebarMidway">
+                      <option value="none">??곸벉</option>
+                      <option value="epPanel" selected>EP??/option>
+                      <option value="himacs">??륁뵠筌띾맩??/option>
+                      <option value="khanstone">燁삳챷???/option>
+                      <option value="ceramic">?紐껋뵬沃?/option>
+                    </select>
+                  </label>
+                  <label>
+                    ??뺤뿻
+                    <input id="homebarDrawers" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <input id="homebarEndPanels" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    EP 繹먮봿??
+                    <select id="homebarEpDepth">
+                      <option value="deep" selected>400mm ?λ뜃??/option>
+                      <option value="shallow">400mm ??꾨릭</option>
+                    </select>
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="homebarLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="homebarT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="shoeEnabled" type="checkbox" />
+                  <span>?醫딆뻣??/span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="shoeM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    繹먮봿??
+                    <select id="shoeDepth">
+                      <option value="shallow" selected>400mm ??꾨릭</option>
+                      <option value="deep">400mm ?λ뜃??/option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <input id="shoeEndPanels" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="shoeLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="shoeT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="fridgeLaundryEnabled" type="checkbox" />
+                  <span>??깆삢??獄??紐낃맒疫꿸퀣??/span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="fridgeLaundryM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    繹먮봿??
+                    <select id="fridgeLaundryDepth">
+                      <option value="deep" selected>400mm ?λ뜃??/option>
+                      <option value="shallow">400mm ??꾨릭</option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <input id="fridgeLaundryEndPanels" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="fridgeLaundryLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="fridgeLaundryT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="pantryEnabled" type="checkbox" />
+                  <span>???껆뵳???/span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="pantryM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    繹먮봿??
+                    <select id="pantryDepth">
+                      <option value="shallow" selected>400mm ??꾨릭</option>
+                      <option value="deep">400mm ?λ뜃??/option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <input id="pantryEndPanels" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ?????뺤뿻??                    <input id="pantryDrawerUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="builtInEnabled" type="checkbox" />
+                  <span>?猷뱀삢(?븐늾而??곸삢)</span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="builtInM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    繹먮봿??
+                    <select id="builtInDepth">
+                      <option value="deep" selected>400mm ?λ뜃??/option>
+                      <option value="shallow">400mm ??꾨릭</option>
+                    </select>
+                  </label>
+                  <label>
+                    EP 筌띾뜃而??                    <input id="builtInEndPanels" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="builtInLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="builtInT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="furniture-block">
+                <label class="check-title">
+                  <input id="hangerEnabled" type="checkbox" />
+                  <span>?猷뱀삢(?諛닿탢??</span>
+                </label>
+                <div class="control-grid island-grid">
+                  <label>
+                    疫뀀챷??mm)
+                    <input id="hangerM" type="number" min="0" step="100" value="0" />
+                  </label>
+                  <label>
+                    繹먮봿??
+                    <select id="hangerDepth">
+                      <option value="deep" selected>400mm ?λ뜃??/option>
+                      <option value="shallow">400mm ??꾨릭</option>
+                    </select>
+                  </label>
+                  <label>
+                    ??깆뵥鈺곌퀡梨????땾
+                    <input id="hangerLightingUnits" type="number" min="0" step="1" value="0" />
+                  </label>
+                  <label>
+                    揶쏄쑴?믦?怨뺤구(T3) ??깆뵥
+                    <input id="hangerT3Units" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="section-heading sub-heading">
+                <label class="section-toggle"><input id="sectionFinishEnabled" type="checkbox" /><span>筌띾뜃而?/span></label>
+                <p>??삘봺?? ?袁⑷쉐, ?癒?┛?? 癰귣똻堉? 筌????醫뤾문</p>
+              </div>
+
+              <div class="furniture-block">
+                <div class="control-grid compact-row-grid">
+                  <label class="inline-check">
+                    <input id="generalWasteEnabled" type="checkbox" />
+                    <span>??곗뺘 ?癒?┛??/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="interiorProtectionEnabled" type="checkbox" />
+                    <span>?紐? ??癰귣똻堉뉔뜮?/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="moveInCleaningEnabled" type="checkbox" />
+                    <span>??놅폒筌???/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="siliconeEnabled" type="checkbox" />
+                    <span>??삘봺??/span>
+                  </label>
+                  <label class="inline-check">
+                    <input id="elasticEnabled" type="checkbox" />
+                    <span>?袁⑷쉐(疫꿸퀡??2揶쏆뮇??</span>
+                  </label>
+                  <label>
+                    ?袁⑷쉐 ?곕떽? 揶쏆뮇??
+                    <input id="elasticExtraRooms" type="number" min="0" step="1" value="0" />
+                  </label>
+                </div>
+              </div>
+
+            </section>
+
+            <aside class="live-summary" aria-live="polite">
+              <div class="summary-title">
+                <span class="dot"></span>
+                <div>
+                  <p>?怨룸뼖 ?醫뤾문 ?遺용튋</p>
+                  <strong id="selectionCount">0揶?????/strong>
+                </div>
+              </div>
+              <dl class="summary-list">
+                <div>
+                  <dt>?怨밸릭?봔??/dt>
+                  <dd id="cabinetSummary">-</dd>
+                </div>
+                <div>
+                  <dt>?袁⑹뵬??뺣굡</dt>
+                  <dd id="islandSummary">-</dd>
+                </div>
+                <div>
+                  <dt>??덉뺍??/dt>
+                  <dd id="homebarSummary">-</dd>
+                </div>
+                <div>
+                  <dt>?醫딆뻣??/dt>
+                  <dd id="shoeSummary">-</dd>
+                </div>
+                <div>
+                  <dt>??깆삢???紐낃맒疫꿸퀣??/dt>
+                  <dd id="fridgeLaundrySummary">-</dd>
+                </div>
+                <div>
+                  <dt>???껆뵳???/dt>
+                  <dd id="pantrySummary">-</dd>
+                </div>
+                <div>
+                  <dt>?猷뱀삢(?븐늾而??곸삢)</dt>
+                  <dd id="builtInSummary">-</dd>
+                </div>
+                <div>
+                  <dt>?猷뱀삢(?諛닿탢??</dt>
+                  <dd id="hangerSummary">-</dd>
+                </div>
+                <div>
+                  <dt>筌ｌ쥒援?癰귣똻堉?/dt>
+                  <dd id="demolitionSummary">-</dd>
+                </div>
+                <div>
+                  <dt>?袁㏓┛?⑤벊沅?/dt>
+                  <dd id="electricalSummary">-</dd>
+                  <dt>鈺곌퀡梨?/dt>
                   <dd id="lightingSummary">-</dd>
-</dt></dt></div>
-<div>
-<dt>野꺫딆읅 ?μ빘釉?/dt&gt;
-                  <dd id="clientTotal"></dd></dt></div>
-</dl>
-<div class="excluded-work">
-<strong>안내<ul><li>창호</li><li>시스템에어컨</li><li>가전제품</li><li>인덕션</li><li>식기세척기</li><li>냉장고</li><li>정수기</li><li>고객 지급 자재</li><li>기타 별도공사</li></ul>
-</strong></div>
-<button class="primary-action" id="saveEstimateButton" type="button">견적 저장</button></aside>
-</div>
-</section>
-<section class="tab-panel" id="quote">
-<div class="quote-sheet" id="customerQuoteSheet">
-<header>
-<div>
-<p>상세 견적서</p>
-<h2 id="quoteProject">프로젝트명</h2>
-<dl class="quote-meta">
-<div><dt>평형</dt><dd id="quoteArea">-</dd></div>
-<div><dt>작성일</dt><dd id="quoteDate">-</dd></div>
-</dl>
-</div>
-<div class="quote-actions">
-<button id="printQuoteButton" type="button">출력</button>
-<strong id="quoteTotal">0원</strong>
-</div>
-</header>
-<table>
-<thead>
-<tr>
-<th>구분</th>
-<th>항목</th>
-<th>금액</th>
-</tr>
-</thead>
-<tbody id="quoteRows"></tbody>
-</table>
-<div class="quote-total-list" id="quoteGroupTotals"></div>
-<p class="quote-note">상담 단계 견적이며, 현장 실측 및 최종 자재 선택에 따라 조정될 수 있습니다.</p>
-</div>
-</section>
-<section class="tab-panel admin-only" id="internal">
-<div class="internal-grid">
-<section class="internal-card internal-summary-card">
-<h2>안내</h2>
-<dl class="metric-list">
-<div>
-<dt>항목</dt>
-<dd id="internalCost"></dd></div>
-<div>
-<dt>?⑥쥒而쇔첎?</dt>
-<dd id="internalRevenue"></dd></div>
-<div>
-<dt>항목<dd id="internalProfit"></dd></dt></div>
-<div>
-<dt>항목<dd id="internalMargin">0.0%</dd>
-</dt></div>
-<div>
-<dt>항목<dd id="discountRoom"></dd></dt></div>
-<div>
-<dt>항목</dt>
-<dd id="marginStatus">?類ㅺ맒</dd>
-</div>
-</dl>
-</section>
-<section class="internal-card">
-<h2>안내</h2>
-<table class="cost-table">
-<tbody><tr><th>하부장</th><td>자당 120,000원, 300mm 단위 올림</td></tr><tr><th>상부장</th><td>자당 90,000원, 300mm 단위 올림</td></tr><tr><th>키큰장</th><td>자당 130,000원, 300mm 단위 올림</td></tr><tr><th>밥솥장</th><td>600mm 1통 560,000원</td></tr><tr><th>상판</th><td>하이막스 220,000원/1,000mm, 칸스톤·세라믹은 판재비 + 공장가공비 + 현장설치비 적용, EP판 130,000원/1,000mm</td></tr><tr><th>미드웨이</th><td>홈바장 상하부장 구간 기준, 최소 1m 적용</td></tr><tr><th>서랍</th><td>아일랜드/홈바장 수량 입력, 개당 60,000원</td></tr><tr><th>수납장/옷장</th><td>신발장·냉장고 및 세탁기장·팬트리장·붙박이장·헹거장 기준 단가 적용</td></tr><tr><th>EP판</th><td>깊이 400mm 이하 90,000원, 400mm 초과 130,000원</td></tr><tr><th>철거</th><td>마루 30,000원/평, 데코타일 15,000원/평, 가구 25,000원/자, 천장 160,000원/평</td></tr><tr><th>전기</th><td>준공 10년 이하 6품, 10년 이상 8품, 기공 300,000원/품, 배선비 600,000원</td></tr><tr><th>AND표준 조명</th><td>다운라이트 10,000원, 사각매입등 35,000원, 실린더등 30,000원, 간접조명(T3) 10,000원/m, 침대 벽등 200,000원</td></tr><tr><th>라인조명</th><td>가구 1통당 240,000원</td></tr><tr><th>간접조명(T3)</th><td>1라인당 50,000원</td></tr><tr><th>욕실/타일</th><td>기공 350,000원/품, 조공 280,000원/품, 욕실 1칸당 기공 3품 + 조공 1품</td></tr><tr><th>도배/필름</th><td>도배 300,000원/품, 필름 280,000원/품</td></tr><tr><th>바닥/기타</th><td>바닥 180,000원/평, 실리콘 350,000원, 탄성 기본 650,000원 + 추가 개소 250,000원</td></tr><tr><th>목공</th><td>목수 300,000원/품, 기계품 150,000원/일, 부자재 150,000원, 양중 200,000원, 실링팬 500,000원/개소</td></tr><tr><th>목공 자재</th><td>석고보드 4,500원/장, MDF 12,500원/장, 합판 30,000원/장, 각재 22,000원/묶음</td></tr></tbody>
-</table>
-</section>
-</div>
-<section class="internal-card detail-card">
-<div class="section-heading compact-heading">
-<h2>안내<p>선택 항목을 확인합니다.</p>
-</h2></div>
-<div class="standard-check-grid">
-<div>
-<h3>항목<ul id="standardSelectedItems"></ul>
-</h3></div>
-<div>
-<h3>항목<ul id="standardUnselectedItems"></ul>
-</h3></div>
-<div>
-<h3>항목</h3>
-<ul id="standardSeparateItems"></ul>
-</div>
-</div>
-</section>
-<section class="internal-card detail-card">
-<div class="section-heading compact-heading">
-<h2>안내</h2>
-<p>선택 항목을 확인합니다.</p></div>
-<div class="table-wrap">
-<table class="detail-table">
-<thead>
-<tr>
-<th>항목</th></tr>
-</thead>
-<tbody id="internalDetailRows"></tbody>
-</table>
-</div>
-<div class="warning-list" id="internalWarnings"></div>
-</section>
-</section>
-<section class="tab-panel" id="admin">
-<section class="internal-card">
-<div class="section-heading compact-heading no-side-padding">
-<h2>저장된 견적 리스트</h2>
-<p>Supabase estimates 저장 목록</p>
-</div>
-<div class="table-wrap">
-<table class="saved-table">
-<thead>
-<tr>
-<th>프로젝트명</th>
-<th>저장일시</th>
-<th>평형</th>
-<th>총 견적금액</th>
-<th>상태</th>
-<th>열기</th>
-<th>삭제</th>
-</tr>
-</thead>
-<tbody id="savedEstimateRows"></tbody>
-</table>
-</div>
-</section>
-<section class="internal-card detail-card">
-<div class="section-heading compact-heading">
-<h2>고객용 상세견적</h2>
-<p>고객에게 노출되는 공정별 견적</p>
-</div>
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>구분</th>
-<th>항목</th>
-<th>금액</th>
-</tr>
-</thead>
-<tbody id="adminQuoteRows"></tbody>
-</table>
-</div>
-<div class="quote-total-list" id="adminQuoteGroupTotals"></div>
-</section>
-<section class="internal-card detail-card admin-only">
-<div class="section-heading compact-heading">
-<h2>내부요약</h2>
-<p>현재 입력값 기준 내부 요약</p>
-</div>
-<dl class="metric-list admin-metric-list">
-<div><dt>직접원가</dt><dd id="adminInternalCost">0원</dd></div>
-<div><dt>고객가</dt><dd id="adminInternalRevenue">0원</dd></div>
-<div><dt>예상마진</dt><dd id="adminInternalProfit">0원</dd></div>
-<div><dt>마진율</dt><dd id="adminInternalMargin">0.0%</dd></div>
-<div><dt>할인 가능 금액</dt><dd id="adminDiscountRoom">0원</dd></div>
-<div><dt>목표 마진 상태</dt><dd id="adminMarginStatus">정상</dd></div>
-</dl>
-</section>
-<section class="internal-card detail-card admin-only">
-<div class="section-heading compact-heading">
-<h2>내부견적</h2>
-<p>원가, 고객가, 마진, 보정률, 단가, 상세 산출 내역</p>
-</div>
-<div class="table-wrap">
-<table class="detail-table">
-<thead>
-<tr>
-<th>항목</th>
-<th>입력</th>
-<th>산출</th>
-<th>단가</th>
-<th>직접원가</th>
-<th>보정률</th>
-<th>고객가</th>
-<th>마진</th>
-</tr>
-</thead>
-<tbody id="adminInternalDetailRows"></tbody>
-</table>
-</div>
-</section>
-<section class="internal-card detail-card admin-only">
-<div class="section-heading compact-heading">
-<h2>표준견적 체크</h2>
-<p>선택 항목, 미선택 항목, 별도 확인을 한눈에 확인합니다.</p>
-</div>
-<div class="standard-check-grid">
-<div>
-<h3>선택 항목</h3></div>
-<div>
-<h3>미선택 항목</h3></div>
-<div>
-<h3>별도 확인</h3>
-<ul id="adminStandardSeparateItems"></ul>
-</div>
-</div>
-<div class="quote-total-list" id="adminProcessTotals"></div>
-</section>
-<section class="internal-card admin-only">
-<div class="section-heading compact-heading no-side-padding">
-<h2>관리기준</h2>
-<p>마진과 보정률 기준을 관리합니다.</p>
-</div>
-<div class="control-grid admin-grid">
-<label>목표 마진(%)
-<input id="targetMargin" max="60" min="5" step="1" type="number" value="35"/>
-</label>
-<label>고객가 수동 보정
-<input id="manualAdjustment" step="10000" type="number" value="0"/>
-</label>
-<label>가구 보정률(%)
-<input id="baseCorrection" max="50" min="-20" step="0.5" type="number" value="0"/>
-</label>
-<label>아일랜드 보정률(%)
-<input id="islandCorrection" max="50" min="-20" step="0.5" type="number" value="0"/>
-</label>
-<label>홈바장 보정률(%)
-<input id="homebarCorrection" max="50" min="-20" step="0.5" type="number" value="0"/>
-</label>
-<label>상판 보정률(%)
-<input id="countertopCorrection" max="50" min="-20" step="0.5" type="number" value="0"/>
-</label>
-<label>옵션 보정률(%)
-<input id="optionCorrection" max="50" min="-20" step="0.5" type="number" value="0"/>
-</label>
-</div>
-</section>
-<section class="internal-card admin-db-card admin-only">
-<div class="section-heading compact-heading no-side-padding">
-<h2>원가DB</h2>
-<p>기준 단가를 변경하면 전체 견적이 즉시 재산출됩니다.</p>
-</div>
-<div class="control-grid admin-grid">
-<label>하부장 자당
-<input id="rateLowerPerJa" step="1000" type="number" value="120000"/></label>
-<label>상부장 자당
-<input id="rateUpperPerJa" step="1000" type="number" value="90000"/></label>
-<label>아일랜드 자당
-<input id="rateIslandPerJa" step="1000" type="number" value="180000"/></label>
-<label>홈바장 자당
-<input id="rateHomebarBuildPerJa" step="1000" type="number" value="210000"/></label>
-<label>키큰장 자당
-<input id="rateTallPerJa" step="1000" type="number" value="130000"/></label>
-<label>냉장고 및 세탁기장 자당
-<input id="rateFridgeLaundryPerJa" step="1000" type="number" value="90000"/></label>
-<label>신발장 자당
-<input id="rateShoePerJa" step="1000" type="number" value="80000"/></label>
-<label>팬트리장 자당
-<input id="ratePantryPerJa" step="1000" type="number" value="65000"/></label>
-<label>팬트리 하부서랍장 1개
-<input id="ratePantryDrawer" step="1000" type="number" value="270000"/></label>
-<label>옷장(붙박이장) 자당
-<input id="rateBuiltInPerJa" step="1000" type="number" value="160000"/></label>
-<label>옷장(헹거장) 자당
-<input id="rateHangerPerJa" step="1000" type="number" value="90000"/></label>
-<label>밥솥장 1통
-<input id="rateRiceCabinetPerUnit" step="1000" type="number" value="560000"/></label>
-<label>EP판 400mm 이하
-<input id="rateEndPanelShallow" step="1000" type="number" value="90000"/></label>
-<label>EP판 400mm 초과
-<input id="rateEndPanelDeep" step="1000" type="number" value="130000"/></label>
-<label>서랍 1개
-<input id="rateDrawer" step="1000" type="number" value="60000"/></label>
-<label>바흐만 2구 콘센트
-<input id="rateBachmannOutlet" step="1000" type="number" value="160000"/></label>
-<label>라인조명 1통
-<input id="rateLightingPerCabinetUnit" step="1000" type="number" value="240000"/></label>
-<label>간접조명(T3) 1라인
-<input id="rateT3LightingUnit" step="1000" type="number" value="50000"/></label>
-<label>다운라이트 1개
-<input id="rateStandardDownlight" step="1000" type="number" value="10000"/></label>
-<label>사각매입등 1개
-<input id="rateStandardSquareLight" step="1000" type="number" value="35000"/></label>
-<label>실린더등 1개
-<input id="rateStandardCylinderLight" step="1000" type="number" value="30000"/></label>
-<label>간접조명(T3) 1m
-<input id="rateStandardT3PerM" step="1000" type="number" value="10000"/></label>
-<label>침대 벽등
-<input id="rateStandardBedWallLight" step="1000" type="number" value="200000"/></label>
-<label>하이막스 1,000mm
-<input id="rateHimacsPerM" step="1000" type="number" value="220000"/></label>
-<label>칸스톤 12T 1장
-<input id="rateKhanstoneSlab" step="1000" type="number" value="1500000"/></label>
-<label>칸스톤 공장가공비
-<input id="rateKhanstoneFactory" step="1000" type="number" value="700000"/></label>
-<label>칸스톤 현장설치비
-<input id="rateKhanstoneInstall" step="1000" type="number" value="900000"/></label>
-<label>세라믹 1장
-<input id="rateCeramicSlab" step="1000" type="number" value="1500000"/></label>
-<label>세라믹 공장가공비
-<input id="rateCeramicFactory" step="1000" type="number" value="700000"/></label>
-<label>세라믹 현장설치비
-<input id="rateCeramicInstall" step="1000" type="number" value="900000"/></label>
-<label>EP판/미드웨이 1,000mm
-<input id="rateEpPanelPerM" step="1000" type="number" value="130000"/></label>
-<label>마루 철거 평당
-<input id="rateDemolitionFloorPerPyeong" step="1000" type="number" value="30000"/></label>
-<label>데코타일 철거 평당
-<input id="rateDemolitionDecoTilePerPyeong" step="1000" type="number" value="15000"/></label>
-<label>가구 철거 자당
-<input id="rateDemolitionFurniturePerJa" step="1000" type="number" value="25000"/></label>
-<label>욕실 철거·방수 1개소
-<input id="rateDemolitionBathroomWaterproof" step="10000" type="number" value="800000"/></label>
-<label>천장 철거 평당
-<input id="rateDemolitionCeilingPerPyeong" step="1000" type="number" value="160000"/></label>
-<label>E/V 보양
-<input id="rateDemolitionElevatorProtect" step="1000" type="number" value="150000"/></label>
-<label>E/V 보양 철거
-<input id="rateDemolitionElevatorProtectRemoval" step="1000" type="number" value="50000"/></label>
-<label>행위허가
-<input id="rateDemolitionPermit" step="1000" type="number" value="200000"/></label>
-<label>동의서
-<input id="rateDemolitionConsent" step="1000" type="number" value="150000"/></label>
-<label>전기 기공 1품
-<input id="rateElectricalWorkerDay" step="1000" type="number" value="300000"/></label>
-<label>전기 조공 1품
-<input id="rateElectricalHelperDay" step="1000" type="number" value="250000"/></label>
-<label>준공 10년 이하 품수
-<input id="rateElectricalUnder10Days" step="0.5" type="number" value="6"/></label>
-<label>준공 10년 이상 품수
-<input id="rateElectricalOver10Days" step="0.5" type="number" value="8"/></label>
-<label>배선 자재
-<input id="rateElectricalWiring" step="1000" type="number" value="600000"/></label>
-<label>AND 표준 콘센트 스위치
-<input id="rateElectricalStandardSwitch" step="1000" type="number" value="400000"/></label>
-<label>타일 기공 1품
-<input id="rateTileWorkerDay" step="1000" type="number" value="350000"/></label>
-<label>타일 조공 1품
-<input id="rateTileHelperDay" step="1000" type="number" value="280000"/></label>
-<label>줄눈 마감
-<input id="rateTileGrout" step="1000" type="number" value="350000"/></label>
-<label>도배 1품
-<input id="rateWallpaperWorkerDay" step="1000" type="number" value="300000"/></label>
-<label>필름 1품
-<input id="rateFilmWorkerDay" step="1000" type="number" value="280000"/></label>
-<label>바닥 시공 평당
-<input id="rateFlooringPerPyeong" step="1000" type="number" value="180000"/></label>
-<label>실리콘
-<input id="rateSilicone" step="1000" type="number" value="350000"/></label>
-<label>탄성 기본
-<input id="rateElasticBase" step="1000" type="number" value="650000"/></label>
-<label>탄성 추가 1개소
-<input id="rateElasticExtraRoom" step="1000" type="number" value="250000"/></label>
-<label>목수 1품
-<input id="rateCarpentryWorkerDay" step="1000" type="number" value="300000"/></label>
-<label>목공 장비 1일
-<input id="rateCarpentryMachineDay" step="1000" type="number" value="150000"/></label>
-<label>목공 자재 운반
-<input id="rateCarpentryLifting" step="1000" type="number" value="200000"/></label>
-<label>목공 부자재
-<input id="rateCarpentrySubsidiary" step="1000" type="number" value="150000"/></label>
-<label>실링팬 1개소
-<input id="rateCarpentryCeilingFanUnit" step="1000" type="number" value="500000"/></label>
-<label>석고보드 1장
-<input id="rateCarpentryDrywallSheet" step="100" type="number" value="4500"/></label>
-<label>MDF 1장
-<input id="rateCarpentryMdfSheet" step="100" type="number" value="12500"/></label>
-<label>합판 1장
-<input id="rateCarpentryPlywoodSheet" step="1000" type="number" value="30000"/></label>
-<label>각재 1묶음
-<input id="rateCarpentryStudBundle" step="1000" type="number" value="22000"/></label>
-</div>
-</section>
-</section>
-</section>
-</main>
-<section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-6" type="module"></script>
-</body>
+                </div>
+                <div>
+                  <dt>野꺫딆읅 ?μ빘釉?/dt>
+                  <dd id="clientTotal">0??/dd>
+                </div>
+              </dl>
+              <div class="excluded-work">
+                <strong>??釉??? ??? ?⑤벊??/strong>
+                <ul>
+                  <li>筌≪???/li>
+                  <li>??뽯뮞??뽯퓠??곷뭘</li>
+                  <li>揶쎛?袁⑹젫??/li>
+                  <li>?紐껊쐮??/li>
+                  <li>??룸┛?紐꾩퓘疫?/li>
+                  <li>??깆삢??/li>
+                  <li>?類ㅻ땾疫?/li>
+                  <li>?⑥쥒而?筌왖疫??癒?삺</li>
+                  <li>疫꿸퀬? 癰귢쑬猷꾣⑤벊沅?/li>
+                </ul>
+              </div>
+              <button id="saveEstimateButton" class="primary-action" type="button">野꺫딆읅 ????/button>
+              <p id="saveStatus" class="status-text" aria-live="polite"></p>
+            </aside>
+          </div>
+        </section>
+
+        <section id="quote" class="tab-panel">
+          <div id="customerQuoteSheet" class="quote-sheet">
+            <header>
+              <div>
+                <p>상세 견적서</p>
+                <h2 id="quoteProject">프로젝트명</h2>
+                <dl class="quote-meta">
+                  <div><dt>평형</dt><dd id="quoteArea">-</dd></div>
+                  <div><dt>작성일</dt><dd id="quoteDate">-</dd></div>
+                </dl>
+              </div>
+              <div class="quote-actions">
+                <button id="printQuoteButton" type="button">출력</button>
+                <strong id="quoteTotal">0원</strong>
+              </div>
+            </header>
+            <table>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>항목</th>
+                  <th>금액</th>
+                </tr>
+              </thead>
+              <tbody id="quoteRows"></tbody>
+            </table>
+            <div id="quoteGroupTotals" class="quote-total-list"></div>
+            <p class="quote-note">※ 부가세 별도 금액입니다.<br />※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section id="internal" class="tab-panel admin-only">
+          <div class="internal-grid">
+            <section class="internal-card internal-summary-card">
+              <h2>??? ?癒? ?遺용튋</h2>
+              <dl class="metric-list">
+                <div>
+                  <dt>筌욊낯??癒?</dt>
+                  <dd id="internalCost">0??/dd>
+                </div>
+                <div>
+                  <dt>?⑥쥒而쇔첎?</dt>
+                  <dd id="internalRevenue">0??/dd>
+                </div>
+                <div>
+                  <dt>??됯맒筌띾뜆彛?/dt>
+                  <dd id="internalProfit">0??/dd>
+                </div>
+                <div>
+                  <dt>筌띾뜆彛??/dt>
+                  <dd id="internalMargin">0.0%</dd>
+                </div>
+                <div>
+                  <dt>?醫롮뵥 揶쎛??疫뀀뜆釉?/dt>
+                  <dd id="discountRoom">0??/dd>
+                </div>
+                <div>
+                  <dt>筌뤴뫚紐?筌띾뜆彛??怨밴묶</dt>
+                  <dd id="marginStatus">?類ㅺ맒</dd>
+                </div>
+              </dl>
+            </section>
+            <section class="internal-card">
+              <h2>?癒? 疫꿸퀣?</h2>
+              <table class="cost-table">
+                <tbody>
+                  <tr><th>?????/th><td>?癒?뼣 120,000?? 300mm ??μ맄 ????/td></tr>
+                  <tr><th>?怨???/th><td>?癒?뼣 90,000?? 300mm ??μ맄 ????/td></tr>
+                  <tr><th>??쎄쿃??/th><td>?癒?뼣 130,000?? 300mm ??μ맄 ????/td></tr>
+                  <tr><th>獄쎧쇰꽒??/th><td>600mm 1??560,000??/td></tr>
+                  <tr><th>?怨밸솇</th><td>??륁뵠筌띾맩??220,000??1,000mm, 燁삳챷???12T 1??1,500,000??+ ?⑤벊?ｅ첎???700,000??+ ?袁⑹삢??볥궗 900,000?? ?紐껋뵬沃?1??1,500,000??+ ?⑤벊?ｅ첎???700,000??+ ?袁⑹삢??볥궗 900,000?? EP??130,000??1,000mm</td></tr>
+                  <tr><th>沃섎챶諭??μ뵠</th><td>??덉뺍???怨밸릭?봔???닌덉퍢 疫꿸퀣?, 筌ㅼ뮇??1m ?怨몄뒠</td></tr>
+                  <tr><th>??뺤뿻</th><td>?袁⑹뵬??뺣굡/??덉뺍?貫??揶쏆뮇????낆젾, 揶쏆뮆??60,000??/td></tr>
+                  <tr><th>??덉뺍??/th><td>??쎄쿃??롪텛??疫꿸퀡??3?? ?λ뜃?들겫??癒?뼣 210,000??/td></tr>
+                  <tr><th>??롪텛???猷뱀삢</th><td>?醫딆뻣??400mm ??꾨릭 80,000???? 400mm ?λ뜃??130,000???? ??깆삢??獄??紐낃맒疫꿸퀣??90,000???? ???껆뵳???65,000???? ???껆뵳??????뺤뿻??270,000??揶? ?猷뱀삢(?븐늾而??곸삢) 160,000???? ?猷뱀삢(?諛닿탢?? 90,000????/td></tr>
+                  <tr><th>EP 筌띾뜃而??/th><td>繹먮봿??400mm ??꾨릭 90,000?? 400mm ?λ뜃??130,000??/td></tr>
+                  <tr><th>筌ｌ쥒援?/th><td>筌띾뜄竊?30,000???? ?怨쀭맜????15,000???? 揶쎛??25,000???? 筌ｌ뮇??160,000????/td></tr>
+                  <tr><th>?袁㏓┛</th><td>餓Β??10????꾨릭 6?? 10????곴맒 8?? 疫꿸퀗??300,000???? 獄쏄퀣苑묌뜮?600,000??/td></tr>
+                  <tr><th>AND??? 鈺곌퀡梨?/th><td>??쇱뒲??깆뵠??10,000?? ??而뽳쭕?쇱뿯??35,000?? ??삘뵛?遺얜쾻 30,000?? 揶쏄쑴?믦?怨뺤구(T3) 10,000??m, 燁삘뫀? 甕곗럥踰?200,000??/td></tr>
+                  <tr><th>??깆뵥鈺곌퀡梨?/th><td>揶쎛??1??щ뼣 240,000??/td></tr>
+                  <tr><th>揶쏄쑴?믦?怨뺤구(T3)</th><td>1??깆뵥??50,000??/td></tr>
+                  <tr><th>????AND??? ??苑?뵳?</th><td>疫꿸퀗??350,000???? 鈺곌퀗??280,000???? ?遺우삢??1燁삳챶??疫꿸퀗??3??+ 鈺곌퀗??1??/td></tr>
+                  <tr><th>?袁④컳/?袁⑥カ</th><td>?袁④컳 300,000???? ?袁⑥カ 280,000????/td></tr>
+                  <tr><th>獄쏅뗀??筌띾뜃而?/th><td>獄쏅뗀??筌띾뜄竊?: LX?癒?탵??疫? 180,000???? ??삘봺??350,000?? ?袁⑷쉐 疫꿸퀡??650,000??+ ?곕떽? 揶쏆뮇??250,000??/td></tr>
+                  <tr><th>筌뤴뫕??/th><td>筌뤴뫗??300,000???? 疫꿸퀗???150,000???? ?봔?癒?삺 150,000?? ?臾믪㉦ 200,000?? ??살춦??500,000??揶쏆뮇??/td></tr>
+                  <tr><th>筌뤴뫕???癒?삺</th><td>??룻ц퉪?諭?4,500???? MDF 12,500???? ??븍솇 30,000???? ??삼펷??22,000???얜씈??/td></tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+          <section class="internal-card detail-card">
+            <div class="section-heading compact-heading">
+              <h2>???野꺫딆읅 筌ｋ똾寃?/h2>
+              <p>?醫뤾문 ???? 沃섎챷苑?????? 癰귢쑬猷??類ㅼ뵥筌??닌됲뀋</p>
+            </div>
+            <div class="standard-check-grid">
+              <div>
+                <h3>?醫뤾문 ????/h3>
+                <ul id="standardSelectedItems"></ul>
+              </div>
+              <div>
+                <h3>沃섎챷苑??????/h3>
+                <ul id="standardUnselectedItems"></ul>
+              </div>
+              <div>
+                <h3>癰귢쑬猷??類ㅼ뵥</h3>
+                <ul id="standardSeparateItems"></ul>
+              </div>
+            </div>
+          </section>
+          <section class="internal-card detail-card">
+            <div class="section-heading compact-heading">
+              <h2>??? ?怨멸쉭 ?怨쀭뀱</h2>
+              <p>??낆젾揶? ??????μ맄, ?癒?, 癰귣똻?숂몴? ?⑥쥒而쇔첎?, 筌띾뜆彛??곕뗄??/p>
+            </div>
+            <div class="table-wrap">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>????/th>
+                    <th>??낆젾</th>
+                    <th>?怨쀭뀱</th>
+                    <th>???</th>
+                    <th>筌욊낯??癒?</th>
+                    <th>癰귣똻?숂몴?/th>
+                    <th>?⑥쥒而쇔첎?</th>
+                    <th>筌띾뜆彛?/th>
+                  </tr>
+                </thead>
+                <tbody id="internalDetailRows"></tbody>
+              </table>
+            </div>
+            <div id="internalWarnings" class="warning-list"></div>
+          </section>
+        </section>
+
+        <section id="admin" class="tab-panel">
+          <section class="internal-card">
+            <div class="section-heading compact-heading no-side-padding">
+              <h2>저장된 견적 리스트</h2>
+              <p>Supabase estimates 저장 목록</p>
+            </div>
+            <div class="table-wrap">
+              <table class="saved-table">
+                <thead>
+                  <tr>
+                    <th>프로젝트명</th>
+                    <th>저장일시</th>
+                    <th>평형</th>
+                    <th>총 견적금액</th>
+                    <th>상태</th>
+                    <th>열기</th>
+                    <th>삭제</th>
+                  </tr>
+                </thead>
+                <tbody id="savedEstimateRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="internal-card detail-card">
+            <div class="section-heading compact-heading">
+              <h2>고객용 상세견적</h2>
+              <p>고객에게 노출되는 공정별 견적</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>항목</th>
+                    <th>금액</th>
+                  </tr>
+                </thead>
+                <tbody id="adminQuoteRows"></tbody>
+              </table>
+            </div>
+            <div id="adminQuoteGroupTotals" class="quote-total-list"></div>
+          </section>
+          <section class="internal-card detail-card admin-only">
+            <div class="section-heading compact-heading">
+              <h2>내부요약</h2>
+              <p>현재 입력값 기준 내부 요약</p>
+            </div>
+            <dl class="metric-list admin-metric-list">
+              <div><dt>직접원가</dt><dd id="adminInternalCost">0원</dd></div>
+              <div><dt>고객가</dt><dd id="adminInternalRevenue">0원</dd></div>
+              <div><dt>예상마진</dt><dd id="adminInternalProfit">0원</dd></div>
+              <div><dt>마진율</dt><dd id="adminInternalMargin">0.0%</dd></div>
+              <div><dt>할인 가능 금액</dt><dd id="adminDiscountRoom">0원</dd></div>
+              <div><dt>목표 마진 상태</dt><dd id="adminMarginStatus">정상</dd></div>
+            </dl>
+          </section>
+          <section class="internal-card detail-card admin-only">
+            <div class="section-heading compact-heading">
+              <h2>내부견적</h2>
+              <p>원가, 고객가, 마진, 보정률, 단가, 상세 산출 내역</p>
+            </div>
+            <div class="table-wrap">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>항목</th>
+                    <th>입력</th>
+                    <th>산출</th>
+                    <th>단가</th>
+                    <th>직접원가</th>
+                    <th>보정률</th>
+                    <th>고객가</th>
+                    <th>마진</th>
+                  </tr>
+                </thead>
+                <tbody id="adminInternalDetailRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="internal-card detail-card admin-only">
+            <div class="section-heading compact-heading">
+              <h2>?온?귐덈┛餓Β</h2>
+              <p>???野꺫딆읅 筌ｋ똾寃? ?⑤벊?숃퉪???룻? 筌띾뜆彛??類ｋ궖</p>
+            </div>
+            <div class="standard-check-grid">
+              <div>
+                <h3>?醫뤾문 ????/h3>
+                <ul id="adminStandardSelectedItems"></ul>
+              </div>
+              <div>
+                <h3>沃섎챷苑??????/h3>
+                <ul id="adminStandardUnselectedItems"></ul>
+              </div>
+              <div>
+                <h3>癰귢쑬猷??類ㅼ뵥</h3>
+                <ul id="adminStandardSeparateItems"></ul>
+              </div>
+            </div>
+            <div id="adminProcessTotals" class="quote-total-list"></div>
+          </section>
+          <section class="internal-card admin-only">
+            <div class="section-heading compact-heading no-side-padding">
+              <h2>?온?귐덈┛餓Β ?怨멸쉭</h2>
+              <p>?⑥쥒而??遺얇늺???紐꾪뀱??? ??낅뮉 筌띾뜆彛? 癰귣똻?? ?癒?DB</p>
+            </div>
+            <div class="control-grid admin-grid">
+              <label>
+                筌뤴뫚紐?筌띾뜆彛?%)
+                <input id="targetMargin" type="number" min="5" max="60" step="1" value="35" />
+              </label>
+              <label>
+                ?⑥쥒而?癰귣똻?숁묾?됰만
+                <input id="manualAdjustment" type="number" step="10000" value="0" />
+              </label>
+              <label>
+                疫꿸퀡??揶쎛??癰귣똻?숂몴?%)
+                <input id="baseCorrection" type="number" min="-20" max="50" step="0.5" value="0" />
+              </label>
+              <label>
+                ?袁⑹뵬??뺣굡 癰귣똻?숂몴?%)
+                <input id="islandCorrection" type="number" min="-20" max="50" step="0.5" value="0" />
+              </label>
+              <label>
+                ??덉뺍??癰귣똻?숂몴?%)
+                <input id="homebarCorrection" type="number" min="-20" max="50" step="0.5" value="0" />
+              </label>
+              <label>
+                ?怨밸솇 癰귣똻?숂몴?%)
+                <input id="countertopCorrection" type="number" min="-20" max="50" step="0.5" value="0" />
+              </label>
+              <label>
+                ????癰귣똻?숂몴?%)
+                <input id="optionCorrection" type="number" min="-20" max="50" step="0.5" value="0" />
+              </label>
+            </div>
+          </section>
+          <section class="internal-card admin-db-card admin-only">
+            <div class="section-heading compact-heading no-side-padding">
+              <h2>?癒?DB</h2>
+              <p>疫꿸퀣????????癰궰野껋?釉?쭖??袁⑷퍥 野꺫딆읅??筌앸맩????沅쏁빊?뺣쭢??덈뼄</p>
+            </div>
+            <div class="control-grid admin-grid">
+              <label>??????癒?뼣<input id="rateLowerPerJa" type="number" step="1000" value="120000" /></label>
+              <label>?怨????癒?뼣<input id="rateUpperPerJa" type="number" step="1000" value="90000" /></label>
+              <label>?袁⑹뵬??뺣굡 ?癒?뼣<input id="rateIslandPerJa" type="number" step="1000" value="180000" /></label>
+              <label>??덉뺍???癒?뼣<input id="rateHomebarBuildPerJa" type="number" step="1000" value="210000" /></label>
+              <label>??쎄쿃???癒?뼣<input id="rateTallPerJa" type="number" step="1000" value="130000" /></label>
+              <label>??깆삢??獄??紐낃맒疫꿸퀣???癒?뼣<input id="rateFridgeLaundryPerJa" type="number" step="1000" value="90000" /></label>
+              <label>?醫딆뻣???癒?뼣<input id="rateShoePerJa" type="number" step="1000" value="80000" /></label>
+              <label>???껆뵳????癒?뼣<input id="ratePantryPerJa" type="number" step="1000" value="65000" /></label>
+              <label>???껆뵳??????뺤뿻??1揶?<input id="ratePantryDrawer" type="number" step="1000" value="270000" /></label>
+              <label>?猷뱀삢(?븐늾而??곸삢) ?癒?뼣<input id="rateBuiltInPerJa" type="number" step="1000" value="160000" /></label>
+              <label>?猷뱀삢(?諛닿탢?? ?癒?뼣<input id="rateHangerPerJa" type="number" step="1000" value="90000" /></label>
+              <label>獄쎧쇰꽒??1??<input id="rateRiceCabinetPerUnit" type="number" step="1000" value="560000" /></label>
+              <label>EP 400mm ??꾨릭<input id="rateEndPanelShallow" type="number" step="1000" value="90000" /></label>
+              <label>EP 400mm ?λ뜃??<input id="rateEndPanelDeep" type="number" step="1000" value="130000" /></label>
+              <label>??뺤뿻 1揶?<input id="rateDrawer" type="number" step="1000" value="60000" /></label>
+              <label>獄쏅??뀐쭕?2???꾩꼷苑??<input id="rateBachmannOutlet" type="number" step="1000" value="160000" /></label>
+              <label>??깆뵥鈺곌퀡梨?1??<input id="rateLightingPerCabinetUnit" type="number" step="1000" value="240000" /></label>
+              <label>揶쏄쑴?믦?怨뺤구(T3) 1??깆뵥<input id="rateT3LightingUnit" type="number" step="1000" value="50000" /></label>
+              <label>??쇱뒲??깆뵠??1揶?<input id="rateStandardDownlight" type="number" step="1000" value="10000" /></label>
+              <label>??而뽳쭕?쇱뿯??1揶?<input id="rateStandardSquareLight" type="number" step="1000" value="35000" /></label>
+              <label>??삘뵛?遺얜쾻 1揶?<input id="rateStandardCylinderLight" type="number" step="1000" value="30000" /></label>
+              <label>揶쏄쑴?믦?怨뺤구(T3) 1m<input id="rateStandardT3PerM" type="number" step="1000" value="10000" /></label>
+              <label>燁삘뫀? 甕곗럥踰?<input id="rateStandardBedWallLight" type="number" step="1000" value="200000" /></label>
+              <label>??륁뵠筌띾맩??1,000mm<input id="rateHimacsPerM" type="number" step="1000" value="220000" /></label>
+              <label>燁삳챷???12T 1??<input id="rateKhanstoneSlab" type="number" step="1000" value="1500000" /></label>
+              <label>燁삳챷????⑤벊?ｅ첎???<input id="rateKhanstoneFactory" type="number" step="1000" value="700000" /></label>
+              <label>燁삳챷????袁⑹삢??볥궗<input id="rateKhanstoneInstall" type="number" step="1000" value="900000" /></label>
+              <label>?紐껋뵬沃?1??<input id="rateCeramicSlab" type="number" step="1000" value="1500000" /></label>
+              <label>?紐껋뵬沃??⑤벊?ｅ첎???<input id="rateCeramicFactory" type="number" step="1000" value="700000" /></label>
+              <label>?紐껋뵬沃??袁⑹삢??볥궗<input id="rateCeramicInstall" type="number" step="1000" value="900000" /></label>
+              <label>EP ?怨밸솇/沃섎챶諭??μ뵠 1,000mm<input id="rateEpPanelPerM" type="number" step="1000" value="130000" /></label>
+              <label>筌띾뜄竊덌㎗醫됯탢 ??곕뼣<input id="rateDemolitionFloorPerPyeong" type="number" step="1000" value="30000" /></label>
+              <label>?怨쀭맜????筌ｌ쥒援???곕뼣<input id="rateDemolitionDecoTilePerPyeong" type="number" step="1000" value="15000" /></label>
+              <label>揶쎛?닌딆퓢椰??癒?뼣<input id="rateDemolitionFurniturePerJa" type="number" step="1000" value="25000" /></label>
+              <label>?遺우삢??筌ｌ쥒援?獄쎻뫗??<input id="rateDemolitionBathroomWaterproof" type="number" step="10000" value="800000" /></label>
+              <label>筌ｌ뮇?ｏ㎗醫됯탢 ??곕뼣<input id="rateDemolitionCeilingPerPyeong" type="number" step="1000" value="160000" /></label>
+              <label>E/V 癰귣똻堉?<input id="rateDemolitionElevatorProtect" type="number" step="1000" value="150000" /></label>
+              <label>E/V 癰귣똻堉?筌ｌ쥒援?<input id="rateDemolitionElevatorProtectRemoval" type="number" step="1000" value="50000" /></label>
+              <label>??깆맄???<input id="rateDemolitionPermit" type="number" step="1000" value="200000" /></label>
+              <label>??덉벥??<input id="rateDemolitionConsent" type="number" step="1000" value="150000" /></label>
+              <label>?袁㏓┛ 疫꿸퀗??1??<input id="rateElectricalWorkerDay" type="number" step="1000" value="300000" /></label>
+              <label>?袁㏓┛ 鈺곌퀗??1??<input id="rateElectricalHelperDay" type="number" step="1000" value="250000" /></label>
+              <label>餓Β??10????꾨릭 ??됰땾<input id="rateElectricalUnder10Days" type="number" step="0.5" value="6" /></label>
+              <label>餓Β??10????곴맒 ??됰땾<input id="rateElectricalOver10Days" type="number" step="0.5" value="8" /></label>
+              <label>?袁㏓┛ 獄쏄퀣苑묌뜮?<input id="rateElectricalWiring" type="number" step="1000" value="600000" /></label>
+              <label>AND ??? ?꾩꼷苑????쇱맄燁?<input id="rateElectricalStandardSwitch" type="number" step="1000" value="400000" /></label>
+              <label>????疫꿸퀗??1??<input id="rateTileWorkerDay" type="number" step="1000" value="350000" /></label>
+              <label>????鈺곌퀗??1??<input id="rateTileHelperDay" type="number" step="1000" value="280000" /></label>
+              <label>????筌롫뗄?<input id="rateTileGrout" type="number" step="1000" value="350000" /></label>
+              <label>?袁④컳 1??<input id="rateWallpaperWorkerDay" type="number" step="1000" value="300000" /></label>
+              <label>?袁⑥カ 1??<input id="rateFilmWorkerDay" type="number" step="1000" value="280000" /></label>
+              <label>獄쏅뗀????곕뼊揶쎛<input id="rateFlooringPerPyeong" type="number" step="1000" value="180000" /></label>
+              <label>??삘봺??疫꿸퀡??<input id="rateSilicone" type="number" step="1000" value="350000" /></label>
+              <label>?袁⑷쉐 疫꿸퀡??<input id="rateElasticBase" type="number" step="1000" value="650000" /></label>
+              <label>?袁⑷쉐 ?곕떽? 1揶쏆뮇??<input id="rateElasticExtraRoom" type="number" step="1000" value="250000" /></label>
+              <label>筌뤴뫗??1??<input id="rateCarpentryWorkerDay" type="number" step="1000" value="300000" /></label>
+              <label>筌뤴뫕??疫꿸퀗???1??<input id="rateCarpentryMachineDay" type="number" step="1000" value="150000" /></label>
+              <label>筌뤴뫕???臾믪㉦<input id="rateCarpentryLifting" type="number" step="1000" value="200000" /></label>
+              <label>筌뤴뫕???봔?癒?삺<input id="rateCarpentrySubsidiary" type="number" step="1000" value="150000" /></label>
+              <label>??살춦??1揶쏆뮇??<input id="rateCarpentryCeilingFanUnit" type="number" step="1000" value="500000" /></label>
+              <label>??룻ц퉪?諭?1??<input id="rateCarpentryDrywallSheet" type="number" step="100" value="4500" /></label>
+              <label>MDF 1??<input id="rateCarpentryMdfSheet" type="number" step="100" value="12500" /></label>
+              <label>??븍솇 1??<input id="rateCarpentryPlywoodSheet" type="number" step="1000" value="30000" /></label>
+              <label>??삼펷??1?얜씈??<input id="rateCarpentryStudBundle" type="number" step="1000" value="22000" /></label>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <section id="printQuoteSheet" class="print-quote-sheet" aria-hidden="true"></section>
+    <script type="module" src="./src/main.js?v=and-os-6"></script>
+  </body>
 </html>
