@@ -482,7 +482,7 @@ function repairStaticKoreanLabels() {
     wallpaperWallLengthM: "벽 길이(mm)",
     sectionFilmEnabled: "필름",
     filmPreset: "기준",
-    filmMaterialLengthM: "필름 길이(mm)",
+    filmMaterialLengthM: "벽 길이(mm)",
     sectionFlooringEnabled: "바닥",
     flooringArea: "면적(평)",
     sectionCarpentryEnabled: "목공",
