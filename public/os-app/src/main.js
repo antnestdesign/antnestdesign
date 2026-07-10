@@ -808,7 +808,7 @@ function repairStaticKoreanLabels() {
   });
   ["marginStatus", "adminMarginStatus"].forEach((id) => {
     const node = document.getElementById(id);
-    if (node && /[濡遺寃怨湲援媛諛紐筌獄揶]|�|\?\?/.test(node.textContent)) node.textContent = "정상";
+    if (node && /�|\?\?/.test(node.textContent)) node.textContent = "정상";
   });
 }
 
@@ -2279,7 +2279,7 @@ function renderWarnings(warnings) {
   box.innerHTML = "";
   for (const warning of warnings) {
     const item = document.createElement("div");
-    item.className = `warning-item${warning.includes("?뺤긽") ? " ok" : ""}`;
+    item.className = `warning-item${warning.includes("정상") ? " ok" : ""}`;
     item.textContent = warning;
     box.appendChild(item);
   }
