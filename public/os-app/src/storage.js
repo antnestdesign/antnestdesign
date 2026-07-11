@@ -152,6 +152,21 @@ async function request(path = "", options = {}) {
   return response.json();
 }
 
+async function insertEstimatePayload(payload) {
+  const response = await fetch(ESTIMATES_ENDPOINT, {
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Supabase insert failed: ${response.status}`);
+  }
+}
+
 export async function saveEstimate(estimate) {
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
@@ -180,12 +195,28 @@ export async function saveEstimate(estimate) {
     status: estimate.status || "상담",
   };
 
-  const rows = await request("?select=*", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(payload),
+  try {
+    await insertEstimatePayload(payload);
+  } catch (error) {
+    const message = String(error?.message || "");
+    const canRetryMinimal =
+      message.includes("PGRST204") ||
+      message.includes("schema cache") ||
+      message.includes("column") ||
+      message.includes("Could not find");
+    if (!canRetryMinimal) throw error;
+    await insertEstimatePayload({
+      project_name: projectName,
+      total_price: estimate.total || 0,
+      estimate_data: payload.estimate_data,
+      status: estimate.status || "상담",
+    });
+  }
+  return normalizeEstimate({
+    ...payload,
+    id: estimate.id || "",
+    created_at: new Date().toISOString(),
   });
-  return normalizeEstimate(rows[0]);
 }
 export async function loadEstimates() {
   const rows = await request("?select=*&order=created_at.desc");
