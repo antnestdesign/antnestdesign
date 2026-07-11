@@ -180,11 +180,8 @@ export async function saveEstimate(estimate) {
     status: estimate.status || "상담",
   };
 
-  const path = estimate.id
-    ? `?id=eq.${encodeURIComponent(estimate.id)}&select=*`
-    : "?select=*";
-  const rows = await request(path, {
-    method: estimate.id ? "PATCH" : "POST",
+  const rows = await request("?select=*", {
+    method: "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(payload),
   });

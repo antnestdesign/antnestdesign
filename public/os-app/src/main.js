@@ -2792,10 +2792,7 @@ document.getElementById("loadProjectButton")?.addEventListener("click", async ()
 document.getElementById("saveEstimateButton")?.addEventListener("click", async () => {
   const status = document.getElementById("saveStatus");
   try {
-    const snapshot = {
-      ...buildEstimateSnapshot(calculate()),
-      id: activeQuoteEstimate?.id,
-    };
+    const snapshot = buildEstimateSnapshot(calculate());
     if (!snapshot.projectName?.trim()) {
       status.textContent = "프로젝트명을 입력해야 저장할 수 있습니다.";
       alert("프로젝트명을 입력해야 저장할 수 있습니다.");
