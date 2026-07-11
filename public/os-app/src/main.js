@@ -2791,30 +2791,34 @@ document.getElementById("loadProjectButton")?.addEventListener("click", async ()
 
 let saveEstimateInProgress = false;
 
+function setSaveStatus(message) {
+  const status = document.getElementById("saveStatus");
+  if (status) status.textContent = message;
+}
+
 async function handleSaveEstimate() {
   if (saveEstimateInProgress) return;
   saveEstimateInProgress = true;
-  const status = document.getElementById("saveStatus");
   try {
-    status.textContent = "저장 준비 중입니다.";
+    setSaveStatus("저장 준비 중입니다.");
     const snapshot = buildEstimateSnapshot(calculate());
     if (!snapshot.projectName?.trim()) {
-      status.textContent = "프로젝트명을 입력해야 저장할 수 있습니다.";
+      setSaveStatus("프로젝트명을 입력해야 저장할 수 있습니다.");
       alert("프로젝트명을 입력해야 저장할 수 있습니다.");
       return;
     }
-    status.textContent = "Supabase에 저장 중입니다.";
+    setSaveStatus("Supabase에 저장 중입니다.");
     const saved = await saveEstimate(snapshot);
     activeQuoteEstimate = saved;
     renderCustomerQuote(saved);
-    status.textContent = `${formatDateTime(saved.savedAt)} 저장 완료`;
+    setSaveStatus(`${formatDateTime(saved.savedAt)} 저장 완료`);
     renderSavedEstimateRows().catch((error) => {
       console.warn("저장 후 목록 갱신 실패", error);
     });
     activateTab("quote");
   } catch (error) {
     console.error("견적 저장 실패", error);
-    status.textContent = "견적 저장에 실패했습니다.";
+    setSaveStatus("견적 저장에 실패했습니다.");
     alert(error.message || "Supabase 견적 저장에 실패했습니다.");
   } finally {
     saveEstimateInProgress = false;
