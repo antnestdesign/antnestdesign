@@ -2789,9 +2789,14 @@ document.getElementById("loadProjectButton")?.addEventListener("click", async ()
   }
 });
 
-document.getElementById("saveEstimateButton")?.addEventListener("click", async () => {
+let saveEstimateInProgress = false;
+
+async function handleSaveEstimate() {
+  if (saveEstimateInProgress) return;
+  saveEstimateInProgress = true;
   const status = document.getElementById("saveStatus");
   try {
+    status.textContent = "저장 준비 중입니다.";
     const snapshot = buildEstimateSnapshot(calculate());
     if (!snapshot.projectName?.trim()) {
       status.textContent = "프로젝트명을 입력해야 저장할 수 있습니다.";
@@ -2811,7 +2816,18 @@ document.getElementById("saveEstimateButton")?.addEventListener("click", async (
     console.error("견적 저장 실패", error);
     status.textContent = "견적 저장에 실패했습니다.";
     alert(error.message || "Supabase 견적 저장에 실패했습니다.");
+  } finally {
+    saveEstimateInProgress = false;
   }
+}
+
+document.getElementById("saveEstimateButton")?.addEventListener("click", handleSaveEstimate);
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#saveEstimateButton");
+  if (!button) return;
+  event.preventDefault();
+  handleSaveEstimate();
 });
 
 document.getElementById("printQuoteButton")?.addEventListener("click", () => {
