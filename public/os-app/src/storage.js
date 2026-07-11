@@ -167,6 +167,18 @@ async function insertEstimatePayload(payload) {
   }
 }
 
+async function insertWithFallbacks(payload, fallbacks) {
+  const errors = [];
+  for (const candidate of [payload, ...fallbacks]) {
+    try {
+      await insertEstimatePayload(candidate);
+      return;
+    } catch (error) {
+      errors.push(error?.message || String(error));
+    }
+  }
+  throw new Error(errors.filter(Boolean).join("\n") || "Supabase estimate save failed.");
+}
 export async function saveEstimate(estimate) {
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
@@ -174,6 +186,7 @@ export async function saveEstimate(estimate) {
   }
   const clientName = estimate.clientName || estimate.inputs?.clientName || "";
   const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
+  const status = estimate.status || "\uC0C1\uB2F4";
 
   const payload = {
     project_name: projectName,
@@ -190,28 +203,23 @@ export async function saveEstimate(estimate) {
       clientName,
       phone,
       clientPhone: phone,
-      status: estimate.status || "상담",
+      status,
     },
-    status: estimate.status || "상담",
+    status,
   };
 
-  try {
-    await insertEstimatePayload(payload);
-  } catch (error) {
-    const message = String(error?.message || "");
-    const canRetryMinimal =
-      message.includes("PGRST204") ||
-      message.includes("schema cache") ||
-      message.includes("column") ||
-      message.includes("Could not find");
-    if (!canRetryMinimal) throw error;
-    await insertEstimatePayload({
+  await insertWithFallbacks(payload, [
+    {
       project_name: projectName,
       total_price: estimate.total || 0,
       estimate_data: payload.estimate_data,
-      status: estimate.status || "상담",
-    });
-  }
+      status,
+    },
+    {
+      project_name: projectName,
+      estimate_data: payload.estimate_data,
+    },
+  ]);
   return normalizeEstimate({
     ...payload,
     id: estimate.id || "",

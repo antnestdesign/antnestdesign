@@ -2802,8 +2802,10 @@ document.getElementById("saveEstimateButton")?.addEventListener("click", async (
     const saved = await saveEstimate(snapshot);
     activeQuoteEstimate = saved;
     renderCustomerQuote(saved);
-    await renderSavedEstimateRows();
     status.textContent = `${formatDateTime(saved.savedAt)} 저장 완료`;
+    renderSavedEstimateRows().catch((error) => {
+      console.warn("저장 후 목록 갱신 실패", error);
+    });
     activateTab("quote");
   } catch (error) {
     console.error("견적 저장 실패", error);
