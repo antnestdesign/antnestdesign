@@ -482,7 +482,7 @@ function repairStaticKoreanLabels() {
     wallpaperWallLengthM: "벽 길이(mm)",
     sectionFilmEnabled: "필름",
     filmPreset: "기준",
-    filmMaterialLengthM: "벽 길이(mm)",
+    filmMaterialLengthM: "필름 길이(mm)",
     sectionFlooringEnabled: "바닥",
     flooringArea: "면적(평)",
     sectionCarpentryEnabled: "목공",
@@ -808,7 +808,7 @@ function repairStaticKoreanLabels() {
   });
   ["marginStatus", "adminMarginStatus"].forEach((id) => {
     const node = document.getElementById(id);
-    if (node && /�|\?\?/.test(node.textContent)) node.textContent = "정상";
+    if (node && /[濡遺寃怨湲援媛諛紐筌獄揶]|�|\?\?/.test(node.textContent)) node.textContent = "정상";
   });
 }
 
@@ -2726,10 +2726,10 @@ function renderProjectSearchResults() {
 
 function loadEstimateIntoUi(estimate) {
   restoreInputValues(estimate.inputs);
-  if (estimate.projectName) el.projectName.value = estimate.projectName;
-  if (estimate.areaPyeong) el.areaPyeong.value = estimate.areaPyeong;
-  if (estimate.clientName) el.clientName.value = estimate.clientName;
-  if (estimate.phone) el.clientPhone.value = estimate.phone;
+  el.projectName.value = estimate.projectName || "";
+  el.areaPyeong.value = estimate.areaPyeong ?? "";
+  el.clientName.value = estimate.clientName || "";
+  el.clientPhone.value = estimate.phone || estimate.clientPhone || "";
   activeQuoteEstimate = null;
   refresh();
   const recalculated = {
@@ -2792,7 +2792,10 @@ document.getElementById("loadProjectButton")?.addEventListener("click", async ()
 document.getElementById("saveEstimateButton")?.addEventListener("click", async () => {
   const status = document.getElementById("saveStatus");
   try {
-    const snapshot = buildEstimateSnapshot(calculate());
+    const snapshot = {
+      ...buildEstimateSnapshot(calculate()),
+      id: activeQuoteEstimate?.id,
+    };
     if (!snapshot.projectName?.trim()) {
       status.textContent = "프로젝트명을 입력해야 저장할 수 있습니다.";
       alert("프로젝트명을 입력해야 저장할 수 있습니다.");

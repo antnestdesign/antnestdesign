@@ -117,13 +117,15 @@ export async function loadProfile() {
 function normalizeEstimate(row) {
   const data = row.estimate_data || {};
   const savedAt = row.created_at || data.savedAt || new Date().toISOString();
+  const clientName = row.client_name || data.clientName || data.inputs?.clientName || "";
+  const phone = row.phone || data.phone || data.clientPhone || data.inputs?.clientPhone || "";
   return {
     ...data,
     id: row.id,
     projectName: row.project_name || data.projectName || "",
-    clientName: row.client_name || data.clientName || "",
-    phone: row.phone || data.phone || "",
-    clientPhone: row.phone || data.clientPhone || data.phone || "",
+    clientName,
+    phone,
+    clientPhone: phone,
     address: row.address || data.address || "",
     areaPyeong: row.area_pyeong ?? data.areaPyeong ?? 0,
     total: row.total_price ?? data.total ?? 0,
@@ -133,11 +135,10 @@ function normalizeEstimate(row) {
     status: row.status || data.status || "상담",
     savedAt,
     customerQuote: data.customerQuote
-      ? { ...data.customerQuote, savedAt }
+      ? { ...data.customerQuote, clientName, phone, savedAt }
       : data.customerQuote,
   };
 }
-
 async function request(path = "", options = {}) {
   const response = await fetch(`${ESTIMATES_ENDPOINT}${path}`, {
     ...options,
@@ -154,13 +155,15 @@ async function request(path = "", options = {}) {
 export async function saveEstimate(estimate) {
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
-    throw new Error("프로젝트명을 입력한 뒤 저장해 주세요.");
+    throw new Error("Project name is required.");
   }
+  const clientName = estimate.clientName || estimate.inputs?.clientName || "";
+  const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
 
   const payload = {
     project_name: projectName,
-    client_name: estimate.clientName || "",
-    phone: estimate.phone || "",
+    client_name: clientName,
+    phone,
     address: estimate.address || "",
     area_pyeong: estimate.areaPyeong || 0,
     total_price: estimate.total || 0,
@@ -169,19 +172,24 @@ export async function saveEstimate(estimate) {
     estimate_data: {
       ...estimate,
       projectName,
+      clientName,
+      phone,
+      clientPhone: phone,
       status: estimate.status || "상담",
     },
     status: estimate.status || "상담",
   };
 
-  const rows = await request("?select=*", {
-    method: "POST",
+  const path = estimate.id
+    ? `?id=eq.${encodeURIComponent(estimate.id)}&select=*`
+    : "?select=*";
+  const rows = await request(path, {
+    method: estimate.id ? "PATCH" : "POST",
     headers: { Prefer: "return=representation" },
     body: JSON.stringify(payload),
   });
   return normalizeEstimate(rows[0]);
 }
-
 export async function loadEstimates() {
   const rows = await request("?select=*&order=created_at.desc");
   return rows.map(normalizeEstimate);
