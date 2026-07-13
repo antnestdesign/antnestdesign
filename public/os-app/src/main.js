@@ -772,7 +772,7 @@ function repairStaticKoreanLabels() {
     if (section.querySelector("#internalDetailRows, #adminInternalDetailRows")) {
       const heading = section.querySelector(".section-heading h2");
       const paragraph = section.querySelector(".section-heading p");
-      if (heading) heading.textContent = "내부견적";
+      if (heading) heading.textContent = "상세견적";
       if (paragraph) paragraph.textContent = "원가, 고객가, 마진, 보정률, 단가, 상세 산출 내역";
       section.querySelectorAll("th").forEach((cell, index) => {
         const headers = ["항목", "입력", "산출", "단가", "직접원가", "보정률", "고객가", "마진"];
@@ -784,7 +784,7 @@ function repairStaticKoreanLabels() {
   if (adminQuoteSection) {
     const heading = adminQuoteSection.querySelector(".section-heading h2");
     const paragraph = adminQuoteSection.querySelector(".section-heading p");
-    if (heading) heading.textContent = "상세견적";
+    if (heading) heading.textContent = "내부견적";
     if (paragraph) paragraph.textContent = "공정별 고객용 금액, 내부 원가, 마진을 확인합니다.";
     const headerRow = adminQuoteSection.querySelector("thead tr");
     if (headerRow) {
@@ -796,6 +796,52 @@ function repairStaticKoreanLabels() {
         <th>마진율</th>
       `;
     }
+  }
+  const adminPanel = document.getElementById("admin");
+  const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
+  if (adminPanel && savedList && !document.getElementById("adminPrintActions")) {
+    const actions = document.createElement("section");
+    actions.className = "internal-card admin-print-actions";
+    actions.id = "adminPrintActions";
+    actions.innerHTML = `
+      <div class="section-heading compact-heading no-side-padding">
+        <h2>출력</h2>
+        <p>관리용 견적서와 발주내역서를 구분해서 출력합니다.</p>
+      </div>
+      <div class="admin-action-row">
+        <button id="printAdminDetailButton" type="button">상세견적 출력</button>
+        <button id="printAdminInternalButton" type="button">내부견적 출력</button>
+        <button id="printPurchaseOrderButton" type="button">발주내역 출력</button>
+      </div>
+    `;
+    savedList.insertAdjacentElement("afterend", actions);
+  }
+  const standardSection = document.getElementById("adminStandardSelectedItems")?.closest(".internal-card");
+  if (adminPanel && standardSection && !document.getElementById("purchaseOrderRows")) {
+    const orderSection = document.createElement("section");
+    orderSection.className = "internal-card detail-card admin-only";
+    orderSection.innerHTML = `
+      <div class="section-heading compact-heading">
+        <h2>발주내역서</h2>
+        <p>발주가 필요한 자재와 품목을 정리합니다.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>공정</th>
+              <th>품목</th>
+              <th>사양</th>
+              <th>수량</th>
+              <th>예상 원가</th>
+            </tr>
+          </thead>
+          <tbody id="purchaseOrderRows"></tbody>
+        </table>
+      </div>
+      <div id="purchaseOrderSummary" class="quote-total-list"></div>
+    `;
+    standardSection.insertAdjacentElement("afterend", orderSection);
   }
   const adminDb = document.querySelector("#admin .admin-db-card");
   if (adminDb) {
@@ -2581,6 +2627,172 @@ function renderPrintQuote(quote) {
   `;
 }
 
+function currentEstimateForPrint() {
+  return activeQuoteEstimate || buildEstimateSnapshot(calculate());
+}
+
+function renderAdminDetailPrint(estimate) {
+  const sheet = document.getElementById("printQuoteSheet");
+  if (!sheet || !estimate) return;
+  const details = estimate.internalDetails || [];
+  sheet.innerHTML = `
+    <header>
+      <p>상세견적</p>
+      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
+      <dl>
+        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
+        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
+      </dl>
+    </header>
+    <table>
+      <thead>
+        <tr><th>항목</th><th>입력</th><th>산출</th><th>단가</th><th>직접원가</th><th>고객가</th><th>마진</th></tr>
+      </thead>
+      <tbody>
+        ${details.map((item) => `
+          <tr>
+            <td>${item.item}</td>
+            <td>${item.input}</td>
+            <td>${item.quantity}</td>
+            <td>${won(item.unitPrice)}</td>
+            <td>${won(item.cost)}</td>
+            <td>${customerWon(item.revenue)}</td>
+            <td>${won(item.customerRevenue - item.cost)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+    <footer>
+      <div><span>고객용 총액</span><strong>${customerWon(estimate.total || 0)}</strong></div>
+      <div><span>내부 원가</span><strong>${won(estimate.costTotal || 0)}</strong></div>
+    </footer>
+  `;
+}
+
+function renderAdminInternalPrint(estimate) {
+  const sheet = document.getElementById("printQuoteSheet");
+  if (!sheet || !estimate) return;
+  const groups = buildAdminMarginGroups(estimate);
+  const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
+  const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
+  const totalProfit = totalCustomer - totalCost;
+  const totalMarginRate = totalCustomer > 0 ? totalProfit / totalCustomer : 0;
+  sheet.innerHTML = `
+    <header>
+      <p>내부견적</p>
+      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
+      <dl>
+        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
+        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
+      </dl>
+    </header>
+    <table>
+      <thead>
+        <tr><th>공정</th><th>고객용</th><th>내부용</th><th>마진</th><th>마진율</th></tr>
+      </thead>
+      <tbody>
+        ${groups.map((group) => `
+          <tr>
+            <td>${group.label}</td>
+            <td>${customerWon(group.customer)}</td>
+            <td>${won(group.cost)}</td>
+            <td>${won(group.profit)}</td>
+            <td>${(group.marginRate * 100).toFixed(1)}%</td>
+          </tr>
+        `).join("")}
+        <tr>
+          <td>총계</td>
+          <td>${customerWon(totalCustomer)}</td>
+          <td>${won(totalCost)}</td>
+          <td>${won(totalProfit)}</td>
+          <td>${(totalMarginRate * 100).toFixed(1)}%</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function purchaseOrderItems(estimate) {
+  const materialKeywords = [
+    "자재", "MDF", "합판", "다루끼", "각재", "상판", "칸스톤", "세라믹", "하이막스", "EP",
+    "싱크볼", "싱크수전", "후드", "도기", "수전", "장식장", "악세사리", "휴젠트",
+    "벽지", "필름", "마루", "다운라이트", "매입등", "실린더", "콘센트", "스위치", "조명",
+    "밥솥장", "서랍", "신발장", "팬트리", "붙박이", "헹거", "냉장고", "세탁기"
+  ];
+  const excludedKeywords = ["인건비", "기공", "조공", "시공", "설치비", "철거", "방수", "양중", "폐기물", "청소", "보양", "허가", "동의서"];
+  return (estimate?.internalDetails || [])
+    .filter((item) => {
+      const text = `${item.item} ${item.input} ${item.quantity}`;
+      return materialKeywords.some((keyword) => text.includes(keyword)) &&
+        !excludedKeywords.some((keyword) => text.includes(keyword));
+    })
+    .map((item) => ({
+      process: quoteGroupLabels[item.group] || item.group || "기타",
+      item: item.item,
+      spec: item.input,
+      quantity: item.quantity,
+      budget: item.cost,
+    }));
+}
+
+function renderPurchaseOrder(estimate) {
+  const rows = document.getElementById("purchaseOrderRows");
+  const summary = document.getElementById("purchaseOrderSummary");
+  if (!rows || !summary) return;
+  const items = purchaseOrderItems(estimate || currentEstimateForPrint());
+  rows.innerHTML = items.length
+    ? items.map((item) => `
+      <tr>
+        <td>${item.process}</td>
+        <td>${item.item}</td>
+        <td>${item.spec}</td>
+        <td>${item.quantity}</td>
+        <td>${won(item.budget)}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">발주 필요 품목이 없습니다.</td></tr>`;
+  summary.innerHTML = `
+    <div><span>발주 품목</span><strong>${items.length}개</strong></div>
+    <div><span>예상 원가</span><strong>${won(items.reduce((sum, item) => sum + item.budget, 0))}</strong></div>
+  `;
+}
+
+function renderPurchaseOrderPrint(estimate) {
+  const sheet = document.getElementById("printQuoteSheet");
+  if (!sheet || !estimate) return;
+  const items = purchaseOrderItems(estimate);
+  sheet.innerHTML = `
+    <header>
+      <p>발주내역서</p>
+      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
+      <dl>
+        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
+        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
+      </dl>
+    </header>
+    <table>
+      <thead>
+        <tr><th>공정</th><th>품목</th><th>사양</th><th>수량</th><th>예상 원가</th></tr>
+      </thead>
+      <tbody>
+        ${items.length ? items.map((item) => `
+          <tr>
+            <td>${item.process}</td>
+            <td>${item.item}</td>
+            <td>${item.spec}</td>
+            <td>${item.quantity}</td>
+            <td>${won(item.budget)}</td>
+          </tr>
+        `).join("") : `<tr><td colspan="5">발주 필요 품목이 없습니다.</td></tr>`}
+      </tbody>
+    </table>
+    <footer>
+      <div><span>발주 품목</span><strong>${items.length}개</strong></div>
+      <div><span>예상 원가</span><strong>${won(items.reduce((sum, item) => sum + item.budget, 0))}</strong></div>
+    </footer>
+  `;
+}
+
 function renderAdminProcessTotals(quote) {
   const box = document.getElementById("adminProcessTotals");
   if (!box) return;
@@ -2608,6 +2820,7 @@ function renderCustomerQuote(estimate) {
     document.getElementById("quoteTotal").textContent = "0원";
     renderCustomerQuoteTable(null, rows, groupTotals);
     if (adminRows && adminGroupTotals) renderAdminMarginTable(null);
+    renderPurchaseOrder(null);
     renderAdminProcessTotals(null);
     return;
   }
@@ -2618,6 +2831,7 @@ function renderCustomerQuote(estimate) {
   document.getElementById("quoteTotal").textContent = quote.totalText;
   renderCustomerQuoteTable(quote, rows, groupTotals);
   if (adminRows && adminGroupTotals) renderAdminMarginTable(estimate);
+  renderPurchaseOrder(estimate);
   renderPrintQuote(quote);
   renderAdminProcessTotals(quote);
 }
@@ -2652,8 +2866,8 @@ async function renderSavedEstimateRows() {
 
 function renderStandardCheck(state) {
   const checks = [
-    ["욕실", state.bathroomEnabled && state.bathroomUnits > 0],
-    ["주방 부속/기기", state.kitchenEnabled && (state.kitchenSinkBowlUnits + state.kitchenFaucetUnits + state.kitchenHoodUnits > 0 || state.kitchenStandardInstallEnabled)],
+    ["욕실", state.bathroomEnabled || state.bathroomUnits > 0],
+    ["주방 부속/기기", state.kitchenEnabled || state.kitchenSinkBowlUnits + state.kitchenFaucetUnits + state.kitchenHoodUnits > 0 || state.kitchenStandardInstallEnabled],
     ["일반 폐기물", state.generalWasteEnabled],
     ["세대 내 보양", state.interiorProtectionEnabled],
     ["입주청소", state.moveInCleaningEnabled],
@@ -2662,8 +2876,8 @@ function renderStandardCheck(state) {
     ["슬라이딩도어", state.slidingDoorUnits > 0],
     ["도배", state.wallpaperEnabled],
     ["필름", state.filmEnabled],
-    ["바닥", state.flooringEnabled && state.flooringArea > 0],
-    ["마감", state.siliconeEnabled || state.elasticEnabled],
+    ["바닥", state.flooringEnabled || state.flooringArea > 0],
+    ["마감", state.siliconeEnabled || state.elasticEnabled || state.elasticExtraRooms > 0],
     ["도어/창호", state.middleDoorUnits > 0 || state.standardDoorUnits > 0 || state.slidingDoorUnits > 0 || state.windowNoticeEnabled],
   ];
   const selected = checks.filter(([, enabled]) => enabled).map(([label]) => label);
@@ -2776,6 +2990,7 @@ function render() {
   renderInternalRows(details);
   renderWarnings(warnings);
   renderStandardCheck(state);
+  renderPurchaseOrder(buildEstimateSnapshot(result));
 }
 
 function refresh() {
@@ -2943,6 +3158,20 @@ document.addEventListener("click", (event) => {
 
 document.getElementById("printQuoteButton")?.addEventListener("click", () => {
   renderPrintQuote(activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote);
+  window.print();
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#printAdminDetailButton, #printAdminInternalButton, #printPurchaseOrderButton");
+  if (!button) return;
+  const estimate = currentEstimateForPrint();
+  if (button.id === "printAdminDetailButton") {
+    renderAdminDetailPrint(estimate);
+  } else if (button.id === "printAdminInternalButton") {
+    renderAdminInternalPrint(estimate);
+  } else {
+    renderPurchaseOrderPrint(estimate);
+  }
   window.print();
 });
 
