@@ -289,12 +289,17 @@ async function requestCostItems(path = "", options = {}) {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
+  const text = await response.text();
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase cost_items request failed: ${response.status}`);
+    const error = new Error(text || `Supabase cost_items request failed: ${response.status}`);
+    error.status = response.status;
+    error.body = text;
+    error.endpoint = "cost_items";
+    error.method = options.method || "GET";
+    throw error;
   }
-  if (response.status === 204) return null;
-  return response.json();
+  if (response.status === 204 || !text.trim()) return null;
+  return JSON.parse(text);
 }
 
 async function requestCostHistory(options = {}) {
@@ -302,12 +307,17 @@ async function requestCostHistory(options = {}) {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
+  const text = await response.text();
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase cost_item_history request failed: ${response.status}`);
+    const error = new Error(text || `Supabase cost_item_history request failed: ${response.status}`);
+    error.status = response.status;
+    error.body = text;
+    error.endpoint = "cost_item_history";
+    error.method = options.method || "GET";
+    throw error;
   }
-  if (response.status === 204) return null;
-  return response.json();
+  if (response.status === 204 || !text.trim()) return null;
+  return JSON.parse(text);
 }
 
 export async function loadCostItems() {
@@ -344,7 +354,14 @@ export async function saveCostItemChanges(changes, userId) {
         updated_by: userId || null,
       }),
     });
-    if (rows?.[0]) saved.push(rows[0]);
+    if (!rows?.[0]) {
+      const error = new Error(`cost_items update returned no rows for ${change.item_code || change.id}`);
+      error.endpoint = "cost_items";
+      error.method = "PATCH";
+      error.body = JSON.stringify({ id: change.id, item_code: change.item_code });
+      throw error;
+    }
+    saved.push(rows[0]);
   }
   return saved;
 }

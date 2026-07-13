@@ -589,6 +589,15 @@ function setRateDbStatus(message) {
   if (status) status.textContent = message;
 }
 
+function isAdmin() {
+  return currentProfile?.role === "admin";
+}
+
+function setText(id, value) {
+  const node = document.getElementById(id);
+  if (node) node.textContent = value;
+}
+
 function rateInputs() {
   return COST_ITEM_DEFINITIONS.map((item) => el[item.inputId]).filter(Boolean);
 }
@@ -731,9 +740,19 @@ async function saveRateSettings() {
     refresh();
     setRateDbStatus("저장 완료");
   } catch (error) {
-    console.error("Supabase 원가DB 저장 실패", error);
+    console.error("Supabase 원가DB 저장 실패", {
+      error,
+      status: error?.status,
+      body: error?.body,
+      endpoint: error?.endpoint,
+      method: error?.method,
+      updated_by: currentProfile?.id,
+      currentProfileId: currentProfile?.id,
+      role: currentProfile?.role,
+      changes,
+    });
     setRateDbStatus("저장 실패");
-    alert("원가DB 저장에 실패했습니다.");
+    alert(`원가DB 저장에 실패했습니다.${error?.message ? `\n${error.message}` : ""}`);
   }
 }
 
@@ -2700,7 +2719,8 @@ function renderQuoteRows(lines, details, total) {
 function renderInternalRows(details) {
   const tbody = document.getElementById("internalDetailRows");
   const adminTbody = document.getElementById("adminInternalDetailRows");
-  tbody.innerHTML = "";
+  if (!tbody && !adminTbody) return;
+  if (tbody) tbody.innerHTML = "";
   if (adminTbody) adminTbody.innerHTML = "";
   for (const item of details) {
     const row = document.createElement("tr");
@@ -2714,13 +2734,14 @@ function renderInternalRows(details) {
       <td>${customerWon(item.revenue)}</td>
       <td>${won(item.customerRevenue - item.cost)}</td>
     `;
-    tbody.appendChild(row);
+    if (tbody) tbody.appendChild(row);
     if (adminTbody) adminTbody.appendChild(row.cloneNode(true));
   }
 }
 
 function renderWarnings(warnings) {
   const box = document.getElementById("internalWarnings");
+  if (!box) return;
   box.innerHTML = "";
   for (const warning of warnings) {
     const item = document.createElement("div");
@@ -3199,23 +3220,23 @@ function renderCustomerQuote(estimate) {
   const adminGroupTotals = document.getElementById("adminQuoteGroupTotals");
 
   if (!quote) {
-    document.getElementById("quoteProject").textContent = "저장된 견적이 없습니다";
-    document.getElementById("quoteArea").textContent = "-";
-    document.getElementById("quoteDate").textContent = "-";
-    document.getElementById("quoteTotal").textContent = "0원";
+    setText("quoteProject", "저장된 견적이 없습니다");
+    setText("quoteArea", "-");
+    setText("quoteDate", "-");
+    setText("quoteTotal", "0원");
     renderCustomerQuoteTable(null, rows, groupTotals);
-    if (adminRows && adminGroupTotals) renderAdminMarginTable(null);
+    if (isAdmin() && adminRows && adminGroupTotals) renderAdminMarginTable(null);
     renderPurchaseOrder(null);
     renderAdminProcessTotals(null);
     return;
   }
 
-  document.getElementById("quoteProject").textContent = quote.projectName;
-  document.getElementById("quoteArea").textContent = `${quote.areaPyeong}평`;
-  document.getElementById("quoteDate").textContent = formatDateTime(quote.savedAt);
-  document.getElementById("quoteTotal").textContent = quote.totalText;
+  setText("quoteProject", quote.projectName);
+  setText("quoteArea", `${quote.areaPyeong}평`);
+  setText("quoteDate", formatDateTime(quote.savedAt));
+  setText("quoteTotal", quote.totalText);
   renderCustomerQuoteTable(quote, rows, groupTotals);
-  if (adminRows && adminGroupTotals) renderAdminMarginTable(estimate);
+  if (isAdmin() && adminRows && adminGroupTotals) renderAdminMarginTable(estimate);
   renderPurchaseOrder(estimate);
   renderPrintQuote(quote);
   renderAdminProcessTotals(quote);
@@ -3224,13 +3245,15 @@ function renderCustomerQuote(estimate) {
 async function renderSavedEstimateRows() {
   const tbody = document.getElementById("savedEstimateRows");
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="7">저장된 견적을 불러오는 중입니다.</td></tr>`;
+  const admin = isAdmin();
+  const colspan = admin ? 7 : 8;
+  tbody.innerHTML = `<tr><td colspan="${colspan}">저장된 견적을 불러오는 중입니다.</td></tr>`;
   try {
     const estimates = await loadEstimates();
     cachedEstimates = estimates;
     renderProjectSearchResults();
     tbody.innerHTML = estimates.length
-      ? estimates.map((estimate) => `
+      ? estimates.map((estimate) => admin ? `
         <tr>
           <td>${estimate.projectName}</td>
           <td>${formatDateTime(estimate.savedAt)}</td>
@@ -3240,11 +3263,22 @@ async function renderSavedEstimateRows() {
           <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
           <td><button type="button" data-delete-estimate="${estimate.id}">삭제</button></td>
         </tr>
+      ` : `
+        <tr>
+          <td>${estimate.projectName || "-"}</td>
+          <td>${estimate.clientName || "-"}</td>
+          <td>${estimate.phone || "-"}</td>
+          <td>${estimate.areaPyeong || "-"}평</td>
+          <td>${estimate.status || "상담"}</td>
+          <td>${estimate.totalText}</td>
+          <td>${formatDateTime(estimate.savedAt)}</td>
+          <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
+        </tr>
       `).join("")
-      : `<tr><td colspan="7">저장된 견적이 없습니다.</td></tr>`;
+      : `<tr><td colspan="${colspan}">저장된 견적이 없습니다.</td></tr>`;
   } catch (error) {
     console.error("견적 조회 실패", error);
-    tbody.innerHTML = `<tr><td colspan="7">견적 조회에 실패했습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colspan}">견적 조회에 실패했습니다.</td></tr>`;
     alert("Supabase 견적 조회에 실패했습니다.");
   }
 }
@@ -3329,49 +3363,41 @@ function render() {
   const result = calculate();
   const { state, details, quoteLines, directCost, customerRevenue, profit, actualMargin, discountRoom, warnings, counts } = result;
 
-  document.getElementById("selectionCount").textContent = `${quoteLines.length}개 항목`;
-  document.getElementById("cabinetSummary").textContent =
-    state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택";
-  document.getElementById("islandSummary").textContent =
-    state.islandEnabled && state.islandM > 0 ? `가로 ${mmText(state.islandM)} / 세로 ${mmText(state.islandDepthMm)}, 서랍 ${state.islandDrawers}개` : "미선택";
-  document.getElementById("homebarSummary").textContent =
-    state.homebarEnabled && state.homebarM > 0 ? `${mmText(state.homebarM)}, 서랍 ${state.homebarDrawers}개` : "미선택";
-  document.getElementById("shoeSummary").textContent =
-    state.shoeEnabled && state.shoeM > 0 ? `${mmText(state.shoeM)} / ${counts.shoeJa}자` : "미선택";
-  document.getElementById("fridgeLaundrySummary").textContent =
-    state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? `${mmText(state.fridgeLaundryM)} / ${counts.fridgeLaundryJa}자` : "미선택";
-  document.getElementById("pantrySummary").textContent =
-    state.pantryEnabled && state.pantryM > 0 ? `${mmText(state.pantryM)} / ${counts.pantryJa}자` : "미선택";
-  document.getElementById("builtInSummary").textContent =
-    state.builtInEnabled && state.builtInM > 0 ? `${mmText(state.builtInM)} / ${counts.builtInJa}자` : "미선택";
-  document.getElementById("hangerSummary").textContent =
-    state.hangerEnabled && state.hangerM > 0 ? `${mmText(state.hangerM)} / ${counts.hangerJa}자` : "미선택";
-  document.getElementById("demolitionSummary").textContent =
-    groupTotalFromDetails(details, "demolition") > 0 ? customerWon(groupTotalFromDetails(details, "demolition")) : "미선택";
-  document.getElementById("electricalSummary").textContent =
+  setText("selectionCount", `${quoteLines.length}개 항목`);
+  setText("cabinetSummary", state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택");
+  setText("islandSummary", state.islandEnabled && state.islandM > 0 ? `가로 ${mmText(state.islandM)} / 세로 ${mmText(state.islandDepthMm)}, 서랍 ${state.islandDrawers}개` : "미선택");
+  setText("homebarSummary", state.homebarEnabled && state.homebarM > 0 ? `${mmText(state.homebarM)}, 서랍 ${state.homebarDrawers}개` : "미선택");
+  setText("shoeSummary", state.shoeEnabled && state.shoeM > 0 ? `${mmText(state.shoeM)} / ${counts.shoeJa}자` : "미선택");
+  setText("fridgeLaundrySummary", state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? `${mmText(state.fridgeLaundryM)} / ${counts.fridgeLaundryJa}자` : "미선택");
+  setText("pantrySummary", state.pantryEnabled && state.pantryM > 0 ? `${mmText(state.pantryM)} / ${counts.pantryJa}자` : "미선택");
+  setText("builtInSummary", state.builtInEnabled && state.builtInM > 0 ? `${mmText(state.builtInM)} / ${counts.builtInJa}자` : "미선택");
+  setText("hangerSummary", state.hangerEnabled && state.hangerM > 0 ? `${mmText(state.hangerM)} / ${counts.hangerJa}자` : "미선택");
+  setText("demolitionSummary", groupTotalFromDetails(details, "demolition") > 0 ? customerWon(groupTotalFromDetails(details, "demolition")) : "미선택");
+  setText(
+    "electricalSummary",
     groupTotalFromDetails(details, "electrical") > 0
       ? `${state.electricalEnabled ? (state.electricalAgeType === "under10" ? "10년 이하" : "10년 이상") : "옵션"} / ${customerWon(groupTotalFromDetails(details, "electrical"))}`
-      : "미선택";
-  document.getElementById("lightingSummary").textContent =
-    state.standardLightingEnabled ? customerWon(groupTotalFromDetails(details, "standardLighting")) : "미선택";
-  document.getElementById("clientTotal").textContent = customerWon(customerRevenue);
+      : "미선택"
+  );
+  setText("lightingSummary", state.standardLightingEnabled ? customerWon(groupTotalFromDetails(details, "standardLighting")) : "미선택");
+  setText("clientTotal", customerWon(customerRevenue));
 
   if (!activeQuoteEstimate) {
     renderCustomerQuote(buildEstimateSnapshot(result));
   }
 
-  document.getElementById("internalCost").textContent = won(directCost);
-  document.getElementById("internalRevenue").textContent = customerWon(customerRevenue);
-  document.getElementById("internalProfit").textContent = won(profit);
-  document.getElementById("internalMargin").textContent = `${(actualMargin * 100).toFixed(1)}%`;
-  document.getElementById("discountRoom").textContent = customerWon(discountRoom);
-  document.getElementById("marginStatus").textContent = warnings.some((item) => item.includes("미달")) ? "미달" : "정상";
-  document.getElementById("adminInternalCost").textContent = won(directCost);
-  document.getElementById("adminInternalRevenue").textContent = customerWon(customerRevenue);
-  document.getElementById("adminInternalProfit").textContent = won(profit);
-  document.getElementById("adminInternalMargin").textContent = `${(actualMargin * 100).toFixed(1)}%`;
-  document.getElementById("adminDiscountRoom").textContent = customerWon(discountRoom);
-  document.getElementById("adminMarginStatus").textContent = warnings.some((item) => item.includes("미달")) ? "미달" : "정상";
+  setText("internalCost", won(directCost));
+  setText("internalRevenue", customerWon(customerRevenue));
+  setText("internalProfit", won(profit));
+  setText("internalMargin", `${(actualMargin * 100).toFixed(1)}%`);
+  setText("discountRoom", customerWon(discountRoom));
+  setText("marginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
+  setText("adminInternalCost", won(directCost));
+  setText("adminInternalRevenue", customerWon(customerRevenue));
+  setText("adminInternalProfit", won(profit));
+  setText("adminInternalMargin", `${(actualMargin * 100).toFixed(1)}%`);
+  setText("adminDiscountRoom", customerWon(discountRoom));
+  setText("adminMarginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
   renderInternalRows(details);
   renderWarnings(warnings);
   renderStandardCheck(state);
@@ -3389,13 +3415,62 @@ function activateTab(tabId) {
   document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === tabId));
 }
 
+let staffAdminShellApplied = false;
+
+function renderStaffAdminShell() {
+  if (staffAdminShellApplied) return;
+  const adminPanel = document.getElementById("admin");
+  if (!adminPanel) return;
+  adminPanel.innerHTML = `
+    <section class="internal-card staff-admin-card">
+      <div class="section-heading compact-heading no-side-padding">
+        <h2>저장된 견적 리스트</h2>
+        <p>고객 공개용 견적만 확인합니다.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="saved-table">
+          <thead>
+            <tr>
+              <th>프로젝트명</th>
+              <th>고객명</th>
+              <th>연락처</th>
+              <th>평형</th>
+              <th>상태</th>
+              <th>고객견적 총액</th>
+              <th>작성일</th>
+              <th>열기</th>
+            </tr>
+          </thead>
+          <tbody id="savedEstimateRows"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="internal-card staff-admin-card">
+      <div class="section-heading compact-heading no-side-padding">
+        <h2>고객용 상세견적</h2>
+        <p>상세견적 탭에서 고객 공개용 견적서를 확인하고 출력합니다.</p>
+      </div>
+      <div class="admin-action-row">
+        <button id="staffOpenClientQuoteButton" type="button">고객용 상세견적 열기</button>
+        <button id="staffPrintClientQuoteButton" type="button">고객용 상세견적 출력</button>
+      </div>
+    </section>
+  `;
+  staffAdminShellApplied = true;
+}
+
 function applyAccessControl() {
   const role = currentProfile?.role || "staff";
   document.body.dataset.role = role;
-  document.getElementById("currentUserLabel").textContent = `${currentProfile?.email || "-"} · ${role}`;
-  document.querySelectorAll(".admin-only").forEach((node) => {
-    node.hidden = role !== "admin";
-  });
+  setText("currentUserLabel", `${currentProfile?.email || "-"} · ${role}`);
+  if (role !== "admin") {
+    document.querySelectorAll(".admin-only").forEach((node) => node.remove());
+    renderStaffAdminShell();
+  } else {
+    document.querySelectorAll(".admin-only").forEach((node) => {
+      node.hidden = false;
+    });
+  }
   if (role !== "admin" && document.getElementById("internal")?.classList.contains("active")) {
     activateTab("client");
   }
@@ -3409,6 +3484,10 @@ function setAuthenticated(isAuthenticated) {
 async function completeLogin() {
   currentProfile = await loadProfile();
   if (!currentProfile) throw new Error("프로필 정보를 불러오지 못했습니다.");
+  if (currentProfile.role === "admin" && staffAdminShellApplied) {
+    window.location.reload();
+    return;
+  }
   await loadRateSettings();
   setAuthenticated(true);
   applyAccessControl();
@@ -3481,6 +3560,10 @@ document.getElementById("loginForm")?.addEventListener("submit", async (event) =
 document.getElementById("logoutButton")?.addEventListener("click", async () => {
   await signOut();
   currentProfile = null;
+  if (staffAdminShellApplied) {
+    window.location.reload();
+    return;
+  }
   setAuthenticated(false);
   document.getElementById("loginPassword").value = "";
 });
@@ -3581,21 +3664,23 @@ document.addEventListener("click", (event) => {
   saveRateSettings();
 });
 
-document.getElementById("savedEstimateRows")?.addEventListener("click", async (event) => {
+document.addEventListener("click", async (event) => {
   const openId = event.target?.dataset?.openEstimate;
   const deleteId = event.target?.dataset?.deleteEstimate;
+  if (!openId && !deleteId) return;
   if (openId) {
     try {
       const estimate = await getEstimate(openId);
       if (!estimate) return;
       loadEstimateIntoUi(estimate);
-      activateTab("admin");
+      if (isAdmin()) activateTab("admin");
     } catch (error) {
       console.error("견적 열기 실패", error);
       alert("Supabase 견적 열기에 실패했습니다.");
     }
   }
   if (deleteId) {
+    if (!isAdmin()) return;
     if (!confirm("저장된 견적을 삭제할까요?")) return;
     try {
       await deleteEstimate(deleteId);
@@ -3609,6 +3694,16 @@ document.getElementById("savedEstimateRows")?.addEventListener("click", async (e
       console.error("견적 삭제 실패", error);
       alert("Supabase 견적 삭제에 실패했습니다.");
     }
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#staffOpenClientQuoteButton, #staffPrintClientQuoteButton");
+  if (!button) return;
+  activateTab("quote");
+  if (button.id === "staffPrintClientQuoteButton") {
+    renderPrintQuote(currentEstimateForPrint()?.customerQuote);
+    window.print();
   }
 });
 
