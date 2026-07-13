@@ -2514,7 +2514,7 @@ function renderAdminMarginTable(estimate) {
 
   for (const group of groups) {
     const row = document.createElement("tr");
-    row.className = "quote-item-row";
+    row.className = "admin-margin-row";
     row.innerHTML = `
       <td>${group.label}</td>
       <td>${customerWon(group.customer)}</td>
