@@ -388,6 +388,7 @@ let originalCostItems = new Map();
 let editedCostItems = new Map();
 let dirtyItemCodes = new Set();
 let costDbLoaded = false;
+let loadedEstimateBaseline = null;
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
@@ -584,6 +585,34 @@ function ensureRateDbSaveButton() {
   adminDb.appendChild(actions);
 }
 
+function ensureCostSnapshotPanel() {
+  const adminPanel = document.getElementById("admin");
+  const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
+  if (!adminPanel || !savedList || document.getElementById("costSnapshotPanel")) return;
+  const section = document.createElement("section");
+  section.id = "costSnapshotPanel";
+  section.className = "internal-card admin-only";
+  section.innerHTML = `
+    <div class="section-heading compact-heading no-side-padding">
+      <h2>원가 기준</h2>
+      <p>저장 당시 원가 기준과 현재 원가DB 상태를 비교합니다.</p>
+    </div>
+    <dl class="metric-list admin-metric-list">
+      <div><dt>원가 적용 기준</dt><dd id="costBasisLabel">저장된 견적 없음</dd></div>
+      <div><dt>견적 저장일</dt><dd id="costBasisSavedAt">-</dd></div>
+      <div><dt>원가 스냅샷 시각</dt><dd id="costSnapshotCapturedAt">-</dd></div>
+      <div><dt>원가DB 최신 수정일</dt><dd id="costDbLatestUpdatedAt">-</dd></div>
+      <div><dt>현재 원가DB 상태</dt><dd id="costSnapshotStatus">-</dd></div>
+    </dl>
+    <div class="admin-action-row">
+      <button id="compareCostSnapshotButton" type="button" disabled>현재 원가와 비교</button>
+      <span id="costCompareStatus" class="status-text"></span>
+    </div>
+    <div id="costComparisonPanel" class="table-wrap" hidden></div>
+  `;
+  savedList.insertAdjacentElement("afterend", section);
+}
+
 function setRateDbStatus(message) {
   const status = document.getElementById("rateDbSaveStatus");
   if (status) status.textContent = message;
@@ -612,6 +641,60 @@ function setRateDbInputsDisabled(disabled) {
 
 function rateNumber(value) {
   return Number(value) || 0;
+}
+
+function costItemFromRow(definition, row) {
+  return {
+    itemCode: definition.itemCode,
+    category: row?.category || definition.category,
+    itemName: row?.item_name || definition.itemName,
+    unit: row?.unit || definition.unit,
+    costPrice: rateNumber(row?.cost_price),
+    defaultMarginRate: rateNumber(row?.default_margin_rate),
+    updatedAt: row?.updated_at || null,
+  };
+}
+
+function latestDate(values) {
+  const timestamps = values
+    .map((value) => value ? new Date(value).getTime() : 0)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : null;
+}
+
+function currentCostItems() {
+  return COST_ITEM_DEFINITIONS
+    .map((definition) => {
+      const row = originalCostItems.get(definition.itemCode);
+      return row ? costItemFromRow(definition, row) : null;
+    })
+    .filter(Boolean);
+}
+
+function buildCostSnapshot() {
+  if (!isAdmin() || !originalCostItems.size) return null;
+  const items = currentCostItems();
+  return {
+    capturedAt: new Date().toISOString(),
+    costDbUpdatedAt: latestDate(items.map((item) => item.updatedAt)),
+    source: "supabase_cost_items",
+    items,
+  };
+}
+
+function costSnapshotMap(snapshot) {
+  return new Map((snapshot?.items || []).map((item) => [item.itemCode, item]));
+}
+
+function costSnapshotChanged(snapshot) {
+  if (!snapshot?.items?.length || !originalCostItems.size) return false;
+  const saved = costSnapshotMap(snapshot);
+  return currentCostItems().some((current) => {
+    const old = saved.get(current.itemCode);
+    if (!old) return true;
+    return rateNumber(old.costPrice) !== rateNumber(current.costPrice) ||
+      rateNumber(old.defaultMarginRate) !== rateNumber(current.defaultMarginRate);
+  });
 }
 
 function clearCostItemDirtyMark(inputId) {
@@ -766,6 +849,7 @@ function repairStaticKoreanLabels() {
   ensureSaveButtons();
   ensureAdminStandardCheckLists();
   ensureRateDbSaveButton();
+  ensureCostSnapshotPanel();
   const labels = {
     projectName: "프로젝트명",
     areaPyeong: "평형",
@@ -2758,8 +2842,14 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function isEstimateInputExcluded(id) {
+  return Boolean(COST_ITEM_BY_INPUT[id]);
+}
+
 function collectInputValues() {
-  return Object.fromEntries(Object.entries(el).map(([id, input]) => [
+  return Object.fromEntries(Object.entries(el)
+    .filter(([id]) => !isEstimateInputExcluded(id))
+    .map(([id, input]) => [
     id,
     input?.type === "checkbox" ? Boolean(input.checked) : input?.value ?? "",
   ]));
@@ -2767,6 +2857,7 @@ function collectInputValues() {
 
 function restoreInputValues(inputs = {}) {
   for (const [id, value] of Object.entries(inputs)) {
+    if (isEstimateInputExcluded(id)) continue;
     const input = el[id];
     if (!input) continue;
     if (input.type === "checkbox") {
@@ -2834,6 +2925,7 @@ function buildEstimateSnapshot(result) {
     costTotal: result.directCost,
     marginRate: Number((result.actualMargin * 100).toFixed(2)),
     status: result.state.status || "견적",
+    costSnapshot: buildCostSnapshot(),
     author: {
       user_id: currentProfile?.id || getAuthSession()?.user?.id || "",
       user_email: currentProfile?.email || getAuthSession()?.user?.email || "",
@@ -2995,6 +3087,110 @@ function renderAdminMarginTable(estimate) {
     <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
     <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
   `;
+}
+
+function renderStoredInternalSummary(estimate) {
+  if (!estimate) return;
+  const summary = estimate.internalSummary || {};
+  const directCost = Number(estimate.costTotal ?? summary.directCost) || 0;
+  const customerRevenue = Number(estimate.total ?? summary.customerRevenue) || 0;
+  const profit = Number.isFinite(summary.profit) ? summary.profit : customerRevenue - directCost;
+  const marginRate = Number.isFinite(summary.marginRate)
+    ? summary.marginRate
+    : (customerRevenue > 0 ? (profit / customerRevenue) * 100 : Number(estimate.marginRate) || 0);
+  setText("internalCost", won(directCost));
+  setText("internalRevenue", customerWon(customerRevenue));
+  setText("internalProfit", won(profit));
+  setText("internalMargin", `${Number(marginRate).toFixed(1)}%`);
+  setText("adminInternalCost", won(directCost));
+  setText("adminInternalRevenue", customerWon(customerRevenue));
+  setText("adminInternalProfit", won(profit));
+  setText("adminInternalMargin", `${Number(marginRate).toFixed(1)}%`);
+}
+
+function renderCostSnapshotInfo(estimate) {
+  if (!isAdmin()) return;
+  const snapshot = estimate?.costSnapshot;
+  const currentLatest = latestDate(currentCostItems().map((item) => item.updatedAt));
+  setText("costBasisLabel", estimate ? (snapshot ? "저장 당시 원가" : "기존 저장 계산 결과") : "저장된 견적 없음");
+  setText("costBasisSavedAt", estimate?.savedAt ? formatDateTime(estimate.savedAt) : "-");
+  setText("costSnapshotCapturedAt", snapshot?.capturedAt ? formatDateTime(snapshot.capturedAt) : "원가 스냅샷 없음");
+  setText("costDbLatestUpdatedAt", currentLatest ? formatDateTime(currentLatest) : "-");
+  const compareButton = document.getElementById("compareCostSnapshotButton");
+  const comparePanel = document.getElementById("costComparisonPanel");
+  const status = document.getElementById("costCompareStatus");
+  if (comparePanel) {
+    comparePanel.hidden = true;
+    comparePanel.innerHTML = "";
+  }
+  if (status) status.textContent = "";
+  if (!estimate) {
+    setText("costSnapshotStatus", "-");
+    if (compareButton) compareButton.disabled = true;
+    return;
+  }
+  if (!snapshot?.items?.length) {
+    setText("costSnapshotStatus", "원가 스냅샷 없음");
+    if (compareButton) compareButton.disabled = true;
+    return;
+  }
+  setText("costSnapshotStatus", costSnapshotChanged(snapshot) ? "저장 이후 변경됨" : "저장 당시와 동일");
+  if (compareButton) compareButton.disabled = !originalCostItems.size;
+}
+
+function renderCostSnapshotComparison(estimate) {
+  const panel = document.getElementById("costComparisonPanel");
+  const status = document.getElementById("costCompareStatus");
+  if (!panel || !estimate?.costSnapshot?.items?.length) {
+    if (status) status.textContent = "원가 스냅샷이 없어 비교할 수 없습니다.";
+    return;
+  }
+  const saved = costSnapshotMap(estimate.costSnapshot);
+  const current = currentCostItems();
+  const rows = current
+    .map((item) => {
+      const old = saved.get(item.itemCode);
+      if (!old) return null;
+      const diff = rateNumber(item.costPrice) - rateNumber(old.costPrice);
+      const diffRate = rateNumber(old.costPrice) > 0 ? diff / rateNumber(old.costPrice) : 0;
+      return { ...item, savedPrice: rateNumber(old.costPrice), diff, diffRate };
+    })
+    .filter((item) => item && item.diff !== 0);
+  const savedDirectCost = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
+  const currentSnapshot = buildEstimateSnapshot(calculate());
+  const currentDirectCost = Number(currentSnapshot.costTotal) || 0;
+  const directDiff = currentDirectCost - savedDirectCost;
+  panel.hidden = false;
+  panel.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>항목명</th>
+          <th>저장 당시 단가</th>
+          <th>현재 단가</th>
+          <th>증감액</th>
+          <th>증감률</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.length ? rows.map((item) => `
+          <tr>
+            <td>${item.itemName}</td>
+            <td>${won(item.savedPrice)}</td>
+            <td>${won(item.costPrice)}</td>
+            <td>${won(item.diff)}</td>
+            <td>${(item.diffRate * 100).toFixed(1)}%</td>
+          </tr>
+        `).join("") : `<tr><td colspan="5">현재 원가DB와 저장 당시 원가가 동일합니다.</td></tr>`}
+      </tbody>
+    </table>
+    <div class="quote-total-list">
+      <div><span>저장 당시 직접원가</span><strong>${won(savedDirectCost)}</strong></div>
+      <div><span>현재 원가 적용 예상 직접원가</span><strong>${won(currentDirectCost)}</strong></div>
+      <div><span>예상 증감액</span><strong>${won(directDiff)}</strong></div>
+    </div>
+  `;
+  if (status) status.textContent = "비교 완료";
 }
 
 function renderPrintQuote(quote) {
@@ -3228,6 +3424,7 @@ function renderCustomerQuote(estimate) {
     if (isAdmin() && adminRows && adminGroupTotals) renderAdminMarginTable(null);
     renderPurchaseOrder(null);
     renderAdminProcessTotals(null);
+    renderCostSnapshotInfo(null);
     return;
   }
 
@@ -3240,6 +3437,7 @@ function renderCustomerQuote(estimate) {
   renderPurchaseOrder(estimate);
   renderPrintQuote(quote);
   renderAdminProcessTotals(quote);
+  renderCostSnapshotInfo(estimate);
 }
 
 async function renderSavedEstimateRows() {
@@ -3521,15 +3719,26 @@ function loadEstimateIntoUi(estimate) {
   currentEditingEstimateId = estimate.id || null;
   activeQuoteEstimate = null;
   refresh();
-  const recalculated = {
-    ...estimate,
-    ...buildEstimateSnapshot(calculate()),
-    id: estimate.id,
-    savedAt: estimate.savedAt,
-  };
-  activeQuoteEstimate = recalculated;
+  const hasStoredResult = estimate.customerQuote || estimate.internalSummary || estimate.internalDetails;
+  const displayEstimate = hasStoredResult
+    ? estimate
+    : {
+      ...estimate,
+      ...buildEstimateSnapshot(calculate()),
+      id: estimate.id,
+      savedAt: estimate.savedAt,
+    };
+  activeQuoteEstimate = displayEstimate;
   currentEditingEstimateId = estimate.id || null;
-  renderCustomerQuote(recalculated);
+  loadedEstimateBaseline = {
+    id: estimate.id || null,
+    inputs: JSON.stringify(estimate.inputs || {}),
+  };
+  renderCustomerQuote(displayEstimate);
+  renderStoredInternalSummary(displayEstimate);
+  renderInternalRows(displayEstimate.internalDetails || []);
+  renderPurchaseOrder(displayEstimate);
+  setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
 }
 
 document.querySelectorAll(".tab-button").forEach((button) => {
@@ -3590,6 +3799,15 @@ function setSaveStatus(message) {
   if (status) status.textContent = message;
 }
 
+function handleEstimateInputChanged() {
+  if (loadedEstimateBaseline && activeQuoteEstimate) {
+    setSaveStatus("입력값이 변경되어 현재 원가 기준으로 재계산되었습니다. 저장 전까지 DB 원본은 변경되지 않습니다.");
+  }
+  activeQuoteEstimate = null;
+  loadedEstimateBaseline = null;
+  refresh();
+}
+
 async function handleSaveEstimate(mode = "update") {
   if (saveEstimateInProgress) return;
   saveEstimateInProgress = true;
@@ -3614,7 +3832,12 @@ async function handleSaveEstimate(mode = "update") {
       : await saveEstimate({ ...snapshot, id: "" });
     activeQuoteEstimate = saved;
     currentEditingEstimateId = saved.id || null;
+    loadedEstimateBaseline = {
+      id: saved.id || null,
+      inputs: JSON.stringify(saved.inputs || {}),
+    };
     renderCustomerQuote(saved);
+    renderStoredInternalSummary(saved);
     setSaveStatus(`${formatDateTime(saved.savedAt)} ${isUpdate ? "수정 저장 완료" : "새 견적 저장 완료"}`);
     renderSavedEstimateRows().catch((error) => {
       console.warn("저장 후 목록 갱신 실패", error);
@@ -3662,6 +3885,12 @@ document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("#saveRateDbButton");
   if (!button) return;
   saveRateSettings();
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#compareCostSnapshotButton");
+  if (!button) return;
+  renderCostSnapshotComparison(activeQuoteEstimate);
 });
 
 document.addEventListener("click", async (event) => {
@@ -3713,14 +3942,12 @@ for (const input of Object.values(el)) {
   input.addEventListener("input", () => {
     normalizeIntegerInput(input);
     syncRateDirtyState(input);
-    activeQuoteEstimate = null;
-    refresh();
+    handleEstimateInputChanged();
   });
   input.addEventListener("change", () => {
     normalizeIntegerInput(input);
     syncRateDirtyState(input);
-    activeQuoteEstimate = null;
-    refresh();
+    handleEstimateInputChanged();
   });
 }
 
