@@ -474,16 +474,20 @@ function ensureAdminStandardCheckLists() {
   const separate = document.getElementById("adminStandardSeparateItems");
   const grid = separate?.closest(".standard-check-grid");
   if (!grid) return;
-  if (!document.getElementById("adminStandardSelectedItems")) {
-    const selectedBox = document.createElement("div");
-    selectedBox.innerHTML = `<h3>선택 항목</h3><ul id="adminStandardSelectedItems"></ul>`;
-    grid.insertBefore(selectedBox, grid.firstElementChild);
-  }
-  if (!document.getElementById("adminStandardUnselectedItems")) {
-    const unselectedBox = document.createElement("div");
-    unselectedBox.innerHTML = `<h3>미선택 항목</h3><ul id="adminStandardUnselectedItems"></ul>`;
-    grid.insertBefore(unselectedBox, separate.closest("div"));
-  }
+  grid.innerHTML = `
+    <div>
+      <h3>선택 항목</h3>
+      <ul id="adminStandardSelectedItems"></ul>
+    </div>
+    <div>
+      <h3>미선택 항목</h3>
+      <ul id="adminStandardUnselectedItems"></ul>
+    </div>
+    <div>
+      <h3>별도 확인</h3>
+      <ul id="adminStandardSeparateItems"></ul>
+    </div>
+  `;
 }
 
 function ensureRateDbSaveButton() {
@@ -903,8 +907,8 @@ function repairStaticKoreanLabels() {
     if (dt) dt.textContent = text;
   });
   const standardSections = [
-    ["standardSelectedItems", ["표준견적 체크", "선택 항목, 미선택 항목, 별도 확인 항목을 구분합니다.", "선택 항목", "미선택 항목", "별도 확인"]],
-    ["adminStandardSelectedItems", ["표준견적 체크", "선택 항목, 미선택 항목, 별도 확인 항목을 구분합니다.", "선택 항목", "미선택 항목", "별도 확인"]],
+    ["standardSelectedItems", ["견적내역 확인", "선택 항목, 미선택 항목, 별도 확인 항목을 구분합니다.", "선택 항목", "미선택 항목", "별도 확인"]],
+    ["adminStandardSelectedItems", ["견적내역 확인", "선택 항목, 미선택 항목, 별도 확인 항목을 구분합니다.", "선택 항목", "미선택 항목", "별도 확인"]],
   ];
   standardSections.forEach(([id, texts]) => {
     const section = document.getElementById(id)?.closest(".internal-card");
