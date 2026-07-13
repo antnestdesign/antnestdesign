@@ -780,6 +780,23 @@ function repairStaticKoreanLabels() {
       });
     }
   });
+  const adminQuoteSection = document.getElementById("adminQuoteRows")?.closest(".detail-card");
+  if (adminQuoteSection) {
+    const heading = adminQuoteSection.querySelector(".section-heading h2");
+    const paragraph = adminQuoteSection.querySelector(".section-heading p");
+    if (heading) heading.textContent = "상세견적";
+    if (paragraph) paragraph.textContent = "공정별 고객용 금액, 내부 원가, 마진을 확인합니다.";
+    const headerRow = adminQuoteSection.querySelector("thead tr");
+    if (headerRow) {
+      headerRow.innerHTML = `
+        <th>공정</th>
+        <th>고객용</th>
+        <th>내부용</th>
+        <th>마진</th>
+        <th>마진율</th>
+      `;
+    }
+  }
   const adminDb = document.querySelector("#admin .admin-db-card");
   if (adminDb) {
     textFor("#admin .admin-db-card h2", "원가DB");
@@ -2441,6 +2458,96 @@ function renderCustomerQuoteTable(quote, rows, groupTotals) {
   `).join("");
 }
 
+function buildAdminMarginGroups(estimate) {
+  if (!estimate) return [];
+  const details = estimate.internalDetails || [];
+  const groups = new Map();
+  const ensureGroup = (label) => {
+    if (!groups.has(label)) groups.set(label, { label, cost: 0, customer: 0 });
+    return groups.get(label);
+  };
+
+  for (const detail of details) {
+    const label = quoteGroupLabels[detail.group] || detail.group || "기타";
+    const group = ensureGroup(label);
+    group.cost += Number(detail.cost) || 0;
+    group.customer += Number.isFinite(detail.customerRevenue)
+      ? detail.customerRevenue
+      : floorThousand(Number(detail.revenue) || 0);
+  }
+
+  const customerTotal = Number(estimate.total ?? estimate.customerQuote?.total ?? estimate.internalSummary?.customerRevenue) || 0;
+  const costTotal = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
+  const groupedCustomer = [...groups.values()].reduce((sum, group) => sum + group.customer, 0);
+  const groupedCost = [...groups.values()].reduce((sum, group) => sum + group.cost, 0);
+  const customerDiff = customerTotal - groupedCustomer;
+  const costDiff = costTotal - groupedCost;
+  if (Math.abs(customerDiff) >= 1 || Math.abs(costDiff) >= 1) {
+    const group = ensureGroup("기타");
+    group.customer += customerDiff;
+    group.cost += costDiff;
+  }
+
+  return quoteGroupOrder
+    .map((label) => groups.get(label))
+    .filter((group) => group && (Math.abs(group.customer) >= 1 || Math.abs(group.cost) >= 1))
+    .map((group) => {
+      const profit = group.customer - group.cost;
+      const marginRate = group.customer > 0 ? profit / group.customer : 0;
+      return { ...group, profit, marginRate };
+    });
+}
+
+function renderAdminMarginTable(estimate) {
+  const rows = document.getElementById("adminQuoteRows");
+  const groupTotals = document.getElementById("adminQuoteGroupTotals");
+  if (!rows || !groupTotals) return;
+  rows.innerHTML = "";
+  groupTotals.innerHTML = "";
+
+  const groups = buildAdminMarginGroups(estimate);
+  if (!groups.length) {
+    rows.innerHTML = `<tr><td colspan="5">표시할 상세견적이 없습니다.</td></tr>`;
+    groupTotals.innerHTML = `<div><span>공정별 마진</span><strong>없음</strong></div>`;
+    return;
+  }
+
+  for (const group of groups) {
+    const row = document.createElement("tr");
+    row.className = "quote-item-row";
+    row.innerHTML = `
+      <td>${group.label}</td>
+      <td>${customerWon(group.customer)}</td>
+      <td>${won(group.cost)}</td>
+      <td>${won(group.profit)}</td>
+      <td>${(group.marginRate * 100).toFixed(1)}%</td>
+    `;
+    rows.appendChild(row);
+  }
+
+  const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
+  const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
+  const totalProfit = totalCustomer - totalCost;
+  const totalMarginRate = totalCustomer > 0 ? totalProfit / totalCustomer : 0;
+  const totalRow = document.createElement("tr");
+  totalRow.className = "quote-total-row";
+  totalRow.innerHTML = `
+    <td>총계</td>
+    <td>${customerWon(totalCustomer)}</td>
+    <td>${won(totalCost)}</td>
+    <td>${won(totalProfit)}</td>
+    <td>${(totalMarginRate * 100).toFixed(1)}%</td>
+  `;
+  rows.appendChild(totalRow);
+
+  groupTotals.innerHTML = `
+    <div><span>고객용 총액</span><strong>${customerWon(totalCustomer)}</strong></div>
+    <div><span>내부 원가</span><strong>${won(totalCost)}</strong></div>
+    <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
+    <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
+  `;
+}
+
 function renderPrintQuote(quote) {
   const sheet = document.getElementById("printQuoteSheet");
   if (!sheet || !quote) return;
@@ -2500,7 +2607,7 @@ function renderCustomerQuote(estimate) {
     document.getElementById("quoteDate").textContent = "-";
     document.getElementById("quoteTotal").textContent = "0원";
     renderCustomerQuoteTable(null, rows, groupTotals);
-    if (adminRows && adminGroupTotals) renderCustomerQuoteTable(null, adminRows, adminGroupTotals);
+    if (adminRows && adminGroupTotals) renderAdminMarginTable(null);
     renderAdminProcessTotals(null);
     return;
   }
@@ -2510,7 +2617,7 @@ function renderCustomerQuote(estimate) {
   document.getElementById("quoteDate").textContent = formatDateTime(quote.savedAt);
   document.getElementById("quoteTotal").textContent = quote.totalText;
   renderCustomerQuoteTable(quote, rows, groupTotals);
-  if (adminRows && adminGroupTotals) renderCustomerQuoteTable(quote, adminRows, adminGroupTotals);
+  if (adminRows && adminGroupTotals) renderAdminMarginTable(estimate);
   renderPrintQuote(quote);
   renderAdminProcessTotals(quote);
 }
