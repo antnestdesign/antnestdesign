@@ -10,6 +10,7 @@ import { wallpaperMaterialDetail, filmMaterialDetail } from "./calculator/finish
 import { miscDetails } from "./calculator/misc.js";
 import {
   saveEstimate,
+  updateEstimate,
   loadEstimates,
   getEstimate,
   deleteEstimate,
@@ -124,6 +125,7 @@ const ids = [
   "areaPyeong",
   "clientName",
   "clientPhone",
+  "estimateStatus",
   "projectSearch",
   "projectSearchResults",
   "sectionDemolitionEnabled",
@@ -433,17 +435,53 @@ function textFor(selector, text) {
   if (node) node.textContent = text;
 }
 
+function ensureEstimateStatusControl() {
+  if (!document.getElementById("estimateStatus")) {
+    const grid = document.querySelector(".project-info-grid");
+    if (grid) {
+      const label = document.createElement("label");
+      label.innerHTML = `
+        상태
+        <select id="estimateStatus">
+          <option value="견적">견적</option>
+          <option value="계약">계약</option>
+          <option value="착공">착공</option>
+          <option value="준공">준공</option>
+        </select>
+      `;
+      grid.appendChild(label);
+      el.estimateStatus = label.querySelector("#estimateStatus");
+    }
+  }
+}
+
+function ensureSaveButtons() {
+  const updateButton = document.getElementById("saveEstimateButton");
+  if (!updateButton) return;
+  updateButton.textContent = "견적 수정";
+  if (document.getElementById("saveAsNewEstimateButton")) return;
+  const newButton = document.createElement("button");
+  newButton.id = "saveAsNewEstimateButton";
+  newButton.className = "secondary-action";
+  newButton.type = "button";
+  newButton.textContent = "새 견적으로 저장";
+  updateButton.insertAdjacentElement("afterend", newButton);
+}
+
 function sectionTextFor(controlId, text) {
   const node = document.getElementById(controlId)?.closest(".section-heading")?.querySelector("p");
   if (node) node.textContent = text;
 }
 
 function repairStaticKoreanLabels() {
+  ensureEstimateStatusControl();
+  ensureSaveButtons();
   const labels = {
     projectName: "프로젝트명",
     areaPyeong: "평형",
     clientName: "고객성명",
     clientPhone: "연락처",
+    estimateStatus: "상태",
     sectionDemolitionEnabled: "철거 및 인허가",
     demolitionFloorEnabled: "바닥",
     demolitionFloorMaterial: "바닥 재질",
@@ -630,7 +668,7 @@ function repairStaticKoreanLabels() {
     Object.entries(values).forEach(([value, text]) => optionTextFor(id, value, text))
   );
 
-  textFor("#saveEstimateButton", "견적 저장");
+  textFor("#saveEstimateButton", "견적 수정");
   textFor("#selectionCount", "0개 선택");
   textFor(".excluded-work strong", "포함되지 않은 공정");
   document.querySelectorAll(".excluded-work li").forEach((item, index) => {
@@ -721,7 +759,79 @@ function repairStaticKoreanLabels() {
     rateCarpentryPlywoodSheet: "합판 1장",
     rateCarpentryStudBundle: "다루끼 1묶음",
   };
-  Object.entries(rateLabels).forEach(([id, text]) => labelTextFor(id, text));
+  const rateCategories = {
+    rateLowerPerJa: "가구",
+    rateUpperPerJa: "가구",
+    rateIslandPerJa: "가구",
+    rateHomebarBuildPerJa: "가구",
+    rateTallPerJa: "가구",
+    rateFridgeLaundryPerJa: "가구",
+    rateShoePerJa: "가구",
+    ratePantryPerJa: "가구",
+    ratePantryDrawer: "가구",
+    rateBuiltInPerJa: "가구",
+    rateHangerPerJa: "가구",
+    rateRiceCabinetPerUnit: "가구",
+    rateEndPanelShallow: "가구",
+    rateEndPanelDeep: "가구",
+    rateDrawer: "가구",
+    rateBachmannOutlet: "가구",
+    rateLightingPerCabinetUnit: "가구",
+    rateT3LightingUnit: "가구",
+    rateStandardDownlight: "전기",
+    rateStandardSquareLight: "전기",
+    rateStandardCylinderLight: "전기",
+    rateStandardT3PerM: "전기",
+    rateStandardBedWallLight: "전기",
+    rateHimacsPerM: "상판",
+    rateKhanstoneSlab: "상판",
+    rateKhanstoneFactory: "상판",
+    rateKhanstoneInstall: "상판",
+    rateCeramicSlab: "상판",
+    rateCeramicFactory: "상판",
+    rateCeramicInstall: "상판",
+    rateEpPanelPerM: "상판",
+    rateDemolitionFloorPerPyeong: "철거",
+    rateDemolitionDecoTilePerPyeong: "철거",
+    rateDemolitionFurniturePerJa: "철거",
+    rateDemolitionBathroomWaterproof: "철거",
+    rateDemolitionCeilingPerPyeong: "철거",
+    rateDemolitionElevatorProtect: "철거",
+    rateDemolitionElevatorProtectRemoval: "철거",
+    rateDemolitionPermit: "인허가",
+    rateDemolitionConsent: "인허가",
+    rateElectricalWorkerDay: "전기",
+    rateElectricalHelperDay: "전기",
+    rateElectricalUnder10Days: "전기",
+    rateElectricalOver10Days: "전기",
+    rateElectricalWiring: "전기",
+    rateElectricalStandardSwitch: "전기",
+    rateTileWorkerDay: "타일",
+    rateTileHelperDay: "타일",
+    rateTileGrout: "타일",
+    rateWallpaperWorkerDay: "도배",
+    rateFilmWorkerDay: "필름",
+    rateFlooringPerPyeong: "바닥",
+    rateSilicone: "마감",
+    rateElasticBase: "마감",
+    rateElasticExtraRoom: "마감",
+    rateCarpentryWorkerDay: "목공",
+    rateCarpentryMachineDay: "목공",
+    rateCarpentryLifting: "목공",
+    rateCarpentrySubsidiary: "목공",
+    rateCarpentryCeilingFanUnit: "목공",
+    rateCarpentryDrywallSheet: "목공",
+    rateCarpentryMdfSheet: "목공",
+    rateCarpentryPlywoodSheet: "목공",
+    rateCarpentryStudBundle: "목공",
+  };
+  const categorizedRateLabel = (category, text) => {
+    if (!category) return text;
+    const duplicatePrefix = new RegExp(`^${category}\\s*`);
+    if (duplicatePrefix.test(text)) return `(${category}) ${text.replace(duplicatePrefix, "")}`;
+    return `(${category})${text}`;
+  };
+  Object.entries(rateLabels).forEach(([id, text]) => labelTextFor(id, categorizedRateLabel(rateCategories[id], text)));
 
   textFor("#internal .internal-summary-card h2", "내부 요약");
   [
@@ -973,6 +1083,7 @@ function readState() {
     areaPyeong: numberValue("areaPyeong"),
     clientName: el.clientName.value || "",
     clientPhone: el.clientPhone.value || "",
+    status: el.estimateStatus?.value || "견적",
     targetMargin: (numberValue("targetMargin") || 35) / 100,
     baseEnabled: furnitureSection && checkedValue("baseEnabled"),
     lowerCabinetM: numberValue("lowerCabinetM"),
@@ -2430,7 +2541,7 @@ function buildEstimateSnapshot(result) {
     totalText: customerWon(result.customerRevenue),
     costTotal: result.directCost,
     marginRate: Number((result.actualMargin * 100).toFixed(2)),
-    status: "상담",
+    status: result.state.status || "견적",
     author: {
       user_id: currentProfile?.id || getAuthSession()?.user?.id || "",
       user_email: currentProfile?.email || getAuthSession()?.user?.email || "",
@@ -2453,7 +2564,7 @@ function buildEstimateSnapshot(result) {
       savedAt,
       total: result.customerRevenue,
       totalText: customerWon(result.customerRevenue),
-      status: "상담",
+      status: result.state.status || "견적",
       groups: groupedCustomerItems(result.details, result.quoteLines),
     },
   };
@@ -3052,6 +3163,7 @@ function loadEstimateIntoUi(estimate) {
   el.areaPyeong.value = estimate.areaPyeong ?? "";
   el.clientName.value = estimate.clientName || "";
   el.clientPhone.value = estimate.phone || estimate.clientPhone || "";
+  if (el.estimateStatus) el.estimateStatus.value = estimate.status || "견적";
   activeQuoteEstimate = null;
   refresh();
   const recalculated = {
@@ -3118,7 +3230,7 @@ function setSaveStatus(message) {
   if (status) status.textContent = message;
 }
 
-async function handleSaveEstimate() {
+async function handleSaveEstimate(mode = "update") {
   if (saveEstimateInProgress) return;
   saveEstimateInProgress = true;
   try {
@@ -3129,11 +3241,19 @@ async function handleSaveEstimate() {
       alert("프로젝트명을 입력해야 저장할 수 있습니다.");
       return;
     }
-    setSaveStatus("Supabase에 저장 중입니다.");
-    const saved = await saveEstimate(snapshot);
+    const isUpdate = mode === "update";
+    if (isUpdate && !activeQuoteEstimate?.id) {
+      setSaveStatus("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
+      alert("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
+      return;
+    }
+    setSaveStatus(isUpdate ? "Supabase에 수정 저장 중입니다." : "Supabase에 새 견적으로 저장 중입니다.");
+    const saved = isUpdate
+      ? await updateEstimate(activeQuoteEstimate.id, { ...snapshot, id: activeQuoteEstimate.id })
+      : await saveEstimate({ ...snapshot, id: "" });
     activeQuoteEstimate = saved;
     renderCustomerQuote(saved);
-    setSaveStatus(`${formatDateTime(saved.savedAt)} 저장 완료`);
+    setSaveStatus(`${formatDateTime(saved.savedAt)} ${isUpdate ? "수정 저장 완료" : "새 견적 저장 완료"}`);
     renderSavedEstimateRows().catch((error) => {
       console.warn("저장 후 목록 갱신 실패", error);
     });
@@ -3147,13 +3267,14 @@ async function handleSaveEstimate() {
   }
 }
 
-document.getElementById("saveEstimateButton")?.addEventListener("click", handleSaveEstimate);
+document.getElementById("saveEstimateButton")?.addEventListener("click", () => handleSaveEstimate("update"));
+document.getElementById("saveAsNewEstimateButton")?.addEventListener("click", () => handleSaveEstimate("new"));
 
 document.addEventListener("click", (event) => {
-  const button = event.target?.closest?.("#saveEstimateButton");
+  const button = event.target?.closest?.("#saveEstimateButton, #saveAsNewEstimateButton");
   if (!button) return;
   event.preventDefault();
-  handleSaveEstimate();
+  handleSaveEstimate(button.id === "saveAsNewEstimateButton" ? "new" : "update");
 });
 
 document.getElementById("printQuoteButton")?.addEventListener("click", () => {

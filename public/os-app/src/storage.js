@@ -132,7 +132,7 @@ function normalizeEstimate(row) {
     totalText: data.totalText || `${(Math.floor((row.total_price || 0) / 1000) * 1000).toLocaleString("ko-KR")}원`,
     costTotal: row.cost_total ?? data.costTotal ?? 0,
     marginRate: row.margin_rate ?? data.marginRate ?? 0,
-    status: row.status || data.status || "상담",
+    status: row.status || data.status || "견적",
     savedAt,
     customerQuote: data.customerQuote
       ? { ...data.customerQuote, clientName, phone, savedAt }
@@ -186,7 +186,7 @@ export async function saveEstimate(estimate) {
   }
   const clientName = estimate.clientName || estimate.inputs?.clientName || "";
   const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
-  const status = estimate.status || "\uC0C1\uB2F4";
+  const status = estimate.status || "견적";
 
   const payload = {
     project_name: projectName,
@@ -226,6 +226,46 @@ export async function saveEstimate(estimate) {
     created_at: new Date().toISOString(),
   });
 }
+
+export async function updateEstimate(id, estimate) {
+  if (!id) {
+    throw new Error("Estimate id is required.");
+  }
+  const projectName = estimate.projectName?.trim();
+  if (!projectName) {
+    throw new Error("Project name is required.");
+  }
+  const clientName = estimate.clientName || estimate.inputs?.clientName || "";
+  const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
+  const status = estimate.status || "견적";
+  const payload = {
+    project_name: projectName,
+    client_name: clientName,
+    phone,
+    address: estimate.address || "",
+    area_pyeong: estimate.areaPyeong || 0,
+    total_price: estimate.total || 0,
+    cost_total: estimate.costTotal || 0,
+    margin_rate: estimate.marginRate || 0,
+    estimate_data: {
+      ...estimate,
+      id,
+      projectName,
+      clientName,
+      phone,
+      clientPhone: phone,
+      status,
+    },
+    status,
+  };
+  const rows = await request(`?id=eq.${encodeURIComponent(id)}&select=*`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify(payload),
+  });
+  return normalizeEstimate(rows?.[0] || { ...payload, id, created_at: estimate.savedAt || new Date().toISOString() });
+}
+
 export async function loadEstimates() {
   const rows = await request("?select=*&order=created_at.desc");
   return rows.map(normalizeEstimate);

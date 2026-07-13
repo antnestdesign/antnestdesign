@@ -54,6 +54,14 @@ button:hover {
   color: #fff;
 }
 
+.secondary-action {
+  width: 100%;
+  margin-top: 8px;
+  background: #fff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .status-text {
   min-height: 18px;
   margin-top: 10px;
