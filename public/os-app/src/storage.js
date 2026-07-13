@@ -1,6 +1,8 @@
 const SUPABASE_URL = "https://lzsxboaqliuwjzwsnnwf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2lbgZkij5jLbtE6JVBfB1Q_MCvzOcVr";
 const ESTIMATES_ENDPOINT = `${SUPABASE_URL}/rest/v1/estimates`;
+const COST_ITEMS_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_items`;
+const COST_ITEM_HISTORY_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_item_history`;
 const AUTH_STORAGE_KEY = "and-os.auth-session";
 
 let authSession = null;
@@ -280,4 +282,69 @@ export async function deleteEstimate(id) {
   await request(`?id=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+async function requestCostItems(path = "", options = {}) {
+  const response = await fetch(`${COST_ITEMS_ENDPOINT}${path}`, {
+    ...options,
+    headers: { ...authHeaders(), ...(options.headers || {}) },
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Supabase cost_items request failed: ${response.status}`);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+async function requestCostHistory(options = {}) {
+  const response = await fetch(COST_ITEM_HISTORY_ENDPOINT, {
+    ...options,
+    headers: { ...authHeaders(), ...(options.headers || {}) },
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Supabase cost_item_history request failed: ${response.status}`);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+export async function loadCostItems() {
+  return requestCostItems("?is_active=eq.true&select=*&order=sort_order.asc,category.asc");
+}
+
+export async function saveCostItemChanges(changes, userId) {
+  const saved = [];
+  for (const change of changes) {
+    const costChanged = Number(change.old_cost_price) !== Number(change.new_cost_price);
+    const marginChanged = Number(change.old_margin_rate) !== Number(change.new_margin_rate);
+    if (!costChanged && !marginChanged) continue;
+
+    await requestCostHistory({
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        cost_item_id: change.id,
+        old_cost_price: change.old_cost_price,
+        new_cost_price: change.new_cost_price,
+        old_margin_rate: change.old_margin_rate,
+        new_margin_rate: change.new_margin_rate,
+        changed_by: userId || null,
+        reason: change.reason || null,
+      }),
+    });
+
+    const rows = await requestCostItems(`?id=eq.${encodeURIComponent(change.id)}&select=*`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        cost_price: change.new_cost_price,
+        default_margin_rate: change.new_margin_rate,
+        updated_by: userId || null,
+      }),
+    });
+    if (rows?.[0]) saved.push(rows[0]);
+  }
+  return saved;
 }

@@ -14,6 +14,8 @@ import {
   loadEstimates,
   getEstimate,
   deleteEstimate,
+  loadCostItems,
+  saveCostItemChanges,
   signIn,
   signOut,
   loadStoredSession,
@@ -382,7 +384,10 @@ let activeQuoteEstimate = null;
 let currentEditingEstimateId = null;
 let currentProfile = null;
 let cachedEstimates = [];
-const RATE_SETTINGS_KEY = "and-os.rate-settings";
+let originalCostItems = new Map();
+let editedCostItems = new Map();
+let dirtyItemCodes = new Set();
+let costDbLoaded = false;
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
@@ -408,6 +413,83 @@ const isSlabMaterial = (material) => slabMaterials.has(material);
 const slabBaseCost = (material) =>
   rates.countertop[material].slabCost + rates.countertop[material].factoryCost + rates.countertop[material].installCost;
 const khanstoneBaseCost = () => slabBaseCost("khanstone");
+
+const COST_ITEM_DEFINITIONS = [
+  ["rateLowerPerJa", "CABINET_LOWER", "가구", "상하부장", "하부장 자당", "자"],
+  ["rateUpperPerJa", "CABINET_UPPER", "가구", "상하부장", "상부장 자당", "자"],
+  ["rateIslandPerJa", "CABINET_ISLAND", "가구", "아일랜드", "아일랜드 자당", "자"],
+  ["rateHomebarBuildPerJa", "CABINET_HOMEBAR_BUILD", "가구", "홈바장", "홈바장 자당", "자"],
+  ["rateTallPerJa", "CABINET_TALL", "가구", "키큰장", "키큰장 자당", "자"],
+  ["rateFridgeLaundryPerJa", "CABINET_FRIDGE_LAUNDRY", "가구", "냉장고장", "냉장고 및 세탁기장 자당", "자"],
+  ["rateShoePerJa", "CABINET_SHOE", "가구", "신발장", "신발장 자당", "자"],
+  ["ratePantryPerJa", "CABINET_PANTRY", "가구", "팬트리장", "팬트리장 자당", "자"],
+  ["ratePantryDrawer", "CABINET_PANTRY_DRAWER", "가구", "팬트리장", "팬트리장 하부서랍장 1개", "개"],
+  ["rateBuiltInPerJa", "CABINET_BUILT_IN_WARDROBE", "가구", "옷장", "옷장(붙박이장) 자당", "자"],
+  ["rateHangerPerJa", "CABINET_HANGER_WARDROBE", "가구", "옷장", "옷장(헹거장) 자당", "자"],
+  ["rateRiceCabinetPerUnit", "CABINET_RICE", "가구", "옵션", "밥솥장 1통", "통"],
+  ["rateEndPanelShallow", "CABINET_EP_SHALLOW", "가구", "EP", "EP 400mm 이하", "개"],
+  ["rateEndPanelDeep", "CABINET_EP_DEEP", "가구", "EP", "EP 400mm 초과", "개"],
+  ["rateDrawer", "CABINET_DRAWER", "가구", "옵션", "서랍 1개", "개"],
+  ["rateBachmannOutlet", "ELEC_BACHMANN_OUTLET", "가구", "주방설비", "바흐만 2구 콘센트", "개"],
+  ["rateLightingPerCabinetUnit", "LIGHT_LINE_CABINET", "가구", "조명", "라인조명 1통", "통"],
+  ["rateT3LightingUnit", "LIGHT_T3_CABINET", "가구", "조명", "간접조명(T3) 1라인", "라인"],
+  ["rateStandardDownlight", "ELEC_DOWNLIGHT", "전기", "조명", "다운라이트 1개", "개"],
+  ["rateStandardSquareLight", "ELEC_SQUARE_LIGHT", "전기", "조명", "사각매입등 1개", "개"],
+  ["rateStandardCylinderLight", "ELEC_CYLINDER_LIGHT", "전기", "조명", "실린더등 1개", "개"],
+  ["rateStandardT3PerM", "ELEC_T3_PER_M", "전기", "조명", "간접조명(T3) 1m", "m"],
+  ["rateStandardBedWallLight", "ELEC_BED_WALL_LIGHT", "전기", "조명", "침대 벽등", "식"],
+  ["rateHimacsPerM", "COUNTER_HIMACS_PER_M", "상판", "하이막스", "하이막스 1,000mm", "m"],
+  ["rateKhanstoneSlab", "COUNTER_KHANSTONE_SLAB", "상판", "칸스톤", "칸스톤 12T 1장", "장"],
+  ["rateKhanstoneFactory", "COUNTER_KHANSTONE_FACTORY", "상판", "칸스톤", "칸스톤 공장가공비", "식"],
+  ["rateKhanstoneInstall", "COUNTER_KHANSTONE_INSTALL", "상판", "칸스톤", "칸스톤 현장시공비", "식"],
+  ["rateCeramicSlab", "COUNTER_CERAMIC_SLAB", "상판", "세라믹", "세라믹 1장", "장"],
+  ["rateCeramicFactory", "COUNTER_CERAMIC_FACTORY", "상판", "세라믹", "세라믹 공장가공비", "식"],
+  ["rateCeramicInstall", "COUNTER_CERAMIC_INSTALL", "상판", "세라믹", "세라믹 현장시공비", "식"],
+  ["rateEpPanelPerM", "COUNTER_EP_PANEL_PER_M", "상판", "EP", "EP 상판/미드웨이 1,000mm", "m"],
+  ["rateDemolitionFloorPerPyeong", "DEMO_FLOOR_WOOD", "철거", "바닥", "마루철거 평당", "평"],
+  ["rateDemolitionDecoTilePerPyeong", "DEMO_FLOOR_DECOTILE", "철거", "바닥", "데코타일 철거 평당", "평"],
+  ["rateDemolitionFurniturePerJa", "DEMO_CABINET_PER_JA", "철거", "가구", "가구철거 자당", "자"],
+  ["rateDemolitionBathroomWaterproof", "DEMO_BATHROOM_WATERPROOF", "철거", "욕실", "화장실 철거 및 방수", "칸"],
+  ["rateDemolitionCeilingPerPyeong", "DEMO_CEILING_PER_PYEONG", "철거", "천장", "천장철거 평당", "평"],
+  ["rateDemolitionElevatorProtect", "DEMO_ELEVATOR_PROTECT", "철거", "보양", "E/V 보양", "식"],
+  ["rateDemolitionElevatorProtectRemoval", "DEMO_ELEVATOR_PROTECT_REMOVAL", "철거", "보양", "E/V 보양 철거", "식"],
+  ["rateDemolitionPermit", "PERMIT_CONSTRUCTION", "인허가", "행위허가", "행위허가", "식"],
+  ["rateDemolitionConsent", "PERMIT_CONSENT", "인허가", "동의서", "동의서", "식"],
+  ["rateElectricalWorkerDay", "ELEC_LABOR_WORKER", "전기", "인건비", "전기 기공 1품", "품"],
+  ["rateElectricalHelperDay", "ELEC_LABOR_HELPER", "전기", "인건비", "전기 조공 1품", "품"],
+  ["rateElectricalUnder10Days", "ELEC_DAYS_UNDER10", "전기", "품수", "준공 10년 이하 품수", "품"],
+  ["rateElectricalOver10Days", "ELEC_DAYS_OVER10", "전기", "품수", "준공 10년 이상 품수", "품"],
+  ["rateElectricalWiring", "ELEC_WIRING", "전기", "자재", "전기 배선비", "식"],
+  ["rateElectricalStandardSwitch", "ELEC_STANDARD_SWITCH", "전기", "기구", "AND 표준 콘센트 스위치", "식"],
+  ["rateTileWorkerDay", "TILE_LABOR_WORKER", "욕실", "타일", "타일 기공 1품", "품"],
+  ["rateTileHelperDay", "TILE_LABOR_HELPER", "욕실", "타일", "타일 조공 1품", "품"],
+  ["rateTileGrout", "TILE_GROUT", "욕실", "타일", "타일 메지", "식"],
+  ["rateWallpaperWorkerDay", "WALLPAPER_LABOR", "도배", "인건비", "도배 1품", "품"],
+  ["rateFilmWorkerDay", "FILM_LABOR", "필름", "인건비", "필름 1품", "품"],
+  ["rateFlooringPerPyeong", "FLOORING_WOOD_PER_PYEONG", "바닥", "마루", "바닥(마루) 평단가", "평"],
+  ["rateSilicone", "FINISH_SILICONE", "마감", "실리콘", "실리콘 기본", "식"],
+  ["rateElasticBase", "FINISH_ELASTIC_BASE", "마감", "탄성", "탄성 기본", "식"],
+  ["rateElasticExtraRoom", "FINISH_ELASTIC_EXTRA_ROOM", "마감", "탄성", "탄성 추가 1개소", "개소"],
+  ["rateCarpentryWorkerDay", "WOOD_LABOR_WORKER", "목공", "인건비", "목공 1품", "품"],
+  ["rateCarpentryMachineDay", "WOOD_MACHINE_DAY", "목공", "장비", "목공 기계품 1품", "품"],
+  ["rateCarpentryLifting", "WOOD_LIFTING", "목공", "양중", "목공 양중", "식"],
+  ["rateCarpentrySubsidiary", "WOOD_SUBSIDIARY", "목공", "부자재", "목공 부자재", "식"],
+  ["rateCarpentryCeilingFanUnit", "WOOD_CEILING_FAN", "목공", "천장", "실링팬 1개소", "개소"],
+  ["rateCarpentryDrywallSheet", "WOOD_DRYWALL_SHEET", "목공", "자재", "석고보드 1장", "장"],
+  ["rateCarpentryMdfSheet", "WOOD_MDF_SHEET", "목공", "자재", "MDF 1장", "장"],
+  ["rateCarpentryPlywoodSheet", "WOOD_PLYWOOD_SHEET", "목공", "자재", "합판 1장", "장"],
+  ["rateCarpentryStudBundle", "WOOD_STUD_BUNDLE", "목공", "자재", "다루끼 1묶음", "묶음"],
+].map(([inputId, itemCode, category, subcategory, itemName, unit], index) => ({
+  inputId,
+  itemCode,
+  category,
+  subcategory,
+  itemName,
+  unit,
+  sortOrder: index + 1,
+}));
+const COST_ITEM_BY_CODE = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.itemCode, item]));
+const COST_ITEM_BY_INPUT = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item]));
 
 function labelTextFor(id, text) {
   const control = document.getElementById(id);
@@ -502,29 +584,157 @@ function ensureRateDbSaveButton() {
   adminDb.appendChild(actions);
 }
 
-function loadRateSettings() {
+function setRateDbStatus(message) {
+  const status = document.getElementById("rateDbSaveStatus");
+  if (status) status.textContent = message;
+}
+
+function rateInputs() {
+  return COST_ITEM_DEFINITIONS.map((item) => el[item.inputId]).filter(Boolean);
+}
+
+function setRateDbInputsDisabled(disabled) {
+  rateInputs().forEach((input) => {
+    input.disabled = disabled;
+  });
+  const saveButton = document.getElementById("saveRateDbButton");
+  if (saveButton) saveButton.disabled = disabled || currentProfile?.role !== "admin";
+}
+
+function rateNumber(value) {
+  return Number(value) || 0;
+}
+
+function clearCostItemDirtyMark(inputId) {
+  const label = document.getElementById(inputId)?.closest("label");
+  label?.classList.remove("cost-item-dirty");
+  label?.querySelector(".dirty-badge")?.remove();
+}
+
+function markCostItemDirty(inputId, isDirty) {
+  const label = document.getElementById(inputId)?.closest("label");
+  if (!label) return;
+  label.classList.toggle("cost-item-dirty", isDirty);
+  let badge = label.querySelector(".dirty-badge");
+  if (isDirty && !badge) {
+    badge = document.createElement("span");
+    badge.className = "dirty-badge";
+    badge.textContent = "변경됨";
+    label.appendChild(badge);
+  }
+  if (!isDirty) badge?.remove();
+}
+
+function syncRateDirtyState(input) {
+  const definition = COST_ITEM_BY_INPUT[input.id];
+  if (!definition || !originalCostItems.has(definition.itemCode)) return;
+  const original = originalCostItems.get(definition.itemCode);
+  const edited = {
+    ...original,
+    cost_price: rateNumber(input.value),
+  };
+  editedCostItems.set(definition.itemCode, edited);
+  const isDirty =
+    rateNumber(original.cost_price) !== rateNumber(edited.cost_price) ||
+    rateNumber(original.default_margin_rate) !== rateNumber(edited.default_margin_rate);
+  if (isDirty) {
+    dirtyItemCodes.add(definition.itemCode);
+  } else {
+    dirtyItemCodes.delete(definition.itemCode);
+  }
+  markCostItemDirty(input.id, isDirty);
+}
+
+async function loadRateSettings() {
+  if (currentProfile?.role !== "admin") {
+    costDbLoaded = false;
+    originalCostItems = new Map();
+    editedCostItems = new Map();
+    dirtyItemCodes = new Set();
+    setRateDbInputsDisabled(true);
+    return;
+  }
+
   try {
-    const saved = JSON.parse(localStorage.getItem(RATE_SETTINGS_KEY) || "{}");
-    Object.entries(saved).forEach(([id, value]) => {
-      if (el[id] && value !== undefined && value !== null) el[id].value = value;
-    });
+    setRateDbStatus("원가DB 불러오는 중입니다.");
+    setRateDbInputsDisabled(true);
+    const rows = await loadCostItems();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error("Supabase 원가DB가 비어 있습니다. cost_items SQL을 먼저 실행해 주세요.");
+    }
+
+    originalCostItems = new Map();
+    editedCostItems = new Map();
+    dirtyItemCodes = new Set();
+    for (const row of rows) {
+      const definition = COST_ITEM_BY_CODE[row.item_code];
+      if (!definition || !el[definition.inputId]) continue;
+      const normalized = {
+        ...row,
+        cost_price: rateNumber(row.cost_price),
+        default_margin_rate: rateNumber(row.default_margin_rate),
+      };
+      originalCostItems.set(row.item_code, normalized);
+      editedCostItems.set(row.item_code, { ...normalized });
+      el[definition.inputId].value = normalized.cost_price;
+      clearCostItemDirtyMark(definition.inputId);
+    }
+
+    costDbLoaded = true;
+    updateRatesFromAdmin();
+    setRateDbInputsDisabled(false);
+    setRateDbStatus("원가DB 연결 완료");
   } catch (error) {
-    console.warn("원가DB 저장값 불러오기 실패", error);
+    console.error("Supabase 원가DB 불러오기 실패", error);
+    costDbLoaded = false;
+    setRateDbInputsDisabled(true);
+    setRateDbStatus("원가DB 연결 실패");
+    throw error;
   }
 }
 
-function saveRateSettings() {
-  const payload = {};
-  Object.keys(el)
-    .filter((id) => id.startsWith("rate") || ["targetMargin", "manualAdjustment", "baseCorrection", "islandCorrection", "homebarCorrection", "countertopCorrection", "optionCorrection"].includes(id))
-    .forEach((id) => {
-      payload[id] = el[id]?.value ?? "";
-    });
-  localStorage.setItem(RATE_SETTINGS_KEY, JSON.stringify(payload));
-  updateRatesFromAdmin();
-  refresh();
-  const status = document.getElementById("rateDbSaveStatus");
-  if (status) status.textContent = "저장 완료";
+async function saveRateSettings() {
+  if (currentProfile?.role !== "admin") {
+    alert("원가DB 저장 권한이 없습니다.");
+    return;
+  }
+  if (!costDbLoaded) {
+    alert("원가DB가 연결되지 않아 저장할 수 없습니다.");
+    return;
+  }
+  const changes = [...dirtyItemCodes]
+    .map((itemCode) => {
+      const original = originalCostItems.get(itemCode);
+      const edited = editedCostItems.get(itemCode);
+      if (!original || !edited) return null;
+      return {
+        id: original.id,
+        item_code: itemCode,
+        old_cost_price: rateNumber(original.cost_price),
+        new_cost_price: rateNumber(edited.cost_price),
+        old_margin_rate: rateNumber(original.default_margin_rate),
+        new_margin_rate: rateNumber(edited.default_margin_rate),
+      };
+    })
+    .filter(Boolean);
+
+  if (!changes.length) {
+    setRateDbStatus("변경된 항목이 없습니다.");
+    return;
+  }
+
+  try {
+    setRateDbStatus("저장 중입니다.");
+    await saveCostItemChanges(changes, currentProfile?.id);
+    await loadRateSettings();
+    updateRatesFromAdmin();
+    refresh();
+    setRateDbStatus("저장 완료");
+  } catch (error) {
+    console.error("Supabase 원가DB 저장 실패", error);
+    setRateDbStatus("저장 실패");
+    alert("원가DB 저장에 실패했습니다.");
+  }
 }
 
 function sectionTextFor(controlId, text) {
@@ -3199,6 +3409,7 @@ function setAuthenticated(isAuthenticated) {
 async function completeLogin() {
   currentProfile = await loadProfile();
   if (!currentProfile) throw new Error("프로필 정보를 불러오지 못했습니다.");
+  await loadRateSettings();
   setAuthenticated(true);
   applyAccessControl();
   refresh();
@@ -3250,7 +3461,6 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 });
 
 repairStaticKoreanLabels();
-loadRateSettings();
 guardCheckboxLabelClicks();
 
 document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
@@ -3407,11 +3617,13 @@ for (const input of Object.values(el)) {
   if (["projectSearch", "projectSearchResults"].includes(input.id)) continue;
   input.addEventListener("input", () => {
     normalizeIntegerInput(input);
+    syncRateDirtyState(input);
     activeQuoteEstimate = null;
     refresh();
   });
   input.addEventListener("change", () => {
     normalizeIntegerInput(input);
+    syncRateDirtyState(input);
     activeQuoteEstimate = null;
     refresh();
   });
