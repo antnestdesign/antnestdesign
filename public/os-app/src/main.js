@@ -379,8 +379,10 @@ const integerIds = [
 
 const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
 let activeQuoteEstimate = null;
+let currentEditingEstimateId = null;
 let currentProfile = null;
 let cachedEstimates = [];
+const RATE_SETTINGS_KEY = "and-os.rate-settings";
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
@@ -468,6 +470,59 @@ function ensureSaveButtons() {
   updateButton.insertAdjacentElement("afterend", newButton);
 }
 
+function ensureAdminStandardCheckLists() {
+  const separate = document.getElementById("adminStandardSeparateItems");
+  const grid = separate?.closest(".standard-check-grid");
+  if (!grid) return;
+  if (!document.getElementById("adminStandardSelectedItems")) {
+    const selectedBox = document.createElement("div");
+    selectedBox.innerHTML = `<h3>선택 항목</h3><ul id="adminStandardSelectedItems"></ul>`;
+    grid.insertBefore(selectedBox, grid.firstElementChild);
+  }
+  if (!document.getElementById("adminStandardUnselectedItems")) {
+    const unselectedBox = document.createElement("div");
+    unselectedBox.innerHTML = `<h3>미선택 항목</h3><ul id="adminStandardUnselectedItems"></ul>`;
+    grid.insertBefore(unselectedBox, separate.closest("div"));
+  }
+}
+
+function ensureRateDbSaveButton() {
+  const adminDb = document.querySelector("#admin .admin-db-card");
+  if (!adminDb || document.getElementById("saveRateDbButton")) return;
+  const actions = document.createElement("div");
+  actions.className = "admin-action-row";
+  actions.innerHTML = `
+    <button id="saveRateDbButton" type="button">원가DB 저장</button>
+    <span id="rateDbSaveStatus" class="status-text"></span>
+  `;
+  adminDb.appendChild(actions);
+}
+
+function loadRateSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RATE_SETTINGS_KEY) || "{}");
+    Object.entries(saved).forEach(([id, value]) => {
+      if (el[id] && value !== undefined && value !== null) el[id].value = value;
+    });
+  } catch (error) {
+    console.warn("원가DB 저장값 불러오기 실패", error);
+  }
+}
+
+function saveRateSettings() {
+  const payload = {};
+  Object.keys(el)
+    .filter((id) => id.startsWith("rate") || ["targetMargin", "manualAdjustment", "baseCorrection", "islandCorrection", "homebarCorrection", "countertopCorrection", "optionCorrection"].includes(id))
+    .forEach((id) => {
+      payload[id] = el[id]?.value ?? "";
+    });
+  localStorage.setItem(RATE_SETTINGS_KEY, JSON.stringify(payload));
+  updateRatesFromAdmin();
+  refresh();
+  const status = document.getElementById("rateDbSaveStatus");
+  if (status) status.textContent = "저장 완료";
+}
+
 function sectionTextFor(controlId, text) {
   const node = document.getElementById(controlId)?.closest(".section-heading")?.querySelector("p");
   if (node) node.textContent = text;
@@ -476,6 +531,8 @@ function sectionTextFor(controlId, text) {
 function repairStaticKoreanLabels() {
   ensureEstimateStatusControl();
   ensureSaveButtons();
+  ensureAdminStandardCheckLists();
+  ensureRateDbSaveButton();
   const labels = {
     projectName: "프로젝트명",
     areaPyeong: "평형",
@@ -2824,16 +2881,19 @@ function renderAdminInternalPrint(estimate) {
 }
 
 function purchaseOrderItems(estimate) {
+  const orderGroups = new Set(["base", "island", "homebar", "shoe", "fridgeLaundry", "pantry", "builtIn", "hanger", "kitchen", "bathroom", "wallpaper", "film", "flooring", "standardLighting", "carpentry"]);
   const materialKeywords = [
     "자재", "MDF", "합판", "다루끼", "각재", "상판", "칸스톤", "세라믹", "하이막스", "EP",
     "싱크볼", "싱크수전", "후드", "도기", "수전", "장식장", "악세사리", "휴젠트",
-    "벽지", "필름", "마루", "다운라이트", "매입등", "실린더", "콘센트", "스위치", "조명",
-    "밥솥장", "서랍", "신발장", "팬트리", "붙박이", "헹거", "냉장고", "세탁기"
+    "벽지", "필름", "마루", "다운라이트", "매입등", "실린더", "콘센트", "스위치",
+    "밥솥장", "서랍", "신발장", "팬트리", "붙박이", "헹거", "냉장고", "세탁기",
+    "하부장", "상부장", "키큰장", "홈바장", "아일랜드", "제작"
   ];
   const excludedKeywords = ["인건비", "기공", "조공", "시공", "설치비", "철거", "방수", "양중", "폐기물", "청소", "보양", "허가", "동의서"];
   return (estimate?.internalDetails || [])
     .filter((item) => {
       const text = `${item.item} ${item.input} ${item.quantity}`;
+      if (!orderGroups.has(item.group)) return false;
       return materialKeywords.some((keyword) => text.includes(keyword)) &&
         !excludedKeywords.some((keyword) => text.includes(keyword));
     })
@@ -3164,6 +3224,7 @@ function loadEstimateIntoUi(estimate) {
   el.clientName.value = estimate.clientName || "";
   el.clientPhone.value = estimate.phone || estimate.clientPhone || "";
   if (el.estimateStatus) el.estimateStatus.value = estimate.status || "견적";
+  currentEditingEstimateId = estimate.id || null;
   activeQuoteEstimate = null;
   refresh();
   const recalculated = {
@@ -3173,6 +3234,7 @@ function loadEstimateIntoUi(estimate) {
     savedAt: estimate.savedAt,
   };
   activeQuoteEstimate = recalculated;
+  currentEditingEstimateId = estimate.id || null;
   renderCustomerQuote(recalculated);
 }
 
@@ -3184,6 +3246,7 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 });
 
 repairStaticKoreanLabels();
+loadRateSettings();
 guardCheckboxLabelClicks();
 
 document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
@@ -3242,16 +3305,18 @@ async function handleSaveEstimate(mode = "update") {
       return;
     }
     const isUpdate = mode === "update";
-    if (isUpdate && !activeQuoteEstimate?.id) {
+    const updateId = currentEditingEstimateId || activeQuoteEstimate?.id;
+    if (isUpdate && !updateId) {
       setSaveStatus("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       alert("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       return;
     }
     setSaveStatus(isUpdate ? "Supabase에 수정 저장 중입니다." : "Supabase에 새 견적으로 저장 중입니다.");
     const saved = isUpdate
-      ? await updateEstimate(activeQuoteEstimate.id, { ...snapshot, id: activeQuoteEstimate.id })
+      ? await updateEstimate(updateId, { ...snapshot, id: updateId })
       : await saveEstimate({ ...snapshot, id: "" });
     activeQuoteEstimate = saved;
+    currentEditingEstimateId = saved.id || null;
     renderCustomerQuote(saved);
     setSaveStatus(`${formatDateTime(saved.savedAt)} ${isUpdate ? "수정 저장 완료" : "새 견적 저장 완료"}`);
     renderSavedEstimateRows().catch((error) => {
@@ -3296,6 +3361,12 @@ document.addEventListener("click", (event) => {
   window.print();
 });
 
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#saveRateDbButton");
+  if (!button) return;
+  saveRateSettings();
+});
+
 document.getElementById("savedEstimateRows")?.addEventListener("click", async (event) => {
   const openId = event.target?.dataset?.openEstimate;
   const deleteId = event.target?.dataset?.deleteEstimate;
@@ -3316,6 +3387,7 @@ document.getElementById("savedEstimateRows")?.addEventListener("click", async (e
       await deleteEstimate(deleteId);
       if (activeQuoteEstimate?.id === deleteId) {
         activeQuoteEstimate = null;
+        currentEditingEstimateId = null;
         renderCustomerQuote(buildEstimateSnapshot(calculate()));
       }
       renderSavedEstimateRows();
