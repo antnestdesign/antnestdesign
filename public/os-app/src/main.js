@@ -3755,8 +3755,8 @@ function ensureSystemManagementShell() {
           <h2>원가DB</h2>
           <p>운영값과 Draft 값을 분리해 확인합니다.</p>
         </div>
-        <div class="table-wrap"><table class="system-cost-table"><thead><tr>
-          <th>품목명</th><th>카테고리</th><th>운영 단가</th><th>Draft 단가</th><th>운영 마진율</th><th>Draft 마진율</th><th>운영 활성</th><th>Draft 활성</th><th>변경</th><th>최근 수정일</th><th class="admin-system-only">저장</th>
+        <div class="table-wrap system-cost-wrap"><table class="system-cost-table"><thead><tr>
+          <th>품목명</th><th>운영<br>원가</th><th>변경<br>원가</th><th>운영<br>마진율</th><th>변경<br>마진율(%)</th><th class="admin-system-only">Draft<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경<br>상태</th><th>변경</th><th>최근 수정일</th>
         </tr></thead><tbody id="systemCostRows"></tbody></table></div>
       </section>
       <section class="internal-card system-publish-card">
@@ -3820,15 +3820,15 @@ function renderSystemCostRows() {
   }
   tbody.innerHTML = rows.map((row) => {
     const dirty = hasDraft(row);
-    const draftCost = draftValue(row, "cost");
-    const draftMargin = draftValue(row, "margin");
+    const draftCost = row.draft_cost_price ?? "";
+    const draftMargin = row.draft_margin_rate ?? 0.3;
     const draftActive = draftValue(row, "active");
     const draftCostCell = canEditCost()
       ? `<input class="system-draft-input" data-system-field="cost" data-item-code="${row.item_code}" type="number" step="1000" min="0" value="${draftCost}">`
-      : won(draftCost);
+      : (row.draft_cost_price !== null && row.draft_cost_price !== undefined ? won(row.draft_cost_price) : "-");
     const draftMarginCell = canEditCost()
-      ? `<input class="system-draft-input" data-system-field="margin" data-item-code="${row.item_code}" type="number" step="0.1" min="0" max="99" value="${(rateNumber(draftMargin) * 100).toFixed(1)}">`
-      : percentText(draftMargin);
+      ? `<input class="system-draft-input system-margin-input" data-system-field="margin" data-item-code="${row.item_code}" type="number" step="0.1" min="0" max="99" value="${(rateNumber(draftMargin) * 100).toFixed(1)}">`
+      : (row.draft_margin_rate !== null && row.draft_margin_rate !== undefined ? percentText(row.draft_margin_rate) : "-");
     const draftActiveCell = canEditCost()
       ? `<select class="system-draft-input" data-system-field="active" data-item-code="${row.item_code}"><option value="true" ${draftActive ? "selected" : ""}>활성</option><option value="false" ${!draftActive ? "selected" : ""}>비활성</option></select>`
       : (draftActive ? "활성" : "비활성");
@@ -3838,16 +3838,16 @@ function renderSystemCostRows() {
     return `
       <tr class="${dirty ? "system-dirty-row" : ""}">
         <td>${escapeHtml(row.item_name || row.itemCode)}</td>
-        <td>${escapeHtml(row.category || "-")}</td>
         <td>${won(row.cost_price)}</td>
         <td>${draftCostCell}</td>
         <td>${percentText(row.default_margin_rate)}</td>
         <td>${draftMarginCell}</td>
+        <td class="admin-system-only">${actionCell}</td>
+        <td>${escapeHtml(row.category || "-")}</td>
         <td>${row.is_active ? "활성" : "비활성"}</td>
         <td>${draftActiveCell}</td>
         <td>${dirty ? "변경됨" : "-"}</td>
         <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
-        <td class="admin-system-only">${actionCell}</td>
       </tr>`;
   }).join("");
 }
@@ -3949,6 +3949,7 @@ function systemRowValue(itemCode, field) {
   const input = document.querySelector(`[data-item-code="${CSS.escape(itemCode)}"][data-system-field="${field}"]`);
   if (!input) return null;
   if (field === "active") return input.value === "true";
+  if (input.value === "") return null;
   if (field === "margin") return rateNumber(input.value) / 100;
   return rateNumber(input.value);
 }
@@ -3957,12 +3958,22 @@ async function saveSystemDraft(itemCode) {
   if (!canEditCost()) return;
   const row = originalCostItems.get(itemCode);
   if (!row) return;
+  const draftCost = systemRowValue(itemCode, "cost");
+  const draftMargin = systemRowValue(itemCode, "margin");
+  if (draftCost !== null && draftCost < 0) {
+    alert("변경 원가는 0원 이상으로 입력해 주세요.");
+    return;
+  }
+  if (draftMargin !== null && (draftMargin < 0 || draftMargin > 0.99)) {
+    alert("변경 마진율은 0 이상 99 이하의 퍼센트 숫자로 입력해 주세요.");
+    return;
+  }
   setSystemStatus("Draft 저장 중입니다.");
   await saveCostItemChanges([{
     id: row.id,
     item_code: itemCode,
-    new_cost_price: systemRowValue(itemCode, "cost"),
-    new_margin_rate: systemRowValue(itemCode, "margin"),
+    new_cost_price: draftCost,
+    new_margin_rate: draftMargin,
     new_is_active: systemRowValue(itemCode, "active"),
   }]);
   await loadRateSettings();

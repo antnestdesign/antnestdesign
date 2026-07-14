@@ -899,16 +899,106 @@ th:last-child {
 
 .system-metric-list {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  letter-spacing: 0;
+}
+
+.system-metric-list div {
+  align-items: center;
+  gap: 10px;
+}
+
+.system-metric-list dt,
+.system-metric-list dd {
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.system-metric-list dd {
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.system-cost-wrap {
+  overflow-x: auto;
 }
 
 .system-cost-table th,
 .system-cost-table td {
   white-space: nowrap;
+  padding-left: 8px;
+  padding-right: 8px;
+  vertical-align: middle;
+}
+
+.system-cost-table {
+  min-width: 900px;
+  table-layout: fixed;
+}
+
+.system-cost-table th {
+  line-height: 1.25;
+}
+
+.system-cost-table th:nth-child(1),
+.system-cost-table td:nth-child(1) {
+  width: 126px;
+}
+
+.system-cost-table th:nth-child(2),
+.system-cost-table td:nth-child(2),
+.system-cost-table th:nth-child(3),
+.system-cost-table td:nth-child(3) {
+  width: 78px;
+}
+
+.system-cost-table th:nth-child(4),
+.system-cost-table td:nth-child(4),
+.system-cost-table th:nth-child(5),
+.system-cost-table td:nth-child(5) {
+  width: 72px;
+}
+
+.system-cost-table th:nth-child(6),
+.system-cost-table td:nth-child(6) {
+  width: 58px;
+}
+
+.system-cost-table th:nth-child(7),
+.system-cost-table td:nth-child(7) {
+  width: 120px;
+}
+
+.system-cost-table th:nth-child(8),
+.system-cost-table td:nth-child(8),
+.system-cost-table th:nth-child(9),
+.system-cost-table td:nth-child(9),
+.system-cost-table th:nth-child(10),
+.system-cost-table td:nth-child(10) {
+  width: 82px;
+}
+
+.system-cost-table th:nth-child(11),
+.system-cost-table td:nth-child(11) {
+  width: 140px;
 }
 
 .system-draft-input {
-  width: 120px;
-  min-width: 96px;
+  width: 70px;
+  min-width: 62px;
+}
+
+.system-margin-input {
+  width: 58px;
+  min-width: 54px;
+}
+
+.system-cost-table [data-system-action="save-draft"] {
+  min-height: 32px;
+  padding: 6px 4px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .system-dirty-row {
