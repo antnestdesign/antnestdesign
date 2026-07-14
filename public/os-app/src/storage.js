@@ -1,8 +1,9 @@
-const SUPABASE_URL = "https://lzsxboaqliuwjzwsnnwf.supabase.co";
+﻿const SUPABASE_URL = "https://lzsxboaqliuwjzwsnnwf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2lbgZkij5jLbtE6JVBfB1Q_MCvzOcVr";
 const ESTIMATES_ENDPOINT = `${SUPABASE_URL}/rest/v1/estimates`;
 const COST_ITEMS_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_items`;
 const COST_ITEM_HISTORY_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_item_history`;
+const COST_PUBLISH_LOG_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_publish_log`;
 const AUTH_STORAGE_KEY = "and-os.auth-session";
 
 let authSession = null;
@@ -50,7 +51,7 @@ export async function signIn(email, password) {
   });
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || "로그인에 실패했습니다.");
+    throw new Error(message || "濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.");
   }
   const session = await response.json();
   persistSession(session);
@@ -103,7 +104,7 @@ export async function loadProfile() {
         break;
       }
     } catch (error) {
-      console.warn("profiles 조회 기준 건너뜀", query, error);
+      console.warn("profiles 議고쉶 湲곗? 嫄대꼫?", query, error);
     }
   }
   profile ||= {};
@@ -112,7 +113,7 @@ export async function loadProfile() {
     ...profile,
     id: session.user.id,
     email: emailRaw,
-    role: role === "admin" ? "admin" : "staff",
+    role: ["admin", "manager", "staff"].includes(role) ? role : "staff",
   };
 }
 
@@ -302,8 +303,16 @@ async function requestCostItems(path = "", options = {}) {
   return JSON.parse(text);
 }
 
-async function requestCostHistory(options = {}) {
-  const response = await fetch(COST_ITEM_HISTORY_ENDPOINT, {
+export async function loadCostItems() {
+  return requestCostItems("?is_active=eq.true&select=*&order=sort_order.asc,category.asc");
+}
+
+export async function loadSystemCostItems() {
+  return requestCostItems("?select=*&order=sort_order.asc,category.asc");
+}
+
+async function requestCostHistory(path = "", options = {}) {
+  const response = await fetch(`${COST_ITEM_HISTORY_ENDPOINT}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -320,48 +329,95 @@ async function requestCostHistory(options = {}) {
   return JSON.parse(text);
 }
 
-export async function loadCostItems() {
-  return requestCostItems("?is_active=eq.true&select=*&order=sort_order.asc,category.asc");
+async function requestCostPublishLog(path = "", options = {}) {
+  const response = await fetch(`${COST_PUBLISH_LOG_ENDPOINT}${path}`, {
+    ...options,
+    headers: { ...authHeaders(), ...(options.headers || {}) },
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    const error = new Error(text || `Supabase cost_publish_log request failed: ${response.status}`);
+    error.status = response.status;
+    error.body = text;
+    error.endpoint = "cost_publish_log";
+    error.method = options.method || "GET";
+    throw error;
+  }
+  if (response.status === 204 || !text.trim()) return null;
+  return JSON.parse(text);
 }
 
-export async function saveCostItemChanges(changes, userId) {
+async function requestRpc(functionName, payload = {}) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: { ...authHeaders(), Prefer: "return=representation" },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    const error = new Error(text || `Supabase RPC failed: ${response.status}`);
+    error.status = response.status;
+    error.body = text;
+    error.endpoint = functionName;
+    error.method = "POST";
+    throw error;
+  }
+  if (response.status === 204 || !text.trim()) return null;
+  return JSON.parse(text);
+}
+
+export async function loadCostItemHistory(limit = 200) {
+  return requestCostHistory(`?select=*,cost_items(item_code,item_name,category,unit)&order=changed_at.desc&limit=${encodeURIComponent(limit)}`);
+}
+
+export async function loadCostPublishLogs(limit = 100) {
+  return requestCostPublishLog(`?select=*&order=published_at.desc&limit=${encodeURIComponent(limit)}`);
+}
+
+export async function loadEstimateCount() {
+  const response = await fetch(`${ESTIMATES_ENDPOINT}?select=id`, {
+    method: "HEAD",
+    headers: { ...authHeaders(), Prefer: "count=exact" },
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Supabase estimates count failed: ${response.status}`);
+  }
+  return Number(response.headers.get("content-range")?.split("/").pop()) || 0;
+}
+
+export async function saveCostItemDraft(costItemId, draftCostPrice, draftMarginRate, draftIsActive) {
+  return requestRpc("save_cost_item_draft", {
+    p_cost_item_id: costItemId,
+    p_draft_cost_price: draftCostPrice,
+    p_draft_margin_rate: draftMarginRate,
+    p_draft_is_active: draftIsActive,
+  });
+}
+
+export async function cancelCostItemDraft(costItemId) {
+  return requestRpc("cancel_cost_item_draft", { p_cost_item_id: costItemId });
+}
+
+export async function cancelAllCostDrafts() {
+  return requestRpc("cancel_all_cost_drafts", {});
+}
+
+export async function publishCostDrafts(reason, memo = null) {
+  return requestRpc("publish_cost_drafts", { p_reason: reason, p_memo: memo });
+}
+
+export async function saveCostItemChanges(changes) {
   const saved = [];
   for (const change of changes) {
-    const costChanged = Number(change.old_cost_price) !== Number(change.new_cost_price);
-    const marginChanged = Number(change.old_margin_rate) !== Number(change.new_margin_rate);
-    if (!costChanged && !marginChanged) continue;
-
-    await requestCostHistory({
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({
-        cost_item_id: change.id,
-        old_cost_price: change.old_cost_price,
-        new_cost_price: change.new_cost_price,
-        old_margin_rate: change.old_margin_rate,
-        new_margin_rate: change.new_margin_rate,
-        changed_by: userId || null,
-        reason: change.reason || null,
-      }),
-    });
-
-    const rows = await requestCostItems(`?id=eq.${encodeURIComponent(change.id)}&select=*`, {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
-        cost_price: change.new_cost_price,
-        default_margin_rate: change.new_margin_rate,
-        updated_by: userId || null,
-      }),
-    });
-    if (!rows?.[0]) {
-      const error = new Error(`cost_items update returned no rows for ${change.item_code || change.id}`);
-      error.endpoint = "cost_items";
-      error.method = "PATCH";
-      error.body = JSON.stringify({ id: change.id, item_code: change.item_code });
-      throw error;
-    }
-    saved.push(rows[0]);
+    saved.push(await saveCostItemDraft(
+      change.id,
+      change.new_cost_price,
+      change.new_margin_rate,
+      change.new_is_active ?? change.is_active ?? null,
+    ));
   }
   return saved;
 }
+
+

@@ -14,8 +14,14 @@ import {
   loadEstimates,
   getEstimate,
   deleteEstimate,
-  loadCostItems,
+  loadSystemCostItems,
+  loadCostItemHistory,
+  loadCostPublishLogs,
+  loadEstimateCount,
   saveCostItemChanges,
+  cancelCostItemDraft,
+  cancelAllCostDrafts,
+  publishCostDrafts,
   signIn,
   signOut,
   loadStoredSession,
@@ -388,6 +394,10 @@ let originalCostItems = new Map();
 let editedCostItems = new Map();
 let dirtyItemCodes = new Set();
 let costDbLoaded = false;
+let systemCostHistory = [];
+let systemPublishLogs = [];
+let systemEstimateCount = 0;
+let systemDataLoaded = false;
 let loadedEstimateBaseline = null;
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
@@ -622,6 +632,26 @@ function isAdmin() {
   return currentProfile?.role === "admin";
 }
 
+function isManager() {
+  return currentProfile?.role === "manager";
+}
+
+function isStaff() {
+  return !currentProfile || currentProfile.role === "staff";
+}
+
+function canViewSystem() {
+  return isAdmin() || isManager();
+}
+
+function canEditCost() {
+  return isAdmin();
+}
+
+function canPublishCost() {
+  return isAdmin();
+}
+
 function setText(id, value) {
   const node = document.getElementById(id);
   if (node) node.textContent = value;
@@ -636,7 +666,7 @@ function setRateDbInputsDisabled(disabled) {
     input.disabled = disabled;
   });
   const saveButton = document.getElementById("saveRateDbButton");
-  if (saveButton) saveButton.disabled = disabled || currentProfile?.role !== "admin";
+  if (saveButton) saveButton.disabled = disabled || !canEditCost();
 }
 
 function rateNumber(value) {
@@ -672,7 +702,7 @@ function currentCostItems() {
 }
 
 function buildCostSnapshot() {
-  if (!isAdmin() || !originalCostItems.size) return null;
+  if (!canViewSystem() || !originalCostItems.size) return null;
   const items = currentCostItems();
   return {
     capturedAt: new Date().toISOString(),
@@ -738,7 +768,7 @@ function syncRateDirtyState(input) {
 }
 
 async function loadRateSettings() {
-  if (currentProfile?.role !== "admin") {
+  if (!canViewSystem()) {
     costDbLoaded = false;
     originalCostItems = new Map();
     editedCostItems = new Map();
@@ -750,7 +780,7 @@ async function loadRateSettings() {
   try {
     setRateDbStatus("원가DB 불러오는 중입니다.");
     setRateDbInputsDisabled(true);
-    const rows = await loadCostItems();
+    const rows = await loadSystemCostItems();
     if (!Array.isArray(rows) || rows.length === 0) {
       throw new Error("Supabase 원가DB가 비어 있습니다. cost_items SQL을 먼저 실행해 주세요.");
     }
@@ -774,7 +804,7 @@ async function loadRateSettings() {
 
     costDbLoaded = true;
     updateRatesFromAdmin();
-    setRateDbInputsDisabled(false);
+    setRateDbInputsDisabled(!canEditCost());
     setRateDbStatus("원가DB 연결 완료");
   } catch (error) {
     console.error("Supabase 원가DB 불러오기 실패", error);
@@ -786,7 +816,7 @@ async function loadRateSettings() {
 }
 
 async function saveRateSettings() {
-  if (currentProfile?.role !== "admin") {
+  if (!canEditCost()) {
     alert("원가DB 저장 권한이 없습니다.");
     return;
   }
@@ -806,6 +836,7 @@ async function saveRateSettings() {
         new_cost_price: rateNumber(edited.cost_price),
         old_margin_rate: rateNumber(original.default_margin_rate),
         new_margin_rate: rateNumber(edited.default_margin_rate),
+        new_is_active: original.is_active,
       };
     })
     .filter(Boolean);
@@ -817,8 +848,9 @@ async function saveRateSettings() {
 
   try {
     setRateDbStatus("저장 중입니다.");
-    await saveCostItemChanges(changes, currentProfile?.id);
+    await saveCostItemChanges(changes);
     await loadRateSettings();
+    await refreshSystemManagement();
     updateRatesFromAdmin();
     refresh();
     setRateDbStatus("저장 완료");
@@ -3657,19 +3689,351 @@ function renderStaffAdminShell() {
   staffAdminShellApplied = true;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function percentText(value) {
+  return `${(rateNumber(value) * 100).toFixed(1)}%`;
+}
+
+function draftValue(row, key) {
+  if (key === "cost") return row.draft_cost_price ?? row.cost_price;
+  if (key === "margin") return row.draft_margin_rate ?? row.default_margin_rate;
+  if (key === "active") return row.draft_is_active ?? row.is_active;
+  return null;
+}
+
+function hasDraft(row) {
+  return row?.draft_cost_price !== null && row?.draft_cost_price !== undefined ||
+    row?.draft_margin_rate !== null && row?.draft_margin_rate !== undefined ||
+    row?.draft_is_active !== null && row?.draft_is_active !== undefined;
+}
+
+function changedCostItems() {
+  return [...originalCostItems.values()].filter(hasDraft);
+}
+
+function latestPublishLog() {
+  return systemPublishLogs[0] || null;
+}
+
+function ensureSystemManagementShell() {
+  if (!canViewSystem()) return;
+  const tabs = document.querySelector(".tabs");
+  if (tabs && !document.querySelector('[data-tab="system"]')) {
+    const button = document.createElement("button");
+    button.className = "tab-button system-tab-button";
+    button.dataset.tab = "system";
+    button.type = "button";
+    button.textContent = "시스템 관리";
+    tabs.appendChild(button);
+    button.addEventListener("click", () => {
+      activateTab("system");
+      refreshSystemManagement().catch((error) => console.error("시스템 관리 갱신 실패", error));
+    });
+  }
+  if (!document.getElementById("system")) {
+    const section = document.createElement("section");
+    section.className = "tab-panel system-panel";
+    section.id = "system";
+    section.innerHTML = `
+      <section class="internal-card system-status-card">
+        <div class="section-heading compact-heading no-side-padding">
+          <h2>시스템 현황</h2>
+          <p>원가DB, Draft, Publish, 견적 저장 상태를 확인합니다.</p>
+        </div>
+        <dl class="metric-list system-metric-list" id="systemStatusMetrics"></dl>
+      </section>
+      <section class="internal-card system-cost-card">
+        <div class="section-heading compact-heading no-side-padding">
+          <h2>원가DB</h2>
+          <p>운영값과 Draft 값을 분리해 확인합니다.</p>
+        </div>
+        <div class="table-wrap"><table class="system-cost-table"><thead><tr>
+          <th>품목명</th><th>카테고리</th><th>운영 단가</th><th>Draft 단가</th><th>운영 마진율</th><th>Draft 마진율</th><th>운영 활성</th><th>Draft 활성</th><th>변경</th><th>최근 수정일</th><th class="admin-system-only">저장</th>
+        </tr></thead><tbody id="systemCostRows"></tbody></table></div>
+      </section>
+      <section class="internal-card system-publish-card">
+        <div class="section-heading compact-heading no-side-padding">
+          <h2>Publish 준비</h2>
+          <p>Draft 변경 품목을 확인한 뒤 admin만 Publish할 수 있습니다.</p>
+        </div>
+        <div id="systemPublishSummary" class="system-publish-summary"></div>
+        <div class="table-wrap"><table><thead><tr><th>품목</th><th>운영값</th><th>Draft값</th><th>차이</th><th class="admin-system-only">취소</th></tr></thead><tbody id="systemDraftRows"></tbody></table></div>
+        <div id="systemPublishActions" class="admin-action-row system-publish-actions"></div>
+        <p id="systemStatusText" class="status-text"></p>
+      </section>
+      <section class="internal-card system-history-card">
+        <div class="section-heading compact-heading no-side-padding"><h2>변경 이력</h2><p>Publish 단위 품목 변경 내역입니다.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>Version</th><th>품목</th><th>이전 값</th><th>변경 값</th><th>활성 변경</th><th>사유</th><th>변경자</th><th>변경일</th></tr></thead><tbody id="systemHistoryRows"></tbody></table></div>
+      </section>
+      <section class="internal-card system-log-card">
+        <div class="section-heading compact-heading no-side-padding"><h2>Publish Log</h2><p>배포 단위 이력입니다.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>Version</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
+      </section>
+    `;
+    document.querySelector(".tab-panel#admin")?.insertAdjacentElement("afterend", section);
+  }
+  renderSystemManagement();
+}
+
+function removeSystemManagementShell() {
+  document.querySelector('[data-tab="system"]')?.remove();
+  document.getElementById("system")?.remove();
+}
+
+function setSystemStatus(message) {
+  const node = document.getElementById("systemStatusText");
+  if (node) node.textContent = message;
+}
+
+function renderSystemStatus() {
+  const box = document.getElementById("systemStatusMetrics");
+  if (!box) return;
+  const items = [...originalCostItems.values()];
+  const drafts = changedCostItems();
+  const latest = latestPublishLog();
+  const metrics = [
+    ["전체 원가 품목 수", items.length.toLocaleString("ko-KR")],
+    ["활성 품목 수", items.filter((item) => item.is_active).length.toLocaleString("ko-KR")],
+    ["Draft 품목 수", drafts.length.toLocaleString("ko-KR")],
+    ["최근 Publish Version", latest?.version || "-"],
+    ["최근 Publish 일시", latest?.published_at ? formatDateTime(latest.published_at) : "-"],
+    ["저장된 견적 수", systemEstimateCount.toLocaleString("ko-KR")],
+  ];
+  box.innerHTML = metrics.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("");
+}
+
+function renderSystemCostRows() {
+  const tbody = document.getElementById("systemCostRows");
+  if (!tbody) return;
+  const rows = [...originalCostItems.values()].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="11">원가DB를 불러오지 못했습니다.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((row) => {
+    const dirty = hasDraft(row);
+    const draftCost = draftValue(row, "cost");
+    const draftMargin = draftValue(row, "margin");
+    const draftActive = draftValue(row, "active");
+    const draftCostCell = canEditCost()
+      ? `<input class="system-draft-input" data-system-field="cost" data-item-code="${row.item_code}" type="number" step="1000" min="0" value="${draftCost}">`
+      : won(draftCost);
+    const draftMarginCell = canEditCost()
+      ? `<input class="system-draft-input" data-system-field="margin" data-item-code="${row.item_code}" type="number" step="0.1" min="0" max="99" value="${(rateNumber(draftMargin) * 100).toFixed(1)}">`
+      : percentText(draftMargin);
+    const draftActiveCell = canEditCost()
+      ? `<select class="system-draft-input" data-system-field="active" data-item-code="${row.item_code}"><option value="true" ${draftActive ? "selected" : ""}>활성</option><option value="false" ${!draftActive ? "selected" : ""}>비활성</option></select>`
+      : (draftActive ? "활성" : "비활성");
+    const actionCell = canEditCost()
+      ? `<button type="button" data-system-action="save-draft" data-item-code="${row.item_code}">Draft 저장</button>`
+      : "";
+    return `
+      <tr class="${dirty ? "system-dirty-row" : ""}">
+        <td>${escapeHtml(row.item_name || row.itemCode)}</td>
+        <td>${escapeHtml(row.category || "-")}</td>
+        <td>${won(row.cost_price)}</td>
+        <td>${draftCostCell}</td>
+        <td>${percentText(row.default_margin_rate)}</td>
+        <td>${draftMarginCell}</td>
+        <td>${row.is_active ? "활성" : "비활성"}</td>
+        <td>${draftActiveCell}</td>
+        <td>${dirty ? "변경됨" : "-"}</td>
+        <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
+        <td class="admin-system-only">${actionCell}</td>
+      </tr>`;
+  }).join("");
+}
+function draftChangeText(row) {
+  const parts = [];
+  if (row.draft_cost_price !== null && row.draft_cost_price !== undefined) parts.push(`단가 ${won(row.cost_price)} → ${won(row.draft_cost_price)}`);
+  if (row.draft_margin_rate !== null && row.draft_margin_rate !== undefined) parts.push(`마진 ${percentText(row.default_margin_rate)} → ${percentText(row.draft_margin_rate)}`);
+  if (row.draft_is_active !== null && row.draft_is_active !== undefined) parts.push(`활성 ${row.is_active ? "활성" : "비활성"} → ${row.draft_is_active ? "활성" : "비활성"}`);
+  return parts.join(" / ") || "-";
+}
+
+function renderSystemDraftRows() {
+  const tbody = document.getElementById("systemDraftRows");
+  const summary = document.getElementById("systemPublishSummary");
+  const actions = document.getElementById("systemPublishActions");
+  if (!tbody || !summary || !actions) return;
+  const rows = changedCostItems();
+  summary.innerHTML = `<strong>Draft 변경 품목 수: ${rows.length.toLocaleString("ko-KR")}개</strong>`;
+  tbody.innerHTML = rows.length ? rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.item_name || row.item_code)}</td>
+      <td>${won(row.cost_price)} / ${percentText(row.default_margin_rate)} / ${row.is_active ? "활성" : "비활성"}</td>
+      <td>${won(draftValue(row, "cost"))} / ${percentText(draftValue(row, "margin"))} / ${draftValue(row, "active") ? "활성" : "비활성"}</td>
+      <td>${escapeHtml(draftChangeText(row))}</td>
+      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="cancel-draft" data-item-code="${row.item_code}">Draft 취소</button>` : ""}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="5">Publish 대기 중인 Draft가 없습니다.</td></tr>`;
+  actions.innerHTML = canPublishCost() ? `
+    <label class="system-publish-reason">Publish 사유<input id="systemPublishReason" type="text" maxlength="500" placeholder="사유를 입력하세요"></label>
+    <button type="button" data-system-action="publish" ${rows.length ? "" : "disabled"}>Publish 실행</button>
+    <button type="button" data-system-action="cancel-all-drafts" ${rows.length ? "" : "disabled"}>전체 Draft 취소</button>
+  ` : "";
+}
+
+function renderSystemHistoryRows() {
+  const tbody = document.getElementById("systemHistoryRows");
+  if (!tbody) return;
+  tbody.innerHTML = systemCostHistory.length ? systemCostHistory.map((row) => {
+    const item = row.cost_items || {};
+    return `<tr>
+      <td>${escapeHtml(row.cost_version || "-")}</td>
+      <td>${escapeHtml(item.item_name || item.item_code || row.cost_item_id || "-")}</td>
+      <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)}</td>
+      <td>${won(row.new_cost_price)} / ${percentText(row.new_margin_rate)}</td>
+      <td>${row.old_is_active === row.new_is_active ? "-" : `${row.old_is_active ? "활성" : "비활성"} → ${row.new_is_active ? "활성" : "비활성"}`}</td>
+      <td>${escapeHtml(row.reason || "-")}</td>
+      <td>${escapeHtml(row.changed_by || "-")}</td>
+      <td>${row.changed_at ? formatDateTime(row.changed_at) : "-"}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="8">변경 이력이 없습니다.</td></tr>`;
+}
+
+function renderSystemPublishLogRows() {
+  const tbody = document.getElementById("systemPublishLogRows");
+  if (!tbody) return;
+  tbody.innerHTML = systemPublishLogs.length ? systemPublishLogs.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.version || "-")}</td>
+      <td>${Number(row.changed_item_count || 0).toLocaleString("ko-KR")}</td>
+      <td>${escapeHtml(row.reason || "-")}</td>
+      <td>${escapeHtml(row.published_by || "-")}</td>
+      <td>${row.published_at ? formatDateTime(row.published_at) : "-"}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="5">Publish Log가 없습니다.</td></tr>`;
+}
+
+function renderSystemManagement() {
+  if (!canViewSystem() || !document.getElementById("system")) return;
+  document.getElementById("system")?.classList.toggle("system-readonly", !canEditCost());
+  renderSystemStatus();
+  renderSystemCostRows();
+  renderSystemDraftRows();
+  renderSystemHistoryRows();
+  renderSystemPublishLogRows();
+}
+
+async function refreshSystemManagement() {
+  if (!canViewSystem()) return;
+  ensureSystemManagementShell();
+  try {
+    const [history, logs, count] = await Promise.all([
+      loadCostItemHistory(),
+      loadCostPublishLogs(),
+      loadEstimateCount().catch(() => cachedEstimates.length),
+    ]);
+    systemCostHistory = Array.isArray(history) ? history : [];
+    systemPublishLogs = Array.isArray(logs) ? logs : [];
+    systemEstimateCount = Number(count) || cachedEstimates.length || 0;
+    systemDataLoaded = true;
+    renderSystemManagement();
+    setSystemStatus(systemDataLoaded ? "시스템 관리 데이터를 불러왔습니다." : "");
+  } catch (error) {
+    console.error("시스템 관리 데이터 조회 실패", error);
+    setSystemStatus("시스템 관리 데이터 조회 실패");
+  }
+}
+
+function systemRowValue(itemCode, field) {
+  const input = document.querySelector(`[data-item-code="${CSS.escape(itemCode)}"][data-system-field="${field}"]`);
+  if (!input) return null;
+  if (field === "active") return input.value === "true";
+  if (field === "margin") return rateNumber(input.value) / 100;
+  return rateNumber(input.value);
+}
+
+async function saveSystemDraft(itemCode) {
+  if (!canEditCost()) return;
+  const row = originalCostItems.get(itemCode);
+  if (!row) return;
+  setSystemStatus("Draft 저장 중입니다.");
+  await saveCostItemChanges([{
+    id: row.id,
+    item_code: itemCode,
+    new_cost_price: systemRowValue(itemCode, "cost"),
+    new_margin_rate: systemRowValue(itemCode, "margin"),
+    new_is_active: systemRowValue(itemCode, "active"),
+  }]);
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus("Draft 저장 완료");
+}
+
+async function cancelSystemDraft(itemCode) {
+  if (!canEditCost()) return;
+  const row = originalCostItems.get(itemCode);
+  if (!row) return;
+  setSystemStatus("Draft 취소 중입니다.");
+  await cancelCostItemDraft(row.id);
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus("Draft 취소 완료");
+}
+
+async function cancelAllSystemDrafts() {
+  if (!canEditCost()) return;
+  if (!confirm("전체 Draft를 취소할까요?")) return;
+  setSystemStatus("전체 Draft 취소 중입니다.");
+  await cancelAllCostDrafts();
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus("전체 Draft 취소 완료");
+}
+
+async function publishSystemDrafts() {
+  if (!canPublishCost()) return;
+  const reason = document.getElementById("systemPublishReason")?.value?.trim();
+  if (!reason) {
+    alert("Publish 사유를 입력해야 합니다.");
+    return;
+  }
+  if (!confirm("현재 Draft를 운영 원가로 Publish할까요?")) return;
+  setSystemStatus("Publish 실행 중입니다.");
+  const result = await publishCostDrafts(reason);
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  const version = Array.isArray(result) ? result[0]?.version : result?.version;
+  setSystemStatus(version ? `Publish 완료: ${version}` : "Publish 완료");
+}
 function applyAccessControl() {
   const role = currentProfile?.role || "staff";
   document.body.dataset.role = role;
   setText("currentUserLabel", `${currentProfile?.email || "-"} · ${role}`);
-  if (role !== "admin") {
+  if (isStaff()) {
+    document.querySelectorAll(".admin-only").forEach((node) => node.remove());
+    removeSystemManagementShell();
+    renderStaffAdminShell();
+  } else if (isManager()) {
     document.querySelectorAll(".admin-only").forEach((node) => node.remove());
     renderStaffAdminShell();
+    ensureSystemManagementShell();
   } else {
     document.querySelectorAll(".admin-only").forEach((node) => {
       node.hidden = false;
     });
+    document.querySelector("#admin .admin-db-card")?.remove();
+    ensureSystemManagementShell();
   }
-  if (role !== "admin" && document.getElementById("internal")?.classList.contains("active")) {
+  if (!isAdmin() && document.getElementById("internal")?.classList.contains("active")) {
     activateTab("client");
   }
 }
@@ -3691,6 +4055,7 @@ async function completeLogin() {
   applyAccessControl();
   refresh();
   await renderSavedEstimateRows();
+  await refreshSystemManagement();
 }
 
 function renderProjectSearchResults() {
@@ -3745,6 +4110,7 @@ document.querySelectorAll(".tab-button").forEach((button) => {
   button.addEventListener("click", () => {
     activateTab(button.dataset.tab);
     if (button.dataset.tab === "admin") renderSavedEstimateRows();
+    if (button.dataset.tab === "system") refreshSystemManagement().catch((error) => console.error("시스템 관리 갱신 실패", error));
   });
 });
 
@@ -3881,6 +4247,23 @@ document.addEventListener("click", (event) => {
   window.print();
 });
 
+document.addEventListener("click", async (event) => {
+  const button = event.target?.closest?.("[data-system-action]");
+  if (!button) return;
+  event.preventDefault();
+  try {
+    const action = button.dataset.systemAction;
+    const itemCode = button.dataset.itemCode;
+    if (action === "save-draft") await saveSystemDraft(itemCode);
+    if (action === "cancel-draft") await cancelSystemDraft(itemCode);
+    if (action === "cancel-all-drafts") await cancelAllSystemDrafts();
+    if (action === "publish") await publishSystemDrafts();
+  } catch (error) {
+    console.error("시스템 관리 작업 실패", error);
+    setSystemStatus("작업 실패");
+    alert(error.message || "시스템 관리 작업에 실패했습니다.");
+  }
+});
 document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("#saveRateDbButton");
   if (!button) return;
@@ -3960,4 +4343,14 @@ if (getAuthSession()) {
     setAuthenticated(false);
   });
 }
+
+
+
+
+
+
+
+
+
+
 

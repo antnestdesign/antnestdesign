@@ -888,3 +888,53 @@ th:last-child {
     min-width: 116px;
   }
 }
+
+.system-tab-button {
+  border-color: #284f5f;
+}
+
+.system-panel .internal-card {
+  margin-bottom: 16px;
+}
+
+.system-metric-list {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.system-cost-table th,
+.system-cost-table td {
+  white-space: nowrap;
+}
+
+.system-draft-input {
+  width: 120px;
+  min-width: 96px;
+}
+
+.system-dirty-row {
+  background: #fff7e6;
+}
+
+.system-publish-summary {
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.system-publish-actions {
+  align-items: end;
+  margin-top: 12px;
+}
+
+.system-publish-reason {
+  display: grid;
+  gap: 6px;
+  min-width: min(420px, 100%);
+}
+
+.system-publish-reason input {
+  min-height: 38px;
+}
+
+.system-readonly .admin-system-only {
+  display: none;
+}
