@@ -69,7 +69,7 @@ const rates = {
     furniturePerJa: 25000,
     bathroomWaterproof: 800000,
     ceilingPerPyeong: 160000,
-    elevatorProtect: 150000,
+    elevatorProtect: 200000,
     elevatorProtectRemoval: 50000,
     permit: 200000,
     consent: 150000,
@@ -88,8 +88,8 @@ const rates = {
     tileGrout: 350000,
     wallpaperWorkerDay: 300000,
     filmWorkerDay: 280000,
-    flooringPerPyeong: 180000,
-    silicone: 350000,
+    flooringPerPyeong: 150000,
+    silicone: 450000,
     elasticBase: 650000,
     elasticExtraRoom: 250000,
   },
@@ -158,6 +158,8 @@ const ids = [
   "riceCabinetUnits",
   "baseEndPanels",
   "baseEpDepth",
+  "baseCountertopEnabled",
+  "baseCountertop",
   "baseLightingUnits",
   "baseT3Units",
   "islandEnabled",
@@ -261,6 +263,7 @@ const ids = [
   "carpentryCurtainBoxUnits",
   "carpentryCofferType",
   "carpentryArtwallM",
+  "carpentryPartitionM",
   "carpentryHiddenDoorUnits",
   "carpentryLineLightM",
   "carpentryIndirectLightUnits",
@@ -954,7 +957,8 @@ function repairStaticKoreanLabels() {
     carpentryIndirectLightUnits: "간접등 개소",
     carpentryCeilingFanUnits: "실링팬 개수",
     carpentryLineLightM: "천장 라인조명 길이(mm)",
-    carpentryArtwallM: "목공벽/아트월/가벽/파티션 길이(mm)",
+    carpentryArtwallM: "목공벽/아트월 길이(mm)",
+    carpentryPartitionM: "가벽(파티션) 길이(mm)",
     carpentryHiddenDoorUnits: "히든도어 개소",
     carpentryCeilingHeight: "천장고(mm)",
     carpentryTvUnits: "벽걸이 TV 보강",
@@ -972,6 +976,8 @@ function repairStaticKoreanLabels() {
     riceCabinetUnits: "밥솥장",
     baseEndPanels: "EP 마감판",
     baseEpDepth: "EP 깊이",
+    baseCountertopEnabled: "상하부장 상판 적용",
+    baseCountertop: "상하부장 상판 등급",
     baseLightingUnits: "라인조명 통수",
     baseT3Units: "간접조명(T3) 라인",
     islandEnabled: "아일랜드",
@@ -1076,6 +1082,7 @@ function repairStaticKoreanLabels() {
     riceCabinetUnits: { 0: "없음", 1: "600mm 1통", 2: "600mm 2통" },
     baseEndPanels: { 0: "없음", 1: "1장", 2: "2장", 3: "3장" },
     baseEpDepth: { shallow: "400mm 이하", deep: "400mm 초과" },
+    baseCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
     islandCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
     islandSideFinish: { epPanel: "EP판", himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹" },
     homebarCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
@@ -1508,7 +1515,7 @@ function readState() {
     clientName: el.clientName.value || "",
     clientPhone: el.clientPhone.value || "",
     status: el.estimateStatus?.value || "견적",
-    targetMargin: (numberValue("targetMargin") || 35) / 100,
+    targetMargin: (numberValue("targetMargin") || 30) / 100,
     baseEnabled: furnitureSection && checkedValue("baseEnabled"),
     lowerCabinetM: numberValue("lowerCabinetM"),
     upperCabinetM: numberValue("upperCabinetM"),
@@ -1516,6 +1523,8 @@ function readState() {
     riceCabinetUnits: numberValue("riceCabinetUnits"),
     baseEndPanels: numberValue("baseEndPanels"),
     baseEpDepth: el.baseEpDepth.value,
+    baseCountertopEnabled: checkedValue("baseCountertopEnabled"),
+    baseCountertop: el.baseCountertop?.value || "himacs",
     baseLightingUnits: integerValue("baseLightingUnits"),
     baseT3Units: integerValue("baseT3Units"),
     islandEnabled: furnitureSection && checkedValue("islandEnabled"),
@@ -1628,6 +1637,7 @@ function readState() {
     carpentryCurtainBoxUnits: integerValue("carpentryCurtainBoxUnits"),
     carpentryCofferType: el.carpentryCofferType.value,
     carpentryArtwallM: numberValue("carpentryArtwallM"),
+    carpentryPartitionM: numberValue("carpentryPartitionM"),
     carpentryHiddenDoorUnits: integerValue("carpentryHiddenDoorUnits"),
     carpentryLineLightM: numberValue("carpentryLineLightM"),
     carpentryIndirectLightUnits: integerValue("carpentryIndirectLightUnits"),
@@ -1865,10 +1875,10 @@ const floorDemolitionUnitPrice = (material) => ({
 }[material] || 0);
 const wallpaperDays = (preset, baseCoat) => {
   const table = {
-    p20: baseCoat ? 5 : 4,
-    p30: baseCoat ? 6 : 5,
-    p40: baseCoat ? 10 : 8,
-    p50: baseCoat ? 14 : 10,
+    p20: baseCoat ? 6 : 5,
+    p30: baseCoat ? 7 : 6,
+    p40: baseCoat ? 11 : 9,
+    p50: baseCoat ? 15 : 11,
   };
   return table[preset] || 0;
 };
@@ -1915,6 +1925,7 @@ function carpentryLaborDays(state) {
   return (
     ceilingWorkDays +
     mmToM(state.carpentryArtwallM) * rates.carpentry.artwallDaysPerM +
+    mmToM(state.carpentryPartitionM) * rates.carpentry.artwallDaysPerM +
     state.carpentryHiddenDoorUnits * rates.carpentry.hiddenDoorDays +
     (state.carpentryMoldingEnabled ? rates.carpentry.moldingDays : 0) +
     (state.carpentryBaseboardEnabled ? rates.carpentry.baseboardDays : 0)
@@ -1923,15 +1934,24 @@ function carpentryLaborDays(state) {
 
 function carpentryMaterialCounts(state) {
   const wallLength = state.carpentryArtwallM;
+  const partitionLength = state.carpentryPartitionM;
   const wallArea = wallLength * state.carpentryCeilingHeight;
-  const totalWallBoards = wallArea > 0 ? Math.ceil(wallArea / boardArea()) : 0;
+  const partitionArea = partitionLength * state.carpentryCeilingHeight;
+  const artwallBoards = wallArea > 0 ? Math.ceil(wallArea / boardArea()) : 0;
+  const partitionBoards = partitionArea > 0 ? Math.ceil(partitionArea / boardArea()) * 2 : 0;
+  const totalWallBoards = artwallBoards + partitionBoards;
   const plywoodBase = state.carpentryTvUnits * 2;
-  const mdfBase = Math.max(0, totalWallBoards - plywoodBase);
+  const mdfBase = Math.max(0, artwallBoards - plywoodBase) + partitionBoards;
   const verticalStuds = wallLength > 0 ? Math.ceil(wallLength / rates.carpentry.studSpacing) : 0;
-  const studLength = (wallLength * 2) + (state.carpentryCeilingHeight * verticalStuds);
+  const partitionVerticalStuds = partitionLength > 0 ? Math.ceil(partitionLength / rates.carpentry.studSpacing) : 0;
+  const wallStudLength = (wallLength * 2) + (state.carpentryCeilingHeight * verticalStuds);
+  const partitionStudLength = ((partitionLength * 2) + (state.carpentryCeilingHeight * partitionVerticalStuds)) * 2;
+  const studLength = wallStudLength + partitionStudLength;
   const studBundleLength = rates.carpentry.studPieceLength * rates.carpentry.studPiecesPerBundle;
   return {
     totalWallBoards,
+    artwallBoards,
+    partitionBoards,
     mdfBase,
     plywoodBase,
     mdf: boardCountWithWaste(mdfBase),
@@ -1941,6 +1961,9 @@ function carpentryMaterialCounts(state) {
     studLengthWithWaste: studLength * rates.carpentry.wasteFactor,
     studBundles: studLength > 0 ? Math.ceil((studLength * rates.carpentry.wasteFactor) / studBundleLength) : 0,
     verticalStuds,
+    partitionVerticalStuds,
+    wallStudLength,
+    partitionStudLength,
   };
 }
 
@@ -1970,8 +1993,10 @@ function calculate() {
   const hangerJa = state.hangerEnabled ? jaRounded(state.hangerM) : 0;
   const islandCounter = rates.countertop[state.islandCountertop];
   const islandSideFinish = rates.countertop[state.islandSideFinish];
+  const baseCounter = rates.countertop[state.baseCountertop];
   const homebarCounter = rates.countertop[state.homebarCountertop];
   const homebarMidway = rates.countertop[state.homebarMidway];
+  const baseCounterBillingM = state.lowerCabinetM > 0 ? Math.max(1, mmToM(state.lowerCabinetM)) : 0;
   const homebarStorageJa = rates.homebarStorageBaseJa;
   const homebarExtraJa = Math.max(0, homebarJa - homebarStorageJa);
   const homebarCounterActualMm = homebarExtraJa * 300;
@@ -2032,6 +2057,18 @@ function calculate() {
       margin,
       correction: state.corrections.option,
     });
+    if (state.baseCountertopEnabled && state.lowerCabinetM > 0) {
+      addDetail(details, {
+        group: "base",
+        item: `상하부장 상판(${baseCounter.label})`,
+        input: `하부장 ${mmText(state.lowerCabinetM)}`,
+        quantity: countertopQuantity(state.baseCountertop, baseCounterBillingM),
+        unitPrice: isSlabMaterial(state.baseCountertop) ? slabBaseCost(state.baseCountertop) : baseCounter.costPerM,
+        cost: countertopCost(state.baseCountertop, baseCounterBillingM),
+        margin,
+        correction: state.corrections.countertop,
+      });
+    }
     if (state.baseLightingUnits > 0) {
       addDetail(details, {
         group: "base",
@@ -2604,14 +2641,15 @@ function calculate() {
     correction: state.corrections.option,
   });
 
-  const carpentryDays = carpentryLaborDays(state);
+  const carpentryRawDays = carpentryLaborDays(state);
+  const carpentryDays = Math.ceil(carpentryRawDays);
   const carpentryMaterials = carpentryMaterialCounts(state);
-  const carpentryActive = hasCarpentryWork(state, carpentryDays, carpentryMaterials);
+  const carpentryActive = hasCarpentryWork(state, carpentryRawDays, carpentryMaterials);
   addUnitDetail(details, {
     group: "carpentry",
     item: "목공 인건비",
-    enabled: carpentryDays > 0,
-    input: "내부 품수 산출",
+    enabled: carpentryRawDays > 0,
+    input: `산출 ${quantityText(carpentryRawDays, "품")} / 올림`,
     quantity: quantityText(carpentryDays, "품"),
     unitPrice: rates.carpentry.workerDay,
     units: carpentryDays,
@@ -2621,11 +2659,11 @@ function calculate() {
   addUnitDetail(details, {
     group: "carpentry",
     item: "목공 기계품",
-    enabled: carpentryDays > 0,
-    input: `${quantityText(carpentryDays, "품")} 올림`,
-    quantity: `${Math.ceil(carpentryDays)}일`,
+    enabled: carpentryRawDays > 0,
+    input: `산출 ${quantityText(carpentryRawDays, "품")} / 올림`,
+    quantity: `${carpentryDays}일`,
     unitPrice: rates.carpentry.machineDay,
-    units: Math.ceil(carpentryDays),
+    units: carpentryDays,
     margin,
     correction: state.corrections.option,
   });
@@ -2666,7 +2704,7 @@ function calculate() {
     group: "carpentry",
     item: "MDF",
     enabled: carpentryMaterials.mdf > 0,
-    input: `기본 ${carpentryMaterials.mdfBase}장 / 15% 할증`,
+    input: `벽체 ${Math.max(0, carpentryMaterials.artwallBoards - carpentryMaterials.plywoodBase)}장 + 가벽 양면 ${carpentryMaterials.partitionBoards}장 / 15% 할증`,
     quantity: `${carpentryMaterials.mdf}장`,
     unitPrice: rates.carpentry.mdfSheet,
     units: carpentryMaterials.mdf,
@@ -2688,7 +2726,7 @@ function calculate() {
     group: "carpentry",
     item: "다루끼",
     enabled: carpentryMaterials.studBundles > 0,
-    input: `${mmText(carpentryMaterials.studLength)} x 1.15`,
+    input: `벽체 ${mmText(carpentryMaterials.wallStudLength)} + 가벽 ${mmText(carpentryMaterials.partitionStudLength)} / 15% 할증`,
     quantity: `${carpentryMaterials.studBundles}묶음`,
     unitPrice: rates.carpentry.studBundle,
     units: carpentryMaterials.studBundles,
@@ -2705,6 +2743,7 @@ function calculate() {
   const discountRoom = Math.max(0, customerRevenue - targetRevenue);
   const groupTotal = (group) => groupTotalFromDetails(details, group);
   const usesStoneSlab =
+    (state.baseEnabled && state.baseCountertopEnabled && state.lowerCabinetM > 0 && isSlabMaterial(state.baseCountertop)) ||
     (state.islandEnabled && state.islandM > 0 && (
       isSlabMaterial(state.islandCountertop) ||
       (isSlabMaterial(state.islandSideFinish) && state.islandSideFinishCount > 0)

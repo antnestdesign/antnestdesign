@@ -327,8 +327,12 @@
 <span>벽체/도어 목공</span></div>
 <div class="control-grid">
 <label>
-                  목공벽/아트월/가벽/파티션 길이(mm)
+                  목공벽/아트월 길이(mm)
                   <input id="carpentryArtwallM" min="0" step="100" type="number" value="0"/>
+</label>
+<label>
+                  가벽(파티션) 길이(mm)
+                  <input id="carpentryPartitionM" min="0" step="100" type="number" value="0"/>
 </label>
 <label>
                   히든도어 개소
@@ -408,6 +412,15 @@
                   <select id="baseEpDepth">
 <option selected="" value="deep"></option><option value="shallow"></option>
 </select>
+</label>
+<label class="inline-check">
+<input id="baseCountertopEnabled" type="checkbox"/>
+<span>상하부장 상판 적용</span>
+</label>
+<label>
+                  상판 등급
+                  <select id="baseCountertop">
+<option selected="" value="himacs"></option><option value="khanstone"></option><option value="ceramic"></option><option value="epPanel"></option></select>
 </label>
 <label>
                   라인조명 통수
@@ -815,7 +828,7 @@
 <section class="internal-card">
 <h2></h2>
 <table class="cost-table">
-<tbody><tr><th>하부장</th><td>자당 120,000원, 300mm 단위 올림</td></tr><tr><th>상부장</th><td>자당 90,000원, 300mm 단위 올림</td></tr><tr><th>키큰장</th><td>자당 130,000원, 300mm 단위 올림</td></tr><tr><th>밥솥장</th><td>600mm 1통 560,000원</td></tr><tr><th>상판</th><td>하이막스 220,000원/1,000mm, 칸스톤/세라믹 장당+가공+시공 기준</td></tr><tr><th>서랍</th><td>아일랜드/홈바장 수량 입력, 개당 60,000원</td></tr><tr><th>EP 마감판</th><td>400mm 이하 90,000원, 400mm 초과 130,000원</td></tr><tr><th>조명</th><td>라인조명 1통 240,000원, 간접조명(T3) 1라인 50,000원</td></tr><tr><th>마감</th><td>실리콘 기본, 탄성 기본 및 추가 개소 기준</td></tr><tr><th>목공</th><td>인건비, 기계품, 부자재, 양중, 자재 산출 기준</td></tr></tbody>
+<tbody><tr><th>하부장</th><td>자당 120,000원, 300mm 단위 올림</td></tr><tr><th>상부장</th><td>자당 90,000원, 300mm 단위 올림</td></tr><tr><th>키큰장</th><td>자당 130,000원, 300mm 단위 올림</td></tr><tr><th>밥솥장</th><td>600mm 1통 560,000원</td></tr><tr><th>상판</th><td>하이막스 220,000원/1,000mm, 칸스톤/세라믹 장당+가공+시공 기준</td></tr><tr><th>서랍</th><td>아일랜드/홈바장 수량 입력, 개당 60,000원</td></tr><tr><th>EP 마감판</th><td>400mm 이하 90,000원, 400mm 초과 130,000원</td></tr><tr><th>조명</th><td>라인조명 1통 240,000원, 간접조명(T3) 1라인 50,000원</td></tr><tr><th>마감</th><td>실리콘 450,000원, 탄성 기본 및 추가 개소 기준</td></tr><tr><th>목공</th><td>인건비와 기계품은 산출 품수 올림, 가벽은 양면 자재 산출 기준</td></tr></tbody>
 </table>
 </section>
 </div>
@@ -959,7 +972,7 @@
 <div class="control-grid admin-grid">
 <label>
                   목표 마진(%)
-                  <input id="targetMargin" max="60" min="5" step="1" type="number" value="35"/>
+                  <input id="targetMargin" max="60" min="5" step="1" type="number" value="30"/>
 </label>
 <label>
                   고객가 수동 보정
@@ -1103,7 +1116,7 @@
                   <input id="rateDemolitionCeilingPerPyeong" step="1000" type="number" value="160000"/></label>
 <label>
                   E/V 보양
-                  <input id="rateDemolitionElevatorProtect" step="1000" type="number" value="150000"/></label>
+                  <input id="rateDemolitionElevatorProtect" step="1000" type="number" value="200000"/></label>
 <label>
                   E/V 보양 철거
                   <input id="rateDemolitionElevatorProtectRemoval" step="1000" type="number" value="50000"/></label>
@@ -1148,10 +1161,10 @@
                   <input id="rateFilmWorkerDay" step="1000" type="number" value="280000"/></label>
 <label>
                   바닥(마루) 평단가
-                  <input id="rateFlooringPerPyeong" step="1000" type="number" value="180000"/></label>
+                  <input id="rateFlooringPerPyeong" step="1000" type="number" value="150000"/></label>
 <label>
                   실리콘 기본
-                  <input id="rateSilicone" step="1000" type="number" value="350000"/></label>
+                  <input id="rateSilicone" step="1000" type="number" value="450000"/></label>
 <label>
                   탄성 기본
                   <input id="rateElasticBase" step="1000" type="number" value="650000"/></label>
