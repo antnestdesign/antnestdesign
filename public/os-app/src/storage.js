@@ -96,6 +96,13 @@ export async function loadOsAuditLogs(params = {}) {
   return requestOsApi(`/audit-logs${suffix}`);
 }
 
+export async function createOsAuditLog(payload) {
+  return requestOsApi("/audit-logs", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createOsUser(payload) {
   return requestOsApi("/users", {
     method: "POST",

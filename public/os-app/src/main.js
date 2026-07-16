@@ -25,6 +25,7 @@ import {
   loadCurrentOsUser,
   loadOsUsers,
   loadOsAuditLogs,
+  createOsAuditLog,
   createOsUser,
   updateOsUser,
   resetOsUserPassword,
@@ -3780,6 +3781,50 @@ function latestPublishLog() {
   return systemPublishLogs[0] || null;
 }
 
+function systemCategories() {
+  return [...new Set([...originalCostItems.values()].map((row) => row.category || "기타"))]
+    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
+}
+
+function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active" } = {}) {
+  return [...originalCostItems.values()].filter((row) => {
+    if (scope === "category" && row.category !== category) return false;
+    if (activeMode === "active" && !row.is_active) return false;
+    return true;
+  });
+}
+
+function marginDistribution(rows) {
+  const counts = new Map();
+  rows.forEach((row) => {
+    const key = percentText(row.default_margin_rate);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return [...counts.entries()].map(([rate, count]) => `${rate} ${count}개`).join(" / ") || "-";
+}
+
+function existingDraftCount(rows) {
+  return rows.filter(hasDraft).length;
+}
+
+async function writeSystemAudit(action, payload = {}) {
+  if (!canManageUsers()) return;
+  try {
+    await createOsAuditLog({
+      action,
+      target_type: payload.target_type || "cost_items",
+      target_id: payload.target_id || null,
+      target_label: payload.target_label || null,
+      before_data: payload.before_data || null,
+      after_data: payload.after_data || null,
+      result: payload.result || "SUCCESS",
+      reason: payload.reason || null,
+    });
+  } catch (error) {
+    console.warn("시스템 감사 기록 저장 실패", error);
+  }
+}
+
 function ensureSystemManagementShell() {
   if (!canViewSystem()) return;
   const tabs = document.querySelector(".tabs");
@@ -3812,6 +3857,7 @@ function ensureSystemManagementShell() {
           <h2>원가 관리</h2>
           <p>운영값과 변경 예정값을 분리해 확인합니다.</p>
         </div>
+        <div id="systemBulkMarginPanel" class="system-operation-panel"></div>
         <div class="table-wrap system-cost-wrap"><table class="system-cost-table"><thead><tr>
           <th>품목명</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>변경</th><th>최근 수정일</th>
         </tr></thead><tbody id="systemCostRows"></tbody></table></div>
@@ -3822,6 +3868,7 @@ function ensureSystemManagementShell() {
           <p>변경 예정 품목을 확인한 뒤 관리자만 배포할 수 있습니다.</p>
         </div>
         <div id="systemPublishSummary" class="system-publish-summary"></div>
+        <div id="systemCategoryCancelPanel" class="system-operation-panel"></div>
         <div class="table-wrap"><table><thead><tr><th>품목</th><th>운영값</th><th>변경 예정값</th><th>차이</th><th class="admin-system-only">취소</th></tr></thead><tbody id="systemDraftRows"></tbody></table></div>
         <div id="systemPublishActions" class="admin-action-row system-publish-actions"></div>
         <p id="systemStatusText" class="status-text"></p>
@@ -3832,7 +3879,8 @@ function ensureSystemManagementShell() {
       </section>
       <section class="internal-card system-log-card">
         <div class="section-heading compact-heading no-side-padding"><h2>배포 기록</h2><p>배포 단위 이력입니다.</p></div>
-        <div class="table-wrap"><table><thead><tr><th>버전</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
+        <div id="systemRollbackPanel" class="system-operation-panel"></div>
+        <div class="table-wrap"><table><thead><tr><th>버전</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th><th class="admin-system-only">원복</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
       </section>
     `;
     document.querySelector(".tab-panel#admin")?.insertAdjacentElement("afterend", section);
@@ -3865,6 +3913,78 @@ function renderSystemStatus() {
     ["저장된 견적 수", systemEstimateCount.toLocaleString("ko-KR")],
   ];
   box.innerHTML = metrics.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("");
+}
+
+function renderBulkMarginPanel() {
+  const panel = document.getElementById("systemBulkMarginPanel");
+  if (!panel) return;
+  const categories = systemCategories();
+  const activeRows = rowsBySystemFilter({ activeMode: "active" });
+  if (!canEditCost()) {
+    panel.innerHTML = `
+      <div class="system-readonly-note">
+        <strong>마진 일괄 변경</strong>
+        <span>매니저는 원가와 변경 예정값을 조회만 할 수 있습니다.</span>
+      </div>`;
+    return;
+  }
+  panel.innerHTML = `
+    <div class="system-operation-header">
+      <h3>마진 일괄 변경</h3>
+      <p>운영값은 즉시 바뀌지 않고 변경 예정 마진율만 생성됩니다.</p>
+    </div>
+    <div class="system-bulk-grid">
+      <label>적용 범위
+        <select id="bulkMarginScope">
+          <option value="all">전체 품목</option>
+          <option value="category">공정별</option>
+        </select>
+      </label>
+      <label>공정
+        <select id="bulkMarginCategory">
+          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
+        </select>
+      </label>
+      <label>대상 상태
+        <select id="bulkMarginActiveMode">
+          <option value="active" selected>활성 품목만</option>
+          <option value="all">전체 품목</option>
+        </select>
+      </label>
+      <label>변경 마진율(%)
+        <input id="bulkMarginRate" type="number" min="0" max="99" step="0.1" value="30">
+      </label>
+      <label>기존 변경 예정값
+        <select id="bulkMarginDraftPolicy">
+          <option value="keep" selected>유지</option>
+          <option value="overwrite">덮어쓰기</option>
+        </select>
+      </label>
+      <button type="button" data-system-action="bulk-margin-preview">대상 확인</button>
+      <button type="button" data-system-action="bulk-margin-apply">변경 예정값으로 일괄 적용</button>
+    </div>
+    <p id="bulkMarginPreview" class="status-text">
+      기본 대상: 활성 품목 ${activeRows.length}개 / 현재 마진율 분포 ${marginDistribution(activeRows)}
+    </p>`;
+}
+
+function renderCategoryCancelPanel() {
+  const panel = document.getElementById("systemCategoryCancelPanel");
+  if (!panel) return;
+  if (!canEditCost()) {
+    panel.innerHTML = "";
+    return;
+  }
+  const categories = systemCategories();
+  panel.innerHTML = `
+    <div class="system-category-cancel">
+      <label>공정별 임시저장 취소
+        <select id="cancelDraftCategory">
+          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
+        </select>
+      </label>
+      <button type="button" data-system-action="cancel-category-drafts">선택 공정 임시저장 취소</button>
+    </div>`;
 }
 
 function renderSystemCostRows() {
@@ -3967,8 +4087,79 @@ function renderSystemPublishLogRows() {
       <td>${escapeHtml(row.reason || "-")}</td>
       <td>${escapeHtml(row.published_by || "-")}</td>
       <td>${row.published_at ? formatDateTime(row.published_at) : "-"}</td>
+      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="rollback-view" data-version="${escapeHtml(row.version || "")}">변경 내역 보기</button>` : ""}</td>
     </tr>
-  `).join("") : `<tr><td colspan="5">배포 기록이 없습니다.</td></tr>`;
+  `).join("") : `<tr><td colspan="6">배포 기록이 없습니다.</td></tr>`;
+}
+
+function renderRollbackPanel(version = "") {
+  const panel = document.getElementById("systemRollbackPanel");
+  if (!panel) return;
+  if (!canEditCost()) {
+    panel.innerHTML = "";
+    return;
+  }
+  if (!version) {
+    panel.innerHTML = `<p class="status-text">배포 기록에서 변경 내역을 선택하면 원복 예정값을 검토할 수 있습니다.</p>`;
+    return;
+  }
+  const log = systemPublishLogs.find((item) => item.version === version);
+  const rows = systemCostHistory.filter((row) => row.cost_version === version);
+  const categories = [...new Set(rows.map((row) => row.cost_items?.category || "기타"))];
+  const reviewed = rows.map((row) => {
+    const item = row.cost_items || {};
+    const current = originalCostItems.get(item.item_code);
+    const conflict = !current ||
+      rateNumber(current.cost_price) !== rateNumber(row.new_cost_price) ||
+      rateNumber(current.default_margin_rate) !== rateNumber(row.new_margin_rate) ||
+      Boolean(current.is_active) !== Boolean(row.new_is_active);
+    return { row, item, current, conflict };
+  });
+  const conflictCount = reviewed.filter((item) => item.conflict).length;
+  panel.innerHTML = `
+    <div class="system-operation-header">
+      <h3>원복 검토: ${escapeHtml(version)}</h3>
+      <p>이전 값을 새 변경 예정값으로 생성합니다. 운영값은 배포 전까지 바뀌지 않습니다.</p>
+    </div>
+    <dl class="system-rollback-meta">
+      <div><dt>원본 사유</dt><dd>${escapeHtml(log?.reason || "-")}</dd></div>
+      <div><dt>원본 배포자</dt><dd>${escapeHtml(log?.published_by || "-")}</dd></div>
+      <div><dt>원본 배포일</dt><dd>${log?.published_at ? formatDateTime(log.published_at) : "-"}</dd></div>
+      <div><dt>대상 품목</dt><dd>${rows.length}개 / 충돌 ${conflictCount}개</dd></div>
+    </dl>
+    <div class="system-bulk-grid">
+      <label>원복 단위
+        <select id="rollbackScope">
+          <option value="version">버전 전체</option>
+          <option value="category">공정별</option>
+          <option value="item">특정 품목</option>
+        </select>
+      </label>
+      <label>공정
+        <select id="rollbackCategory">
+          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
+        </select>
+      </label>
+      <label>품목
+        <select id="rollbackItemCode">
+          ${reviewed.map(({ item }) => `<option value="${escapeHtml(item.item_code || "")}">${escapeHtml(item.item_name || item.item_code || "-")}</option>`).join("")}
+        </select>
+      </label>
+      <label class="inline-check"><input id="rollbackForceConflicts" type="checkbox"><span>충돌 품목도 변경 예정값 생성</span></label>
+      <button type="button" data-system-action="rollback-create" data-version="${escapeHtml(version)}">원복 예정값 생성</button>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>품목</th><th>원본 변경 전</th><th>원본 변경 후</th><th>현재 운영값</th><th>원복 예정값</th><th>충돌</th></tr></thead><tbody>
+      ${reviewed.map(({ row, item, current, conflict }) => `
+        <tr class="${conflict ? "system-conflict-row" : ""}">
+          <td>${escapeHtml(item.item_name || item.item_code || "-")}</td>
+          <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)} / ${row.old_is_active ? "활성" : "비활성"}</td>
+          <td>${won(row.new_cost_price)} / ${percentText(row.new_margin_rate)} / ${row.new_is_active ? "활성" : "비활성"}</td>
+          <td>${current ? `${won(current.cost_price)} / ${percentText(current.default_margin_rate)} / ${current.is_active ? "활성" : "비활성"}` : "품목 없음"}</td>
+          <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)} / ${row.old_is_active ? "활성" : "비활성"}</td>
+          <td>${conflict ? "충돌" : "-"}</td>
+        </tr>
+      `).join("")}
+    </tbody></table></div>`;
 }
 
 function roleLabel(role) {
@@ -4383,10 +4574,13 @@ function renderSystemManagement() {
   if (!canViewSystem() || !document.getElementById("system")) return;
   document.getElementById("system")?.classList.toggle("system-readonly", !canEditCost());
   renderSystemStatus();
+  renderBulkMarginPanel();
   renderSystemCostRows();
+  renderCategoryCancelPanel();
   renderSystemDraftRows();
   renderSystemHistoryRows();
   renderSystemPublishLogRows();
+  renderRollbackPanel();
   if (canManageUsers()) {
     ensureUserManagementShell();
     renderUserManagement();
@@ -4458,12 +4652,89 @@ async function saveSystemDraft(itemCode) {
   setSystemStatus("임시저장 완료");
 }
 
+function bulkMarginOptions() {
+  return {
+    scope: document.getElementById("bulkMarginScope")?.value || "all",
+    category: document.getElementById("bulkMarginCategory")?.value || "",
+    activeMode: document.getElementById("bulkMarginActiveMode")?.value || "active",
+    marginRate: rateNumber(document.getElementById("bulkMarginRate")?.value) / 100,
+    policy: document.getElementById("bulkMarginDraftPolicy")?.value || "keep",
+  };
+}
+
+function previewBulkMargin() {
+  if (!canEditCost()) return;
+  const options = bulkMarginOptions();
+  const targetRows = rowsBySystemFilter(options);
+  const draftCount = existingDraftCount(targetRows);
+  const target = document.getElementById("bulkMarginPreview");
+  if (target) {
+    target.textContent = `대상 ${targetRows.length}개 / 현재 마진율 분포 ${marginDistribution(targetRows)} / 기존 변경 예정값 ${draftCount}개 / 변경 예정 마진율 ${percentText(options.marginRate)}`;
+  }
+}
+
+async function applyBulkMarginDrafts() {
+  if (!canEditCost()) return;
+  const options = bulkMarginOptions();
+  if (options.marginRate < 0 || options.marginRate > 0.99) {
+    alert("변경 마진율은 0 이상 99 이하의 퍼센트 숫자로 입력해 주세요.");
+    return;
+  }
+  let targetRows = rowsBySystemFilter(options);
+  const draftCount = existingDraftCount(targetRows);
+  if (options.policy === "keep") targetRows = targetRows.filter((row) => !hasDraft(row));
+  if (!targetRows.length) {
+    setSystemStatus("적용할 품목이 없습니다.");
+    return;
+  }
+  if (!confirm(`${targetRows.length}개 품목에 ${percentText(options.marginRate)} 변경 예정 마진율을 적용할까요?`)) return;
+  setSystemStatus("마진율 변경 예정값을 일괄 적용 중입니다.");
+  for (const row of targetRows) {
+    await saveCostItemChanges([{
+      id: row.id,
+      item_code: row.item_code,
+      new_cost_price: row.draft_cost_price ?? null,
+      new_margin_rate: options.marginRate,
+      new_is_active: row.draft_is_active ?? null,
+    }]);
+  }
+  await writeSystemAudit("COST_MARGIN_BULK_DRAFT", {
+    target_label: options.scope === "category" ? options.category : "전체 품목",
+    after_data: {
+      scope: options.scope,
+      category: options.category,
+      activeMode: options.activeMode,
+      targetCount: targetRows.length,
+      existingDraftCount: draftCount,
+      marginRate: options.marginRate,
+      draftPolicy: options.policy,
+    },
+    reason: "마진율 일괄 변경 예정값 생성",
+  });
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus(`마진율 변경 예정값 ${targetRows.length}개 적용 완료`);
+}
+
 async function cancelSystemDraft(itemCode) {
   if (!canEditCost()) return;
   const row = originalCostItems.get(itemCode);
   if (!row) return;
   setSystemStatus("임시저장 취소 중입니다.");
   await cancelCostItemDraft(row.id);
+  await writeSystemAudit("COST_DRAFT_CANCEL_ITEM", {
+    target_id: row.id,
+    target_label: row.item_name || row.item_code,
+    before_data: {
+      item_code: row.item_code,
+      draft_cost_price: row.draft_cost_price,
+      draft_margin_rate: row.draft_margin_rate,
+      draft_is_active: row.draft_is_active,
+    },
+    reason: "품목별 임시저장 취소",
+  });
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
@@ -4471,16 +4742,107 @@ async function cancelSystemDraft(itemCode) {
   setSystemStatus("임시저장 취소 완료");
 }
 
+async function cancelCategorySystemDrafts() {
+  if (!canEditCost()) return;
+  const category = document.getElementById("cancelDraftCategory")?.value || "";
+  const rows = changedCostItems().filter((row) => row.category === category);
+  if (!rows.length) {
+    setSystemStatus("선택 공정에 취소할 변경 예정값이 없습니다.");
+    return;
+  }
+  if (!confirm(`${category} 공정의 변경 예정값 ${rows.length}개를 취소할까요?`)) return;
+  setSystemStatus("공정별 임시저장 취소 중입니다.");
+  for (const row of rows) {
+    await cancelCostItemDraft(row.id);
+  }
+  await writeSystemAudit("COST_DRAFT_CANCEL_CATEGORY", {
+    target_label: category,
+    before_data: { category, targetCount: rows.length },
+    reason: "공정별 임시저장 취소",
+  });
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus(`${category} 공정 임시저장 ${rows.length}개 취소 완료`);
+}
+
 async function cancelAllSystemDrafts() {
   if (!canEditCost()) return;
+  const rows = changedCostItems();
   if (!confirm("전체 임시저장을 취소할까요?")) return;
   setSystemStatus("전체 임시저장 취소 중입니다.");
   await cancelAllCostDrafts();
+  await writeSystemAudit("COST_DRAFT_CANCEL_ALL", {
+    target_label: "전체 품목",
+    before_data: { targetCount: rows.length },
+    reason: "전체 임시저장 취소",
+  });
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
   refresh();
   setSystemStatus("전체 임시저장 취소 완료");
+}
+
+function rollbackTargets(version) {
+  const scope = document.getElementById("rollbackScope")?.value || "version";
+  const category = document.getElementById("rollbackCategory")?.value || "";
+  const itemCode = document.getElementById("rollbackItemCode")?.value || "";
+  const force = Boolean(document.getElementById("rollbackForceConflicts")?.checked);
+  return systemCostHistory
+    .filter((row) => row.cost_version === version)
+    .filter((row) => {
+      const item = row.cost_items || {};
+      if (scope === "category") return item.category === category;
+      if (scope === "item") return item.item_code === itemCode;
+      return true;
+    })
+    .map((row) => {
+      const item = row.cost_items || {};
+      const current = originalCostItems.get(item.item_code);
+      const conflict = !current ||
+        rateNumber(current.cost_price) !== rateNumber(row.new_cost_price) ||
+        rateNumber(current.default_margin_rate) !== rateNumber(row.new_margin_rate) ||
+        Boolean(current.is_active) !== Boolean(row.new_is_active);
+      return { row, item, current, conflict, force };
+    })
+    .filter((item) => item.force || !item.conflict);
+}
+
+async function createRollbackDrafts(version) {
+  if (!canEditCost()) return;
+  const targets = rollbackTargets(version);
+  if (!targets.length) {
+    setSystemStatus("원복 예정값을 생성할 대상이 없습니다.");
+    return;
+  }
+  if (!confirm(`${version} 기준 원복 예정값 ${targets.length}개를 생성할까요?`)) return;
+  setSystemStatus("원복 예정값 생성 중입니다.");
+  for (const target of targets) {
+    if (!target.current) continue;
+    await saveCostItemChanges([{
+      id: target.current.id,
+      item_code: target.item.item_code,
+      new_cost_price: rateNumber(target.row.old_cost_price),
+      new_margin_rate: rateNumber(target.row.old_margin_rate),
+      new_is_active: Boolean(target.row.old_is_active),
+    }]);
+  }
+  await writeSystemAudit("COST_ROLLBACK_DRAFT", {
+    target_label: version,
+    after_data: {
+      sourceVersion: version,
+      targetCount: targets.length,
+      forceConflicts: Boolean(document.getElementById("rollbackForceConflicts")?.checked),
+    },
+    reason: "배포 기록 기준 원복 예정값 생성",
+  });
+  await loadRateSettings();
+  await refreshSystemManagement();
+  updateRatesFromAdmin();
+  refresh();
+  setSystemStatus(`${version} 원복 예정값 ${targets.length}개 생성 완료`);
 }
 
 async function publishSystemDrafts() {
@@ -4492,7 +4854,14 @@ async function publishSystemDrafts() {
   }
   if (!confirm("현재 변경 예정값을 운영 원가로 배포할까요?")) return;
   setSystemStatus("배포 중입니다.");
+  const rows = changedCostItems();
   const result = await publishCostDrafts(reason);
+  await writeSystemAudit("COST_DRAFT_PUBLISH", {
+    target_label: reason,
+    before_data: { targetCount: rows.length },
+    after_data: { result },
+    reason,
+  });
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
@@ -4860,6 +5229,11 @@ document.addEventListener("click", async (event) => {
     const itemCode = button.dataset.itemCode;
     if (action === "save-draft") await saveSystemDraft(itemCode);
     if (action === "cancel-draft") await cancelSystemDraft(itemCode);
+    if (action === "bulk-margin-preview") previewBulkMargin();
+    if (action === "bulk-margin-apply") await applyBulkMarginDrafts();
+    if (action === "cancel-category-drafts") await cancelCategorySystemDrafts();
+    if (action === "rollback-view") renderRollbackPanel(button.dataset.version || "");
+    if (action === "rollback-create") await createRollbackDrafts(button.dataset.version || "");
     if (action === "cancel-all-drafts") await cancelAllSystemDrafts();
     if (action === "publish") await publishSystemDrafts();
   } catch (error) {
