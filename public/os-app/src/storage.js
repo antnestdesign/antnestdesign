@@ -45,6 +45,7 @@ export function getAuthSession() {
 
 function userFacingApiError(status, message) {
   if (status === 401) return "로그인이 필요합니다.";
+  if (status === 403 && message) return message;
   if (status === 403) return "접근 권한이 없습니다.";
   if (status === 409) return "이미 사용 중인 정보가 있습니다.";
   if (status >= 500) return "서버 요청을 처리하지 못했습니다.";

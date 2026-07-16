@@ -27,10 +27,10 @@ import {
   createOsUser,
   updateOsUser,
   resetOsUserPassword,
+  changeOwnPassword,
   signIn,
   signOut,
   loadStoredSession,
-  loadProfile,
   getAuthSession,
 } from "./storage.js";
 
@@ -408,6 +408,7 @@ let osUsersLoaded = false;
 let osUserActionBusy = false;
 let editingUserId = null;
 let resettingUserId = null;
+let passwordChangeBusy = false;
 let loadedEstimateBaseline = null;
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
@@ -4337,6 +4338,102 @@ async function publishSystemDrafts() {
   const version = Array.isArray(result) ? result[0]?.version : result?.version;
   setSystemStatus(version ? `배포 완료: ${version}` : "배포 완료");
 }
+
+function ensurePasswordChangeShell() {
+  if (document.getElementById("passwordChangeScreen")) return;
+  const section = document.createElement("section");
+  section.className = "login-screen password-change-screen";
+  section.id = "passwordChangeScreen";
+  section.hidden = true;
+  section.innerHTML = `
+    <form class="login-card password-change-card" id="passwordChangeForm">
+      <p class="eyebrow">AND OS</p>
+      <h1>비밀번호 변경</h1>
+      <p>처음 로그인했거나 초기 비밀번호가 재설정되었습니다.</p>
+      <label>
+        새 비밀번호
+        <input autocomplete="new-password" id="newOwnPassword" required type="password">
+      </label>
+      <label>
+        새 비밀번호 확인
+        <input autocomplete="new-password" id="newOwnPasswordConfirm" required type="password">
+      </label>
+      <button class="primary-action" type="submit">비밀번호 변경</button>
+      <button class="secondary-action" id="passwordChangeLogoutButton" type="button">로그아웃</button>
+      <p aria-live="polite" class="status-text" id="passwordChangeStatus"></p>
+    </form>
+  `;
+  document.body.insertBefore(section, document.getElementById("appShell"));
+}
+
+function setPasswordChangeRequired(required) {
+  ensurePasswordChangeShell();
+  const screen = document.getElementById("passwordChangeScreen");
+  document.getElementById("loginScreen").hidden = required || !!getAuthSession();
+  if (screen) screen.hidden = !required;
+  document.getElementById("appShell").classList.toggle("app-locked", required);
+}
+
+function clearPasswordChangeInputs() {
+  const password = document.getElementById("newOwnPassword");
+  const confirm = document.getElementById("newOwnPasswordConfirm");
+  if (password) password.value = "";
+  if (confirm) confirm.value = "";
+}
+
+function validateOwnPassword(password, confirm) {
+  if (password !== password.trim()) throw new Error("비밀번호 앞뒤에 공백을 넣을 수 없습니다.");
+  if (password.length < 8) throw new Error("비밀번호는 8자 이상이어야 합니다.");
+  if (!/[A-Za-z]/.test(password)) throw new Error("비밀번호에는 영문이 포함되어야 합니다.");
+  if (!/\d/.test(password)) throw new Error("비밀번호에는 숫자가 포함되어야 합니다.");
+  if (password !== confirm) throw new Error("비밀번호 확인이 일치하지 않습니다.");
+}
+
+async function leavePasswordChangeFlow() {
+  await signOut();
+  currentProfile = null;
+  clearPasswordChangeInputs();
+  setPasswordChangeRequired(false);
+  setAuthenticated(false);
+  const password = document.getElementById("loginPassword");
+  if (password) password.value = "";
+}
+
+async function submitOwnPasswordChange(event) {
+  event.preventDefault();
+  if (passwordChangeBusy) return;
+  const status = document.getElementById("passwordChangeStatus");
+  const password = document.getElementById("newOwnPassword")?.value || "";
+  const confirm = document.getElementById("newOwnPasswordConfirm")?.value || "";
+  try {
+    validateOwnPassword(password, confirm);
+    passwordChangeBusy = true;
+    if (status) status.textContent = "비밀번호를 변경하는 중입니다.";
+    await changeOwnPassword(password);
+    clearPasswordChangeInputs();
+    const profile = await loadCurrentOsUser();
+    if (profile.must_change_password) {
+      throw new Error("비밀번호 변경 상태를 확인하지 못했습니다. 다시 로그인해 주세요.");
+    }
+    if (status) status.textContent = "비밀번호 변경이 완료되었습니다.";
+    await enterAuthenticatedApp(profile);
+  } catch (error) {
+    console.error("비밀번호 변경 실패", error);
+    clearPasswordChangeInputs();
+    if (status) status.textContent = error.message || "비밀번호 변경에 실패했습니다.";
+  } finally {
+    passwordChangeBusy = false;
+  }
+}
+
+function bindPasswordChangeShell() {
+  ensurePasswordChangeShell();
+  document.getElementById("passwordChangeForm")?.addEventListener("submit", submitOwnPasswordChange);
+  document.getElementById("passwordChangeLogoutButton")?.addEventListener("click", () => {
+    leavePasswordChangeFlow().catch((error) => console.error("비밀번호 변경 화면 로그아웃 실패", error));
+  });
+}
+
 function applyAccessControl() {
   const role = currentProfile?.role || "staff";
   document.body.dataset.role = role;
@@ -4363,12 +4460,13 @@ function applyAccessControl() {
 
 function setAuthenticated(isAuthenticated) {
   document.getElementById("loginScreen").hidden = isAuthenticated;
+  const passwordScreen = document.getElementById("passwordChangeScreen");
+  if (passwordScreen) passwordScreen.hidden = true;
   document.getElementById("appShell").classList.toggle("app-locked", !isAuthenticated);
 }
 
-async function completeLogin() {
-  currentProfile = await loadProfile();
-  if (!currentProfile) throw new Error("프로필 정보를 불러오지 못했습니다.");
+async function enterAuthenticatedApp(profile) {
+  currentProfile = profile;
   if (currentProfile.role === "admin" && staffAdminShellApplied) {
     window.location.reload();
     return;
@@ -4379,6 +4477,24 @@ async function completeLogin() {
   refresh();
   await renderSavedEstimateRows();
   await refreshSystemManagement();
+}
+
+async function completeLogin() {
+  const profile = await loadCurrentOsUser();
+  if (!profile) throw new Error("프로필 정보를 불러오지 못했습니다.");
+  if (profile.is_active === false) {
+    await signOut();
+    currentProfile = null;
+    setAuthenticated(false);
+    throw new Error("비활성화된 계정입니다. 관리자에게 문의해 주세요.");
+  }
+  if (profile.must_change_password) {
+    currentProfile = profile;
+    setAuthenticated(false);
+    setPasswordChangeRequired(true);
+    return;
+  }
+  await enterAuthenticatedApp(profile);
 }
 
 function renderProjectSearchResults() {
@@ -4439,6 +4555,7 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 
 repairStaticKoreanLabels();
 guardCheckboxLabelClicks();
+bindPasswordChangeShell();
 
 document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -4450,8 +4567,9 @@ document.getElementById("loginForm")?.addEventListener("submit", async (event) =
     status.textContent = "";
   } catch (error) {
     console.error("로그인 실패", error);
-    status.textContent = "로그인에 실패했습니다.";
-    alert("로그인에 실패했습니다.");
+    const message = error.message || "로그인에 실패했습니다.";
+    status.textContent = message;
+    alert(message);
   }
 });
 
@@ -4684,9 +4802,10 @@ loadStoredSession();
 if (getAuthSession()) {
   completeLogin().catch((error) => {
     console.error("세션 복원 실패", error);
-    signOut();
-    setAuthenticated(false);
-  });
+  signOut();
+  setAuthenticated(false);
+  setPasswordChangeRequired(false);
+});
 }
 
 

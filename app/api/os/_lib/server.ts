@@ -26,7 +26,7 @@ type AuthUser = {
   email?: string;
 };
 
-type UserContext = {
+export type UserContext = {
   authUser: AuthUser;
   profile: Profile;
 };
@@ -158,7 +158,7 @@ export async function getUserContext(request: NextRequest): Promise<UserContext>
     throw new ApiError(403, "사용자 프로필이 없습니다.");
   }
   if (!profile.is_active) {
-    throw new ApiError(403, "비활성 사용자입니다.");
+    throw new ApiError(403, "비활성화된 계정입니다. 관리자에게 문의해 주세요.");
   }
   return { authUser, profile };
 }
@@ -187,8 +187,17 @@ export function assertNonEmptyString(value: unknown, label: string) {
 
 export function assertPassword(value: unknown) {
   const password = assertNonEmptyString(value, "비밀번호");
+  if (password !== password.trim()) {
+    throw new ApiError(400, "비밀번호 앞뒤에 공백을 넣을 수 없습니다.");
+  }
   if (password.length < 8) {
     throw new ApiError(400, "비밀번호는 8자 이상이어야 합니다.");
+  }
+  if (!/[A-Za-z]/.test(password)) {
+    throw new ApiError(400, "비밀번호에는 영문이 포함되어야 합니다.");
+  }
+  if (!/\d/.test(password)) {
+    throw new ApiError(400, "비밀번호에는 숫자가 포함되어야 합니다.");
   }
   return password;
 }
