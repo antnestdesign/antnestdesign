@@ -4139,6 +4139,17 @@ function ensureAuditLogShell() {
   renderAuditLogRows();
 }
 
+function removePrivilegedManagementShell() {
+  document.getElementById("userManagementCard")?.remove();
+  document.getElementById("auditLogCard")?.remove();
+  osUsers = [];
+  osUsersLoaded = false;
+  osAuditLogs = [];
+  osAuditLogsLoaded = false;
+  editingUserId = null;
+  resettingUserId = null;
+}
+
 function setAuditLogStatus(message, type = "") {
   const node = document.getElementById("auditLogStatus");
   if (!node) return;
@@ -4342,6 +4353,8 @@ function renderSystemManagement() {
     renderUserManagement();
     ensureAuditLogShell();
     renderAuditLogRows();
+  } else {
+    removePrivilegedManagementShell();
   }
 }
 
@@ -4554,6 +4567,7 @@ function applyAccessControl() {
     renderStaffAdminShell();
   } else if (isManager()) {
     document.querySelectorAll(".admin-only").forEach((node) => node.remove());
+    removePrivilegedManagementShell();
     renderStaffAdminShell();
     ensureSystemManagementShell();
   } else {
