@@ -120,8 +120,9 @@ export async function supabaseFetch<T>(path: string, init?: RequestInit): Promis
     const message = await response.text();
     throw new ApiError(response.status, message || "요청 처리에 실패했습니다.");
   }
-  if (response.status === 204) return null as T;
-  return (await response.json()) as T;
+  const text = await response.text();
+  if (!text.trim()) return null as T;
+  return JSON.parse(text) as T;
 }
 
 export async function getAuthUser(accessToken: string): Promise<AuthUser> {
