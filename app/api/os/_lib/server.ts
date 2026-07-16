@@ -107,7 +107,7 @@ export async function supabaseFetch<T>(path: string, init?: RequestInit): Promis
   });
   if (!response.ok) {
     const message = await response.text();
-    throw new ApiError(response.status, message || "Supabase 요청에 실패했습니다.");
+    throw new ApiError(response.status, message || "요청 처리에 실패했습니다.");
   }
   if (response.status === 204) return null as T;
   return (await response.json()) as T;

@@ -599,7 +599,7 @@ function ensureRateDbSaveButton() {
   const actions = document.createElement("div");
   actions.className = "admin-action-row";
   actions.innerHTML = `
-    <button id="saveRateDbButton" type="button">원가DB 저장</button>
+    <button id="saveRateDbButton" type="button">원가 관리 저장</button>
     <span id="rateDbSaveStatus" class="status-text"></span>
   `;
   adminDb.appendChild(actions);
@@ -615,14 +615,14 @@ function ensureCostSnapshotPanel() {
   section.innerHTML = `
     <div class="section-heading compact-heading no-side-padding">
       <h2>원가 기준</h2>
-      <p>저장 당시 원가 기준과 현재 원가DB 상태를 비교합니다.</p>
+      <p>저장 당시 원가 기준과 현재 원가 상태를 비교합니다.</p>
     </div>
     <dl class="metric-list admin-metric-list">
       <div><dt>원가 적용 기준</dt><dd id="costBasisLabel">저장된 견적 없음</dd></div>
       <div><dt>견적 저장일</dt><dd id="costBasisSavedAt">-</dd></div>
-      <div><dt>원가 스냅샷 시각</dt><dd id="costSnapshotCapturedAt">-</dd></div>
-      <div><dt>원가DB 최신 수정일</dt><dd id="costDbLatestUpdatedAt">-</dd></div>
-      <div><dt>현재 원가DB 상태</dt><dd id="costSnapshotStatus">-</dd></div>
+      <div><dt>저장 원가 기준 시각</dt><dd id="costSnapshotCapturedAt">-</dd></div>
+      <div><dt>원가 관리 최신 수정일</dt><dd id="costDbLatestUpdatedAt">-</dd></div>
+      <div><dt>현재 원가 상태</dt><dd id="costSnapshotStatus">-</dd></div>
     </dl>
     <div class="admin-action-row">
       <button id="compareCostSnapshotButton" type="button" disabled>현재 원가와 비교</button>
@@ -792,11 +792,11 @@ async function loadRateSettings() {
   }
 
   try {
-    setRateDbStatus("원가DB 불러오는 중입니다.");
+    setRateDbStatus("원가 정보를 불러오는 중입니다.");
     setRateDbInputsDisabled(true);
     const rows = await loadSystemCostItems();
     if (!Array.isArray(rows) || rows.length === 0) {
-      throw new Error("Supabase 원가DB가 비어 있습니다. cost_items SQL을 먼저 실행해 주세요.");
+      throw new Error("원가 관리 데이터가 비어 있습니다. 관리자에게 확인해 주세요.");
     }
 
     originalCostItems = new Map();
@@ -819,23 +819,23 @@ async function loadRateSettings() {
     costDbLoaded = true;
     updateRatesFromAdmin();
     setRateDbInputsDisabled(!canEditCost());
-    setRateDbStatus("원가DB 연결 완료");
+    setRateDbStatus("원가 정보 연결 완료");
   } catch (error) {
     console.error("Supabase 원가DB 불러오기 실패", error);
     costDbLoaded = false;
     setRateDbInputsDisabled(true);
-    setRateDbStatus("원가DB 연결 실패");
+    setRateDbStatus("원가 정보 연결 실패");
     throw error;
   }
 }
 
 async function saveRateSettings() {
   if (!canEditCost()) {
-    alert("원가DB 저장 권한이 없습니다.");
+    alert("원가 관리 저장 권한이 없습니다.");
     return;
   }
   if (!costDbLoaded) {
-    alert("원가DB가 연결되지 않아 저장할 수 없습니다.");
+    alert("원가 정보가 연결되지 않아 저장할 수 없습니다.");
     return;
   }
   const changes = [...dirtyItemCodes]
@@ -881,7 +881,7 @@ async function saveRateSettings() {
       changes,
     });
     setRateDbStatus("저장 실패");
-    alert(`원가DB 저장에 실패했습니다.${error?.message ? `\n${error.message}` : ""}`);
+    alert(`원가 관리 저장에 실패했습니다.${error?.message ? `\n${error.message}` : ""}`);
   }
 }
 
@@ -1375,7 +1375,7 @@ function repairStaticKoreanLabels() {
   }
   const adminDb = document.querySelector("#admin .admin-db-card");
   if (adminDb) {
-    textFor("#admin .admin-db-card h2", "원가DB");
+    textFor("#admin .admin-db-card h2", "원가 관리");
     textFor("#admin .admin-db-card p", "기준 단가와 보정률은 관리 화면에서만 수정합니다.");
   }
   const management = document.getElementById("targetMargin")?.closest(".internal-card");
@@ -1383,7 +1383,7 @@ function repairStaticKoreanLabels() {
     const heading = management.querySelector(".section-heading h2");
     const paragraph = management.querySelector(".section-heading p");
     if (heading) heading.textContent = "관리기준";
-    if (paragraph) paragraph.textContent = "마진, 보정률, 원가DB 기준을 관리합니다.";
+    if (paragraph) paragraph.textContent = "마진, 보정률, 원가 관리 기준을 관리합니다.";
   }
   [
     "clientTotal",
@@ -3160,7 +3160,7 @@ function renderCostSnapshotInfo(estimate) {
   const currentLatest = latestDate(currentCostItems().map((item) => item.updatedAt));
   setText("costBasisLabel", estimate ? (snapshot ? "저장 당시 원가" : "기존 저장 계산 결과") : "저장된 견적 없음");
   setText("costBasisSavedAt", estimate?.savedAt ? formatDateTime(estimate.savedAt) : "-");
-  setText("costSnapshotCapturedAt", snapshot?.capturedAt ? formatDateTime(snapshot.capturedAt) : "원가 스냅샷 없음");
+  setText("costSnapshotCapturedAt", snapshot?.capturedAt ? formatDateTime(snapshot.capturedAt) : "저장 원가 기준 없음");
   setText("costDbLatestUpdatedAt", currentLatest ? formatDateTime(currentLatest) : "-");
   const compareButton = document.getElementById("compareCostSnapshotButton");
   const comparePanel = document.getElementById("costComparisonPanel");
@@ -3176,7 +3176,7 @@ function renderCostSnapshotInfo(estimate) {
     return;
   }
   if (!snapshot?.items?.length) {
-    setText("costSnapshotStatus", "원가 스냅샷 없음");
+    setText("costSnapshotStatus", "저장 원가 기준 없음");
     if (compareButton) compareButton.disabled = true;
     return;
   }
@@ -3227,7 +3227,7 @@ function renderCostSnapshotComparison(estimate) {
             <td>${won(item.diff)}</td>
             <td>${(item.diffRate * 100).toFixed(1)}%</td>
           </tr>
-        `).join("") : `<tr><td colspan="5">현재 원가DB와 저장 당시 원가가 동일합니다.</td></tr>`}
+        `).join("") : `<tr><td colspan="5">현재 원가와 저장 당시 원가가 동일합니다.</td></tr>`}
       </tbody>
     </table>
     <div class="quote-total-list">
@@ -3523,7 +3523,7 @@ async function renderSavedEstimateRows() {
   } catch (error) {
     console.error("견적 조회 실패", error);
     tbody.innerHTML = `<tr><td colspan="${colspan}">견적 조회에 실패했습니다.</td></tr>`;
-    alert("Supabase 견적 조회에 실패했습니다.");
+    alert("견적 조회에 실패했습니다.");
   }
 }
 
@@ -3760,36 +3760,36 @@ function ensureSystemManagementShell() {
       <section class="internal-card system-status-card">
         <div class="section-heading compact-heading no-side-padding">
           <h2>시스템 현황</h2>
-          <p>원가DB, Draft, Publish, 견적 저장 상태를 확인합니다.</p>
+          <p>원가 관리, 변경 예정값, 배포, 견적 저장 상태를 확인합니다.</p>
         </div>
         <dl class="metric-list system-metric-list" id="systemStatusMetrics"></dl>
       </section>
       <section class="internal-card system-cost-card">
         <div class="section-heading compact-heading no-side-padding">
-          <h2>원가DB</h2>
-          <p>운영값과 Draft 값을 분리해 확인합니다.</p>
+          <h2>원가 관리</h2>
+          <p>운영값과 변경 예정값을 분리해 확인합니다.</p>
         </div>
         <div class="table-wrap system-cost-wrap"><table class="system-cost-table"><thead><tr>
-          <th>품목명</th><th>운영<br>원가</th><th>변경<br>원가</th><th>운영<br>마진율</th><th>변경<br>마진율(%)</th><th class="admin-system-only">Draft<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경<br>상태</th><th>변경</th><th>최근 수정일</th>
+          <th>품목명</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>변경</th><th>최근 수정일</th>
         </tr></thead><tbody id="systemCostRows"></tbody></table></div>
       </section>
       <section class="internal-card system-publish-card">
         <div class="section-heading compact-heading no-side-padding">
-          <h2>Publish 준비</h2>
-          <p>Draft 변경 품목을 확인한 뒤 admin만 Publish할 수 있습니다.</p>
+          <h2>배포 준비</h2>
+          <p>변경 예정 품목을 확인한 뒤 관리자만 배포할 수 있습니다.</p>
         </div>
         <div id="systemPublishSummary" class="system-publish-summary"></div>
-        <div class="table-wrap"><table><thead><tr><th>품목</th><th>운영값</th><th>Draft값</th><th>차이</th><th class="admin-system-only">취소</th></tr></thead><tbody id="systemDraftRows"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>품목</th><th>운영값</th><th>변경 예정값</th><th>차이</th><th class="admin-system-only">취소</th></tr></thead><tbody id="systemDraftRows"></tbody></table></div>
         <div id="systemPublishActions" class="admin-action-row system-publish-actions"></div>
         <p id="systemStatusText" class="status-text"></p>
       </section>
       <section class="internal-card system-history-card">
-        <div class="section-heading compact-heading no-side-padding"><h2>변경 이력</h2><p>Publish 단위 품목 변경 내역입니다.</p></div>
-        <div class="table-wrap"><table><thead><tr><th>Version</th><th>품목</th><th>이전 값</th><th>변경 값</th><th>활성 변경</th><th>사유</th><th>변경자</th><th>변경일</th></tr></thead><tbody id="systemHistoryRows"></tbody></table></div>
+        <div class="section-heading compact-heading no-side-padding"><h2>변경 이력</h2><p>배포 단위 품목 변경 내역입니다.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>버전</th><th>품목</th><th>이전 값</th><th>변경 값</th><th>활성 변경</th><th>사유</th><th>변경자</th><th>변경일</th></tr></thead><tbody id="systemHistoryRows"></tbody></table></div>
       </section>
       <section class="internal-card system-log-card">
-        <div class="section-heading compact-heading no-side-padding"><h2>Publish Log</h2><p>배포 단위 이력입니다.</p></div>
-        <div class="table-wrap"><table><thead><tr><th>Version</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
+        <div class="section-heading compact-heading no-side-padding"><h2>배포 기록</h2><p>배포 단위 이력입니다.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>버전</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
       </section>
     `;
     document.querySelector(".tab-panel#admin")?.insertAdjacentElement("afterend", section);
@@ -3816,9 +3816,9 @@ function renderSystemStatus() {
   const metrics = [
     ["전체 원가 품목 수", items.length.toLocaleString("ko-KR")],
     ["활성 품목 수", items.filter((item) => item.is_active).length.toLocaleString("ko-KR")],
-    ["Draft 품목 수", drafts.length.toLocaleString("ko-KR")],
-    ["최근 Publish Version", latest?.version || "-"],
-    ["최근 Publish 일시", latest?.published_at ? formatDateTime(latest.published_at) : "-"],
+    ["변경 예정 품목 수", drafts.length.toLocaleString("ko-KR")],
+    ["최근 배포 버전", latest?.version || "-"],
+    ["최근 배포 일시", latest?.published_at ? formatDateTime(latest.published_at) : "-"],
     ["저장된 견적 수", systemEstimateCount.toLocaleString("ko-KR")],
   ];
   box.innerHTML = metrics.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("");
@@ -3829,7 +3829,7 @@ function renderSystemCostRows() {
   if (!tbody) return;
   const rows = [...originalCostItems.values()].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11">원가DB를 불러오지 못했습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11">원가 정보를 불러오지 못했습니다.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map((row) => {
@@ -3847,7 +3847,7 @@ function renderSystemCostRows() {
       ? `<select class="system-draft-input" data-system-field="active" data-item-code="${row.item_code}"><option value="true" ${draftActive ? "selected" : ""}>활성</option><option value="false" ${!draftActive ? "selected" : ""}>비활성</option></select>`
       : (draftActive ? "활성" : "비활성");
     const actionCell = canEditCost()
-      ? `<button type="button" data-system-action="save-draft" data-item-code="${row.item_code}">Draft 저장</button>`
+      ? `<button type="button" data-system-action="save-draft" data-item-code="${row.item_code}">임시저장</button>`
       : "";
     return `
       <tr class="${dirty ? "system-dirty-row" : ""}">
@@ -3879,20 +3879,20 @@ function renderSystemDraftRows() {
   const actions = document.getElementById("systemPublishActions");
   if (!tbody || !summary || !actions) return;
   const rows = changedCostItems();
-  summary.innerHTML = `<strong>Draft 변경 품목 수: ${rows.length.toLocaleString("ko-KR")}개</strong>`;
+  summary.innerHTML = `<strong>변경 예정 품목 수: ${rows.length.toLocaleString("ko-KR")}개</strong>`;
   tbody.innerHTML = rows.length ? rows.map((row) => `
     <tr>
       <td>${escapeHtml(row.item_name || row.item_code)}</td>
       <td>${won(row.cost_price)} / ${percentText(row.default_margin_rate)} / ${row.is_active ? "활성" : "비활성"}</td>
       <td>${won(draftValue(row, "cost"))} / ${percentText(draftValue(row, "margin"))} / ${draftValue(row, "active") ? "활성" : "비활성"}</td>
       <td>${escapeHtml(draftChangeText(row))}</td>
-      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="cancel-draft" data-item-code="${row.item_code}">Draft 취소</button>` : ""}</td>
+      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="cancel-draft" data-item-code="${row.item_code}">임시저장 취소</button>` : ""}</td>
     </tr>
-  `).join("") : `<tr><td colspan="5">Publish 대기 중인 Draft가 없습니다.</td></tr>`;
+  `).join("") : `<tr><td colspan="5">배포 대기 중인 변경 예정값이 없습니다.</td></tr>`;
   actions.innerHTML = canPublishCost() ? `
-    <label class="system-publish-reason">Publish 사유<input id="systemPublishReason" type="text" maxlength="500" placeholder="사유를 입력하세요"></label>
-    <button type="button" data-system-action="publish" ${rows.length ? "" : "disabled"}>Publish 실행</button>
-    <button type="button" data-system-action="cancel-all-drafts" ${rows.length ? "" : "disabled"}>전체 Draft 취소</button>
+    <label class="system-publish-reason">배포 사유<input id="systemPublishReason" type="text" maxlength="500" placeholder="사유를 입력하세요"></label>
+    <button type="button" data-system-action="publish" ${rows.length ? "" : "disabled"}>배포</button>
+    <button type="button" data-system-action="cancel-all-drafts" ${rows.length ? "" : "disabled"}>전체 임시저장 취소</button>
   ` : "";
 }
 
@@ -3925,11 +3925,11 @@ function renderSystemPublishLogRows() {
       <td>${escapeHtml(row.published_by || "-")}</td>
       <td>${row.published_at ? formatDateTime(row.published_at) : "-"}</td>
     </tr>
-  `).join("") : `<tr><td colspan="5">Publish Log가 없습니다.</td></tr>`;
+  `).join("") : `<tr><td colspan="5">배포 기록이 없습니다.</td></tr>`;
 }
 
 function roleLabel(role) {
-  return { admin: "관리자", manager: "매니저", staff: "스태프" }[role] || "스태프";
+  return { admin: "관리자", manager: "매니저", staff: "직원" }[role] || "직원";
 }
 
 function passwordStatusLabel(user) {
@@ -3998,14 +3998,14 @@ function renderUserEditPanel() {
   panel.innerHTML = `
     <div class="section-heading compact-heading no-side-padding">
       <h3>사용자 수정</h3>
-      <p>마지막 활성 admin은 비활성화하거나 역할을 낮출 수 없고, 본인 계정은 직접 비활성화할 수 없습니다.</p>
+      <p>마지막 활성 관리자는 비활성화하거나 역할을 낮출 수 없고, 본인 계정은 직접 비활성화할 수 없습니다.</p>
     </div>
     <form id="userEditForm" class="user-management-form">
       <label>이름<input id="editUserName" type="text" value="${escapeHtml(user.name || "")}" autocomplete="off"></label>
       <label>역할<select id="editUserRole">
         <option value="admin" ${user.role === "admin" ? "selected" : ""}>관리자</option>
         <option value="manager" ${user.role === "manager" ? "selected" : ""}>매니저</option>
-        <option value="staff" ${user.role === "staff" ? "selected" : ""}>스태프</option>
+        <option value="staff" ${user.role === "staff" ? "selected" : ""}>직원</option>
       </select></label>
       <label>상태<select id="editUserActive">
         <option value="true" ${user.is_active ? "selected" : ""}>활성</option>
@@ -4077,7 +4077,7 @@ function ensureUserManagementShell() {
         <label>초기 비밀번호<input id="newUserPassword" type="password" autocomplete="new-password"></label>
         <label>초기 비밀번호 확인<input id="newUserPasswordConfirm" type="password" autocomplete="new-password"></label>
         <label>역할<select id="newUserRole">
-          <option value="staff">스태프</option>
+          <option value="staff">직원</option>
           <option value="manager">매니저</option>
           <option value="admin">관리자</option>
         </select></label>
@@ -4280,7 +4280,7 @@ async function saveSystemDraft(itemCode) {
     alert("변경 마진율은 0 이상 99 이하의 퍼센트 숫자로 입력해 주세요.");
     return;
   }
-  setSystemStatus("Draft 저장 중입니다.");
+  setSystemStatus("임시저장 중입니다.");
   await saveCostItemChanges([{
     id: row.id,
     item_code: itemCode,
@@ -4292,55 +4292,55 @@ async function saveSystemDraft(itemCode) {
   await refreshSystemManagement();
   updateRatesFromAdmin();
   refresh();
-  setSystemStatus("Draft 저장 완료");
+  setSystemStatus("임시저장 완료");
 }
 
 async function cancelSystemDraft(itemCode) {
   if (!canEditCost()) return;
   const row = originalCostItems.get(itemCode);
   if (!row) return;
-  setSystemStatus("Draft 취소 중입니다.");
+  setSystemStatus("임시저장 취소 중입니다.");
   await cancelCostItemDraft(row.id);
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
   refresh();
-  setSystemStatus("Draft 취소 완료");
+  setSystemStatus("임시저장 취소 완료");
 }
 
 async function cancelAllSystemDrafts() {
   if (!canEditCost()) return;
-  if (!confirm("전체 Draft를 취소할까요?")) return;
-  setSystemStatus("전체 Draft 취소 중입니다.");
+  if (!confirm("전체 임시저장을 취소할까요?")) return;
+  setSystemStatus("전체 임시저장 취소 중입니다.");
   await cancelAllCostDrafts();
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
   refresh();
-  setSystemStatus("전체 Draft 취소 완료");
+  setSystemStatus("전체 임시저장 취소 완료");
 }
 
 async function publishSystemDrafts() {
   if (!canPublishCost()) return;
   const reason = document.getElementById("systemPublishReason")?.value?.trim();
   if (!reason) {
-    alert("Publish 사유를 입력해야 합니다.");
+    alert("배포 사유를 입력해야 합니다.");
     return;
   }
-  if (!confirm("현재 Draft를 운영 원가로 Publish할까요?")) return;
-  setSystemStatus("Publish 실행 중입니다.");
+  if (!confirm("현재 변경 예정값을 운영 원가로 배포할까요?")) return;
+  setSystemStatus("배포 중입니다.");
   const result = await publishCostDrafts(reason);
   await loadRateSettings();
   await refreshSystemManagement();
   updateRatesFromAdmin();
   refresh();
   const version = Array.isArray(result) ? result[0]?.version : result?.version;
-  setSystemStatus(version ? `Publish 완료: ${version}` : "Publish 완료");
+  setSystemStatus(version ? `배포 완료: ${version}` : "배포 완료");
 }
 function applyAccessControl() {
   const role = currentProfile?.role || "staff";
   document.body.dataset.role = role;
-  setText("currentUserLabel", `${currentProfile?.email || "-"} · ${role}`);
+  setText("currentUserLabel", `${currentProfile?.email || "-"} · ${roleLabel(role)}`);
   if (isStaff()) {
     document.querySelectorAll(".admin-only").forEach((node) => node.remove());
     removeSystemManagementShell();
@@ -4490,7 +4490,7 @@ function setSaveStatus(message) {
 
 function handleEstimateInputChanged() {
   if (loadedEstimateBaseline && activeQuoteEstimate) {
-    setSaveStatus("입력값이 변경되어 현재 원가 기준으로 재계산되었습니다. 저장 전까지 DB 원본은 변경되지 않습니다.");
+    setSaveStatus("입력값이 변경되어 현재 원가 기준으로 재계산되었습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
   }
   activeQuoteEstimate = null;
   loadedEstimateBaseline = null;
@@ -4515,7 +4515,7 @@ async function handleSaveEstimate(mode = "update") {
       alert("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       return;
     }
-    setSaveStatus(isUpdate ? "Supabase에 수정 저장 중입니다." : "Supabase에 새 견적으로 저장 중입니다.");
+    setSaveStatus(isUpdate ? "수정 저장 중입니다." : "새 견적으로 저장 중입니다.");
     const saved = isUpdate
       ? await updateEstimate(updateId, { ...snapshot, id: updateId })
       : await saveEstimate({ ...snapshot, id: "" });
@@ -4535,7 +4535,7 @@ async function handleSaveEstimate(mode = "update") {
   } catch (error) {
     console.error("견적 저장 실패", error);
     setSaveStatus("견적 저장에 실패했습니다.");
-    alert(error.message || "Supabase 견적 저장에 실패했습니다.");
+    alert(error.message || "견적 저장에 실패했습니다.");
   } finally {
     saveEstimateInProgress = false;
   }
@@ -4633,7 +4633,7 @@ document.addEventListener("click", async (event) => {
       if (isAdmin()) activateTab("admin");
     } catch (error) {
       console.error("견적 열기 실패", error);
-      alert("Supabase 견적 열기에 실패했습니다.");
+      alert("견적 열기에 실패했습니다.");
     }
   }
   if (deleteId) {
@@ -4649,7 +4649,7 @@ document.addEventListener("click", async (event) => {
       renderSavedEstimateRows();
     } catch (error) {
       console.error("견적 삭제 실패", error);
-      alert("Supabase 견적 삭제에 실패했습니다.");
+      alert("견적 삭제에 실패했습니다.");
     }
   }
 });

@@ -121,8 +121,8 @@ export async function signIn(email, password) {
     body: JSON.stringify({ email, password }),
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.");
+    await response.text();
+    throw new Error("로그인에 실패했습니다.");
   }
   const session = await response.json();
   persistSession(session);
@@ -146,8 +146,8 @@ async function requestGeneric(path, options = {}) {
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase request failed: ${response.status}`);
+    await response.text();
+    throw new Error(`데이터 요청에 실패했습니다. (${response.status})`);
   }
   if (response.status === 204) return null;
   return response.json();
@@ -219,8 +219,8 @@ async function request(path = "", options = {}) {
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase request failed: ${response.status}`);
+    await response.text();
+    throw new Error(`데이터 요청에 실패했습니다. (${response.status})`);
   }
   if (response.status === 204) return null;
   return response.json();
@@ -236,8 +236,8 @@ async function insertEstimatePayload(payload) {
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase insert failed: ${response.status}`);
+    await response.text();
+    throw new Error(`데이터 저장에 실패했습니다. (${response.status})`);
   }
 }
 
@@ -251,12 +251,12 @@ async function insertWithFallbacks(payload, fallbacks) {
       errors.push(error?.message || String(error));
     }
   }
-  throw new Error(errors.filter(Boolean).join("\n") || "Supabase estimate save failed.");
+  throw new Error(errors.filter(Boolean).join("\n") || "견적 저장에 실패했습니다.");
 }
 export async function saveEstimate(estimate) {
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
-    throw new Error("Project name is required.");
+    throw new Error("프로젝트명을 입력해 주세요.");
   }
   const clientName = estimate.clientName || estimate.inputs?.clientName || "";
   const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
@@ -303,11 +303,11 @@ export async function saveEstimate(estimate) {
 
 export async function updateEstimate(id, estimate) {
   if (!id) {
-    throw new Error("Estimate id is required.");
+    throw new Error("수정할 견적을 찾지 못했습니다.");
   }
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
-    throw new Error("Project name is required.");
+    throw new Error("프로젝트명을 입력해 주세요.");
   }
   const clientName = estimate.clientName || estimate.inputs?.clientName || "";
   const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
@@ -363,7 +363,7 @@ async function requestCostItems(path = "", options = {}) {
   });
   const text = await response.text();
   if (!response.ok) {
-    const error = new Error(text || `Supabase cost_items request failed: ${response.status}`);
+    const error = new Error(`원가 품목 조회에 실패했습니다. (${response.status})`);
     error.status = response.status;
     error.body = text;
     error.endpoint = "cost_items";
@@ -389,7 +389,7 @@ async function requestCostHistory(path = "", options = {}) {
   });
   const text = await response.text();
   if (!response.ok) {
-    const error = new Error(text || `Supabase cost_item_history request failed: ${response.status}`);
+    const error = new Error(`변경 이력 조회에 실패했습니다. (${response.status})`);
     error.status = response.status;
     error.body = text;
     error.endpoint = "cost_item_history";
@@ -407,7 +407,7 @@ async function requestCostPublishLog(path = "", options = {}) {
   });
   const text = await response.text();
   if (!response.ok) {
-    const error = new Error(text || `Supabase cost_publish_log request failed: ${response.status}`);
+    const error = new Error(`배포 기록 조회에 실패했습니다. (${response.status})`);
     error.status = response.status;
     error.body = text;
     error.endpoint = "cost_publish_log";
@@ -426,7 +426,7 @@ async function requestRpc(functionName, payload = {}) {
   });
   const text = await response.text();
   if (!response.ok) {
-    const error = new Error(text || `Supabase RPC failed: ${response.status}`);
+    const error = new Error(`요청 처리에 실패했습니다. (${response.status})`);
     error.status = response.status;
     error.body = text;
     error.endpoint = functionName;
@@ -451,8 +451,8 @@ export async function loadEstimateCount() {
     headers: { ...authHeaders(), Prefer: "count=exact" },
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Supabase estimates count failed: ${response.status}`);
+    await response.text();
+    throw new Error(`저장 견적 수 조회에 실패했습니다. (${response.status})`);
   }
   return Number(response.headers.get("content-range")?.split("/").pop()) || 0;
 }
