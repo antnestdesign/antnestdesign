@@ -87,6 +87,15 @@ export async function loadOsUsers() {
   return requestOsApi("/users");
 }
 
+export async function loadOsAuditLogs(params = {}) {
+  const query = new URLSearchParams();
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.action) query.set("action", params.action);
+  if (params.actor) query.set("actor", params.actor);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestOsApi(`/audit-logs${suffix}`);
+}
+
 export async function createOsUser(payload) {
   return requestOsApi("/users", {
     method: "POST",

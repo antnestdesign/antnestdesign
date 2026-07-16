@@ -6,9 +6,11 @@ import {
   assertValidRole,
   errorResponse,
   json,
+  profileAuditData,
   requireAdmin,
   sanitizeProfile,
   supabaseFetch,
+  writeAuditLog,
 } from "../_lib/server";
 
 type CreatedAuthUser = {
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
   let createdUserId: string | null = null;
 
   try {
-    await requireAdmin(request);
+    const context = await requireAdmin(request);
     const body = (await request.json()) as Record<string, unknown>;
     const name = assertNonEmptyString(body.name, "이름");
     const email = assertNonEmptyString(body.email, "이메일").toLowerCase();
@@ -50,10 +52,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!createdUser?.id) {
-      throw new ApiError(500, "Auth 사용자를 생성하지 못했습니다.");
+      throw new ApiError(500, "인증 사용자를 생성하지 못했습니다.");
     }
     createdUserId = createdUser.id;
 
+    let createdProfile: ReturnType<typeof sanitizeProfile>;
     try {
       const profiles = await supabaseFetch<Array<Parameters<typeof sanitizeProfile>[0]>>(
         "/rest/v1/profiles?select=id,name,email,role,is_active,must_change_password,created_at,updated_at",
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
           }),
         },
       );
-      return json(sanitizeProfile(profiles[0]), { status: 201 });
+      createdProfile = sanitizeProfile(profiles[0]);
     } catch (profileError) {
       await supabaseFetch<null>(`/auth/v1/admin/users/${encodeURIComponent(createdUser.id)}`, {
         method: "DELETE",
@@ -79,6 +82,14 @@ export async function POST(request: NextRequest) {
       });
       throw profileError;
     }
+    await writeAuditLog(context, {
+      action: "USER_CREATED",
+      target_type: "user",
+      target_id: createdProfile.id,
+      target_label: createdProfile.email || createdProfile.name || createdProfile.id,
+      after_data: profileAuditData(createdProfile),
+    });
+    return json(createdProfile, { status: 201 });
   } catch (error) {
     if (createdUserId) {
       console.error("AND OS user creation failed after auth user creation", { userId: createdUserId });

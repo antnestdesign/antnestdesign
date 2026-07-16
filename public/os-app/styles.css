@@ -1110,8 +1110,40 @@ th:last-child {
   color: #b3261e;
 }
 
+.audit-log-card {
+  display: grid;
+  gap: 12px;
+}
+
+.audit-filter-grid {
+  grid-template-columns: minmax(160px, 220px) minmax(180px, 280px) auto;
+  align-items: end;
+}
+
+.audit-log-table {
+  min-width: 980px;
+}
+
+.audit-log-table th,
+.audit-log-table td {
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+#auditLogStatus[data-status="success"] {
+  color: #137333;
+}
+
+#auditLogStatus[data-status="error"] {
+  color: #b3261e;
+}
+
 @media (max-width: 900px) {
   .user-management-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-filter-grid {
     grid-template-columns: 1fr;
   }
 }

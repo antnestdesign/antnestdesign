@@ -31,6 +31,17 @@ export type UserContext = {
   profile: Profile;
 };
 
+export type AuditLogPayload = {
+  action: string;
+  target_type?: string | null;
+  target_id?: string | null;
+  target_label?: string | null;
+  before_data?: Record<string, unknown> | null;
+  after_data?: Record<string, unknown> | null;
+  result?: string;
+  reason?: string | null;
+};
+
 export class ApiError extends Error {
   status: number;
 
@@ -207,4 +218,83 @@ export async function countActiveAdmins() {
     "/rest/v1/profiles?role=eq.admin&is_active=eq.true&select=id",
   );
   return rows.length;
+}
+
+function sanitizeAuditValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeAuditValue);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+  const blocked = new Set([
+    "password",
+    "initialPassword",
+    "newPassword",
+    "access_token",
+    "refresh_token",
+    "service_role_key",
+    "authorization",
+    "Authorization",
+  ]);
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !blocked.has(key))
+      .map(([key, item]) => [key, sanitizeAuditValue(item)]),
+  );
+}
+
+function sanitizeAuditData(value: Record<string, unknown> | null | undefined) {
+  if (!value) return null;
+  return sanitizeAuditValue(value) as Record<string, unknown>;
+}
+
+export function profileAuditData(profile: Profile | null | undefined) {
+  if (!profile) return null;
+  return {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    is_active: profile.is_active,
+    must_change_password: profile.must_change_password,
+  };
+}
+
+export async function writeAuditLog(context: UserContext, payload: AuditLogPayload) {
+  await supabaseFetch<null>("/rest/v1/os_audit_logs", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      actor_user_id: context.authUser.id,
+      actor_email: context.profile.email || context.authUser.email || null,
+      actor_name: context.profile.name || null,
+      actor_role: context.profile.role,
+      action: payload.action,
+      target_type: payload.target_type || null,
+      target_id: payload.target_id || null,
+      target_label: payload.target_label || null,
+      before_data: sanitizeAuditData(payload.before_data),
+      after_data: sanitizeAuditData(payload.after_data),
+      result: payload.result || "SUCCESS",
+      reason: payload.reason || null,
+    }),
+  });
+}
+
+export function sanitizeAuditLog(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    actor_user_id: row.actor_user_id,
+    actor_email: row.actor_email,
+    actor_name: row.actor_name,
+    actor_role: row.actor_role,
+    action: row.action,
+    target_type: row.target_type,
+    target_id: row.target_id,
+    target_label: row.target_label,
+    result: row.result,
+    reason: row.reason,
+  };
 }
