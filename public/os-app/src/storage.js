@@ -43,6 +43,77 @@ export function getAuthSession() {
   return authSession || loadStoredSession();
 }
 
+function userFacingApiError(status, message) {
+  if (status === 401) return "로그인이 필요합니다.";
+  if (status === 403) return "접근 권한이 없습니다.";
+  if (status === 409) return "이미 사용 중인 정보가 있습니다.";
+  if (status >= 500) return "서버 요청을 처리하지 못했습니다.";
+  return message || "요청을 처리하지 못했습니다.";
+}
+
+async function requestOsApi(path, options = {}) {
+  const session = getAuthSession();
+  if (!session?.access_token) {
+    throw new Error("로그인이 필요합니다.");
+  }
+  const response = await fetch(`/api/os${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = "";
+    try {
+      message = JSON.parse(text)?.error || "";
+    } catch {
+      message = "";
+    }
+    throw new Error(userFacingApiError(response.status, message));
+  }
+  if (response.status === 204 || !text.trim()) return null;
+  return JSON.parse(text);
+}
+
+export async function loadCurrentOsUser() {
+  return requestOsApi("/me");
+}
+
+export async function loadOsUsers() {
+  return requestOsApi("/users");
+}
+
+export async function createOsUser(payload) {
+  return requestOsApi("/users", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateOsUser(id, payload) {
+  return requestOsApi(`/users/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function resetOsUserPassword(id, initialPassword) {
+  return requestOsApi(`/users/${encodeURIComponent(id)}/reset-password`, {
+    method: "POST",
+    body: JSON.stringify({ initialPassword }),
+  });
+}
+
+export async function changeOwnPassword(newPassword) {
+  return requestOsApi("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ newPassword }),
+  });
+}
+
 export async function signIn(email, password) {
   const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",

@@ -1028,3 +1028,90 @@ th:last-child {
 .system-readonly .admin-system-only {
   display: none;
 }
+
+.user-management-card {
+  display: grid;
+  gap: 14px;
+}
+
+.user-management-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.user-management-form,
+.user-subpanel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.user-management-form h3,
+.user-subpanel h3 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.user-management-form label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.user-management-form input,
+.user-management-form select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: var(--ink);
+  background: var(--panel);
+}
+
+.user-management-form button,
+.user-action-cell button {
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.user-management-panels {
+  display: grid;
+  gap: 12px;
+}
+
+.user-management-table {
+  min-width: 980px;
+}
+
+.user-management-table th,
+.user-management-table td {
+  letter-spacing: 0;
+}
+
+.user-action-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#userManagementStatus[data-status="success"] {
+  color: #137333;
+}
+
+#userManagementStatus[data-status="error"] {
+  color: #b3261e;
+}
+
+@media (max-width: 900px) {
+  .user-management-layout {
+    grid-template-columns: 1fr;
+  }
+}
