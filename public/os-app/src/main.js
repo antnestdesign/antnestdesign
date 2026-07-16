@@ -88,6 +88,7 @@ const rates = {
     tileHelperDay: 280000,
     tileGrout: 350000,
     wallpaperWorkerDay: 300000,
+    wallpaperMaterialPerPyeong: 10000,
     filmWorkerDay: 280000,
     flooringPerPyeong: 150000,
     silicone: 450000,
@@ -417,6 +418,7 @@ let passwordChangeBusy = false;
 let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
+let snapshotCalculationMissingItems = [];
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
@@ -494,6 +496,7 @@ const COST_ITEM_DEFINITIONS = [
   ["rateTileHelperDay", "TILE_LABOR_HELPER", "욕실", "타일", "타일 조공 1품", "품"],
   ["rateTileGrout", "TILE_GROUT", "욕실", "타일", "타일 메지", "식"],
   ["rateWallpaperWorkerDay", "WALLPAPER_LABOR", "도배", "인건비", "도배 1품", "품"],
+  ["rateWallpaperMaterialPerPyeong", "WALLPAPER_MATERIAL_PER_PYEONG", "도배", "자재", "도배 자재 평당", "평"],
   ["rateFilmWorkerDay", "FILM_LABOR", "필름", "인건비", "필름 1품", "품"],
   ["rateFlooringPerPyeong", "FLOORING_WOOD_PER_PYEONG", "바닥", "마루", "바닥(마루) 평단가", "평"],
   ["rateSilicone", "FINISH_SILICONE", "마감", "실리콘", "실리콘 기본", "식"],
@@ -1468,6 +1471,7 @@ function updateRatesFromAdmin() {
   rates.finish.tileHelperDay = rateValue("rateTileHelperDay", rates.finish.tileHelperDay);
   rates.finish.tileGrout = rateValue("rateTileGrout", rates.finish.tileGrout);
   rates.finish.wallpaperWorkerDay = rateValue("rateWallpaperWorkerDay", rates.finish.wallpaperWorkerDay);
+  rates.finishMaterial.wallpaperMaterialPerPyeong = rateValue("rateWallpaperMaterialPerPyeong", rates.finishMaterial.wallpaperMaterialPerPyeong);
   rates.finish.filmWorkerDay = rateValue("rateFilmWorkerDay", rates.finish.filmWorkerDay);
   rates.finish.flooringPerPyeong = rateValue("rateFlooringPerPyeong", rates.finish.flooringPerPyeong);
   rates.finish.silicone = rateValue("rateSilicone", rates.finish.silicone);
@@ -1858,7 +1862,7 @@ function customerItemName(item) {
     .replace("몸통", "제작")
     .replace("냉장고 및 세탁기장", "냉장고장")
     .replace("옷장(붙박이장)", "붙박이장")
-    .replace(/\bEP\b/g, "EP판");
+    .replace(/\bEP(?!판)\b/g, "EP판");
 }
 const countertopQuoteText = (material, billingM) =>
   isSlabMaterial(material) ? "1장 + 가공/시공" : mText(billingM);
@@ -3002,7 +3006,7 @@ function groupedCustomerItems(details, lines) {
     }));
 }
 
-function buildEstimateSnapshot(result) {
+function buildEstimateSnapshot(result, options = {}) {
   const savedAt = new Date().toISOString();
   return {
     projectName: result.state.projectName,
@@ -3015,7 +3019,7 @@ function buildEstimateSnapshot(result) {
     costTotal: result.directCost,
     marginRate: Number((result.actualMargin * 100).toFixed(2)),
     status: result.state.status || "견적",
-    costSnapshot: buildCostSnapshot(),
+    costSnapshot: options.costSnapshot || buildCostSnapshot(),
     author: {
       user_id: currentProfile?.id || getAuthSession()?.user?.id || "",
       user_email: currentProfile?.email || getAuthSession()?.user?.email || "",
@@ -3317,7 +3321,7 @@ function renderPrintQuote(quote) {
 }
 
 function currentEstimateForPrint() {
-  return activeQuoteEstimate || buildEstimateSnapshot(calculate());
+  return activeQuoteEstimate || buildEstimateSnapshot(calculateForCurrentEstimate());
 }
 
 function renderAdminDetailPrint(estimate) {
@@ -3648,8 +3652,9 @@ function guardCheckboxLabelClicks() {
 }
 
 function render() {
-  const result = calculate();
+  const result = calculateForCurrentEstimate();
   const { state, details, quoteLines, directCost, customerRevenue, profit, actualMargin, discountRoom, warnings, counts } = result;
+  const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
 
   setText("selectionCount", `${quoteLines.length}개 항목`);
   setText("cabinetSummary", state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택");
@@ -3670,7 +3675,9 @@ function render() {
   setText("lightingSummary", state.standardLightingEnabled ? customerWon(groupTotalFromDetails(details, "standardLighting")) : "미선택");
   setText("clientTotal", customerWon(customerRevenue));
 
-  if (!activeQuoteEstimate) {
+  if (usesStoredEstimateSnapshot && activeQuoteEstimate) {
+    renderCustomerQuote(activeQuoteEstimate);
+  } else if (!activeQuoteEstimate) {
     renderCustomerQuote(buildEstimateSnapshot(result));
   }
 
@@ -3690,6 +3697,14 @@ function render() {
   renderWarnings(warnings);
   renderStandardCheck(state);
   renderPurchaseOrder(buildEstimateSnapshot(result));
+
+  if (usesStoredEstimateSnapshot && activeQuoteEstimate) {
+    const storedTotal = Number(activeQuoteEstimate.total ?? activeQuoteEstimate.customerQuote?.total) || 0;
+    setText("clientTotal", customerWon(storedTotal));
+    renderStoredInternalSummary(activeQuoteEstimate);
+    renderInternalRows(activeQuoteEstimate.internalDetails || []);
+    renderPurchaseOrder(activeQuoteEstimate);
+  }
 }
 
 function refresh() {
@@ -3792,6 +3807,79 @@ function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active
     if (activeMode === "active" && !row.is_active) return false;
     return true;
   });
+}
+
+function canonicalInputValues(inputs = {}) {
+  return JSON.stringify(Object.keys(inputs)
+    .sort()
+    .reduce((acc, key) => {
+      if (!isEstimateInputExcluded(key)) acc[key] = inputs[key];
+      return acc;
+    }, {}));
+}
+
+function currentInputKey() {
+  return canonicalInputValues(collectInputValues());
+}
+
+function loadedEstimateMatchesCurrentInputs() {
+  return Boolean(loadedEstimateBaseline?.inputs && currentInputKey() === loadedEstimateBaseline.inputs);
+}
+
+function syncLoadedEstimateSnapshot() {
+  if (!loadedEstimateBaseline?.estimate) return false;
+  if (loadedEstimateMatchesCurrentInputs()) {
+    activeQuoteEstimate = loadedEstimateBaseline.estimate;
+    return true;
+  }
+  if (activeQuoteEstimate?.id === loadedEstimateBaseline.id) {
+    activeQuoteEstimate = null;
+  }
+  return false;
+}
+
+function shouldUseLoadedCostSnapshot() {
+  return Boolean(
+    loadedEstimateBaseline?.estimate?.costSnapshot?.items?.length &&
+    !loadedEstimateMatchesCurrentInputs()
+  );
+}
+
+function requiredMissingSnapshotItems(snapshot, state) {
+  const saved = costSnapshotMap(snapshot);
+  const missing = [];
+  if (state?.wallpaperMaterialEnabled && !saved.has("WALLPAPER_MATERIAL_PER_PYEONG")) {
+    missing.push("도배 자재비");
+  }
+  return missing;
+}
+
+function calculateForCurrentEstimate() {
+  snapshotCalculationMissingItems = [];
+  if (!shouldUseLoadedCostSnapshot()) return calculate();
+
+  const snapshot = loadedEstimateBaseline.estimate.costSnapshot;
+  const saved = costSnapshotMap(snapshot);
+  const previousValues = [];
+  for (const definition of COST_ITEM_DEFINITIONS) {
+    const input = el[definition.inputId];
+    const item = saved.get(definition.itemCode);
+    if (!input || !item) continue;
+    previousValues.push([input, input.value]);
+    input.value = rateNumber(item.costPrice);
+  }
+
+  try {
+    updateRatesFromAdmin();
+    const result = calculate();
+    snapshotCalculationMissingItems = requiredMissingSnapshotItems(snapshot, result.state);
+    return result;
+  } finally {
+    previousValues.forEach(([input, value]) => {
+      input.value = value;
+    });
+    updateRatesFromAdmin();
+  }
 }
 
 function marginDistribution(rows) {
@@ -5063,13 +5151,15 @@ function loadEstimateIntoUi(estimate) {
       ...buildEstimateSnapshot(calculate()),
       id: estimate.id,
       savedAt: estimate.savedAt,
-    };
+  };
   activeQuoteEstimate = displayEstimate;
   currentEditingEstimateId = estimate.id || null;
   loadedEstimateBaseline = {
     id: estimate.id || null,
-    inputs: JSON.stringify(estimate.inputs || {}),
+    inputs: currentInputKey(),
+    estimate: displayEstimate,
   };
+  setText("clientTotal", customerWon(Number(displayEstimate.total ?? displayEstimate.customerQuote?.total) || 0));
   renderCustomerQuote(displayEstimate);
   renderStoredInternalSummary(displayEstimate);
   renderInternalRows(displayEstimate.internalDetails || []);
@@ -5139,11 +5229,17 @@ function setSaveStatus(message) {
 }
 
 function handleEstimateInputChanged() {
-  if (loadedEstimateBaseline && activeQuoteEstimate) {
-    setSaveStatus("입력값이 변경되어 현재 원가 기준으로 재계산되었습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
+  if (loadedEstimateBaseline) {
+    if (loadedEstimateMatchesCurrentInputs()) {
+      activeQuoteEstimate = loadedEstimateBaseline.estimate;
+      setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
+    } else {
+      activeQuoteEstimate = null;
+      setSaveStatus("입력값이 변경되어 재계산되었습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
+    }
+  } else {
+    activeQuoteEstimate = null;
   }
-  activeQuoteEstimate = null;
-  loadedEstimateBaseline = null;
   refresh();
 }
 
@@ -5152,13 +5248,24 @@ async function handleSaveEstimate(mode = "update") {
   saveEstimateInProgress = true;
   try {
     setSaveStatus("저장 준비 중입니다.");
-    const snapshot = buildEstimateSnapshot(calculate());
+    const isUpdate = mode === "update";
+    const result = calculateForCurrentEstimate();
+    if (isUpdate && shouldUseLoadedCostSnapshot() && snapshotCalculationMissingItems.length) {
+      const message = `저장 당시 원가 스냅샷에 ${snapshotCalculationMissingItems.join(", ")} 품목이 없어 현재 원가와 섞어 저장하지 않았습니다. 새 기준 재계산 기능에서 처리해 주세요.`;
+      setSaveStatus(message);
+      alert(message);
+      return;
+    }
+    const snapshot = buildEstimateSnapshot(result, {
+      costSnapshot: isUpdate && shouldUseLoadedCostSnapshot()
+        ? loadedEstimateBaseline?.estimate?.costSnapshot
+        : undefined,
+    });
     if (!snapshot.projectName?.trim()) {
       setSaveStatus("프로젝트명을 입력해야 저장할 수 있습니다.");
       alert("프로젝트명을 입력해야 저장할 수 있습니다.");
       return;
     }
-    const isUpdate = mode === "update";
     const updateId = currentEditingEstimateId || activeQuoteEstimate?.id;
     if (isUpdate && !updateId) {
       setSaveStatus("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
@@ -5173,7 +5280,8 @@ async function handleSaveEstimate(mode = "update") {
     currentEditingEstimateId = saved.id || null;
     loadedEstimateBaseline = {
       id: saved.id || null,
-      inputs: JSON.stringify(saved.inputs || {}),
+      inputs: currentInputKey(),
+      estimate: saved,
     };
     renderCustomerQuote(saved);
     renderStoredInternalSummary(saved);
