@@ -22,6 +22,9 @@ import {
   cancelCostItemDraft,
   cancelAllCostDrafts,
   publishCostDrafts,
+  createCostItem,
+  cloneCostItem,
+  updatePendingCostItem,
   loadCurrentOsUser,
   loadOsUsers,
   loadOsAuditLogs,
@@ -419,6 +422,17 @@ let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
 let snapshotCalculationMissingItems = [];
+let costItemEditorMode = null;
+let costItemEditorSourceCode = null;
+let costItemActionBusy = false;
+let costItemFilters = {
+  keyword: "",
+  category: "",
+  subcategory: "",
+  active: "all",
+  state: "all",
+  sort: "sort",
+};
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
@@ -815,7 +829,6 @@ async function loadRateSettings() {
     dirtyItemCodes = new Set();
     for (const row of rows) {
       const definition = COST_ITEM_BY_CODE[row.item_code];
-      if (!definition || !el[definition.inputId]) continue;
       const normalized = {
         ...row,
         cost_price: rateNumber(row.cost_price),
@@ -823,8 +836,10 @@ async function loadRateSettings() {
       };
       originalCostItems.set(row.item_code, normalized);
       editedCostItems.set(row.item_code, { ...normalized });
-      el[definition.inputId].value = normalized.cost_price;
-      clearCostItemDirtyMark(definition.inputId);
+      if (definition && el[definition.inputId]) {
+        el[definition.inputId].value = normalized.cost_price;
+        clearCostItemDirtyMark(definition.inputId);
+      }
     }
 
     costDbLoaded = true;
@@ -3809,6 +3824,89 @@ function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active
   });
 }
 
+const COST_CALCULATION_BASIS_OPTIONS = [
+  ["fixed", "고정금액"],
+  ["apartment_pyeong", "아파트 평형"],
+  ["flooring_pyeong", "실제 시공평수"],
+  ["length_mm", "길이(mm)"],
+  ["length_m", "길이(m)"],
+  ["area_sqm", "면적(㎡)"],
+  ["count", "개수"],
+  ["bathroom_count", "욕실 개소"],
+  ["lower_cabinet_length", "하부장 길이"],
+  ["upper_cabinet_length", "상부장 길이"],
+  ["homebar_length", "홈바장 길이"],
+  ["island_length", "아일랜드 길이"],
+  ["partition_length", "가벽 길이"],
+  ["manual_input", "사용자 직접입력"],
+];
+
+const COST_ROUNDING_OPTIONS = [
+  ["none", "소수 유지"],
+  ["ceil", "정수 올림"],
+  ["floor", "정수 내림"],
+  ["round", "반올림"],
+];
+
+function systemSubcategories(category = "") {
+  return [...new Set([...originalCostItems.values()]
+    .filter((row) => !category || row.category === category)
+    .map((row) => row.subcategory || "")
+    .filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
+}
+
+function filteredSystemCostItems() {
+  const keyword = costItemFilters.keyword.trim().toLowerCase();
+  const rows = [...originalCostItems.values()].filter((row) => {
+    if (keyword) {
+      const haystack = `${row.item_code || ""} ${row.item_name || ""}`.toLowerCase();
+      if (!haystack.includes(keyword)) return false;
+    }
+    if (costItemFilters.category && row.category !== costItemFilters.category) return false;
+    if (costItemFilters.subcategory && row.subcategory !== costItemFilters.subcategory) return false;
+    if (costItemFilters.active === "active" && !row.is_active) return false;
+    if (costItemFilters.active === "inactive" && row.is_active) return false;
+    if (costItemFilters.state === "draft" && !hasDraft(row)) return false;
+    if (costItemFilters.state === "pending" && !row.is_pending_new) return false;
+    if (costItemFilters.state === "published" && row.is_pending_new) return false;
+    return true;
+  });
+  return rows.sort((a, b) => {
+    if (costItemFilters.sort === "updated") {
+      return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
+    }
+    return (a.sort_order || 0) - (b.sort_order || 0);
+  });
+}
+
+function costItemFormDefaults(source = {}) {
+  return {
+    item_code: source.item_code || "",
+    category: source.category || systemCategories()[0] || "",
+    subcategory: source.subcategory || "",
+    item_name: source.item_name || "",
+    unit: source.unit || "",
+    calculation_basis: source.calculation_basis || "manual_input",
+    cost_price: source.cost_price ?? "",
+    default_margin_rate: source.default_margin_rate ?? 0.3,
+    is_active: source.draft_is_active ?? source.is_active ?? true,
+    sort_order: source.sort_order ?? 0,
+    memo: source.memo || "",
+    customer_name: source.customer_name || "",
+    order_name: source.order_name || "",
+    calculation_multiplier: source.calculation_multiplier ?? 1,
+    min_quantity: source.min_quantity ?? "",
+    rounding_method: source.rounding_method || "none",
+    include_in_customer_quote: source.include_in_customer_quote ?? true,
+    include_in_internal_quote: source.include_in_internal_quote ?? true,
+    include_in_order_sheet: source.include_in_order_sheet ?? false,
+    is_material: source.is_material ?? false,
+    is_labor: source.is_labor ?? false,
+    is_service: source.is_service ?? false,
+  };
+}
+
 function canonicalInputValues(inputs = {}) {
   return JSON.stringify(Object.keys(inputs)
     .sort()
@@ -3946,8 +4044,10 @@ function ensureSystemManagementShell() {
           <p>운영값과 변경 예정값을 분리해 확인합니다.</p>
         </div>
         <div id="systemBulkMarginPanel" class="system-operation-panel"></div>
+        <div id="systemCostItemTools" class="system-operation-panel"></div>
+        <div id="systemCostItemEditor" class="system-operation-panel" hidden></div>
         <div class="table-wrap system-cost-wrap"><table class="system-cost-table"><thead><tr>
-          <th>품목명</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>변경</th><th>최근 수정일</th>
+          <th>품목명</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>상태</th><th>최근 수정일</th><th class="admin-system-only">작업</th>
         </tr></thead><tbody id="systemCostRows"></tbody></table></div>
       </section>
       <section class="internal-card system-publish-card">
@@ -4075,12 +4175,165 @@ function renderCategoryCancelPanel() {
     </div>`;
 }
 
+function renderCostItemTools() {
+  const panel = document.getElementById("systemCostItemTools");
+  if (!panel) return;
+  const categories = systemCategories();
+  const subcategories = systemSubcategories(costItemFilters.category);
+  panel.innerHTML = `
+    <div class="system-operation-header">
+      <h3>품목 검색·필터</h3>
+      <p>품목 수가 늘어나도 코드, 이름, 분류, 상태로 빠르게 찾습니다.</p>
+    </div>
+    <div class="system-bulk-grid cost-item-filter-grid">
+      <label>검색
+        <input id="costItemSearch" type="search" value="${escapeHtml(costItemFilters.keyword)}" placeholder="품목명 또는 코드">
+      </label>
+      <label>대분류
+        <select id="costItemCategoryFilter">
+          <option value="">전체</option>
+          ${categories.map((item) => `<option value="${escapeHtml(item)}" ${costItemFilters.category === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+        </select>
+      </label>
+      <label>중분류
+        <select id="costItemSubcategoryFilter">
+          <option value="">전체</option>
+          ${subcategories.map((item) => `<option value="${escapeHtml(item)}" ${costItemFilters.subcategory === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+        </select>
+      </label>
+      <label>활성 상태
+        <select id="costItemActiveFilter">
+          <option value="all" ${costItemFilters.active === "all" ? "selected" : ""}>전체</option>
+          <option value="active" ${costItemFilters.active === "active" ? "selected" : ""}>활성</option>
+          <option value="inactive" ${costItemFilters.active === "inactive" ? "selected" : ""}>비활성</option>
+        </select>
+      </label>
+      <label>운영 상태
+        <select id="costItemStateFilter">
+          <option value="all" ${costItemFilters.state === "all" ? "selected" : ""}>전체</option>
+          <option value="draft" ${costItemFilters.state === "draft" ? "selected" : ""}>변경 예정</option>
+          <option value="pending" ${costItemFilters.state === "pending" ? "selected" : ""}>신규 배포 대기</option>
+          <option value="published" ${costItemFilters.state === "published" ? "selected" : ""}>운영 품목</option>
+        </select>
+      </label>
+      <label>정렬
+        <select id="costItemSortFilter">
+          <option value="sort" ${costItemFilters.sort === "sort" ? "selected" : ""}>정렬 순서</option>
+          <option value="updated" ${costItemFilters.sort === "updated" ? "selected" : ""}>최근 수정순</option>
+        </select>
+      </label>
+      ${canEditCost() ? `<button type="button" data-system-action="cost-item-create-open">+ 품목 추가</button>` : ""}
+    </div>`;
+}
+
+function renderCostItemEditor() {
+  const panel = document.getElementById("systemCostItemEditor");
+  if (!panel) return;
+  if (!canEditCost() || !costItemEditorMode) {
+    panel.hidden = true;
+    panel.innerHTML = "";
+    return;
+  }
+  const source = costItemEditorSourceCode ? originalCostItems.get(costItemEditorSourceCode) : null;
+  const isEdit = costItemEditorMode === "edit";
+  const isClone = costItemEditorMode === "clone";
+  const defaults = costItemFormDefaults(source || {});
+  if (!isEdit) {
+    defaults.item_code = "";
+    defaults.item_name = "";
+  }
+  const categories = systemCategories();
+  const subcategories = systemSubcategories(defaults.category);
+  panel.hidden = false;
+  panel.innerHTML = `
+    <div class="system-operation-header">
+      <h3>${isEdit ? "신규 품목 수정" : isClone ? "품목 복제" : "품목 추가"}</h3>
+      <p>신규 품목은 배포 전까지 운영 견적 계산에 사용되지 않습니다.</p>
+    </div>
+    <form id="costItemForm" class="cost-item-form">
+      <div class="cost-item-form-grid">
+        <label>품목 코드
+          <input id="costItemCode" type="text" value="${escapeHtml(defaults.item_code)}" ${isEdit ? "readonly" : ""} placeholder="SYSTEM_TEST_MATERIAL_ITEM">
+        </label>
+        <label>품목명
+          <input id="costItemName" type="text" value="${escapeHtml(defaults.item_name)}">
+        </label>
+        <label>대분류
+          <select id="costItemCategory">
+            ${categories.map((item) => `<option value="${escapeHtml(item)}" ${defaults.category === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+          </select>
+        </label>
+        <label>중분류
+          <select id="costItemSubcategory">
+            ${subcategories.map((item) => `<option value="${escapeHtml(item)}" ${defaults.subcategory === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+          </select>
+        </label>
+        <label>단위
+          <input id="costItemUnit" type="text" value="${escapeHtml(defaults.unit)}">
+        </label>
+        <label>계산 기준
+          <select id="costItemCalculationBasis">
+            ${COST_CALCULATION_BASIS_OPTIONS.map(([value, label]) => `<option value="${escapeHtml(value)}" ${defaults.calculation_basis === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+          </select>
+        </label>
+        <label>기본 원가
+          <input id="costItemCostPrice" type="number" min="0" step="1000" value="${defaults.cost_price}">
+        </label>
+        <label>기본 마진율(%)
+          <input id="costItemMarginRate" type="number" min="0" max="99" step="0.1" value="${(rateNumber(defaults.default_margin_rate) * 100).toFixed(1)}">
+        </label>
+        <label>활성 상태
+          <select id="costItemActive">
+            <option value="true" ${defaults.is_active ? "selected" : ""}>활성</option>
+            <option value="false" ${!defaults.is_active ? "selected" : ""}>비활성</option>
+          </select>
+        </label>
+        <label>정렬 순서
+          <input id="costItemSortOrder" type="number" min="0" step="1" value="${defaults.sort_order}">
+        </label>
+        <label>계산 배수
+          <input id="costItemMultiplier" type="number" min="0" step="0.01" value="${defaults.calculation_multiplier}">
+        </label>
+        <label>최소 수량
+          <input id="costItemMinQuantity" type="number" min="0" step="0.01" value="${defaults.min_quantity}">
+        </label>
+        <label>수량 올림 방식
+          <select id="costItemRounding">
+            ${COST_ROUNDING_OPTIONS.map(([value, label]) => `<option value="${value}" ${defaults.rounding_method === value ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+        </label>
+        <label>고객 표시명
+          <input id="costItemCustomerName" type="text" value="${escapeHtml(defaults.customer_name)}">
+        </label>
+        <label>내부 설명
+          <input id="costItemMemo" type="text" value="${escapeHtml(defaults.memo)}">
+        </label>
+        <label>발주 표시명
+          <input id="costItemOrderName" type="text" value="${escapeHtml(defaults.order_name)}">
+        </label>
+      </div>
+      <div class="cost-item-checks">
+        <label class="inline-check"><input id="costItemCustomerQuote" type="checkbox" ${defaults.include_in_customer_quote ? "checked" : ""}><span>고객 견적 표시</span></label>
+        <label class="inline-check"><input id="costItemInternalQuote" type="checkbox" ${defaults.include_in_internal_quote ? "checked" : ""}><span>내부 견적 표시</span></label>
+        <label class="inline-check"><input id="costItemOrderSheet" type="checkbox" ${defaults.include_in_order_sheet ? "checked" : ""}><span>발주내역 표시</span></label>
+        <label class="inline-check"><input id="costItemMaterial" type="checkbox" ${defaults.is_material ? "checked" : ""}><span>자재</span></label>
+        <label class="inline-check"><input id="costItemLabor" type="checkbox" ${defaults.is_labor ? "checked" : ""}><span>인건비</span></label>
+        <label class="inline-check"><input id="costItemService" type="checkbox" ${defaults.is_service ? "checked" : ""}><span>기타/서비스</span></label>
+      </div>
+      <p class="status-text">새 입력 필드가 필요한 품목은 배포 전 “견적 입력 화면 연결 필요” 상태를 확인하세요.</p>
+      <div class="admin-action-row">
+        <button type="submit" ${costItemActionBusy ? "disabled" : ""}>${isEdit ? "수정 임시저장" : isClone ? "복제 임시저장" : "신규 임시저장"}</button>
+        <button type="button" data-system-action="cost-item-editor-close">취소</button>
+      </div>
+    </form>`;
+}
+
 function renderSystemCostRows() {
   const tbody = document.getElementById("systemCostRows");
   if (!tbody) return;
-  const rows = [...originalCostItems.values()].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const rows = filteredSystemCostItems();
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11">원가 정보를 불러오지 못했습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12">조건에 맞는 원가 품목이 없습니다.</td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map((row) => {
@@ -4100,8 +4353,16 @@ function renderSystemCostRows() {
     const actionCell = canEditCost()
       ? `<button type="button" data-system-action="save-draft" data-item-code="${row.item_code}">임시저장</button>`
       : "";
+    const stateLabel = row.is_pending_new ? "신규 배포 대기" : dirty ? "변경 예정" : "운영";
+    const managementActions = canEditCost()
+      ? `<div class="cost-item-row-actions">
+          <button type="button" data-system-action="cost-item-clone-open" data-item-code="${row.item_code}">복제</button>
+          ${row.is_pending_new ? `<button type="button" data-system-action="cost-item-edit-open" data-item-code="${row.item_code}">수정</button>` : ""}
+          <button type="button" data-system-action="deactivate-draft" data-item-code="${row.item_code}">${row.is_active ? "비활성화 예정" : "재활성화 예정"}</button>
+        </div>`
+      : "";
     return `
-      <tr class="${dirty ? "system-dirty-row" : ""}">
+      <tr class="${dirty ? "system-dirty-row" : ""} ${row.is_pending_new ? "system-pending-row" : ""}">
         <td>${escapeHtml(row.item_name || row.itemCode)}</td>
         <td>${won(row.cost_price)}</td>
         <td>${draftCostCell}</td>
@@ -4111,8 +4372,9 @@ function renderSystemCostRows() {
         <td>${escapeHtml(row.category || "-")}</td>
         <td>${row.is_active ? "활성" : "비활성"}</td>
         <td>${draftActiveCell}</td>
-        <td>${dirty ? "변경됨" : "-"}</td>
+        <td>${stateLabel}</td>
         <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
+        <td class="admin-system-only">${managementActions}</td>
       </tr>`;
   }).join("");
 }
@@ -4663,6 +4925,8 @@ function renderSystemManagement() {
   document.getElementById("system")?.classList.toggle("system-readonly", !canEditCost());
   renderSystemStatus();
   renderBulkMarginPanel();
+  renderCostItemTools();
+  renderCostItemEditor();
   renderSystemCostRows();
   renderCategoryCancelPanel();
   renderSystemDraftRows();
@@ -4738,6 +5002,116 @@ async function saveSystemDraft(itemCode) {
   updateRatesFromAdmin();
   refresh();
   setSystemStatus("임시저장 완료");
+}
+
+function costItemFormPayload() {
+  const margin = rateNumber(document.getElementById("costItemMarginRate")?.value) / 100;
+  return {
+    item_code: document.getElementById("costItemCode")?.value || "",
+    item_name: document.getElementById("costItemName")?.value || "",
+    category: document.getElementById("costItemCategory")?.value || "",
+    subcategory: document.getElementById("costItemSubcategory")?.value || "",
+    unit: document.getElementById("costItemUnit")?.value || "",
+    calculation_basis: document.getElementById("costItemCalculationBasis")?.value || "",
+    cost_price: rateNumber(document.getElementById("costItemCostPrice")?.value),
+    default_margin_rate: margin,
+    is_active: document.getElementById("costItemActive")?.value !== "false",
+    sort_order: rateNumber(document.getElementById("costItemSortOrder")?.value),
+    memo: document.getElementById("costItemMemo")?.value || "",
+    customer_name: document.getElementById("costItemCustomerName")?.value || "",
+    order_name: document.getElementById("costItemOrderName")?.value || "",
+    calculation_multiplier: rateNumber(document.getElementById("costItemMultiplier")?.value) || 1,
+    min_quantity: document.getElementById("costItemMinQuantity")?.value || null,
+    rounding_method: document.getElementById("costItemRounding")?.value || "none",
+    include_in_customer_quote: Boolean(document.getElementById("costItemCustomerQuote")?.checked),
+    include_in_internal_quote: Boolean(document.getElementById("costItemInternalQuote")?.checked),
+    include_in_order_sheet: Boolean(document.getElementById("costItemOrderSheet")?.checked),
+    is_material: Boolean(document.getElementById("costItemMaterial")?.checked),
+    is_labor: Boolean(document.getElementById("costItemLabor")?.checked),
+    is_service: Boolean(document.getElementById("costItemService")?.checked),
+  };
+}
+
+function openCostItemEditor(mode, itemCode = "") {
+  if (!canEditCost()) return;
+  costItemEditorMode = mode;
+  costItemEditorSourceCode = itemCode || null;
+  renderCostItemEditor();
+  document.getElementById("systemCostItemEditor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeCostItemEditor() {
+  costItemEditorMode = null;
+  costItemEditorSourceCode = null;
+  renderCostItemEditor();
+}
+
+async function submitCostItemForm(event) {
+  event.preventDefault();
+  if (!canEditCost() || costItemActionBusy || !costItemEditorMode) return;
+  const payload = costItemFormPayload();
+  try {
+    costItemActionBusy = true;
+    renderCostItemEditor();
+    setSystemStatus("원가 품목 임시저장 중입니다.");
+    if (costItemEditorMode === "edit") {
+      const row = originalCostItems.get(costItemEditorSourceCode);
+      if (!row?.id) throw new Error("수정할 신규 품목을 찾지 못했습니다.");
+      await updatePendingCostItem(row.id, payload);
+    } else if (costItemEditorMode === "clone") {
+      const row = originalCostItems.get(costItemEditorSourceCode);
+      if (!row?.id) throw new Error("복제할 품목을 찾지 못했습니다.");
+      await cloneCostItem({ ...payload, source_cost_item_id: row.id });
+    } else {
+      await createCostItem(payload);
+    }
+    closeCostItemEditor();
+    await loadRateSettings();
+    await refreshSystemManagement();
+    setSystemStatus("신규 품목이 변경 예정값으로 임시저장되었습니다.");
+  } finally {
+    costItemActionBusy = false;
+    renderCostItemEditor();
+  }
+}
+
+async function createDeactivateDraft(itemCode) {
+  if (!canEditCost()) return;
+  const row = originalCostItems.get(itemCode);
+  if (!row) return;
+  const targetActive = !row.is_active;
+  const label = targetActive ? "재활성화" : "비활성화";
+  if (!confirm(`${row.item_name || row.item_code} 품목을 ${label} 예정값으로 임시저장할까요?`)) return;
+  await saveCostItemChanges([{
+    id: row.id,
+    item_code: row.item_code,
+    new_cost_price: row.draft_cost_price ?? null,
+    new_margin_rate: row.draft_margin_rate ?? null,
+    new_is_active: targetActive,
+  }]);
+  await writeSystemAudit(targetActive ? "COST_ITEM_REACTIVATE_DRAFT" : "COST_ITEM_DEACTIVATE_DRAFT", {
+    target_id: row.id,
+    target_label: row.item_name || row.item_code,
+    before_data: { item_code: row.item_code, is_active: row.is_active },
+    after_data: { item_code: row.item_code, draft_is_active: targetActive },
+    reason: `${label} 변경 예정값 생성`,
+  });
+  await loadRateSettings();
+  await refreshSystemManagement();
+  setSystemStatus(`${label} 예정값 임시저장 완료`);
+}
+
+function updateCostItemFilters() {
+  costItemFilters = {
+    keyword: document.getElementById("costItemSearch")?.value || "",
+    category: document.getElementById("costItemCategoryFilter")?.value || "",
+    subcategory: document.getElementById("costItemSubcategoryFilter")?.value || "",
+    active: document.getElementById("costItemActiveFilter")?.value || "all",
+    state: document.getElementById("costItemStateFilter")?.value || "all",
+    sort: document.getElementById("costItemSortFilter")?.value || "sort",
+  };
+  renderCostItemTools();
+  renderSystemCostRows();
 }
 
 function bulkMarginOptions() {
@@ -5337,6 +5711,11 @@ document.addEventListener("click", async (event) => {
     const itemCode = button.dataset.itemCode;
     if (action === "save-draft") await saveSystemDraft(itemCode);
     if (action === "cancel-draft") await cancelSystemDraft(itemCode);
+    if (action === "cost-item-create-open") openCostItemEditor("create");
+    if (action === "cost-item-clone-open") openCostItemEditor("clone", itemCode);
+    if (action === "cost-item-edit-open") openCostItemEditor("edit", itemCode);
+    if (action === "cost-item-editor-close") closeCostItemEditor();
+    if (action === "deactivate-draft") await createDeactivateDraft(itemCode);
     if (action === "bulk-margin-preview") previewBulkMargin();
     if (action === "bulk-margin-apply") await applyBulkMarginDrafts();
     if (action === "cancel-category-drafts") await cancelCategorySystemDrafts();
@@ -5368,8 +5747,32 @@ document.addEventListener("click", (event) => {
   });
 });
 
+document.addEventListener("click", async (event) => {
+  const button = event.target?.closest?.("#costItemForm button[type='submit']");
+  if (!button) return;
+  try {
+    await submitCostItemForm(event);
+  } catch (error) {
+    event.preventDefault();
+    console.error("원가 품목 임시저장 실패", error);
+    setSystemStatus("원가 품목 임시저장 실패");
+    alert(error.message || "원가 품목 임시저장에 실패했습니다.");
+  }
+});
+
 document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form?.matches?.("#costItemForm")) {
+    try {
+      await submitCostItemForm(event);
+    } catch (error) {
+      event.preventDefault();
+      console.error("원가 품목 임시저장 실패", error);
+      setSystemStatus("원가 품목 임시저장 실패");
+      alert(error.message || "원가 품목 임시저장에 실패했습니다.");
+    }
+    return;
+  }
   if (!form?.matches?.("#userCreateForm, #userEditForm, #userPasswordForm")) return;
   try {
     if (form.id === "userCreateForm") await submitCreateUser(event);
@@ -5379,6 +5782,24 @@ document.addEventListener("submit", async (event) => {
     event.preventDefault();
     setUserManagementStatus(error.message || "사용자관리 작업에 실패했습니다.", "error");
     renderUserManagement();
+  }
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target?.matches?.("#costItemSearch")) updateCostItemFilters();
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target?.matches?.("#costItemCategoryFilter, #costItemSubcategoryFilter, #costItemActiveFilter, #costItemStateFilter, #costItemSortFilter")) {
+    updateCostItemFilters();
+  }
+  if (event.target?.matches?.("#costItemCategory")) {
+    const subcategory = document.getElementById("costItemSubcategory");
+    if (subcategory) {
+      subcategory.innerHTML = systemSubcategories(event.target.value)
+        .map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`)
+        .join("");
+    }
   }
 });
 

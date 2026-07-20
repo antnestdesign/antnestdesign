@@ -1221,6 +1221,58 @@ th:last-child {
   background: #fff7ed;
 }
 
+.system-pending-row {
+  background: #f7fbff;
+}
+
+.cost-item-filter-grid {
+  grid-template-columns: minmax(180px, 1.5fr) repeat(5, minmax(120px, 1fr)) auto;
+}
+
+.cost-item-form {
+  display: grid;
+  gap: 12px;
+}
+
+.cost-item-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.cost-item-form-grid label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.cost-item-form-grid input,
+.cost-item-form-grid select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.cost-item-checks,
+.cost-item-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cost-item-row-actions button {
+  min-height: 30px;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
 #auditLogStatus[data-status="success"] {
   color: #137333;
 }
@@ -1240,7 +1292,9 @@ th:last-child {
 
   .system-bulk-grid,
   .system-category-cancel,
-  .system-rollback-meta {
+  .system-rollback-meta,
+  .cost-item-filter-grid,
+  .cost-item-form-grid {
     grid-template-columns: 1fr;
   }
 }

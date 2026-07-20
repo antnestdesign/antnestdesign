@@ -495,6 +495,27 @@ export async function publishCostDrafts(reason, memo = null) {
   return requestRpc("publish_cost_drafts", { p_reason: reason, p_memo: memo });
 }
 
+export async function createCostItem(payload) {
+  return requestOsApi("/cost-items", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function cloneCostItem(payload) {
+  return requestOsApi("/cost-items/clone", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePendingCostItem(id, payload) {
+  return requestOsApi(`/cost-items/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function saveCostItemChanges(changes) {
   const saved = [];
   for (const change of changes) {

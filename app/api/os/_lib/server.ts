@@ -125,6 +125,31 @@ export async function supabaseFetch<T>(path: string, init?: RequestInit): Promis
   return JSON.parse(text) as T;
 }
 
+export async function supabaseUserFetch<T>(
+  path: string,
+  accessToken: string,
+  init?: RequestInit,
+): Promise<T> {
+  const serviceKey = requireServiceRoleKey();
+  const response = await fetch(serviceUrl(path), {
+    ...init,
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new ApiError(response.status, message || "요청 처리에 실패했습니다.");
+  }
+  const text = await response.text();
+  if (!text.trim()) return null as T;
+  return JSON.parse(text) as T;
+}
+
 export async function getAuthUser(accessToken: string): Promise<AuthUser> {
   const serviceKey = requireServiceRoleKey();
   const response = await fetch(serviceUrl("/auth/v1/user"), {
