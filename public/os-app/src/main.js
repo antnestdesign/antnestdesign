@@ -6,7 +6,7 @@ import { miscRates } from "./rates/misc.js";
 import { bathroomDetails } from "./calculator/bathroom.js";
 import { kitchenDetails } from "./calculator/kitchen.js";
 import { doorDetails } from "./calculator/door.js";
-import { wallpaperMaterialDetail, filmMaterialDetail } from "./calculator/finish.js";
+import { wallpaperMaterialDetail, wallpaperSupplyDetail, filmMaterialDetail } from "./calculator/finish.js";
 import { miscDetails } from "./calculator/misc.js";
 import {
   saveEstimate,
@@ -1863,8 +1863,8 @@ const customerItemNames = {
   MDF: "MDF 자재",
   "다루끼": "각재",
   "도배 인건비": "도배 시공",
-  "도배 자재(디아망급)": "벽지(AND표준 디아망급)",
-  "도배 자재(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
+  "도배지(디아망급)": "벽지(AND표준 디아망급)",
+  "도배지(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
   "필름 인건비": "필름 시공",
   "필름 자재(우드 무늬)": "필름(AND표준 우드)",
   "바닥 시공": "바닥(AND표준 마루)",
@@ -2594,7 +2594,10 @@ function calculate() {
     margin,
     correction: state.corrections.option,
   });
-  addModuleDetails(details, [wallpaperMaterialDetail(state, rates.finishMaterial)], margin, state.corrections.option);
+  addModuleDetails(details, [
+    wallpaperMaterialDetail(state, rates.finishMaterial),
+    wallpaperSupplyDetail(state, rates.finishMaterial),
+  ], margin, state.corrections.option);
 
   const filmUnitDays = filmDays(state.filmPreset);
   addUnitDetail(details, {
