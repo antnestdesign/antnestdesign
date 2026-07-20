@@ -1435,6 +1435,11 @@ function repairStaticKoreanLabels() {
   });
 }
 
+function removeDuplicateManagementCriteriaBlock() {
+  const block = document.getElementById("targetMargin")?.closest(".internal-card");
+  if (block) block.remove();
+}
+
 function updateRatesFromAdmin() {
   rates.lowerPerJa = rateValue("rateLowerPerJa", rates.lowerPerJa);
   rates.upperPerJa = rateValue("rateUpperPerJa", rates.upperPerJa);
@@ -4101,12 +4106,12 @@ function renderSystemStatus() {
   const drafts = changedCostItems();
   const latest = latestPublishLog();
   const metrics = [
-    ["전체 원가 품목 수", items.length.toLocaleString("ko-KR")],
-    ["활성 품목 수", items.filter((item) => item.is_active).length.toLocaleString("ko-KR")],
-    ["변경 예정 품목 수", drafts.length.toLocaleString("ko-KR")],
+    ["전체 원가 품목 수", `${items.length.toLocaleString("ko-KR")}개`],
+    ["활성 품목 수", `${items.filter((item) => item.is_active).length.toLocaleString("ko-KR")}개`],
+    ["변경 예정 품목 수", `${drafts.length.toLocaleString("ko-KR")}개`],
     ["최근 배포 버전", latest?.version || "-"],
     ["최근 배포 일시", latest?.published_at ? formatDateTime(latest.published_at) : "-"],
-    ["저장된 견적 수", systemEstimateCount.toLocaleString("ko-KR")],
+    ["저장된 견적 수", `${systemEstimateCount.toLocaleString("ko-KR")}건`],
   ];
   box.innerHTML = metrics.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("");
 }
@@ -5559,6 +5564,7 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 
 repairStaticKoreanLabels();
 guardCheckboxLabelClicks();
+removeDuplicateManagementCriteriaBlock();
 bindPasswordChangeShell();
 
 document.getElementById("loginForm")?.addEventListener("submit", async (event) => {

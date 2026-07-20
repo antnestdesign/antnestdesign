@@ -471,13 +471,27 @@ button:disabled {
   margin: 0;
 }
 
-.summary-list div,
-.metric-list div {
+.summary-list div {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.metric-list {
+  gap: 12px;
+}
+
+.metric-list div {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
 }
 
 dt {
@@ -488,6 +502,23 @@ dt {
 dd {
   margin: 0;
   font-weight: 800;
+}
+
+.metric-list dt {
+  font-size: 12px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.metric-list dd {
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 .adjustment {
@@ -745,7 +776,7 @@ th:last-child {
 }
 
 .admin-metric-list {
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   padding: 0 20px 20px;
 }
 
@@ -898,12 +929,11 @@ th:last-child {
 }
 
 .system-metric-list {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   letter-spacing: 0;
 }
 
 .system-metric-list div {
-  align-items: center;
   gap: 10px;
 }
 
@@ -917,7 +947,7 @@ th:last-child {
   font-variant-numeric: tabular-nums;
   word-break: keep-all;
   overflow-wrap: anywhere;
-  text-align: right;
+  text-align: left;
 }
 
 .system-cost-wrap {
