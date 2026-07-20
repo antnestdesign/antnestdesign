@@ -8,13 +8,10 @@ import {
   supabaseFetch,
   writeAuditLog,
 } from "../_lib/server";
-import { assertCanManageChangeOrder, hashJson } from "../contract-packages/_lib/contracts";
-
-function objectValue(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
+import {
+  assertCanManageChangeOrder,
+  normalizeChangeOrderBody,
+} from "../contract-packages/_lib/contracts";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,54 +37,32 @@ export async function POST(request: NextRequest) {
     const context = await requireAdmin(request);
     assertCanManageChangeOrder(context);
     const body = (await request.json()) as Record<string, unknown>;
-    const packageId = String(body.package_id || "").trim();
-    if (!packageId) throw new ApiError(400, "계약 패키지 ID가 필요합니다.");
-    const packages = await supabaseFetch<Array<Record<string, unknown>>>(
-      `/rest/v1/contract_package_snapshots?id=eq.${encodeURIComponent(packageId)}&select=*`,
-    );
-    const contractPackage = packages[0];
-    if (!contractPackage) throw new ApiError(404, "계약 패키지를 찾지 못했습니다.");
-    if (contractPackage.status !== "CONTRACTED") {
-      throw new ApiError(409, "계약확정된 패키지만 변경견적을 만들 수 있습니다.");
-    }
-    const existing = await supabaseFetch<Array<{ change_version: number }>>(
-      `/rest/v1/change_orders?package_id=eq.${encodeURIComponent(packageId)}&select=change_version&order=change_version.desc&limit=1`,
-    );
-    const changeVersion = Number(existing[0]?.change_version || 0) + 1;
-    const afterSnapshot = objectValue(body.after_snapshot);
-    const amountDelta = Number(body.amount_delta || 0);
-    const payload = {
-      package_id: packageId,
-      estimate_id: contractPackage.estimate_id,
-      change_version: changeVersion,
-      status: "CHANGE_PENDING",
-      title: String(body.title || `변경견적 ${changeVersion}`).trim(),
-      before_snapshot: contractPackage,
-      after_snapshot: afterSnapshot,
-      amount_delta: Number.isFinite(amountDelta) ? amountDelta : 0,
-      schedule_impact: objectValue(body.schedule_impact),
-      approval_snapshot: null,
-      source_hash: hashJson({ package_id: packageId, change_version: changeVersion, after_snapshot: afterSnapshot }),
-      created_by: context.authUser.id,
-    };
-    const rows = await supabaseFetch<Array<Record<string, unknown>>>(
-      "/rest/v1/change_orders?select=*",
+    const { packageId, title, afterSnapshot, amountDelta, scheduleImpact } = normalizeChangeOrderBody(body);
+    const changeOrder = await supabaseFetch<Record<string, unknown>>(
+      "/rest/v1/rpc/create_contract_change_order",
       {
         method: "POST",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          p_actor_user_id: context.authUser.id,
+          p_payload: {
+            package_id: packageId,
+            title,
+            after_snapshot: afterSnapshot,
+            amount_delta: amountDelta,
+            schedule_impact: scheduleImpact,
+          },
+        }),
       },
     );
-    const changeOrder = rows[0];
     await writeAuditLog(context, {
       action: "CHANGE_ORDER_CREATED",
       target_type: "change_order",
       target_id: changeOrder?.id ? String(changeOrder.id) : null,
-      target_label: String(payload.title),
+      target_label: String(changeOrder?.title || title),
       after_data: {
         package_id: packageId,
-        change_version: changeVersion,
-        amount_delta: payload.amount_delta,
+        change_version: changeOrder?.change_version,
+        amount_delta: changeOrder?.amount_delta,
       },
     });
     return json(changeOrder, { status: 201 });

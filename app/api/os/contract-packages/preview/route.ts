@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
-import { ApiError, errorResponse, getUserContext, json } from "../../_lib/server";
+import { errorResponse, getUserContext, json } from "../../_lib/server";
 import {
   DOCUMENT_TYPES,
   assertCanCreateContractPreview,
+  assertContractNoAvailable,
+  assertUuid,
   buildContractPackageSnapshot,
   normalizeContractOptions,
   renderDocumentJson,
@@ -13,11 +15,11 @@ export async function POST(request: NextRequest) {
     const context = await getUserContext(request);
     assertCanCreateContractPreview(context);
     const body = (await request.json()) as Record<string, unknown>;
-    const estimateId = String(body.estimate_id || "").trim();
-    if (!estimateId) throw new ApiError(400, "저장 견적 ID가 필요합니다.");
+    const estimateId = assertUuid(body.estimate_id, "저장 견적 ID");
     const options = body.options && typeof body.options === "object"
       ? normalizeContractOptions(body.options as Record<string, unknown>)
       : undefined;
+    if (options?.contract_no) await assertContractNoAvailable(estimateId, options.contract_no);
     const snapshot = await buildContractPackageSnapshot(estimateId, options);
     const documents = DOCUMENT_TYPES.map((type) => ({
       document_type: type,

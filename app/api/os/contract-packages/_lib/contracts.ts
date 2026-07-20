@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { ApiError, UserContext, supabaseFetch } from "../../_lib/server";
+import { ApiError, UserContext, UserRole, supabaseFetch } from "../../_lib/server";
 
 export const CONTRACT_TEMPLATE_VERSION = "RFC-005-2026.07.20";
 export const CONTRACT_RULE_VERSION = "RFC-006-2026.07.20";
@@ -31,15 +31,22 @@ type SpecRow = {
 };
 
 export type ContractOptionsPayload = {
-  contract_info?: Record<string, unknown>;
-  customer_info?: Record<string, unknown>;
-  contractor_info?: Record<string, unknown>;
-  site_manager?: Record<string, unknown>;
-  admin_tasks?: Record<string, unknown>;
-  protection_options?: Record<string, unknown>;
-  item_options?: Record<string, unknown>;
-  notes?: string | null;
+  contract_no?: string | null;
+  contract_info: Record<string, unknown>;
+  customer_info: Record<string, unknown>;
+  contractor_info: Record<string, unknown>;
+  site_manager: Record<string, unknown>;
+  admin_tasks: Record<string, boolean>;
+  protection_options: Record<string, boolean>;
+  item_options: Record<string, unknown>;
+  notes: string | null;
 };
+
+const MAX_JSON_BYTES = 120_000;
+const MAX_ARRAY_ITEMS = 300;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CONTRACT_NO_PATTERN = /^[A-Za-z0-9가-힣._-]{1,50}$/;
+const PHONE_PATTERN = /^[0-9+\-()\s.]{0,30}$/;
 
 export function assertCanWriteContractOptions(context: UserContext) {
   if (context.profile.role !== "admin" && context.profile.role !== "staff") {
@@ -57,6 +64,12 @@ export function assertCanManageChangeOrder(context: UserContext) {
   if (context.profile.role !== "admin") {
     throw new ApiError(403, "변경견적과 변경승인은 관리자만 처리할 수 있습니다.");
   }
+}
+
+export function assertUuid(value: unknown, label: string) {
+  const text = stringValue(value);
+  if (!UUID_PATTERN.test(text)) throw new ApiError(400, `${label} 형식이 올바르지 않습니다.`);
+  return text;
 }
 
 export function hashJson(value: unknown) {
@@ -83,9 +96,69 @@ function stringValue(value: unknown, fallback = "") {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+function nullableString(value: unknown, maxLength: number, label: string) {
+  if (value == null) return null;
+  if (typeof value !== "string") throw new ApiError(400, `${label}은 문자로 입력해 주세요.`);
+  const text = value.trim();
+  if (!text) return null;
+  if (text.length > maxLength) throw new ApiError(400, `${label}은 ${maxLength}자 이하로 입력해 주세요.`);
+  return text;
+}
+
+function requiredString(value: unknown, maxLength: number, label: string) {
+  const text = nullableString(value, maxLength, label);
+  if (!text) throw new ApiError(400, `${label}을 입력해 주세요.`);
+  return text;
+}
+
 function numberValue(value: unknown, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
+}
+
+function moneyValue(value: unknown, label: string, allowNegative = false) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) throw new ApiError(400, `${label} 금액이 올바르지 않습니다.`);
+  if (!allowNegative && number < 0) throw new ApiError(400, `${label} 금액은 0 이상이어야 합니다.`);
+  if (Math.abs(number) > 10_000_000_000) throw new ApiError(400, `${label} 금액이 허용 범위를 초과했습니다.`);
+  return Math.round(number);
+}
+
+function dateString(value: unknown, label: string, required = false) {
+  const text = nullableString(value, 10, label);
+  if (!text) {
+    if (required) throw new ApiError(400, `${label}을 입력해 주세요.`);
+    return null;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new ApiError(400, `${label}은 YYYY-MM-DD 형식이어야 합니다.`);
+  const date = new Date(`${text}T00:00:00+09:00`);
+  if (Number.isNaN(date.getTime())) throw new ApiError(400, `${label}이 올바르지 않습니다.`);
+  return text;
+}
+
+function emailString(value: unknown, label: string) {
+  const text = nullableString(value, 120, label);
+  if (!text) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) throw new ApiError(400, `${label} 형식이 올바르지 않습니다.`);
+  return text;
+}
+
+function phoneString(value: unknown, label: string) {
+  const text = nullableString(value, 30, label);
+  if (!text) return null;
+  if (!PHONE_PATTERN.test(text)) throw new ApiError(400, `${label} 형식이 올바르지 않습니다.`);
+  return text;
+}
+
+function booleanValue(value: unknown) {
+  return value === true;
+}
+
+function limitedJsonObject(value: unknown, label: string, maxBytes = MAX_JSON_BYTES) {
+  const object = objectValue(value);
+  const size = Buffer.byteLength(JSON.stringify(object), "utf8");
+  if (size > maxBytes) throw new ApiError(400, `${label} 데이터가 너무 큽니다.`);
+  return object;
 }
 
 function dateMinusDays(dateText: string, days: number) {
@@ -113,16 +186,96 @@ function paymentSchedule(totalAmount: number, startDate: string) {
   });
 }
 
-export function normalizeContractOptions(body: Record<string, unknown>): ContractOptionsPayload {
+export function normalizeContractNo(value: unknown, required = false) {
+  const text = nullableString(value, 50, "계약번호");
+  if (!text) {
+    if (required) throw new ApiError(400, "계약번호를 입력해 주세요.");
+    return null;
+  }
+  if (!CONTRACT_NO_PATTERN.test(text)) {
+    throw new ApiError(400, "계약번호는 한글, 영문, 숫자, -, _, . 만 사용할 수 있습니다.");
+  }
+  return text;
+}
+
+function normalizeContractInfo(source: Record<string, unknown>, contractNo: string | null) {
+  const startDate = dateString(source.start_date, "착공일");
+  const plannedCompletionDate = dateString(source.planned_completion_date, "준공예정일");
+  if (startDate && plannedCompletionDate && startDate > plannedCompletionDate) {
+    throw new ApiError(400, "착공일은 준공예정일보다 늦을 수 없습니다.");
+  }
   return {
-    contract_info: objectValue(body.contract_info),
-    customer_info: objectValue(body.customer_info),
-    contractor_info: objectValue(body.contractor_info),
-    site_manager: objectValue(body.site_manager),
-    admin_tasks: objectValue(body.admin_tasks),
-    protection_options: objectValue(body.protection_options),
-    item_options: objectValue(body.item_options),
-    notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
+    contract_no: contractNo,
+    contract_date: dateString(source.contract_date, "계약일"),
+    construction_type: nullableString(source.construction_type, 80, "공사유형"),
+    start_date: startDate,
+    planned_completion_date: plannedCompletionDate,
+  };
+}
+
+function normalizeCustomerInfo(source: Record<string, unknown>) {
+  return {
+    customer_address: nullableString(source.customer_address, 200, "고객 주소"),
+    customer_email: emailString(source.customer_email, "고객 이메일"),
+  };
+}
+
+function normalizeContractorInfo(source: Record<string, unknown>) {
+  return {
+    company_name: nullableString(source.company_name, 120, "시공자 상호"),
+    business_no: nullableString(source.business_no, 40, "사업자등록번호"),
+    representative: nullableString(source.representative, 80, "대표자"),
+    address: nullableString(source.address, 200, "시공자 주소"),
+    phone: phoneString(source.phone, "시공자 연락처"),
+  };
+}
+
+function normalizeSiteManager(source: Record<string, unknown>) {
+  return {
+    name: nullableString(source.name, 80, "공사담당자 이름"),
+    title: nullableString(source.title, 80, "공사담당자 직책"),
+    phone: phoneString(source.phone, "공사담당자 연락처"),
+  };
+}
+
+function normalizeAdminTasks(source: Record<string, unknown>) {
+  return {
+    admin_office_filing_included: booleanValue(source.admin_office_filing_included),
+    resident_consent_included: booleanValue(source.resident_consent_included),
+    permit_filing_included: booleanValue(source.permit_filing_included),
+  };
+}
+
+function normalizeProtectionOptions(source: Record<string, unknown>) {
+  return {
+    existing_finish_protection_included: booleanValue(source.existing_finish_protection_included),
+    existing_pipe_cleaning_included: booleanValue(source.existing_pipe_cleaning_included),
+    new_finish_protection_required: true,
+  };
+}
+
+function normalizeItemOptions(source: unknown) {
+  const object = limitedJsonObject(source, "품목 옵션", 80_000);
+  const entries = Object.entries(object).slice(0, MAX_ARRAY_ITEMS);
+  return Object.fromEntries(entries.map(([key, value]) => {
+    const safeKey = key.replace(/[^\w가-힣.-]/g, "").slice(0, 80);
+    return [safeKey, limitedJsonObject(value, "품목 옵션 상세", 8_000)];
+  }));
+}
+
+export function normalizeContractOptions(body: Record<string, unknown>): ContractOptionsPayload {
+  const rawContractInfo = objectValue(body.contract_info);
+  const contractNo = normalizeContractNo(body.contract_no ?? rawContractInfo.contract_no);
+  return {
+    contract_no: contractNo,
+    contract_info: normalizeContractInfo(rawContractInfo, contractNo),
+    customer_info: normalizeCustomerInfo(objectValue(body.customer_info)),
+    contractor_info: normalizeContractorInfo(objectValue(body.contractor_info)),
+    site_manager: normalizeSiteManager(objectValue(body.site_manager)),
+    admin_tasks: normalizeAdminTasks(objectValue(body.admin_tasks)),
+    protection_options: normalizeProtectionOptions(objectValue(body.protection_options)),
+    item_options: normalizeItemOptions(body.item_options),
+    notes: nullableString(body.notes, 1000, "메모"),
   };
 }
 
@@ -142,13 +295,25 @@ export async function loadDocumentOptions(estimateId: string) {
   return rows[0] || null;
 }
 
+export async function assertContractNoAvailable(estimateId: string, contractNo: string | null) {
+  if (!contractNo) return;
+  const encodedNo = encodeURIComponent(contractNo);
+  const encodedEstimateId = encodeURIComponent(estimateId);
+  const optionRows = await supabaseFetch<Array<{ id: string }>>(
+    `/rest/v1/estimate_document_options?contract_no=eq.${encodedNo}&estimate_id=neq.${encodedEstimateId}&select=id&limit=1`,
+  );
+  if (optionRows[0]) throw new ApiError(409, "이미 다른 견적에서 사용 중인 계약번호입니다.");
+  const packageRows = await supabaseFetch<Array<{ id: string }>>(
+    `/rest/v1/contract_package_snapshots?contract_no=eq.${encodedNo}&estimate_id=neq.${encodedEstimateId}&select=id&limit=1`,
+  );
+  if (packageRows[0]) throw new ApiError(409, "이미 다른 계약 패키지에서 사용 중인 계약번호입니다.");
+}
+
 export async function assertNoContractedPackage(estimateId: string) {
   const rows = await supabaseFetch<Array<{ id: string }>>(
     `/rest/v1/contract_package_snapshots?estimate_id=eq.${encodeURIComponent(estimateId)}&status=in.(CONTRACTED,SUPERSEDED,CANCELLED)&select=id&limit=1`,
   );
-  if (rows[0]) {
-    throw new ApiError(409, "계약확정된 견적은 변경견적으로 처리해 주세요.");
-  }
+  if (rows[0]) throw new ApiError(409, "계약확정된 견적은 변경견적으로 처리해 주세요.");
 }
 
 async function loadActiveSpecs() {
@@ -199,7 +364,6 @@ function specMatchesItem(spec: SpecRow, itemName: string, category: string) {
   const source = `${itemName} ${category}`;
   const specName = spec.item_name || "";
   if (specName && source.includes(specName)) return true;
-  const code = spec.spec_code || "";
   const aliases: Record<string, string[]> = {
     KITCHEN_FAUCET: ["싱크수전", "주방수전"],
     KITCHEN_SINK: ["싱크볼"],
@@ -223,7 +387,7 @@ function specMatchesItem(spec: SpecRow, itemName: string, category: string) {
     MIDDLE_DOOR: ["중문"],
     BUILT_IN_STORAGE: ["붙박이장", "수납장", "제작"],
   };
-  return (aliases[code] || []).some((alias) => source.includes(alias));
+  return (aliases[spec.spec_code] || []).some((alias) => source.includes(alias));
 }
 
 function buildSpecSnapshot(items: ReturnType<typeof customerQuoteItems>, specs: SpecRow[]) {
@@ -244,8 +408,8 @@ function buildSpecSnapshot(items: ReturnType<typeof customerQuoteItems>, specs: 
 }
 
 function evaluateClauses(options: ContractOptionsPayload) {
-  const adminTasks = objectValue(options.admin_tasks);
-  const protection = objectValue(options.protection_options);
+  const adminTasks = options.admin_tasks;
+  const protection = options.protection_options;
   const enabled = (key: string) => adminTasks[key] === true;
   const customerTasks = [
     ["관리사무소 공사신고", !enabled("admin_office_filing_included")],
@@ -271,32 +435,41 @@ function evaluateClauses(options: ContractOptionsPayload) {
   };
 }
 
-export async function buildContractPackageSnapshot(estimateId: string, optionsOverride?: ContractOptionsPayload) {
-  const estimate = await loadEstimateRow(estimateId);
-  const savedOptions = await loadDocumentOptions(estimateId);
-  const options = {
+function optionsFromSaved(savedOptions: Record<string, unknown> | null): ContractOptionsPayload {
+  return {
+    contract_no: savedOptions?.contract_no == null ? null : String(savedOptions.contract_no),
     contract_info: objectValue(savedOptions?.contract_info),
     customer_info: objectValue(savedOptions?.customer_info),
     contractor_info: objectValue(savedOptions?.contractor_info),
     site_manager: objectValue(savedOptions?.site_manager),
-    admin_tasks: objectValue(savedOptions?.admin_tasks),
-    protection_options: objectValue(savedOptions?.protection_options),
+    admin_tasks: objectValue(savedOptions?.admin_tasks) as Record<string, boolean>,
+    protection_options: objectValue(savedOptions?.protection_options) as Record<string, boolean>,
     item_options: objectValue(savedOptions?.item_options),
     notes: typeof savedOptions?.notes === "string" ? savedOptions.notes : null,
+  };
+}
+
+export async function buildContractPackageSnapshot(estimateId: string, optionsOverride?: ContractOptionsPayload) {
+  const estimate = await loadEstimateRow(estimateId);
+  const savedOptions = await loadDocumentOptions(estimateId);
+  const options = {
+    ...optionsFromSaved(savedOptions),
     ...optionsOverride,
   };
+  const contractNo = normalizeContractNo(options.contract_no, true);
   const estimateSnapshot = limitedEstimateSnapshot(estimate);
   const specs = await loadActiveSpecs();
   const specSnapshot = buildSpecSnapshot(estimateSnapshot.quote_items, specs);
   const clauseSnapshot = evaluateClauses(options);
-  const contractInfo = objectValue(options.contract_info);
   const totalAmount = numberValue(estimateSnapshot.total_price);
-  const startDate = stringValue(contractInfo.start_date);
+  const startDate = stringValue(options.contract_info.start_date);
   const snapshot = {
     estimate_id: estimate.id,
     estimate_revision: estimateSnapshot.estimate_revision,
+    contract_no: contractNo,
     contract_info: {
-      ...contractInfo,
+      ...options.contract_info,
+      contract_no: contractNo,
       project_name: estimateSnapshot.project_name,
       site_address: estimateSnapshot.site_address,
       area_pyeong: estimateSnapshot.area_pyeong,
@@ -306,12 +479,12 @@ export async function buildContractPackageSnapshot(estimateId: string, optionsOv
       customer: {
         name: estimateSnapshot.customer_name,
         phone: estimateSnapshot.customer_phone,
-        address: stringValue(options.customer_info?.customer_address),
-        email: stringValue(options.customer_info?.customer_email),
+        address: stringValue(options.customer_info.customer_address),
+        email: stringValue(options.customer_info.customer_email),
       },
-      contractor: objectValue(options.contractor_info),
+      contractor: options.contractor_info,
     },
-    site_manager: objectValue(options.site_manager),
+    site_manager: options.site_manager,
     estimate_snapshot: estimateSnapshot,
     document_options_snapshot: options,
     spec_snapshot: specSnapshot,
@@ -356,4 +529,117 @@ export function renderDocumentJson(type: ContractDocumentType, snapshot: Record<
           payment_schedule: snapshot.payment_schedule,
         },
   };
+}
+
+function projectDocument(row: Record<string, unknown>, role: UserRole) {
+  if (role === "staff") {
+    return {
+      id: row.id,
+      document_type: row.document_type,
+      package_version: row.package_version,
+      generation_status: row.generation_status,
+      content_json: row.content_json,
+      file_path: row.file_path,
+      file_url: row.file_url,
+      mime_type: row.mime_type,
+      created_at: row.created_at,
+    };
+  }
+  return row;
+}
+
+export function projectContractOptions(row: Record<string, unknown> | null, role: UserRole, estimateId?: string) {
+  const fallback = { estimate_id: estimateId || null };
+  if (!row) return fallback;
+  if (role === "staff") {
+    return {
+      id: row.id,
+      estimate_id: row.estimate_id,
+      contract_no: row.contract_no,
+      contract_info: row.contract_info,
+      customer_info: row.customer_info,
+      contractor_info: row.contractor_info,
+      site_manager: row.site_manager,
+      admin_tasks: row.admin_tasks,
+      protection_options: row.protection_options,
+      item_options: row.item_options,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
+  return row;
+}
+
+export function projectContractPackage(row: Record<string, unknown>, role: UserRole) {
+  const documents = Array.isArray(row.contract_document_versions)
+    ? row.contract_document_versions.map((item) => projectDocument(objectValue(item), role))
+    : [];
+  if (role === "staff") {
+    return {
+      id: row.id,
+      estimate_id: row.estimate_id,
+      estimate_revision: row.estimate_revision,
+      package_version: row.package_version,
+      status: row.status,
+      contract_no: row.contract_no,
+      contract_info: row.contract_info,
+      parties_info: row.parties_info,
+      site_manager: row.site_manager,
+      estimate_snapshot: row.estimate_snapshot,
+      spec_snapshot: row.spec_snapshot,
+      clause_snapshot: row.clause_snapshot,
+      payment_schedule: row.payment_schedule,
+      template_version: row.template_version,
+      rule_version: row.rule_version,
+      contract_document_versions: documents,
+      confirmed_at: row.confirmed_at,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
+  return {
+    ...row,
+    contract_document_versions: documents,
+  };
+}
+
+export function sanitizePackageList(rows: Array<Record<string, unknown>>, role: UserRole) {
+  return rows.map((row) => projectContractPackage(row, role));
+}
+
+export function normalizeChangeOrderBody(body: Record<string, unknown>) {
+  const packageId = assertUuid(body.package_id, "계약 패키지 ID");
+  const title = nullableString(body.title, 120, "변경견적 제목") || "변경견적";
+  const afterSnapshot = limitedJsonObject(body.after_snapshot, "변경 후 스냅샷");
+  const amountDelta = moneyValue(body.amount_delta, "변경금액", true);
+  const scheduleImpact = limitedJsonObject(body.schedule_impact, "일정 영향", 20_000);
+  return { packageId, title, afterSnapshot, amountDelta, scheduleImpact };
+}
+
+export function normalizeApprovalBody(body: Record<string, unknown>) {
+  const customerName = requiredString(body.customer_name, 80, "고객 성명");
+  const approvalMethod = requiredString(body.approval_method, 80, "승인방식");
+  const customerSignedAt = dateString(body.customer_signed_at, "고객 승인일", true);
+  const approvedDocumentHash = requiredString(body.approved_document_hash, 128, "승인 대상 문서 해시");
+  const approvedPackageVersion = Math.trunc(numberValue(body.approved_package_version, 0));
+  if (approvedPackageVersion <= 0) throw new ApiError(400, "승인 대상 패키지 버전이 올바르지 않습니다.");
+  const evidenceFileId = nullableString(body.evidence_file_id, 120, "증적 파일 ID");
+  const evidenceUrl = nullableString(body.evidence_url, 500, "증적 URL");
+  if (!evidenceFileId && !evidenceUrl) throw new ApiError(400, "증적 파일 또는 증적 URL이 필요합니다.");
+  return {
+    customerName,
+    approvalMethod,
+    customerSignedAt,
+    approvedDocumentHash,
+    approvedPackageVersion,
+    evidenceFileId,
+    evidenceUrl,
+    notes: nullableString(body.notes, 1000, "승인 메모"),
+  };
+}
+
+export function revisedContractAmount(original: number, priorApprovedChangeTotal: number, amountDelta: number) {
+  const revised = original + priorApprovedChangeTotal + amountDelta;
+  if (!Number.isFinite(revised) || revised < 0) throw new ApiError(400, "변경 후 계약금액이 올바르지 않습니다.");
+  return Math.round(revised);
 }
