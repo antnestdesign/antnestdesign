@@ -29,6 +29,10 @@ import {
   loadOsUsers,
   loadOsAuditLogs,
   createOsAuditLog,
+  loadContractOptions,
+  saveContractOptions,
+  loadContractPackages,
+  previewContractPackage,
   createOsUser,
   updateOsUser,
   resetOsUserPassword,
@@ -421,6 +425,12 @@ let passwordChangeBusy = false;
 let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
+let contractOptionsState = null;
+let contractPackagesState = [];
+let contractPreviewState = null;
+let contractOptionsDirty = false;
+let contractSelectedDocumentType = "CONTRACT";
+let contractBusy = false;
 let snapshotCalculationMissingItems = [];
 let costItemEditorMode = null;
 let costItemEditorSourceCode = null;
@@ -658,6 +668,428 @@ function ensureCostSnapshotPanel() {
   savedList.insertAdjacentElement("afterend", section);
 }
 
+function ensureContractPackagePanel() {
+  if (!canViewContractPackage()) return;
+  const adminPanel = document.getElementById("admin");
+  const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
+  if (!adminPanel || !savedList || document.getElementById("contractPackagePanel")) return;
+  const section = document.createElement("section");
+  section.id = "contractPackagePanel";
+  section.className = "internal-card contract-package-card";
+  section.innerHTML = `
+    <div class="section-heading compact-heading no-side-padding">
+      <h2>계약 패키지</h2>
+      <p>저장 견적을 기준으로 계약서, 견적서, 공사사양서 미리보기를 생성합니다.</p>
+    </div>
+    <div id="contractPackageEmpty" class="contract-empty">
+      저장된 견적을 열면 계약 기본정보와 계약 옵션을 입력할 수 있습니다.
+    </div>
+    <div id="contractPackageWorkspace" hidden>
+      <div class="contract-package-toolbar">
+        <div>
+          <strong id="contractEstimateTitle">-</strong>
+          <span id="contractEstimateMeta">-</span>
+        </div>
+        <span id="contractPackageStatus" class="status-text"></span>
+      </div>
+      <form id="contractOptionsForm" class="contract-options-form">
+        <section class="contract-panel">
+          <div class="contract-panel-heading">
+            <h3>기본정보</h3>
+            <p>현장 주소와 평형은 기존 저장 견적에서 읽어옵니다.</p>
+          </div>
+          <div class="contract-form-grid">
+            <label>계약번호<input id="contractNo" data-contract-field="contract_no" type="text" maxlength="50"></label>
+            <label>계약일<input id="contractDate" data-contract-field="contract_date" type="date"></label>
+            <label>공사 유형<input id="constructionType" data-contract-field="construction_type" type="text" maxlength="80" placeholder="예: 주거 인테리어"></label>
+            <label>공사현장 주소<input id="contractSiteAddress" type="text" readonly></label>
+            <label>평형<input id="contractAreaPyeong" type="text" readonly></label>
+            <label>면적(㎡)<input id="contractAreaM2" type="text" readonly></label>
+            <label>착공일<input id="contractStartDate" data-contract-field="start_date" type="date"></label>
+            <label>준공예정일<input id="contractCompletionDate" data-contract-field="planned_completion_date" type="date"></label>
+          </div>
+        </section>
+        <section class="contract-panel">
+          <div class="contract-panel-heading">
+            <h3>고객정보</h3>
+            <p>고객명과 연락처는 저장 견적에서 읽고, 계약용 주소와 이메일만 별도로 저장합니다.</p>
+          </div>
+          <div class="contract-form-grid">
+            <label>고객명<input id="contractCustomerName" type="text" readonly></label>
+            <label>연락처<input id="contractCustomerPhone" type="text" readonly></label>
+            <label>고객 주소<input id="customerAddress" data-contract-field="customer_address" type="text" maxlength="200"></label>
+            <label>이메일<input id="customerEmail" data-contract-field="customer_email" type="email" maxlength="120"></label>
+          </div>
+        </section>
+        <section class="contract-panel">
+          <div class="contract-panel-heading">
+            <h3>공사담당자</h3>
+            <p>이번 단계에서는 직접 입력한 담당자 정보가 문서 미리보기에 연동됩니다.</p>
+          </div>
+          <div class="contract-form-grid">
+            <label>성명<input id="siteManagerName" data-contract-field="site_manager_name" type="text" maxlength="80"></label>
+            <label>직책<input id="siteManagerTitle" data-contract-field="site_manager_title" type="text" maxlength="80"></label>
+            <label>연락처<input id="siteManagerPhone" data-contract-field="site_manager_phone" type="tel" maxlength="30"></label>
+          </div>
+        </section>
+        <section class="contract-panel">
+          <div class="contract-panel-heading">
+            <h3>계약 옵션</h3>
+            <p>체크 여부는 계약 조건과 제외사항 판단에 사용됩니다.</p>
+          </div>
+          <div class="contract-check-grid">
+            <label><input id="adminOfficeFilingIncluded" data-contract-check="admin_office_filing_included" type="checkbox">관리사무소 신고 포함</label>
+            <label><input id="residentConsentIncluded" data-contract-check="resident_consent_included" type="checkbox">입주민 동의 포함</label>
+            <label><input id="permitFilingIncluded" data-contract-check="permit_filing_included" type="checkbox">인허가 신고 포함</label>
+            <label><input id="existingFinishProtectionIncluded" data-contract-check="existing_finish_protection_included" type="checkbox">마감재 보양 포함</label>
+            <label><input id="existingPipeCleaningIncluded" data-contract-check="existing_pipe_cleaning_included" type="checkbox">기존 배관 청소 포함</label>
+          </div>
+        </section>
+        <div id="contractWriteActions" class="admin-action-row contract-actions">
+          <button id="saveContractOptionsButton" type="button">계약 옵션 저장</button>
+          <button id="previewContractPackageButton" type="button">3종 문서 미리보기</button>
+        </div>
+        <p id="contractReadonlyNote" class="system-readonly-note" hidden><span>매니저는 계약 정보를 조회만 할 수 있습니다.</span></p>
+      </form>
+      <section class="contract-panel">
+        <div class="contract-panel-heading">
+          <h3>품목별 공사사양</h3>
+          <p>견적 포함 품목에 연결된 표준사양만 미리보기에 표시됩니다.</p>
+        </div>
+        <div id="contractSpecSnapshot" class="contract-spec-list">미리보기를 생성하면 품목별 공사사양이 표시됩니다.</div>
+      </section>
+      <section class="contract-panel">
+        <div class="contract-panel-heading">
+          <h3>3종 문서 미리보기</h3>
+          <p>이번 단계에서는 DOCX/PDF 대신 JSON 스냅샷을 읽기 쉬운 형태로 표시합니다.</p>
+        </div>
+        <div class="contract-document-tabs">
+          <button type="button" data-contract-doc="CONTRACT" class="active">계약서</button>
+          <button type="button" data-contract-doc="QUOTE">견적서</button>
+          <button type="button" data-contract-doc="SPEC">공사사양서</button>
+        </div>
+        <div id="contractDocumentPreview" class="contract-document-preview">미리보기를 생성해 주세요.</div>
+      </section>
+      <section class="contract-panel">
+        <div class="contract-panel-heading">
+          <h3>계약 패키지 목록</h3>
+          <p>확정 기능은 이번 단계에서 제공하지 않습니다.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="contract-package-table">
+            <thead><tr><th>계약번호</th><th>버전</th><th>상태</th><th>생성일</th><th>문서</th></tr></thead>
+            <tbody id="contractPackageRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  `;
+  savedList.insertAdjacentElement("afterend", section);
+}
+
+function selectedContractEstimate() {
+  if (!currentEditingEstimateId) return null;
+  return activeQuoteEstimate || cachedEstimates.find((estimate) => estimate.id === currentEditingEstimateId) || null;
+}
+
+function contractStatus(message, type = "") {
+  const node = document.getElementById("contractPackageStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.dataset.status = type;
+}
+
+function contractOptionSource() {
+  return contractOptionsState && typeof contractOptionsState === "object" ? contractOptionsState : {};
+}
+
+function contractNested(path, fallback = "") {
+  const source = contractOptionSource();
+  return path.reduce((value, key) => value && typeof value === "object" ? value[key] : undefined, source) ?? fallback;
+}
+
+function contractOptionValue(path, fallback = "") {
+  const value = contractNested(path, fallback);
+  return value == null ? "" : String(value);
+}
+
+function contractOptionChecked(path) {
+  return contractNested(path, false) === true;
+}
+
+function areaM2Text(areaPyeong) {
+  const area = Number(areaPyeong) || 0;
+  return area ? `${(area * 3.3058).toFixed(2)}㎡` : "-";
+}
+
+function setContractField(id, value) {
+  const node = document.getElementById(id);
+  if (node) node.value = value ?? "";
+}
+
+function setContractChecked(id, checked) {
+  const node = document.getElementById(id);
+  if (node) node.checked = checked === true;
+}
+
+function collectContractOptionsPayload() {
+  const text = (id) => document.getElementById(id)?.value?.trim() || "";
+  const checked = (id) => document.getElementById(id)?.checked === true;
+  return {
+    contract_no: text("contractNo") || null,
+    contract_info: {
+      contract_no: text("contractNo") || null,
+      contract_date: text("contractDate") || null,
+      construction_type: text("constructionType") || null,
+      start_date: text("contractStartDate") || null,
+      planned_completion_date: text("contractCompletionDate") || null,
+    },
+    customer_info: {
+      customer_address: text("customerAddress") || null,
+      customer_email: text("customerEmail") || null,
+    },
+    contractor_info: {},
+    site_manager: {
+      name: text("siteManagerName") || null,
+      title: text("siteManagerTitle") || null,
+      phone: text("siteManagerPhone") || null,
+    },
+    admin_tasks: {
+      admin_office_filing_included: checked("adminOfficeFilingIncluded"),
+      resident_consent_included: checked("residentConsentIncluded"),
+      permit_filing_included: checked("permitFilingIncluded"),
+    },
+    protection_options: {
+      existing_finish_protection_included: checked("existingFinishProtectionIncluded"),
+      existing_pipe_cleaning_included: checked("existingPipeCleaningIncluded"),
+    },
+    item_options: {},
+    notes: null,
+  };
+}
+
+function validateContractOptionsForPreview(payload) {
+  if (!payload.contract_no) throw new Error("계약번호를 입력해 주세요.");
+  if (payload.customer_info.customer_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.customer_info.customer_email)) {
+    throw new Error("이메일 형식이 올바르지 않습니다.");
+  }
+  if (payload.contract_info.start_date && payload.contract_info.planned_completion_date &&
+      payload.contract_info.start_date > payload.contract_info.planned_completion_date) {
+    throw new Error("착공일은 준공예정일보다 늦을 수 없습니다.");
+  }
+}
+
+function renderContractOptionsForm(estimate) {
+  const editable = canEditContractPackageOptions();
+  setContractField("contractNo", contractOptionValue(["contract_no"]));
+  setContractField("contractDate", contractOptionValue(["contract_info", "contract_date"]));
+  setContractField("constructionType", contractOptionValue(["contract_info", "construction_type"]));
+  setContractField("contractSiteAddress", estimate?.address || "");
+  setContractField("contractAreaPyeong", estimate?.areaPyeong ? `${estimate.areaPyeong}평` : "-");
+  setContractField("contractAreaM2", areaM2Text(estimate?.areaPyeong));
+  setContractField("contractStartDate", contractOptionValue(["contract_info", "start_date"]));
+  setContractField("contractCompletionDate", contractOptionValue(["contract_info", "planned_completion_date"]));
+  setContractField("contractCustomerName", estimate?.clientName || "");
+  setContractField("contractCustomerPhone", estimate?.phone || estimate?.clientPhone || "");
+  setContractField("customerAddress", contractOptionValue(["customer_info", "customer_address"]));
+  setContractField("customerEmail", contractOptionValue(["customer_info", "customer_email"]));
+  setContractField("siteManagerName", contractOptionValue(["site_manager", "name"]));
+  setContractField("siteManagerTitle", contractOptionValue(["site_manager", "title"]));
+  setContractField("siteManagerPhone", contractOptionValue(["site_manager", "phone"]));
+  setContractChecked("adminOfficeFilingIncluded", contractOptionChecked(["admin_tasks", "admin_office_filing_included"]));
+  setContractChecked("residentConsentIncluded", contractOptionChecked(["admin_tasks", "resident_consent_included"]));
+  setContractChecked("permitFilingIncluded", contractOptionChecked(["admin_tasks", "permit_filing_included"]));
+  setContractChecked("existingFinishProtectionIncluded", contractOptionChecked(["protection_options", "existing_finish_protection_included"]));
+  setContractChecked("existingPipeCleaningIncluded", contractOptionChecked(["protection_options", "existing_pipe_cleaning_included"]));
+  document.querySelectorAll("#contractOptionsForm input, #contractOptionsForm select, #contractOptionsForm textarea").forEach((node) => {
+    if (node.readOnly) return;
+    node.disabled = !editable;
+  });
+  const actions = document.getElementById("contractWriteActions");
+  if (actions) actions.hidden = !editable;
+  const readonly = document.getElementById("contractReadonlyNote");
+  if (readonly) readonly.hidden = editable;
+}
+
+function contractDocumentLabel(type) {
+  return { CONTRACT: "계약서", QUOTE: "견적서", SPEC: "공사사양서" }[type] || type || "-";
+}
+
+function renderContractPackages() {
+  const tbody = document.getElementById("contractPackageRows");
+  if (!tbody) return;
+  tbody.innerHTML = contractPackagesState.length
+    ? contractPackagesState.map((item) => `
+      <tr>
+        <td>${escapeHtml(item.contract_no || "-")}</td>
+        <td>${escapeHtml(item.package_version || "-")}</td>
+        <td>${escapeHtml(item.status || "-")}</td>
+        <td>${formatDateTime(item.created_at)}</td>
+        <td>${Array.isArray(item.contract_document_versions) ? item.contract_document_versions.length : 0}종</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">생성된 계약 패키지가 없습니다.</td></tr>`;
+}
+
+function sanitizeContractPreviewValue(key, value) {
+  if (isStaff() && /(^id$|_id$|hash|created_by|confirmed_by|source_hash|content_hash|internal|cost|margin)/i.test(key)) {
+    return undefined;
+  }
+  return value;
+}
+
+function renderJsonHtml(value, depth = 0, keyName = "") {
+  const safe = sanitizeContractPreviewValue(keyName, value);
+  if (safe === undefined) return "";
+  if (Array.isArray(safe)) {
+    if (!safe.length) return `<span class="contract-empty-value">없음</span>`;
+    return `<ol class="contract-json-list">${safe.map((item) => `<li>${renderJsonHtml(item, depth + 1, keyName)}</li>`).join("")}</ol>`;
+  }
+  if (safe && typeof safe === "object") {
+    const rows = Object.entries(safe)
+      .map(([key, item]) => {
+        const rendered = renderJsonHtml(item, depth + 1, key);
+        return rendered ? `<div class="contract-json-row"><dt>${escapeHtml(key)}</dt><dd>${rendered}</dd></div>` : "";
+      })
+      .filter(Boolean)
+      .join("");
+    return rows ? `<dl class="contract-json-object">${rows}</dl>` : `<span class="contract-empty-value">없음</span>`;
+  }
+  if (safe == null || safe === "") return `<span class="contract-empty-value">-</span>`;
+  if (typeof safe === "number") return escapeHtml(safe.toLocaleString("ko-KR"));
+  return escapeHtml(safe);
+}
+
+function renderContractSpecSnapshot() {
+  const node = document.getElementById("contractSpecSnapshot");
+  if (!node) return;
+  const specs = Array.isArray(contractPreviewState?.snapshot?.spec_snapshot)
+    ? contractPreviewState.snapshot.spec_snapshot
+    : [];
+  node.innerHTML = specs.length
+    ? `<div class="table-wrap"><table class="contract-spec-table"><thead><tr><th>공정</th><th>견적 품목</th><th>표준사양</th><th>제품급</th><th>버전</th></tr></thead><tbody>${specs.map((spec) => `
+      <tr>
+        <td>${escapeHtml(spec.work_category || "-")}</td>
+        <td>${escapeHtml(spec.item_name || "-")}</td>
+        <td>${escapeHtml(spec.standard_item_name || "-")}</td>
+        <td>${escapeHtml(spec.selected_grade || "-")}</td>
+        <td>${escapeHtml(spec.spec_version || "-")}</td>
+      </tr>
+    `).join("")}</tbody></table></div>`
+    : "미리보기를 생성하면 품목별 공사사양이 표시됩니다.";
+}
+
+function renderContractDocumentPreview() {
+  const node = document.getElementById("contractDocumentPreview");
+  if (!node) return;
+  const documents = Array.isArray(contractPreviewState?.documents) ? contractPreviewState.documents : [];
+  const previewDocument = documents.find((item) => item.document_type === contractSelectedDocumentType);
+  if (!previewDocument) {
+    node.innerHTML = "미리보기를 생성해 주세요.";
+    return;
+  }
+  node.innerHTML = `
+    <div class="contract-document-heading">
+      <strong>${contractDocumentLabel(previewDocument.document_type)}</strong>
+      <span>${escapeHtml(previewDocument.generation_status || "GENERATED")}</span>
+    </div>
+    ${renderJsonHtml(previewDocument.content_json || {})}
+  `;
+}
+
+function renderContractPreview() {
+  document.querySelectorAll("[data-contract-doc]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.contractDoc === contractSelectedDocumentType);
+  });
+  renderContractSpecSnapshot();
+  renderContractDocumentPreview();
+}
+
+function renderContractPackagePanel(estimate = selectedContractEstimate()) {
+  ensureContractPackagePanel();
+  const empty = document.getElementById("contractPackageEmpty");
+  const workspace = document.getElementById("contractPackageWorkspace");
+  if (!empty || !workspace) return;
+  if (!estimate?.id) {
+    empty.hidden = false;
+    workspace.hidden = true;
+    return;
+  }
+  empty.hidden = true;
+  workspace.hidden = false;
+  setText("contractEstimateTitle", estimate.projectName || "저장 견적");
+  setText("contractEstimateMeta", `${estimate.clientName || "고객명 없음"} · ${estimate.areaPyeong || "-"}평 · ${estimate.totalText || "-"}`);
+  renderContractOptionsForm(estimate);
+  renderContractPackages();
+  renderContractPreview();
+}
+
+async function refreshContractPackagePanel(estimate = selectedContractEstimate()) {
+  ensureContractPackagePanel();
+  if (!estimate?.id || !canViewContractPackage()) {
+    renderContractPackagePanel(null);
+    return;
+  }
+  contractStatus("계약 정보를 불러오는 중입니다.");
+  try {
+    const [options, packages] = await Promise.all([
+      loadContractOptions(estimate.id),
+      loadContractPackages(estimate.id),
+    ]);
+    contractOptionsState = options || { estimate_id: estimate.id };
+    contractPackagesState = Array.isArray(packages) ? packages : [];
+    contractPreviewState = null;
+    contractOptionsDirty = false;
+    renderContractPackagePanel(estimate);
+    contractStatus("계약 정보를 불러왔습니다.", "success");
+  } catch (error) {
+    console.error("계약 패키지 조회 실패", error);
+    contractStatus(error.message || "계약 정보를 불러오지 못했습니다.", "error");
+    renderContractPackagePanel(estimate);
+  }
+}
+
+async function saveContractOptionsFromForm() {
+  const estimate = selectedContractEstimate();
+  if (!estimate?.id || !canEditContractPackageOptions()) return;
+  if (contractBusy) return;
+  try {
+    contractBusy = true;
+    const payload = collectContractOptionsPayload();
+    contractStatus("계약 옵션을 저장하는 중입니다.");
+    contractOptionsState = await saveContractOptions(estimate.id, payload);
+    contractOptionsDirty = false;
+    renderContractPackagePanel(estimate);
+    contractStatus("계약 옵션을 저장했습니다.", "success");
+  } catch (error) {
+    console.error("계약 옵션 저장 실패", error);
+    contractStatus(error.message || "계약 옵션 저장에 실패했습니다.", "error");
+  } finally {
+    contractBusy = false;
+  }
+}
+
+async function previewContractPackageFromForm() {
+  const estimate = selectedContractEstimate();
+  if (!estimate?.id || !canPreviewContractPackage()) return;
+  if (contractBusy) return;
+  try {
+    contractBusy = true;
+    const payload = collectContractOptionsPayload();
+    validateContractOptionsForPreview(payload);
+    contractStatus("3종 문서 미리보기를 생성하는 중입니다.");
+    contractPreviewState = await previewContractPackage(estimate.id, payload);
+    contractSelectedDocumentType = "CONTRACT";
+    renderContractPackagePanel(estimate);
+    contractStatus("미리보기를 생성했습니다. 데이터는 저장되지 않았습니다.", "success");
+  } catch (error) {
+    console.error("계약 패키지 미리보기 실패", error);
+    contractStatus(error.message || "미리보기를 생성하지 못했습니다.", "error");
+  } finally {
+    contractBusy = false;
+  }
+}
+
 function setRateDbStatus(message) {
   const status = document.getElementById("rateDbSaveStatus");
   if (status) status.textContent = message;
@@ -689,6 +1121,18 @@ function canPublishCost() {
 
 function canManageUsers() {
   return isAdmin();
+}
+
+function canViewContractPackage() {
+  return Boolean(currentProfile);
+}
+
+function canEditContractPackageOptions() {
+  return isAdmin() || currentProfile?.role === "staff";
+}
+
+function canPreviewContractPackage() {
+  return isAdmin() || currentProfile?.role === "staff";
 }
 
 function setText(id, value) {
@@ -5460,6 +5904,7 @@ function applyAccessControl() {
     document.querySelector("#admin .admin-db-card")?.remove();
     ensureSystemManagementShell();
   }
+  ensureContractPackagePanel();
   if (!isAdmin() && document.getElementById("internal")?.classList.contains("active")) {
     activateTab("client");
   }
@@ -5483,6 +5928,7 @@ async function enterAuthenticatedApp(profile) {
   applyAccessControl();
   refresh();
   await renderSavedEstimateRows();
+  renderContractPackagePanel();
   await refreshSystemManagement();
 }
 
@@ -5552,6 +5998,7 @@ function loadEstimateIntoUi(estimate) {
   renderInternalRows(displayEstimate.internalDetails || []);
   renderPurchaseOrder(displayEstimate);
   setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
+  refreshContractPackagePanel(displayEstimate).catch((error) => console.error("계약 패키지 갱신 실패", error));
 }
 
 document.querySelectorAll(".tab-button").forEach((button) => {
@@ -5586,6 +6033,10 @@ document.getElementById("loginForm")?.addEventListener("submit", async (event) =
 document.getElementById("logoutButton")?.addEventListener("click", async () => {
   await signOut();
   currentProfile = null;
+  contractOptionsState = null;
+  contractPackagesState = [];
+  contractPreviewState = null;
+  contractOptionsDirty = false;
   if (staffAdminShellApplied) {
     window.location.reload();
     return;
@@ -5677,6 +6128,7 @@ async function handleSaveEstimate(mode = "update") {
     renderSavedEstimateRows().catch((error) => {
       console.warn("저장 후 목록 갱신 실패", error);
     });
+    refreshContractPackagePanel(saved).catch((error) => console.warn("저장 후 계약 패키지 갱신 실패", error));
     activateTab("quote");
   } catch (error) {
     console.error("견적 저장 실패", error);
@@ -5695,6 +6147,41 @@ document.addEventListener("click", (event) => {
   if (!button) return;
   event.preventDefault();
   handleSaveEstimate(button.id === "saveAsNewEstimateButton" ? "new" : "update");
+});
+
+document.addEventListener("input", (event) => {
+  if (!event.target?.closest?.("#contractOptionsForm")) return;
+  contractOptionsDirty = true;
+  contractStatus("저장되지 않은 계약 옵션 변경사항이 있습니다.");
+});
+
+document.addEventListener("change", (event) => {
+  if (!event.target?.closest?.("#contractOptionsForm")) return;
+  contractOptionsDirty = true;
+  contractStatus("저장되지 않은 계약 옵션 변경사항이 있습니다.");
+});
+
+document.addEventListener("click", async (event) => {
+  const button = event.target?.closest?.("#saveContractOptionsButton, #previewContractPackageButton, [data-contract-doc]");
+  if (!button) return;
+  event.preventDefault();
+  if (button.dataset.contractDoc) {
+    contractSelectedDocumentType = button.dataset.contractDoc;
+    renderContractPreview();
+    return;
+  }
+  if (button.id === "saveContractOptionsButton") {
+    await saveContractOptionsFromForm();
+  }
+  if (button.id === "previewContractPackageButton") {
+    await previewContractPackageFromForm();
+  }
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (!contractOptionsDirty) return;
+  event.preventDefault();
+  event.returnValue = "";
 });
 
 document.getElementById("printQuoteButton")?.addEventListener("click", () => {

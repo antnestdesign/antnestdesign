@@ -1311,6 +1311,213 @@ th:last-child {
   color: #b3261e;
 }
 
+.contract-package-card {
+  display: grid;
+  gap: 14px;
+}
+
+.contract-empty {
+  padding: 14px;
+  border: 1px dashed var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.contract-package-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.contract-package-toolbar strong,
+.contract-package-toolbar span {
+  display: block;
+  letter-spacing: 0;
+}
+
+.contract-package-toolbar span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.contract-options-form {
+  display: grid;
+  gap: 12px;
+}
+
+.contract-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.contract-panel-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.contract-panel-heading h3 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.contract-panel-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.contract-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.contract-form-grid label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.contract-form-grid input,
+.contract-form-grid select,
+.contract-form-grid textarea {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--panel);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.contract-form-grid input[readonly] {
+  background: #f7f7f2;
+  color: var(--muted);
+}
+
+.contract-check-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.contract-check-grid label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.contract-actions {
+  margin-top: 0;
+}
+
+#contractPackageStatus[data-status="success"] {
+  color: #137333;
+}
+
+#contractPackageStatus[data-status="error"] {
+  color: #b3261e;
+}
+
+.contract-document-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contract-document-tabs button {
+  min-height: 32px;
+  padding-inline: 12px;
+}
+
+.contract-document-tabs button.active {
+  background: var(--ink);
+  color: var(--panel);
+}
+
+.contract-document-preview,
+.contract-spec-list {
+  overflow: auto;
+  max-height: 460px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  letter-spacing: 0;
+}
+
+.contract-document-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.contract-json-object {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.contract-json-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.35fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.contract-json-row dt,
+.contract-json-row dd {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.contract-json-row dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.contract-json-row dd {
+  overflow-wrap: anywhere;
+}
+
+.contract-json-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.contract-empty-value {
+  color: var(--muted);
+}
+
+.contract-spec-table,
+.contract-package-table {
+  min-width: 760px;
+}
+
 @media (max-width: 900px) {
   .user-management-layout {
     grid-template-columns: 1fr;
@@ -1324,7 +1531,15 @@ th:last-child {
   .system-category-cancel,
   .system-rollback-meta,
   .cost-item-filter-grid,
-  .cost-item-form-grid {
+  .cost-item-form-grid,
+  .contract-form-grid,
+  .contract-check-grid {
     grid-template-columns: 1fr;
+  }
+
+  .contract-package-toolbar,
+  .contract-json-row {
+    grid-template-columns: 1fr;
+    display: grid;
   }
 }

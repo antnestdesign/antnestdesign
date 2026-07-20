@@ -103,6 +103,35 @@ export async function createOsAuditLog(payload) {
   });
 }
 
+export async function loadContractOptions(estimateId) {
+  const query = new URLSearchParams({ estimateId });
+  return requestOsApi(`/contract-options?${query.toString()}`);
+}
+
+export async function saveContractOptions(estimateId, payload) {
+  return requestOsApi("/contract-options", {
+    method: "PUT",
+    body: JSON.stringify({ estimate_id: estimateId, ...payload }),
+  });
+}
+
+export async function loadContractPackages(estimateId) {
+  const query = estimateId ? `?${new URLSearchParams({ estimateId }).toString()}` : "";
+  return requestOsApi(`/contract-packages${query}`);
+}
+
+export async function loadContractPackage(packageId, estimateId) {
+  const query = estimateId ? `?${new URLSearchParams({ estimateId }).toString()}` : "";
+  return requestOsApi(`/contract-packages/${encodeURIComponent(packageId)}${query}`);
+}
+
+export async function previewContractPackage(estimateId, options) {
+  return requestOsApi("/contract-packages/preview", {
+    method: "POST",
+    body: JSON.stringify({ estimate_id: estimateId, options }),
+  });
+}
+
 export async function createOsUser(payload) {
   return requestOsApi("/users", {
     method: "POST",
