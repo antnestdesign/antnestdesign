@@ -2986,19 +2986,19 @@ function groupedCustomerItems(details, lines) {
     return groups.get(label);
   };
   const addCustomerItem = (group, name, amount, amountText = customerWon(amount)) => {
+    const displayAmount = floorThousand(Number(amount) || 0);
     const existing = group.items.find((item) => item.name === name && item.amountText !== "현장별 별도");
-    if (existing && amount > 0) {
-      existing.amount += amount;
+    if (existing && displayAmount > 0) {
+      existing.amount += displayAmount;
       existing.amountText = customerWon(existing.amount);
       return;
     }
-    group.items.push({ name, amount, amountText });
+    group.items.push({ name, amount: displayAmount, amountText });
   };
 
   for (const detail of details.filter((item) => item.revenue > 0)) {
     const group = ensureGroup(quoteGroupLabels[detail.group] || detail.group);
-    group.total += detail.revenue;
-    addCustomerItem(group, customerItemName(detail.item), detail.revenue);
+    addCustomerItem(group, customerItemName(detail.item), detail.customerRevenue ?? detail.revenue);
   }
 
   for (const line of lines.filter((item) => item.amountText)) {
@@ -3008,29 +3008,34 @@ function groupedCustomerItems(details, lines) {
 
   for (const line of lines.filter((item) => item.process === "상담 보정" && item.revenue !== 0)) {
     const group = ensureGroup("기타");
-    group.total += line.revenue;
     addCustomerItem(group, line.description, line.revenue);
   }
 
   return quoteGroupOrder
     .map((label) => groups.get(label))
     .filter(Boolean)
-    .map((group) => ({
-      ...group,
-      totalText: customerWon(group.total),
-    }));
+    .map((group) => {
+      const total = group.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      return {
+        ...group,
+        total,
+        totalText: customerWon(total),
+      };
+    });
 }
 
 function buildEstimateSnapshot(result, options = {}) {
   const savedAt = new Date().toISOString();
+  const customerGroups = groupedCustomerItems(result.details, result.quoteLines);
+  const customerTotal = customerGroups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
   return {
     projectName: result.state.projectName,
     areaPyeong: result.state.areaPyeong,
     clientName: result.state.clientName,
     phone: result.state.clientPhone,
     savedAt,
-    total: result.customerRevenue,
-    totalText: customerWon(result.customerRevenue),
+    total: customerTotal,
+    totalText: customerWon(customerTotal),
     costTotal: result.directCost,
     marginRate: Number((result.actualMargin * 100).toFixed(2)),
     status: result.state.status || "견적",
@@ -3055,10 +3060,10 @@ function buildEstimateSnapshot(result, options = {}) {
       clientName: result.state.clientName,
       phone: result.state.clientPhone,
       savedAt,
-      total: result.customerRevenue,
-      totalText: customerWon(result.customerRevenue),
+      total: customerTotal,
+      totalText: customerWon(customerTotal),
       status: result.state.status || "견적",
-      groups: groupedCustomerItems(result.details, result.quoteLines),
+      groups: customerGroups,
     },
   };
 }
