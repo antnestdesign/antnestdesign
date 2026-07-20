@@ -68,6 +68,8 @@ create table if not exists public.contract_package_snapshots (
   estimate_revision text not null,
   package_version integer not null,
   contract_no text not null,
+  parent_package_id uuid references public.contract_package_snapshots(id) on delete restrict,
+  originating_change_order_id uuid,
   status text not null default 'DRAFT',
   contract_info jsonb not null,
   parties_info jsonb not null,
@@ -80,6 +82,11 @@ create table if not exists public.contract_package_snapshots (
   template_version text not null,
   rule_version text not null,
   source_hash text not null,
+  package_manifest_hash text,
+  original_contract_amount numeric,
+  prior_approved_change_total numeric not null default 0,
+  amount_delta numeric not null default 0,
+  revised_contract_amount numeric,
   created_by uuid references auth.users(id),
   confirmed_by uuid references auth.users(id),
   confirmed_at timestamptz,
@@ -90,11 +97,25 @@ create table if not exists public.contract_package_snapshots (
     status in ('DRAFT', 'PREVIEWED', 'READY', 'CONTRACTED', 'CHANGE_PENDING', 'SUPERSEDED', 'CANCELLED')
   ),
   constraint contract_package_contract_no_format check (contract_no ~ '^[A-Za-z0-9가-힣._-]{1,50}$'),
-  constraint contract_package_hash_not_empty check (length(trim(source_hash)) > 0)
+  constraint contract_package_hash_not_empty check (length(trim(source_hash)) > 0),
+  constraint contract_package_manifest_hash_not_empty check (
+    package_manifest_hash is null or length(trim(package_manifest_hash)) > 0
+  ),
+  constraint contract_package_amount_check check (
+    revised_contract_amount is null
+    or revised_contract_amount = coalesce(original_contract_amount, 0) + prior_approved_change_total + amount_delta
+  )
 );
 
 alter table public.contract_package_snapshots
-  add column if not exists contract_no text;
+  add column if not exists contract_no text,
+  add column if not exists parent_package_id uuid references public.contract_package_snapshots(id) on delete restrict,
+  add column if not exists originating_change_order_id uuid,
+  add column if not exists package_manifest_hash text,
+  add column if not exists original_contract_amount numeric,
+  add column if not exists prior_approved_change_total numeric not null default 0,
+  add column if not exists amount_delta numeric not null default 0,
+  add column if not exists revised_contract_amount numeric;
 
 create table if not exists public.contract_document_versions (
   id uuid primary key default gen_random_uuid(),
@@ -113,6 +134,9 @@ create table if not exists public.contract_document_versions (
   constraint contract_document_unique unique (package_id, package_version, document_type),
   constraint contract_document_type_check check (document_type in ('CONTRACT', 'QUOTE', 'SPEC')),
   constraint contract_document_status_check check (generation_status in ('GENERATED', 'FINAL', 'FAILED')),
+  constraint contract_document_content_object_check check (
+    jsonb_typeof(content_json) = 'object' and content_json <> '{}'::jsonb
+  ),
   constraint contract_document_hash_not_empty check (length(trim(content_hash)) > 0)
 );
 
@@ -125,9 +149,11 @@ create table if not exists public.change_orders (
   title text not null,
   before_snapshot jsonb not null,
   after_snapshot jsonb not null,
+  pending_package_id uuid references public.contract_package_snapshots(id) on delete restrict,
   amount_delta numeric not null default 0,
   schedule_impact jsonb not null default '{}'::jsonb,
   approval_snapshot jsonb,
+  package_manifest_hash text,
   source_hash text not null,
   created_by uuid references auth.users(id),
   approved_by uuid references auth.users(id),
@@ -137,8 +163,32 @@ create table if not exists public.change_orders (
   constraint change_order_version_unique unique (package_id, change_version),
   constraint change_order_status_check check (status in ('CHANGE_PENDING', 'APPROVED', 'REJECTED', 'CANCELLED')),
   constraint change_order_title_not_empty check (length(trim(title)) > 0),
-  constraint change_order_hash_not_empty check (length(trim(source_hash)) > 0)
+  constraint change_order_hash_not_empty check (length(trim(source_hash)) > 0),
+  constraint change_order_manifest_hash_not_empty check (
+    package_manifest_hash is null or length(trim(package_manifest_hash)) > 0
+  )
 );
+
+alter table public.change_orders
+  add column if not exists pending_package_id uuid references public.contract_package_snapshots(id) on delete restrict,
+  add column if not exists package_manifest_hash text;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'contract_package_originating_change_order_fk'
+      and conrelid = 'public.contract_package_snapshots'::regclass
+  ) then
+    alter table public.contract_package_snapshots
+      add constraint contract_package_originating_change_order_fk
+      foreign key (originating_change_order_id)
+      references public.change_orders(id)
+      on delete restrict;
+  end if;
+end;
+$$;
 
 create table if not exists public.change_order_approvals (
   id uuid primary key default gen_random_uuid(),
@@ -193,14 +243,32 @@ on public.contract_package_snapshots (status, created_at desc);
 create index if not exists contract_package_contract_no_idx
 on public.contract_package_snapshots (contract_no, estimate_id);
 
+create unique index if not exists contract_package_active_source_unique
+on public.contract_package_snapshots (estimate_id, source_hash, template_version, rule_version)
+where status in ('DRAFT', 'PREVIEWED', 'READY', 'CONTRACTED', 'CHANGE_PENDING');
+
+create index if not exists contract_package_parent_idx
+on public.contract_package_snapshots (parent_package_id, package_version desc);
+
 create index if not exists contract_document_package_idx
 on public.contract_document_versions (package_id, package_version, document_type);
 
 create index if not exists change_orders_package_idx
 on public.change_orders (package_id, change_version desc);
 
+create unique index if not exists change_orders_pending_one_idx
+on public.change_orders (package_id)
+where status = 'CHANGE_PENDING';
+
+create unique index if not exists change_orders_pending_package_unique
+on public.change_orders (pending_package_id)
+where pending_package_id is not null;
+
 create index if not exists change_order_approvals_order_idx
 on public.change_order_approvals (change_order_id, created_at desc);
+
+create unique index if not exists change_order_approvals_order_unique
+on public.change_order_approvals (change_order_id);
 
 create or replace function public.set_rfc006_updated_at()
 returns trigger
@@ -464,6 +532,13 @@ revoke all on table public.change_order_approvals from anon, authenticated;
 
 grant select on public.standard_spec_catalog to authenticated;
 
+grant select, insert, update on table public.estimate_document_options to service_role;
+grant select on table public.standard_spec_catalog to service_role;
+grant select on table public.contract_package_snapshots to service_role;
+grant select on table public.contract_document_versions to service_role;
+grant select on table public.change_orders to service_role;
+grant select on table public.change_order_approvals to service_role;
+
 create or replace function public.create_contract_package_snapshot(
   p_actor_user_id uuid,
   p_payload jsonb
@@ -480,6 +555,7 @@ declare
   v_package_id uuid;
   v_package_version integer;
   v_doc_count integer;
+  v_manifest_hash text;
   v_result jsonb;
 begin
   select lower(role) into v_role
@@ -512,6 +588,18 @@ begin
 
   perform pg_advisory_xact_lock(hashtext('contract-package:' || v_estimate_id::text));
 
+  if exists (
+    select 1
+    from public.contract_package_snapshots
+    where estimate_id = v_estimate_id
+      and source_hash = p_payload->>'source_hash'
+      and template_version = p_payload->>'template_version'
+      and rule_version = p_payload->>'rule_version'
+      and status in ('DRAFT', 'PREVIEWED', 'READY', 'CONTRACTED', 'CHANGE_PENDING')
+  ) then
+    raise exception 'same contract package already exists';
+  end if;
+
   select coalesce(max(package_version), 0) + 1
   into v_package_version
   from public.contract_package_snapshots
@@ -522,6 +610,8 @@ begin
     estimate_revision,
     package_version,
     contract_no,
+    parent_package_id,
+    originating_change_order_id,
     status,
     contract_info,
     parties_info,
@@ -534,12 +624,18 @@ begin
     template_version,
     rule_version,
     source_hash,
+    original_contract_amount,
+    prior_approved_change_total,
+    amount_delta,
+    revised_contract_amount,
     created_by
   ) values (
     v_estimate_id,
     p_payload->>'estimate_revision',
     v_package_version,
     v_contract_no,
+    nullif(p_payload->>'parent_package_id', '')::uuid,
+    nullif(p_payload->>'originating_change_order_id', '')::uuid,
     'DRAFT',
     p_payload->'contract_info',
     p_payload->'parties_info',
@@ -552,6 +648,10 @@ begin
     p_payload->>'template_version',
     p_payload->>'rule_version',
     p_payload->>'source_hash',
+    nullif(p_payload->>'original_contract_amount', '')::numeric,
+    coalesce(nullif(p_payload->>'prior_approved_change_total', '')::numeric, 0),
+    coalesce(nullif(p_payload->>'amount_delta', '')::numeric, 0),
+    nullif(p_payload->>'revised_contract_amount', '')::numeric,
     p_actor_user_id
   )
   returning id into v_package_id;
@@ -582,7 +682,8 @@ begin
   from jsonb_array_elements(coalesce(p_payload->'documents', '[]'::jsonb)) doc
   where doc->>'document_type' in ('CONTRACT', 'QUOTE', 'SPEC')
     and length(coalesce(doc->>'content_hash', '')) > 0
-    and doc ? 'content_json';
+    and jsonb_typeof(doc->'content_json') = 'object'
+    and doc->'content_json' <> '{}'::jsonb;
 
   select count(distinct document_type)
   into v_doc_count
@@ -596,12 +697,23 @@ begin
     raise exception 'all three contract documents must be generated';
   end if;
 
+  select encode(
+    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),
+    'hex'
+  )
+  into v_manifest_hash
+  from public.contract_document_versions
+  where package_id = v_package_id
+    and package_version = v_package_version
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
   update public.contract_package_snapshots
   set status = 'PREVIEWED'
   where id = v_package_id;
 
   update public.contract_package_snapshots
-  set status = 'READY'
+  set status = 'READY',
+      package_manifest_hash = v_manifest_hash
   where id = v_package_id;
 
   select to_jsonb(p.*) || jsonb_build_object(
@@ -714,11 +826,19 @@ declare
   v_role text;
   v_package public.contract_package_snapshots%rowtype;
   v_package_id uuid;
+  v_pending_package_id uuid;
+  v_pending_package_version integer;
   v_change_version integer;
   v_change_order_id uuid;
   v_title text;
   v_amount_delta numeric;
+  v_original_contract_amount numeric;
+  v_prior_approved_change_total numeric;
+  v_revised_contract_amount numeric;
   v_source_hash text;
+  v_pending_source_hash text;
+  v_manifest_hash text;
+  v_doc_count integer;
   v_result jsonb;
 begin
   select lower(role) into v_role
@@ -752,6 +872,43 @@ begin
 
   perform pg_advisory_xact_lock(hashtext('change-order:' || v_package_id::text));
 
+  if exists (
+    select 1
+    from public.change_orders
+    where package_id = v_package_id
+      and status = 'CHANGE_PENDING'
+  ) then
+    raise exception 'pending change order already exists';
+  end if;
+
+  v_original_contract_amount := coalesce(
+    v_package.original_contract_amount,
+    (v_package.contract_info->>'total_amount')::numeric,
+    0
+  );
+
+  select coalesce(sum(c.amount_delta), 0)
+  into v_prior_approved_change_total
+  from public.change_orders c
+  join public.contract_package_snapshots p on p.id = c.package_id
+  where p.estimate_id = v_package.estimate_id
+    and p.contract_no = v_package.contract_no
+    and c.status = 'APPROVED';
+
+  v_revised_contract_amount := v_original_contract_amount + v_prior_approved_change_total + v_amount_delta;
+  if v_revised_contract_amount < 0 then
+    raise exception 'revised contract amount is invalid';
+  end if;
+
+  if jsonb_typeof(p_payload->'pending_snapshot') is distinct from 'object'
+    or p_payload->'pending_snapshot' = '{}'::jsonb then
+    raise exception 'pending package snapshot is required';
+  end if;
+
+  if coalesce((p_payload->'pending_snapshot'->'contract_info'->>'total_amount')::numeric, -1) <> v_revised_contract_amount then
+    raise exception 'pending package total does not match revised contract amount';
+  end if;
+
   select coalesce(max(change_version), 0) + 1
   into v_change_version
   from public.change_orders
@@ -763,11 +920,15 @@ begin
 
   v_source_hash := encode(
     digest(
-      (v_package_id::text || ':' || v_change_version::text || ':' || coalesce((p_payload->'after_snapshot')::text, '{}')),
+      (v_package_id::text || ':' || v_change_version::text || ':' || coalesce((p_payload->'pending_snapshot')::text, '{}')),
       'sha256'
     ),
     'hex'
   );
+  v_pending_source_hash := nullif(trim(coalesce(p_payload->>'pending_source_hash', '')), '');
+  if v_pending_source_hash is null then
+    raise exception 'pending source hash is required';
+  end if;
 
   insert into public.change_orders (
     package_id,
@@ -798,11 +959,146 @@ begin
   )
   returning id into v_change_order_id;
 
+  select coalesce(max(package_version), 0) + 1
+  into v_pending_package_version
+  from public.contract_package_snapshots
+  where estimate_id = v_package.estimate_id;
+
+  insert into public.contract_package_snapshots (
+    estimate_id,
+    estimate_revision,
+    package_version,
+    contract_no,
+    parent_package_id,
+    originating_change_order_id,
+    status,
+    contract_info,
+    parties_info,
+    site_manager,
+    estimate_snapshot,
+    document_options_snapshot,
+    spec_snapshot,
+    clause_snapshot,
+    payment_schedule,
+    template_version,
+    rule_version,
+    source_hash,
+    original_contract_amount,
+    prior_approved_change_total,
+    amount_delta,
+    revised_contract_amount,
+    created_by
+  ) values (
+    v_package.estimate_id,
+    coalesce(p_payload->'pending_snapshot'->>'estimate_revision', v_package.estimate_revision),
+    v_pending_package_version,
+    v_package.contract_no,
+    v_package_id,
+    v_change_order_id,
+    'DRAFT',
+    p_payload->'pending_snapshot'->'contract_info',
+    p_payload->'pending_snapshot'->'parties_info',
+    coalesce(p_payload->'pending_snapshot'->'site_manager', '{}'::jsonb),
+    p_payload->'pending_snapshot'->'estimate_snapshot',
+    p_payload->'pending_snapshot'->'document_options_snapshot',
+    coalesce(p_payload->'pending_snapshot'->'spec_snapshot', '[]'::jsonb),
+    coalesce(p_payload->'pending_snapshot'->'clause_snapshot', '{}'::jsonb),
+    coalesce(p_payload->'pending_snapshot'->'payment_schedule', '[]'::jsonb),
+    coalesce(p_payload->'pending_snapshot'->>'template_version', v_package.template_version),
+    coalesce(p_payload->'pending_snapshot'->>'rule_version', v_package.rule_version),
+    v_pending_source_hash,
+    v_original_contract_amount,
+    v_prior_approved_change_total,
+    v_amount_delta,
+    v_revised_contract_amount,
+    p_actor_user_id
+  )
+  returning id into v_pending_package_id;
+
+  insert into public.contract_document_versions (
+    package_id,
+    document_type,
+    package_version,
+    generation_status,
+    content_json,
+    content_hash,
+    file_path,
+    file_url,
+    mime_type,
+    created_by
+  )
+  select
+    v_pending_package_id,
+    doc->>'document_type',
+    v_pending_package_version,
+    'GENERATED',
+    doc->'content_json',
+    doc->>'content_hash',
+    nullif(doc->>'file_path', ''),
+    nullif(doc->>'file_url', ''),
+    nullif(doc->>'mime_type', ''),
+    p_actor_user_id
+  from jsonb_array_elements(coalesce(p_payload->'documents', '[]'::jsonb)) doc
+  where doc->>'document_type' in ('CONTRACT', 'QUOTE', 'SPEC')
+    and length(coalesce(doc->>'content_hash', '')) > 0
+    and jsonb_typeof(doc->'content_json') = 'object'
+    and doc->'content_json' <> '{}'::jsonb;
+
+  select count(distinct document_type)
+  into v_doc_count
+  from public.contract_document_versions
+  where package_id = v_pending_package_id
+    and package_version = v_pending_package_version
+    and generation_status = 'GENERATED'
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  if v_doc_count <> 3 then
+    raise exception 'all three pending contract documents must be generated';
+  end if;
+
+  select encode(
+    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),
+    'hex'
+  )
+  into v_manifest_hash
+  from public.contract_document_versions
+  where package_id = v_pending_package_id
+    and package_version = v_pending_package_version
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  update public.contract_package_snapshots
+  set status = 'PREVIEWED'
+  where id = v_pending_package_id;
+
+  update public.contract_package_snapshots
+  set status = 'READY',
+      package_manifest_hash = v_manifest_hash
+  where id = v_pending_package_id;
+
+  update public.change_orders
+  set pending_package_id = v_pending_package_id,
+      package_manifest_hash = v_manifest_hash,
+      after_snapshot = p_payload->'pending_snapshot'
+  where id = v_change_order_id;
+
   update public.contract_package_snapshots
   set status = 'CHANGE_PENDING'
   where id = v_package_id;
 
-  select to_jsonb(c)
+  select to_jsonb(c) || jsonb_build_object(
+    'pending_package', (
+      select to_jsonb(p) || jsonb_build_object(
+        'contract_document_versions',
+        coalesce((
+          select jsonb_agg(to_jsonb(d) order by d.document_type)
+          from public.contract_document_versions d
+          where d.package_id = p.id
+        ), '[]'::jsonb)
+      )
+      from public.contract_package_snapshots p
+      where p.id = c.pending_package_id
+    )
+  )
   into v_result
   from public.change_orders c
   where c.id = v_change_order_id;
@@ -825,6 +1121,7 @@ declare
   v_role text;
   v_order public.change_orders%rowtype;
   v_package public.contract_package_snapshots%rowtype;
+  v_pending_package public.contract_package_snapshots%rowtype;
   v_customer_name text;
   v_approval_method text;
   v_evidence_file_id text;
@@ -832,6 +1129,7 @@ declare
   v_approved_document_hash text;
   v_approved_package_version integer;
   v_customer_signed_at date;
+  v_doc_count integer;
   v_original_contract_amount numeric;
   v_prior_approved_change_total numeric;
   v_revised_contract_amount numeric;
@@ -876,6 +1174,36 @@ begin
     raise exception 'contract package is not waiting for change approval';
   end if;
 
+  if v_order.pending_package_id is null or v_order.package_manifest_hash is null then
+    raise exception 'pending contract package is required';
+  end if;
+
+  select *
+  into v_pending_package
+  from public.contract_package_snapshots
+  where id = v_order.pending_package_id
+  for update;
+
+  if not found then
+    raise exception 'pending contract package not found';
+  end if;
+
+  if v_pending_package.status <> 'READY' then
+    raise exception 'pending contract package is not ready';
+  end if;
+
+  if v_pending_package.parent_package_id is distinct from v_package.id
+    or v_pending_package.originating_change_order_id is distinct from v_order.id
+  then
+    raise exception 'pending contract package relation is invalid';
+  end if;
+
+  if v_pending_package.package_manifest_hash is null
+    or v_pending_package.package_manifest_hash <> v_order.package_manifest_hash
+  then
+    raise exception 'pending contract package manifest does not match change order';
+  end if;
+
   v_customer_name := nullif(trim(coalesce(p_payload->>'customer_name', '')), '');
   v_approval_method := nullif(trim(coalesce(p_payload->>'approval_method', '')), '');
   v_evidence_file_id := nullif(trim(coalesce(p_payload->>'evidence_file_id', '')), '');
@@ -894,22 +1222,46 @@ begin
     raise exception 'customer approval evidence is required';
   end if;
 
-  if v_approved_package_version <> v_package.package_version then
-    raise exception 'approved package version does not match current package version';
+  if v_approved_package_version <> v_pending_package.package_version then
+    raise exception 'approved package version does not match pending package version';
   end if;
 
-  v_original_contract_amount := coalesce((v_package.contract_info->>'total_amount')::numeric, 0);
+  if v_approved_document_hash <> v_order.package_manifest_hash
+    or v_approved_document_hash <> v_pending_package.package_manifest_hash
+  then
+    raise exception 'approved document hash does not match pending package manifest';
+  end if;
 
-  select coalesce(sum(amount_delta), 0)
-  into v_prior_approved_change_total
-  from public.change_orders
-  where package_id = v_order.package_id
-    and status = 'APPROVED'
-    and id <> p_change_order_id;
+  select count(distinct document_type)
+  into v_doc_count
+  from public.contract_document_versions
+  where package_id = v_pending_package.id
+    and package_version = v_pending_package.package_version
+    and generation_status = 'GENERATED'
+    and length(coalesce(content_hash, '')) > 0
+    and jsonb_typeof(content_json) = 'object'
+    and content_json <> '{}'::jsonb
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  if v_doc_count <> 3 then
+    raise exception 'all three pending contract documents must be generated before approval';
+  end if;
+
+  v_original_contract_amount := coalesce(
+    v_pending_package.original_contract_amount,
+    v_package.original_contract_amount,
+    (v_package.contract_info->>'total_amount')::numeric,
+    0
+  );
+  v_prior_approved_change_total := coalesce(v_pending_package.prior_approved_change_total, 0);
 
   v_revised_contract_amount := v_original_contract_amount + v_prior_approved_change_total + v_order.amount_delta;
   if v_revised_contract_amount < 0 then
     raise exception 'revised contract amount is invalid';
+  end if;
+
+  if v_pending_package.revised_contract_amount is distinct from v_revised_contract_amount then
+    raise exception 'pending contract package revised amount does not match change order';
   end if;
 
   v_approval_snapshot := jsonb_build_object(
@@ -928,7 +1280,10 @@ begin
     'revised_contract_amount', v_revised_contract_amount,
     'notes', nullif(trim(coalesce(p_payload->>'notes', '')), ''),
     'change_order_id', p_change_order_id,
-    'change_version', v_order.change_version
+    'change_version', v_order.change_version,
+    'parent_package_id', v_package.id,
+    'pending_package_id', v_pending_package.id,
+    'package_manifest_hash', v_pending_package.package_manifest_hash
   );
 
   v_approval_hash := encode(digest(v_approval_snapshot::text, 'sha256'), 'hex');
@@ -976,8 +1331,21 @@ begin
   where id = p_change_order_id;
 
   update public.contract_package_snapshots
-  set status = 'CONTRACTED'
-  where id = v_order.package_id;
+  set status = 'SUPERSEDED'
+  where id = v_package.id;
+
+  update public.contract_document_versions
+  set generation_status = 'FINAL',
+      locked_at = public.and_os_now()
+  where package_id = v_pending_package.id
+    and package_version = v_pending_package.package_version
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  update public.contract_package_snapshots
+  set status = 'CONTRACTED',
+      confirmed_by = p_actor_user_id,
+      confirmed_at = public.and_os_now()
+  where id = v_pending_package.id;
 
   select to_jsonb(c) || jsonb_build_object(
     'change_order_approvals',
@@ -986,6 +1354,18 @@ begin
       from public.change_order_approvals a
       where a.change_order_id = c.id
     ), '[]'::jsonb),
+    'pending_package', (
+      select to_jsonb(p) || jsonb_build_object(
+        'contract_document_versions',
+        coalesce((
+          select jsonb_agg(to_jsonb(d) order by d.document_type)
+          from public.contract_document_versions d
+          where d.package_id = p.id
+        ), '[]'::jsonb)
+      )
+      from public.contract_package_snapshots p
+      where p.id = c.pending_package_id
+    ),
     'approval_hash', v_approval_hash,
     'revised_contract_amount', v_revised_contract_amount
   )

@@ -7,42 +7,31 @@ import {
   writeAuditLog,
 } from "../_lib/server";
 import {
-  DOCUMENT_TYPES,
   assertCanCreateContractPreview,
   assertContractNoAvailable,
+  assertPackageEstimateScope,
   assertUuid,
+  buildContractDocuments,
   buildContractPackageSnapshot,
-  hashJson,
   normalizeContractOptions,
-  renderDocumentJson,
+  projectContractPackage,
+  requireEstimateScopeForStaff,
   sanitizePackageList,
 } from "./_lib/contracts";
-
-function documentRows(snapshot: Record<string, unknown>) {
-  return DOCUMENT_TYPES.map((type) => {
-    const content = renderDocumentJson(type, snapshot);
-    return {
-      document_type: type,
-      generation_status: "GENERATED",
-      content_json: content,
-      content_hash: hashJson(content),
-      file_path: null,
-      file_url: null,
-      mime_type: null,
-    };
-  });
-}
 
 export async function GET(request: NextRequest) {
   try {
     const context = await getUserContext(request);
     const url = new URL(request.url);
-    const estimateId = url.searchParams.get("estimateId");
+    const estimateId = url.searchParams.get("estimateId")
+      ? assertUuid(url.searchParams.get("estimateId"), "저장 견적 ID")
+      : null;
+    requireEstimateScopeForStaff(context, estimateId);
     const filters = [
       "select=*,contract_document_versions(*)",
       "order=created_at.desc",
     ];
-    if (estimateId) filters.push(`estimate_id=eq.${encodeURIComponent(assertUuid(estimateId, "저장 견적 ID"))}`);
+    if (estimateId) filters.push(`estimate_id=eq.${encodeURIComponent(estimateId)}`);
     const rows = await supabaseFetch<Array<Record<string, unknown>>>(
       `/rest/v1/contract_package_snapshots?${filters.join("&")}`,
     );
@@ -63,7 +52,7 @@ export async function POST(request: NextRequest) {
       : undefined;
     if (options?.contract_no) await assertContractNoAvailable(estimateId, options.contract_no);
     const snapshot = await buildContractPackageSnapshot(estimateId, options);
-    const documents = documentRows(snapshot);
+    const documents = buildContractDocuments(snapshot);
     const rows = await supabaseFetch<Array<Record<string, unknown>>>(
       "/rest/v1/rpc/create_contract_package_snapshot",
       {
@@ -91,6 +80,8 @@ export async function POST(request: NextRequest) {
       },
     );
     const contractPackage = Array.isArray(rows) ? rows[0] : rows;
+    if (!contractPackage) throw new Error("계약 패키지 생성 결과가 비어 있습니다.");
+    assertPackageEstimateScope(contractPackage || {}, estimateId);
     await writeAuditLog(context, {
       action: "CONTRACT_PACKAGE_CREATED",
       target_type: "contract_package",
@@ -104,7 +95,7 @@ export async function POST(request: NextRequest) {
         source_hash: snapshot.source_hash,
       },
     });
-    return json(contractPackage, { status: 201 });
+    return json(projectContractPackage(contractPackage, context.profile.role), { status: 201 });
   } catch (error) {
     return errorResponse(error);
   }

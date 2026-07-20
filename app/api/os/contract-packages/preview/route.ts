@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 import { errorResponse, getUserContext, json } from "../../_lib/server";
 import {
-  DOCUMENT_TYPES,
   assertCanCreateContractPreview,
   assertContractNoAvailable,
   assertUuid,
+  buildContractDocuments,
   buildContractPackageSnapshot,
   normalizeContractOptions,
-  renderDocumentJson,
+  projectContractPreview,
 } from "../_lib/contracts";
 
 export async function POST(request: NextRequest) {
@@ -21,16 +21,8 @@ export async function POST(request: NextRequest) {
       : undefined;
     if (options?.contract_no) await assertContractNoAvailable(estimateId, options.contract_no);
     const snapshot = await buildContractPackageSnapshot(estimateId, options);
-    const documents = DOCUMENT_TYPES.map((type) => ({
-      document_type: type,
-      generation_status: "GENERATED",
-      content_json: renderDocumentJson(type, snapshot),
-    }));
-    return json({
-      status: "PREVIEWED",
-      snapshot,
-      documents,
-    });
+    const documents = buildContractDocuments(snapshot);
+    return json(projectContractPreview(snapshot, documents, context.profile.role));
   } catch (error) {
     return errorResponse(error);
   }

@@ -531,6 +531,54 @@ export function renderDocumentJson(type: ContractDocumentType, snapshot: Record<
   };
 }
 
+export function buildContractDocuments(snapshot: Record<string, unknown>) {
+  return DOCUMENT_TYPES.map((type) => {
+    const content = renderDocumentJson(type, snapshot);
+    return {
+      document_type: type,
+      generation_status: "GENERATED",
+      content_json: content,
+      content_hash: hashJson(content),
+      file_path: null,
+      file_url: null,
+      mime_type: null,
+    };
+  });
+}
+
+function staffContractInfo(value: unknown) {
+  const info = objectValue(value);
+  return {
+    contract_no: info.contract_no ?? "",
+    contract_date: info.contract_date ?? null,
+    construction_type: info.construction_type ?? null,
+    start_date: info.start_date ?? null,
+    planned_completion_date: info.planned_completion_date ?? null,
+    project_name: info.project_name ?? "",
+    site_address: info.site_address ?? "",
+    area_pyeong: info.area_pyeong ?? null,
+    total_amount: info.total_amount ?? 0,
+  };
+}
+
+function staffEstimateSnapshot(value: unknown) {
+  const estimate = objectValue(value);
+  return {
+    estimate_id: estimate.estimate_id,
+    estimate_revision: estimate.estimate_revision,
+    project_name: estimate.project_name,
+    area_pyeong: estimate.area_pyeong,
+    site_address: estimate.site_address,
+    customer_name: estimate.customer_name,
+    customer_phone: estimate.customer_phone,
+    total_price: estimate.total_price,
+    total_text: estimate.total_text,
+    status: estimate.status,
+    customer_quote: estimate.customer_quote,
+    quote_items: estimate.quote_items,
+  };
+}
+
 function projectDocument(row: Record<string, unknown>, role: UserRole) {
   if (role === "staff") {
     return {
@@ -546,6 +594,47 @@ function projectDocument(row: Record<string, unknown>, role: UserRole) {
     };
   }
   return row;
+}
+
+function projectPackageSnapshotForStaff(row: Record<string, unknown>) {
+  return {
+    estimate_id: row.estimate_id,
+    estimate_revision: row.estimate_revision,
+    package_version: row.package_version,
+    status: row.status,
+    contract_no: row.contract_no,
+    contract_info: staffContractInfo(row.contract_info),
+    parties_info: objectValue(row.parties_info),
+    site_manager: objectValue(row.site_manager),
+    estimate_snapshot: staffEstimateSnapshot(row.estimate_snapshot),
+    spec_snapshot: Array.isArray(row.spec_snapshot) ? row.spec_snapshot : [],
+    clause_snapshot: objectValue(row.clause_snapshot),
+    payment_schedule: Array.isArray(row.payment_schedule) ? row.payment_schedule : [],
+    template_version: row.template_version,
+    rule_version: row.rule_version,
+  };
+}
+
+export function projectContractPreview(
+  snapshot: Record<string, unknown>,
+  documents: Array<Record<string, unknown>>,
+  role: UserRole,
+) {
+  if (role === "staff") {
+    return {
+      status: "PREVIEWED",
+      snapshot: projectPackageSnapshotForStaff({
+        ...snapshot,
+        parties_info: snapshot.parties,
+      }),
+      documents: documents.map((item) => projectDocument(objectValue(item), role)),
+    };
+  }
+  return {
+    status: "PREVIEWED",
+    snapshot,
+    documents,
+  };
 }
 
 export function projectContractOptions(row: Record<string, unknown> | null, role: UserRole, estimateId?: string) {
@@ -577,20 +666,7 @@ export function projectContractPackage(row: Record<string, unknown>, role: UserR
   if (role === "staff") {
     return {
       id: row.id,
-      estimate_id: row.estimate_id,
-      estimate_revision: row.estimate_revision,
-      package_version: row.package_version,
-      status: row.status,
-      contract_no: row.contract_no,
-      contract_info: row.contract_info,
-      parties_info: row.parties_info,
-      site_manager: row.site_manager,
-      estimate_snapshot: row.estimate_snapshot,
-      spec_snapshot: row.spec_snapshot,
-      clause_snapshot: row.clause_snapshot,
-      payment_schedule: row.payment_schedule,
-      template_version: row.template_version,
-      rule_version: row.rule_version,
+      ...projectPackageSnapshotForStaff(row),
       contract_document_versions: documents,
       confirmed_at: row.confirmed_at,
       created_at: row.created_at,
@@ -605,6 +681,29 @@ export function projectContractPackage(row: Record<string, unknown>, role: UserR
 
 export function sanitizePackageList(rows: Array<Record<string, unknown>>, role: UserRole) {
   return rows.map((row) => projectContractPackage(row, role));
+}
+
+export function requireEstimateScopeForStaff(context: UserContext, estimateId: string | null) {
+  if (context.profile.role === "staff" && !estimateId) {
+    throw new ApiError(400, "직원은 저장 견적 기준으로만 계약 패키지를 조회할 수 있습니다.");
+  }
+}
+
+export function assertPackageEstimateScope(row: Record<string, unknown>, estimateId: string | null) {
+  if (estimateId && String(row.estimate_id) !== estimateId) {
+    throw new ApiError(404, "계약 패키지를 찾지 못했습니다.");
+  }
+}
+
+export function normalizePendingSnapshotForChange(value: unknown) {
+  const snapshot = limitedJsonObject(value, "변경 후 계약 패키지 스냅샷");
+  if (!objectValue(snapshot.contract_info).total_amount) {
+    throw new ApiError(400, "변경 후 계약금액이 필요합니다.");
+  }
+  if (!snapshot.estimate_snapshot || !snapshot.spec_snapshot || !snapshot.payment_schedule) {
+    throw new ApiError(400, "변경 후 계약 패키지 스냅샷이 완전하지 않습니다.");
+  }
+  return snapshot;
 }
 
 export function normalizeChangeOrderBody(body: Record<string, unknown>) {

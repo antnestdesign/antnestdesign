@@ -10,7 +10,10 @@ import {
 } from "../_lib/server";
 import {
   assertCanManageChangeOrder,
+  buildContractDocuments,
+  hashJson,
   normalizeChangeOrderBody,
+  normalizePendingSnapshotForChange,
 } from "../contract-packages/_lib/contracts";
 
 export async function GET(request: NextRequest) {
@@ -38,6 +41,8 @@ export async function POST(request: NextRequest) {
     assertCanManageChangeOrder(context);
     const body = (await request.json()) as Record<string, unknown>;
     const { packageId, title, afterSnapshot, amountDelta, scheduleImpact } = normalizeChangeOrderBody(body);
+    const pendingSnapshot = normalizePendingSnapshotForChange(afterSnapshot);
+    const documents = buildContractDocuments(pendingSnapshot);
     const changeOrder = await supabaseFetch<Record<string, unknown>>(
       "/rest/v1/rpc/create_contract_change_order",
       {
@@ -47,7 +52,9 @@ export async function POST(request: NextRequest) {
           p_payload: {
             package_id: packageId,
             title,
-            after_snapshot: afterSnapshot,
+            pending_snapshot: pendingSnapshot,
+            pending_source_hash: hashJson(pendingSnapshot),
+            documents,
             amount_delta: amountDelta,
             schedule_impact: scheduleImpact,
           },
