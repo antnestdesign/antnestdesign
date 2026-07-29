@@ -462,6 +462,7 @@ let costItemFilters = {
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (value) => Math.floor(value / 1000) * 1000;
 const customerWon = (value) => `${floorThousand(value).toLocaleString("ko-KR")}원`;
+const moneyAmount = (value) => Math.round(Number(value) || 0);
 const numberValue = (id) => Number(el[id]?.value) || 0;
 const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
 const checkedValue = (id) => Boolean(el[id]?.checked);
@@ -2781,6 +2782,17 @@ function removeDuplicateManagementCriteriaBlock() {
   if (block) block.remove();
 }
 
+function removeLegacyAdminEstimatePanels() {
+  [
+    "adminQuoteRows",
+    "adminInternalCost",
+    "adminInternalDetailRows",
+  ].forEach((id) => {
+    const block = document.getElementById(id)?.closest(".internal-card");
+    if (block) block.remove();
+  });
+}
+
 function updateRatesFromAdmin() {
   rates.lowerPerJa = rateValue("rateLowerPerJa", rates.lowerPerJa);
   rates.upperPerJa = rateValue("rateUpperPerJa", rates.upperPerJa);
@@ -4575,10 +4587,8 @@ function buildAdminMarginGroups(estimate) {
   for (const detail of details) {
     const label = quoteGroupLabels[detail.group] || detail.group || "기타";
     const group = ensureGroup(label);
-    group.cost += Number(detail.cost) || 0;
-    group.customer += Number.isFinite(detail.customerRevenue)
-      ? detail.customerRevenue
-      : floorThousand(Number(detail.revenue) || 0);
+    group.cost += moneyAmount(detail.cost);
+    group.customer += internalDetailCustomerAmount(detail);
     group.count += 1;
     group.details.push(detail);
   }
@@ -4597,19 +4607,21 @@ function buildAdminMarginGroups(estimate) {
     });
 }
 
+function internalDetailCustomerAmount(detail) {
+  return moneyAmount(Number.isFinite(detail?.customerRevenue)
+    ? detail.customerRevenue
+    : floorThousand(Number(detail?.revenue) || 0));
+}
+
 function storedEstimateSummary(estimate) {
-  const customerTotal = Number(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue) || 0;
-  const directCost = Number(estimate?.costTotal ?? estimate?.internalSummary?.directCost) || 0;
+  const customerTotal = moneyAmount(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue);
+  const directCost = moneyAmount(estimate?.costTotal ?? estimate?.internalSummary?.directCost);
   const profit = customerTotal - directCost;
   const marginRate = customerTotal > 0 ? profit / customerTotal : 0;
   const details = Array.isArray(estimate?.internalDetails) ? estimate.internalDetails : [];
-  const detailCustomerTotal = details.reduce((sum, detail) => {
-    const customer = Number.isFinite(detail.customerRevenue)
-      ? detail.customerRevenue
-      : floorThousand(Number(detail.revenue) || 0);
-    return sum + (Number(customer) || 0);
-  }, 0);
-  const detailCostTotal = details.reduce((sum, detail) => sum + (Number(detail.cost) || 0), 0);
+  const groups = buildAdminMarginGroups(estimate);
+  const detailCustomerTotal = groups.reduce((sum, group) => sum + moneyAmount(group.customer), 0);
+  const detailCostTotal = groups.reduce((sum, group) => sum + moneyAmount(group.cost), 0);
   return {
     customerTotal,
     directCost,
@@ -4683,10 +4695,8 @@ function renderAdminTradeGroup(group, index) {
             </thead>
             <tbody>
               ${details.map((detail) => {
-                const customer = Number.isFinite(detail.customerRevenue)
-                  ? detail.customerRevenue
-                  : floorThousand(Number(detail.revenue) || 0);
-                const cost = Number(detail.cost) || 0;
+                const customer = internalDetailCustomerAmount(detail);
+                const cost = moneyAmount(detail.cost);
                 const profit = customer - cost;
                 const marginRate = customer > 0 ? profit / customer : 0;
                 return `
@@ -4759,14 +4769,6 @@ function renderAdminMarginTable(estimate) {
     <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
     <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
   `;
-  const estimateCustomer = Number(estimate.total ?? estimate.customerQuote?.total ?? estimate.internalSummary?.customerRevenue) || 0;
-  const estimateCost = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
-  if (Math.abs(totalCustomer - estimateCustomer) >= 1 || Math.abs(totalCost - estimateCost) >= 1) {
-    groupTotals.insertAdjacentHTML(
-      "beforeend",
-      `<div class="warning-item">내부 상세 합계와 전체 견적 합계가 일치하지 않습니다.</div>`,
-    );
-  }
 }
 
 function renderStoredInternalSummary(estimate) {
@@ -7262,6 +7264,7 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 repairStaticKoreanLabels();
 guardCheckboxLabelClicks();
 removeDuplicateManagementCriteriaBlock();
+removeLegacyAdminEstimatePanels();
 bindPasswordChangeShell();
 
 document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
