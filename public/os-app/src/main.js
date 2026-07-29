@@ -429,6 +429,8 @@ let passwordChangeBusy = false;
 let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
+let pipeCleaningAdjustmentDirty = false;
+let lastRenderedEstimateSnapshot = null;
 let contractOptionsState = null;
 let contractPackagesState = [];
 let allContractPackagesState = [];
@@ -3118,22 +3120,6 @@ function addUnitDetail(details, { group, item, enabled, input, quantity, unitPri
   });
 }
 
-function addFixedRevenueDetail(details, { group, item, enabled, input, quantity, unitPrice, revenue }) {
-  if (!enabled || revenue <= 0) return;
-  details.push({
-    group,
-    item,
-    input,
-    quantity,
-    unitPrice,
-    cost: 0,
-    correction: 0,
-    revenue,
-    customerRevenue: revenue,
-    profit: revenue,
-  });
-}
-
 function islandSideFinishCalc(material, count, sideLengthM) {
   if (count <= 0) return { quantity: "0개", cost: 0 };
   if (material === "himacs") {
@@ -3986,15 +3972,6 @@ function calculate() {
   addModuleDetails(details, kitchenDetails(state, rates.kitchen), margin, state.corrections.option);
   addModuleDetails(details, doorDetails(state, rates.door), margin, state.corrections.option);
   addModuleDetails(details, miscDetails(state, rates.misc), margin, state.corrections.option);
-  addFixedRevenueDetail(details, {
-    group: "misc",
-    item: "기존 배관 청소",
-    enabled: state.existingPipeCleaningEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: 300000,
-    revenue: 300000,
-  });
 
   addUnitDetail(details, {
     group: "silicone",
@@ -4398,7 +4375,7 @@ function buildEstimateSnapshot(result, options = {}) {
   const savedAt = new Date().toISOString();
   const customerGroups = groupedCustomerItems(result.details, result.quoteLines);
   const customerTotal = customerGroups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
-  return {
+  const snapshot = {
     projectName: result.state.projectName,
     areaPyeong: result.state.areaPyeong,
     clientName: result.state.clientName,
@@ -4436,6 +4413,7 @@ function buildEstimateSnapshot(result, options = {}) {
       groups: customerGroups,
     },
   };
+  return applyExistingPipeCleaningAdjustment(snapshot, result.state.existingPipeCleaningEnabled);
 }
 
 const PIPE_CLEANING_ITEM_NAME = "기존 배관 청소";
@@ -4444,23 +4422,6 @@ const PIPE_CLEANING_AMOUNT = 300000;
 function cloneJson(value) {
   if (value == null) return value;
   return JSON.parse(JSON.stringify(value));
-}
-
-function pipeCleaningEnabledFromInputs(inputs = {}) {
-  return inputs.existingPipeCleaningEnabled === true;
-}
-
-function canonicalInputsExceptPipeCleaning(inputs = {}) {
-  const normalized = { ...inputs };
-  delete normalized.existingPipeCleaningEnabled;
-  return canonicalInputValues(normalized);
-}
-
-function onlyPipeCleaningChanged() {
-  if (!loadedEstimateBaseline?.estimate?.customerQuote) return false;
-  const baselineInputs = loadedEstimateBaseline.estimate.inputs || {};
-  return canonicalInputsExceptPipeCleaning(baselineInputs) === canonicalInputsExceptPipeCleaning(collectInputValues()) &&
-    pipeCleaningEnabledFromInputs(baselineInputs) !== Boolean(el.existingPipeCleaningEnabled?.checked);
 }
 
 function applyPipeCleaningToCustomerQuote(quote, enabled) {
@@ -4482,13 +4443,15 @@ function applyPipeCleaningToCustomerQuote(quote, enabled) {
     miscGroup.total = miscGroup.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     miscGroup.totalText = customerWon(miscGroup.total);
   }
-  nextQuote.groups = quoteGroupOrder.map((label) => groups.find((group) => group.label === label)).filter(Boolean);
+  nextQuote.groups = quoteGroupOrder
+    .map((label) => groups.find((group) => group.label === label))
+    .filter((group) => group && Array.isArray(group.items) && group.items.length);
   nextQuote.total = nextQuote.groups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
   nextQuote.totalText = customerWon(nextQuote.total);
   return nextQuote;
 }
 
-function derivePipeCleaningEstimateSnapshot(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) {
+function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) {
   const next = cloneJson(estimate);
   if (!next?.customerQuote) return null;
   const inputs = { ...(next.inputs || {}) };
@@ -4513,8 +4476,18 @@ function derivePipeCleaningEstimateSnapshot(estimate, enabled = Boolean(el.exist
 }
 
 function currentPipeCleaningDerivedEstimate() {
-  if (!onlyPipeCleaningChanged()) return null;
-  return derivePipeCleaningEstimateSnapshot(loadedEstimateBaseline.estimate);
+  if (!pipeCleaningAdjustmentDirty || !activeQuoteEstimate?.customerQuote) return null;
+  return activeQuoteEstimate;
+}
+
+function renderEstimateSnapshotOnly(estimate) {
+  const total = Number(estimate.total ?? estimate.customerQuote?.total) || 0;
+  setText("clientTotal", customerWon(total));
+  renderCustomerQuote(estimate);
+  renderStoredInternalSummary(estimate);
+  renderInternalRows(estimate.internalDetails || []);
+  renderPurchaseOrder(estimate);
+  lastRenderedEstimateSnapshot = estimate;
 }
 
 function renderCustomerQuoteTable(quote, rows, groupTotals) {
@@ -4790,7 +4763,7 @@ function renderPrintQuote(quote) {
 }
 
 function currentEstimateForPrint() {
-  return activeQuoteEstimate || buildEstimateSnapshot(calculateForCurrentEstimate());
+  return activeQuoteEstimate || lastRenderedEstimateSnapshot || buildEstimateSnapshot(calculateForCurrentEstimate());
 }
 
 function renderAdminDetailPrint(estimate) {
@@ -5165,6 +5138,13 @@ function render() {
   const result = calculateForCurrentEstimate();
   const { state, details, quoteLines, directCost, customerRevenue, profit, actualMargin, discountRoom, warnings, counts } = result;
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
+  const calculatedSnapshot = buildEstimateSnapshot(result);
+  const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
+  const displaySummary = displayEstimate.internalSummary || {};
+  const displayRevenue = Number(displaySummary.customerRevenue ?? displayEstimate.total ?? customerRevenue) || 0;
+  const displayCost = Number(displaySummary.directCost ?? displayEstimate.costTotal ?? directCost) || 0;
+  const displayProfit = Number(displaySummary.profit ?? profit) || 0;
+  const displayMarginRate = Number(displaySummary.marginRate ?? (actualMargin * 100)) || 0;
 
   setText("selectionCount", `${quoteLines.length}개 항목`);
   setText("cabinetSummary", state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택");
@@ -5183,30 +5163,25 @@ function render() {
       : "미선택"
   );
   setText("lightingSummary", state.standardLightingEnabled ? customerWon(groupTotalFromDetails(details, "standardLighting")) : "미선택");
-  setText("clientTotal", customerWon(customerRevenue));
+  setText("clientTotal", customerWon(displayRevenue));
+  renderCustomerQuote(displayEstimate);
 
-  if (usesStoredEstimateSnapshot && activeQuoteEstimate) {
-    renderCustomerQuote(activeQuoteEstimate);
-  } else if (!activeQuoteEstimate) {
-    renderCustomerQuote(buildEstimateSnapshot(result));
-  }
-
-  setText("internalCost", won(directCost));
-  setText("internalRevenue", customerWon(customerRevenue));
-  setText("internalProfit", won(profit));
-  setText("internalMargin", `${(actualMargin * 100).toFixed(1)}%`);
+  setText("internalCost", won(displayCost));
+  setText("internalRevenue", customerWon(displayRevenue));
+  setText("internalProfit", won(displayProfit));
+  setText("internalMargin", `${displayMarginRate.toFixed(1)}%`);
   setText("discountRoom", customerWon(discountRoom));
   setText("marginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
-  setText("adminInternalCost", won(directCost));
-  setText("adminInternalRevenue", customerWon(customerRevenue));
-  setText("adminInternalProfit", won(profit));
-  setText("adminInternalMargin", `${(actualMargin * 100).toFixed(1)}%`);
+  setText("adminInternalCost", won(displayCost));
+  setText("adminInternalRevenue", customerWon(displayRevenue));
+  setText("adminInternalProfit", won(displayProfit));
+  setText("adminInternalMargin", `${displayMarginRate.toFixed(1)}%`);
   setText("adminDiscountRoom", customerWon(discountRoom));
   setText("adminMarginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
-  renderInternalRows(details);
+  renderInternalRows(displayEstimate.internalDetails || details);
   renderWarnings(warnings);
   renderStandardCheck(state);
-  renderPurchaseOrder(buildEstimateSnapshot(result));
+  renderPurchaseOrder(displayEstimate);
 
   if (usesStoredEstimateSnapshot && activeQuoteEstimate) {
     const storedTotal = Number(activeQuoteEstimate.total ?? activeQuoteEstimate.customerQuote?.total) || 0;
@@ -5215,6 +5190,7 @@ function render() {
     renderInternalRows(activeQuoteEstimate.internalDetails || []);
     renderPurchaseOrder(activeQuoteEstimate);
   }
+  lastRenderedEstimateSnapshot = displayEstimate;
 }
 
 function refresh() {
@@ -7015,6 +6991,8 @@ function renderProjectSearchResults() {
 }
 
 function loadEstimateIntoUi(estimate) {
+  pipeCleaningAdjustmentDirty = false;
+  lastRenderedEstimateSnapshot = null;
   restoreInputValues(estimate.inputs);
   el.projectName.value = estimate.projectName || "";
   el.areaPyeong.value = estimate.areaPyeong ?? "";
@@ -7035,6 +7013,7 @@ function loadEstimateIntoUi(estimate) {
       savedAt: estimate.savedAt,
   };
   activeQuoteEstimate = displayEstimate;
+  lastRenderedEstimateSnapshot = displayEstimate;
   currentEditingEstimateId = estimate.id || null;
   loadedEstimateBaseline = {
     id: estimate.id || null,
@@ -7117,6 +7096,7 @@ function setSaveStatus(message) {
 }
 
 function handleEstimateInputChanged() {
+  pipeCleaningAdjustmentDirty = false;
   if (loadedEstimateBaseline) {
     if (loadedEstimateMatchesCurrentInputs()) {
       activeQuoteEstimate = loadedEstimateBaseline.estimate;
@@ -7129,6 +7109,18 @@ function handleEstimateInputChanged() {
     activeQuoteEstimate = null;
   }
   refresh();
+}
+
+function handleExistingPipeCleaningChanged() {
+  const enabled = Boolean(el.existingPipeCleaningEnabled?.checked);
+  const baseEstimate = activeQuoteEstimate || loadedEstimateBaseline?.estimate || lastRenderedEstimateSnapshot;
+  if (!baseEstimate?.customerQuote) return;
+  const adjustedEstimate = applyExistingPipeCleaningAdjustment(baseEstimate, enabled);
+  if (!adjustedEstimate) return;
+  activeQuoteEstimate = adjustedEstimate;
+  pipeCleaningAdjustmentDirty = true;
+  renderEstimateSnapshotOnly(adjustedEstimate);
+  setSaveStatus("기존 배관 청소 항목만 변경되었습니다. 수정 저장 전까지 원본 견적은 변경되지 않습니다.");
 }
 
 async function handleSaveEstimate(mode = "update") {
@@ -7172,6 +7164,8 @@ async function handleSaveEstimate(mode = "update") {
       inputs: currentInputKey(),
       estimate: saved,
     };
+    pipeCleaningAdjustmentDirty = false;
+    lastRenderedEstimateSnapshot = saved;
     renderCustomerQuote(saved);
     renderStoredInternalSummary(saved);
     setSaveStatus(`${formatDateTime(saved.savedAt)} ${isUpdate ? "수정 저장 완료" : "새 견적 저장 완료"}`);
@@ -7426,6 +7420,10 @@ document.addEventListener("click", (event) => {
 for (const input of Object.values(el)) {
   if (!input) continue;
   if (["projectSearch", "projectSearchResults"].includes(input.id)) continue;
+  if (input.id === "existingPipeCleaningEnabled") {
+    input.addEventListener("change", handleExistingPipeCleaningChanged);
+    continue;
+  }
   input.addEventListener("input", () => {
     normalizeIntegerInput(input);
     syncRateDirtyState(input);
