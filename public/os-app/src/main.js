@@ -5322,6 +5322,13 @@ function systemCategoryLabel(category = "") {
   return value;
 }
 
+const SYSTEM_TRADE_ORDER = ["철거", "전기·조명", "목공", "가구", "타일·욕실", "도배·필름", "바닥", "마감·기타"];
+
+function systemTradeOrderIndex(label = "") {
+  const index = SYSTEM_TRADE_ORDER.indexOf(label);
+  return index === -1 ? SYSTEM_TRADE_ORDER.length : index;
+}
+
 function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active" } = {}) {
   return [...originalCostItems.values()].filter((row) => {
     if (scope === "category" && row.category !== category) return false;
@@ -5362,6 +5369,14 @@ function systemSubcategories(category = "") {
     .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
 }
 
+function systemTradeSubcategories(tradeLabel = "") {
+  return [...new Set([...originalCostItems.values()]
+    .filter((row) => !tradeLabel || systemCategoryLabel(row.category) === tradeLabel)
+    .map((row) => row.subcategory || "")
+    .filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
+}
+
 function systemCostRowsForAccordion() {
   const keyword = costItemFilters.keyword.trim().toLowerCase();
   const rows = [...originalCostItems.values()].filter((row) => {
@@ -5388,14 +5403,13 @@ function systemCostRowsForAccordion() {
 function groupedSystemCostRows() {
   const groups = new Map();
   for (const row of systemCostRowsForAccordion()) {
-    const category = row.category || "기타";
-    if (!groups.has(category)) groups.set(category, []);
-    groups.get(category).push(row);
+    const tradeLabel = systemCategoryLabel(row.category);
+    if (!groups.has(tradeLabel)) groups.set(tradeLabel, []);
+    groups.get(tradeLabel).push(row);
   }
-  return [...groups.entries()].sort(([a], [b]) => {
-    const labelCompare = systemCategoryLabel(a).localeCompare(systemCategoryLabel(b), "ko-KR");
-    return labelCompare || String(a).localeCompare(String(b), "ko-KR");
-  });
+  return [...groups.entries()].sort(([a], [b]) =>
+    systemTradeOrderIndex(a) - systemTradeOrderIndex(b) || String(a).localeCompare(String(b), "ko-KR")
+  );
 }
 
 function costItemFormDefaults(source = {}) {
@@ -5699,7 +5713,7 @@ function renderCategoryCancelPanel() {
 function renderCostItemTools() {
   const panel = document.getElementById("systemCostItemTools");
   if (!panel) return;
-  const subcategories = systemSubcategories(expandedSystemCostCategory);
+  const subcategories = systemTradeSubcategories(expandedSystemCostCategory);
   panel.innerHTML = `
     <div class="system-operation-header">
       <h3>품목 검색·필터</h3>
@@ -5894,11 +5908,11 @@ function renderSystemCostRows() {
     panel.innerHTML = `<div class="system-empty-state">조건에 맞는 원가 품목이 없습니다.</div>`;
     return;
   }
-  if (costItemFilters.keyword && !groups.some(([category]) => category === expandedSystemCostCategory)) {
+  if (costItemFilters.keyword && !groups.some(([tradeLabel]) => tradeLabel === expandedSystemCostCategory)) {
     expandedSystemCostCategory = groups[0][0];
   }
-  panel.innerHTML = groups.map(([category, rows]) => {
-    const isOpen = expandedSystemCostCategory === category;
+  panel.innerHTML = groups.map(([tradeLabel, rows]) => {
+    const isOpen = expandedSystemCostCategory === tradeLabel;
     const draftCount = rows.filter(hasDraft).length;
     const inactiveDraftCount = rows.filter((row) => row.draft_is_active === false).length;
     const meta = [
@@ -5908,9 +5922,9 @@ function renderSystemCostRows() {
     ].filter(Boolean).join(" · ");
     return `
       <section class="system-cost-group ${isOpen ? "is-open" : ""}">
-        <button class="system-cost-group-header" type="button" data-system-cost-category="${escapeHtml(category)}" aria-expanded="${isOpen ? "true" : "false"}">
+        <button class="system-cost-group-header" type="button" data-system-cost-category="${escapeHtml(tradeLabel)}" aria-expanded="${isOpen ? "true" : "false"}">
           <span>
-            <strong>${escapeHtml(systemCategoryLabel(category))}</strong>
+            <strong>${escapeHtml(tradeLabel)}</strong>
             <small>${escapeHtml(meta)}</small>
           </span>
           <span class="system-cost-toggle">${isOpen ? "접기" : "펼치기"}</span>
