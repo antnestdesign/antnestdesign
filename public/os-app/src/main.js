@@ -865,14 +865,14 @@ function defaultContractOptionsFromEstimate(estimate, options = {}) {
     ...options,
     estimate_id: options.estimate_id || estimate?.id || null,
     admin_tasks: {
-      admin_office_filing_included: state.demolitionPermitEnabled === true,
+      admin_office_filing_included: false,
       resident_consent_included: state.demolitionConsentEnabled === true,
       permit_filing_included: state.demolitionPermitEnabled === true,
       ...(options.admin_tasks || {}),
     },
     protection_options: {
       existing_finish_protection_included: state.interiorProtectionEnabled === true,
-      existing_pipe_cleaning_included: state.moveInCleaningEnabled === true,
+      existing_pipe_cleaning_included: false,
       ...(options.protection_options || {}),
     },
   };
