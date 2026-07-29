@@ -269,6 +269,7 @@ const ids = [
   "generalWasteEnabled",
   "interiorProtectionEnabled",
   "moveInCleaningEnabled",
+  "existingPipeCleaningEnabled",
   "siliconeEnabled",
   "elasticEnabled",
   "elasticExtraRooms",
@@ -767,11 +768,9 @@ function ensureContractPackagePanel() {
             <p>체크 여부는 계약 조건과 제외사항 판단에 사용됩니다.</p>
           </div>
           <div class="contract-check-grid">
-            <label><input id="adminOfficeFilingIncluded" data-contract-check="admin_office_filing_included" type="checkbox">관리사무소 신고 포함</label>
-            <label><input id="residentConsentIncluded" data-contract-check="resident_consent_included" type="checkbox">입주민 동의 포함</label>
+            <label><input id="residentConsentIncluded" data-contract-check="resident_consent_included" type="checkbox">관리사무소 신고·입주민 동의 포함</label>
             <label><input id="permitFilingIncluded" data-contract-check="permit_filing_included" type="checkbox">인허가 신고 포함</label>
             <label><input id="existingFinishProtectionIncluded" data-contract-check="existing_finish_protection_included" type="checkbox">마감재 보양 포함</label>
-            <label><input id="existingPipeCleaningIncluded" data-contract-check="existing_pipe_cleaning_included" type="checkbox">기존 배관 청소 포함</label>
           </div>
         </section>
         <div id="contractWriteActions" class="admin-action-row contract-actions">
@@ -865,14 +864,13 @@ function defaultContractOptionsFromEstimate(estimate, options = {}) {
     ...options,
     estimate_id: options.estimate_id || estimate?.id || null,
     admin_tasks: {
-      admin_office_filing_included: false,
+      admin_office_filing_included: state.demolitionConsentEnabled === true,
       resident_consent_included: state.demolitionConsentEnabled === true,
       permit_filing_included: state.demolitionPermitEnabled === true,
       ...(options.admin_tasks || {}),
     },
     protection_options: {
       existing_finish_protection_included: state.interiorProtectionEnabled === true,
-      existing_pipe_cleaning_included: false,
       ...(options.protection_options || {}),
     },
   };
@@ -901,6 +899,7 @@ function setContractChecked(id, checked) {
 function collectContractOptionsPayload() {
   const text = (id) => document.getElementById(id)?.value?.trim() || "";
   const checked = (id) => document.getElementById(id)?.checked === true;
+  const consentIncluded = checked("residentConsentIncluded");
   return {
     contract_no: null,
     contract_info: {
@@ -921,13 +920,12 @@ function collectContractOptionsPayload() {
       phone: text("siteManagerPhone") || null,
     },
     admin_tasks: {
-      admin_office_filing_included: checked("adminOfficeFilingIncluded"),
-      resident_consent_included: checked("residentConsentIncluded"),
+      admin_office_filing_included: consentIncluded,
+      resident_consent_included: consentIncluded,
       permit_filing_included: checked("permitFilingIncluded"),
     },
     protection_options: {
       existing_finish_protection_included: checked("existingFinishProtectionIncluded"),
-      existing_pipe_cleaning_included: checked("existingPipeCleaningIncluded"),
     },
     item_options: {},
     notes: null,
@@ -962,11 +960,12 @@ function renderContractOptionsForm(estimate) {
   setContractField("siteManagerName", contractOptionValue(["site_manager", "name"]));
   setContractField("siteManagerTitle", contractOptionValue(["site_manager", "title"]));
   setContractField("siteManagerPhone", contractOptionValue(["site_manager", "phone"]));
-  setContractChecked("adminOfficeFilingIncluded", contractOptionChecked(["admin_tasks", "admin_office_filing_included"]));
-  setContractChecked("residentConsentIncluded", contractOptionChecked(["admin_tasks", "resident_consent_included"]));
+  setContractChecked("residentConsentIncluded", (
+    contractOptionChecked(["admin_tasks", "admin_office_filing_included"]) ||
+    contractOptionChecked(["admin_tasks", "resident_consent_included"])
+  ));
   setContractChecked("permitFilingIncluded", contractOptionChecked(["admin_tasks", "permit_filing_included"]));
   setContractChecked("existingFinishProtectionIncluded", contractOptionChecked(["protection_options", "existing_finish_protection_included"]));
-  setContractChecked("existingPipeCleaningIncluded", contractOptionChecked(["protection_options", "existing_pipe_cleaning_included"]));
   document.querySelectorAll("#contractOptionsForm input, #contractOptionsForm select, #contractOptionsForm textarea").forEach((node) => {
     if (node.readOnly) return;
     node.disabled = !editable;
@@ -2383,6 +2382,7 @@ function repairStaticKoreanLabels() {
     generalWasteEnabled: "일반 폐기물",
     interiorProtectionEnabled: "세대 내 보양비",
     moveInCleaningEnabled: "입주청소",
+    existingPipeCleaningEnabled: "기존 배관 청소 추가 (+300,000원)",
     siliconeEnabled: "실리콘",
     elasticEnabled: "탄성(기본 2개소)",
     elasticExtraRooms: "탄성 추가 개소",
@@ -2982,6 +2982,7 @@ function readState() {
     generalWasteEnabled: finishSection && checkedValue("generalWasteEnabled"),
     interiorProtectionEnabled: finishSection && checkedValue("interiorProtectionEnabled"),
     moveInCleaningEnabled: finishSection && checkedValue("moveInCleaningEnabled"),
+    existingPipeCleaningEnabled: finishSection && checkedValue("existingPipeCleaningEnabled"),
     siliconeEnabled: finishSection && checkedValue("siliconeEnabled"),
     elasticEnabled: finishSection && checkedValue("elasticEnabled"),
     elasticExtraRooms: integerValue("elasticExtraRooms"),
@@ -3109,6 +3110,22 @@ function addUnitDetail(details, { group, item, enabled, input, quantity, unitPri
   });
 }
 
+function addFixedRevenueDetail(details, { group, item, enabled, input, quantity, unitPrice, revenue }) {
+  if (!enabled || revenue <= 0) return;
+  details.push({
+    group,
+    item,
+    input,
+    quantity,
+    unitPrice,
+    cost: 0,
+    correction: 0,
+    revenue,
+    customerRevenue: revenue,
+    profit: revenue,
+  });
+}
+
 function islandSideFinishCalc(material, count, sideLengthM) {
   if (count <= 0) return { quantity: "0개", cost: 0 };
   if (material === "himacs") {
@@ -3202,6 +3219,7 @@ const customerItemNames = {
   "바닥 시공": "바닥(AND표준 마루)",
   "일반 폐기물": "폐기물 처리",
   "입주청소": "준공 청소",
+  "기존 배관 청소": "기존 배관 청소",
 };
 function customerItemName(item) {
   if (customerItemNames[item]) return customerItemNames[item];
@@ -3960,6 +3978,15 @@ function calculate() {
   addModuleDetails(details, kitchenDetails(state, rates.kitchen), margin, state.corrections.option);
   addModuleDetails(details, doorDetails(state, rates.door), margin, state.corrections.option);
   addModuleDetails(details, miscDetails(state, rates.misc), margin, state.corrections.option);
+  addFixedRevenueDetail(details, {
+    group: "misc",
+    item: "기존 배관 청소",
+    enabled: state.existingPipeCleaningEnabled,
+    input: "1식",
+    quantity: "1식",
+    unitPrice: 300000,
+    revenue: 300000,
+  });
 
   addUnitDetail(details, {
     group: "silicone",
@@ -4977,6 +5004,7 @@ function renderStandardCheck(state) {
     ["일반 폐기물", state.generalWasteEnabled],
     ["세대 내 보양", state.interiorProtectionEnabled],
     ["입주청소", state.moveInCleaningEnabled],
+    ["기존 배관 청소", state.existingPipeCleaningEnabled],
     ["중문", state.middleDoorUnits > 0],
     ["일반도어", state.standardDoorUnits > 0],
     ["슬라이딩도어", state.slidingDoorUnits > 0],
