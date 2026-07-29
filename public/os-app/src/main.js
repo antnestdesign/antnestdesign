@@ -4636,6 +4636,14 @@ function renderAdminMarginTable(estimate) {
     <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
     <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
   `;
+  const estimateCustomer = Number(estimate.total ?? estimate.customerQuote?.total ?? estimate.internalSummary?.customerRevenue) || 0;
+  const estimateCost = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
+  if (Math.abs(totalCustomer - estimateCustomer) >= 1 || Math.abs(totalCost - estimateCost) >= 1) {
+    groupTotals.insertAdjacentHTML(
+      "beforeend",
+      `<div class="warning-item">내부 상세 합계와 전체 견적 합계가 일치하지 않습니다.</div>`,
+    );
+  }
 }
 
 function renderStoredInternalSummary(estimate) {
