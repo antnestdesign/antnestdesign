@@ -698,7 +698,7 @@ begin
   end if;
 
   select encode(
-    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),
+    extensions.digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'::text),
     'hex'
   )
   into v_manifest_hash
@@ -919,9 +919,9 @@ begin
   end if;
 
   v_source_hash := encode(
-    digest(
+    extensions.digest(
       (v_package_id::text || ':' || v_change_version::text || ':' || coalesce((p_payload->'pending_snapshot')::text, '{}')),
-      'sha256'
+      'sha256'::text
     ),
     'hex'
   );
@@ -1057,7 +1057,7 @@ begin
   end if;
 
   select encode(
-    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),
+    extensions.digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'::text),
     'hex'
   )
   into v_manifest_hash
@@ -1286,7 +1286,7 @@ begin
     'package_manifest_hash', v_pending_package.package_manifest_hash
   );
 
-  v_approval_hash := encode(digest(v_approval_snapshot::text, 'sha256'), 'hex');
+  v_approval_hash := encode(extensions.digest(v_approval_snapshot::text, 'sha256'::text), 'hex');
 
   insert into public.change_order_approvals (
     change_order_id,
