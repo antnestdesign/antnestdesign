@@ -1429,6 +1429,22 @@ th:last-child {
   margin-top: 0;
 }
 
+.contract-list-search {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 8px;
+}
+
+.contract-list-search input {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: var(--panel);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
 #contractPackageStatus[data-status="success"] {
   color: #137333;
 }
@@ -1518,6 +1534,10 @@ th:last-child {
   min-width: 760px;
 }
 
+.contract-package-search-table {
+  min-width: 1180px;
+}
+
 .contract-print-actions {
   padding: 0;
 }
@@ -1537,6 +1557,7 @@ th:last-child {
   .cost-item-filter-grid,
   .cost-item-form-grid,
   .contract-form-grid,
+  .contract-list-search,
   .contract-check-grid {
     grid-template-columns: 1fr;
   }

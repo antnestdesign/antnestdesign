@@ -45,8 +45,9 @@ export type ContractOptionsPayload = {
 const MAX_JSON_BYTES = 120_000;
 const MAX_ARRAY_ITEMS = 300;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const CONTRACT_NO_PATTERN = /^[A-Za-z0-9가-힣._-]{1,50}$/;
+const CONTRACT_NO_PATTERN = /^AND-\d{4}-\d{2}-\d{3}$/;
 const PHONE_PATTERN = /^[0-9+\-()\s.]{0,30}$/;
+const CONTRACT_NO_PLACEHOLDER = "미발급";
 
 export function assertCanWriteContractOptions(context: UserContext) {
   if (context.profile.role !== "admin" && context.profile.role !== "staff") {
@@ -63,6 +64,12 @@ export function assertCanCreateContractPreview(context: UserContext) {
 export function assertCanManageChangeOrder(context: UserContext) {
   if (context.profile.role !== "admin") {
     throw new ApiError(403, "변경견적과 변경승인은 관리자만 처리할 수 있습니다.");
+  }
+}
+
+export function assertCanCreateContractPackage(context: UserContext) {
+  if (context.profile.role !== "admin") {
+    throw new ApiError(403, "계약 패키지 저장은 관리자만 할 수 있습니다.");
   }
 }
 
@@ -189,11 +196,12 @@ function paymentSchedule(totalAmount: number, startDate: string) {
 export function normalizeContractNo(value: unknown, required = false) {
   const text = nullableString(value, 50, "계약번호");
   if (!text) {
-    if (required) throw new ApiError(400, "계약번호를 입력해 주세요.");
+    if (required) throw new ApiError(400, "계약번호가 필요합니다.");
     return null;
   }
+  if (text === CONTRACT_NO_PLACEHOLDER || text === "자동 생성") return null;
   if (!CONTRACT_NO_PATTERN.test(text)) {
-    throw new ApiError(400, "계약번호는 한글, 영문, 숫자, -, _, . 만 사용할 수 있습니다.");
+    throw new ApiError(400, "계약번호는 AND-YYYY-MM-NNN 형식이어야 합니다.");
   }
   return text;
 }
@@ -314,6 +322,127 @@ export async function assertNoContractedPackage(estimateId: string) {
     `/rest/v1/contract_package_snapshots?estimate_id=eq.${encodeURIComponent(estimateId)}&status=in.(CONTRACTED,SUPERSEDED,CANCELLED)&select=id&limit=1`,
   );
   if (rows[0]) throw new ApiError(409, "계약확정된 견적은 변경견적으로 처리해 주세요.");
+}
+
+export async function assertNoSavedContractPackage(estimateId: string) {
+  const rows = await supabaseFetch<Array<{ id: string }>>(
+    `/rest/v1/contract_package_snapshots?estimate_id=eq.${encodeURIComponent(estimateId)}&select=id&limit=1`,
+  );
+  if (rows[0]) {
+    throw new ApiError(409, "이미 저장된 계약 패키지가 있습니다. 계약 목록에서 불러와 다시 출력해 주세요.");
+  }
+}
+
+async function assertContractNoUnused(contractNo: string) {
+  const encodedNo = encodeURIComponent(contractNo);
+  const optionRows = await supabaseFetch<Array<{ id: string }>>(
+    `/rest/v1/estimate_document_options?contract_no=eq.${encodedNo}&select=id&limit=1`,
+  );
+  if (optionRows[0]) throw new ApiError(409, "이미 사용 중인 계약번호입니다.");
+  const packageRows = await supabaseFetch<Array<{ id: string }>>(
+    `/rest/v1/contract_package_snapshots?contract_no=eq.${encodedNo}&select=id&limit=1`,
+  );
+  if (packageRows[0]) throw new ApiError(409, "이미 사용 중인 계약번호입니다.");
+}
+
+function seoulYearMonth(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value || String(date.getUTCFullYear());
+  const month = parts.find((part) => part.type === "month")?.value || String(date.getUTCMonth() + 1).padStart(2, "0");
+  return { year, month };
+}
+
+export async function generateNextContractNo(date = new Date()) {
+  const { year, month } = seoulYearMonth(date);
+  const prefix = `AND-${year}-${month}-`;
+  const rows = await supabaseFetch<Array<{ contract_no: string }>>(
+    `/rest/v1/contract_package_snapshots?contract_no=like.${encodeURIComponent(`${prefix}*`)}&select=contract_no&order=contract_no.desc&limit=1`,
+  );
+  const latest = rows[0]?.contract_no || "";
+  const latestSeq = latest.startsWith(prefix) ? Number(latest.slice(prefix.length)) || 0 : 0;
+  for (let seq = latestSeq + 1; seq < latestSeq + 25; seq += 1) {
+    const contractNo = `${prefix}${String(seq).padStart(3, "0")}`;
+    try {
+      await assertContractNoUnused(contractNo);
+      return contractNo;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) continue;
+      throw error;
+    }
+  }
+  throw new ApiError(409, "계약번호를 자동 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+}
+
+async function reserveContractNoForEstimate(
+  estimateId: string,
+  contractNo: string,
+  options: ContractOptionsPayload,
+  actorUserId: string,
+) {
+  const existing = await loadDocumentOptions(estimateId);
+  const rowPayload = {
+    contract_no: contractNo,
+    contract_info: {
+      ...options.contract_info,
+      contract_no: contractNo,
+    },
+    customer_info: options.customer_info,
+    contractor_info: options.contractor_info,
+    site_manager: options.site_manager,
+    admin_tasks: options.admin_tasks,
+    protection_options: options.protection_options,
+    item_options: options.item_options,
+    notes: options.notes,
+    updated_by: actorUserId,
+  };
+  const rows = existing
+    ? await supabaseFetch<Array<Record<string, unknown>>>(
+      `/rest/v1/estimate_document_options?estimate_id=eq.${encodeURIComponent(estimateId)}&select=*`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(rowPayload),
+      },
+    )
+    : await supabaseFetch<Array<Record<string, unknown>>>(
+      "/rest/v1/estimate_document_options?select=*",
+      {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          estimate_id: estimateId,
+          ...rowPayload,
+          created_by: actorUserId,
+        }),
+      },
+    );
+  return rows[0] || null;
+}
+
+export async function issueContractNoForEstimate(
+  estimateId: string,
+  options: ContractOptionsPayload,
+  actorUserId: string,
+) {
+  if (options.contract_no) {
+    await reserveContractNoForEstimate(estimateId, options.contract_no, options, actorUserId);
+    return options.contract_no;
+  }
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const contractNo = await generateNextContractNo();
+    try {
+      await reserveContractNoForEstimate(estimateId, contractNo, options, actorUserId);
+      return contractNo;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) continue;
+      throw error;
+    }
+  }
+  throw new ApiError(409, "계약번호를 자동 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 }
 
 async function loadActiveSpecs() {
@@ -449,26 +578,38 @@ function optionsFromSaved(savedOptions: Record<string, unknown> | null): Contrac
   };
 }
 
-export async function buildContractPackageSnapshot(estimateId: string, optionsOverride?: ContractOptionsPayload) {
+export async function buildContractPackageSnapshot(
+  estimateId: string,
+  optionsOverride?: ContractOptionsPayload,
+  assignedContractNo?: string | null,
+) {
   const estimate = await loadEstimateRow(estimateId);
   const savedOptions = await loadDocumentOptions(estimateId);
   const options = {
     ...optionsFromSaved(savedOptions),
     ...optionsOverride,
   };
-  const contractNo = normalizeContractNo(options.contract_no, true);
+  const contractNo = normalizeContractNo(assignedContractNo ?? options.contract_no) || CONTRACT_NO_PLACEHOLDER;
   const estimateSnapshot = limitedEstimateSnapshot(estimate);
   const specs = await loadActiveSpecs();
   const specSnapshot = buildSpecSnapshot(estimateSnapshot.quote_items, specs);
   const clauseSnapshot = evaluateClauses(options);
+  const resolvedOptions: ContractOptionsPayload = {
+    ...options,
+    contract_no: contractNo,
+    contract_info: {
+      ...options.contract_info,
+      contract_no: contractNo,
+    },
+  };
   const totalAmount = numberValue(estimateSnapshot.total_price);
-  const startDate = stringValue(options.contract_info.start_date);
+  const startDate = stringValue(resolvedOptions.contract_info.start_date);
   const snapshot = {
     estimate_id: estimate.id,
     estimate_revision: estimateSnapshot.estimate_revision,
     contract_no: contractNo,
     contract_info: {
-      ...options.contract_info,
+      ...resolvedOptions.contract_info,
       contract_no: contractNo,
       project_name: estimateSnapshot.project_name,
       site_address: estimateSnapshot.site_address,
@@ -479,14 +620,14 @@ export async function buildContractPackageSnapshot(estimateId: string, optionsOv
       customer: {
         name: estimateSnapshot.customer_name,
         phone: estimateSnapshot.customer_phone,
-        address: stringValue(options.customer_info.customer_address),
-        email: stringValue(options.customer_info.customer_email),
+        address: stringValue(resolvedOptions.customer_info.customer_address),
+        email: stringValue(resolvedOptions.customer_info.customer_email),
       },
-      contractor: options.contractor_info,
+      contractor: resolvedOptions.contractor_info,
     },
-    site_manager: options.site_manager,
+    site_manager: resolvedOptions.site_manager,
     estimate_snapshot: estimateSnapshot,
-    document_options_snapshot: options,
+    document_options_snapshot: resolvedOptions,
     spec_snapshot: specSnapshot,
     clause_snapshot: clauseSnapshot,
     payment_schedule: paymentSchedule(totalAmount, startDate),

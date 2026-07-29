@@ -7,12 +7,15 @@ import {
   writeAuditLog,
 } from "../_lib/server";
 import {
-  assertCanCreateContractPreview,
+  assertCanCreateContractPackage,
   assertContractNoAvailable,
   assertPackageEstimateScope,
   assertUuid,
   buildContractDocuments,
   buildContractPackageSnapshot,
+  assertNoContractedPackage,
+  assertNoSavedContractPackage,
+  issueContractNoForEstimate,
   normalizeContractOptions,
   projectContractPackage,
   requireEstimateScopeForStaff,
@@ -26,6 +29,7 @@ export async function GET(request: NextRequest) {
     const estimateId = url.searchParams.get("estimateId")
       ? assertUuid(url.searchParams.get("estimateId"), "저장 견적 ID")
       : null;
+    const keyword = (url.searchParams.get("q") || "").trim().toLowerCase();
     requireEstimateScopeForStaff(context, estimateId);
     const filters = [
       "select=*,contract_document_versions(*)",
@@ -35,7 +39,37 @@ export async function GET(request: NextRequest) {
     const rows = await supabaseFetch<Array<Record<string, unknown>>>(
       `/rest/v1/contract_package_snapshots?${filters.join("&")}`,
     );
-    return json(sanitizePackageList(rows, context.profile.role));
+    const filteredRows = keyword
+      ? rows.filter((row) => {
+        const contractInfo = row.contract_info && typeof row.contract_info === "object"
+          ? row.contract_info as Record<string, unknown>
+          : {};
+        const estimateSnapshot = row.estimate_snapshot && typeof row.estimate_snapshot === "object"
+          ? row.estimate_snapshot as Record<string, unknown>
+          : {};
+        const partiesInfo = row.parties_info && typeof row.parties_info === "object"
+          ? row.parties_info as Record<string, unknown>
+          : {};
+        const customer = partiesInfo.customer && typeof partiesInfo.customer === "object"
+          ? partiesInfo.customer as Record<string, unknown>
+          : {};
+        const haystack = [
+          row.contract_no,
+          contractInfo.project_name,
+          contractInfo.site_address,
+          contractInfo.construction_type,
+          estimateSnapshot.project_name,
+          estimateSnapshot.customer_name,
+          estimateSnapshot.customer_phone,
+          estimateSnapshot.site_address,
+          customer.name,
+          customer.phone,
+          customer.address,
+        ].map((value) => String(value || "").toLowerCase()).join(" ");
+        return haystack.includes(keyword);
+      })
+      : rows;
+    return json(sanitizePackageList(filteredRows, context.profile.role));
   } catch (error) {
     return errorResponse(error);
   }
@@ -44,14 +78,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const context = await getUserContext(request);
-    assertCanCreateContractPreview(context);
+    assertCanCreateContractPackage(context);
     const body = (await request.json()) as Record<string, unknown>;
     const estimateId = assertUuid(body.estimate_id, "저장 견적 ID");
+    await assertNoContractedPackage(estimateId);
+    await assertNoSavedContractPackage(estimateId);
     const options = body.options && typeof body.options === "object"
       ? normalizeContractOptions(body.options as Record<string, unknown>)
-      : undefined;
-    if (options?.contract_no) await assertContractNoAvailable(estimateId, options.contract_no);
-    const snapshot = await buildContractPackageSnapshot(estimateId, options);
+      : normalizeContractOptions({});
+    const contractNo = await issueContractNoForEstimate(estimateId, options, context.authUser.id);
+    if (options.contract_no) await assertContractNoAvailable(estimateId, options.contract_no);
+    const snapshot = await buildContractPackageSnapshot(estimateId, options, contractNo);
     const documents = buildContractDocuments(snapshot);
     const rows = await supabaseFetch<Array<Record<string, unknown>>>(
       "/rest/v1/rpc/create_contract_package_snapshot",

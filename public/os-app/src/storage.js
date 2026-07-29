@@ -115,9 +115,12 @@ export async function saveContractOptions(estimateId, payload) {
   });
 }
 
-export async function loadContractPackages(estimateId) {
-  const query = estimateId ? `?${new URLSearchParams({ estimateId }).toString()}` : "";
-  return requestOsApi(`/contract-packages${query}`);
+export async function loadContractPackages(estimateId, params = {}) {
+  const query = new URLSearchParams();
+  if (estimateId) query.set("estimateId", estimateId);
+  if (params.q) query.set("q", params.q);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestOsApi(`/contract-packages${suffix}`);
 }
 
 export async function loadContractPackage(packageId, estimateId) {
@@ -127,6 +130,13 @@ export async function loadContractPackage(packageId, estimateId) {
 
 export async function previewContractPackage(estimateId, options) {
   return requestOsApi("/contract-packages/preview", {
+    method: "POST",
+    body: JSON.stringify({ estimate_id: estimateId, options }),
+  });
+}
+
+export async function createContractPackage(estimateId, options) {
+  return requestOsApi("/contract-packages", {
     method: "POST",
     body: JSON.stringify({ estimate_id: estimateId, options }),
   });
