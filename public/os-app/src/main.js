@@ -855,6 +855,34 @@ function contractOptionChecked(path) {
   return contractNested(path, false) === true;
 }
 
+function estimateOptionState(estimate) {
+  return estimate?.inputs && typeof estimate.inputs === "object" ? estimate.inputs : estimate || {};
+}
+
+function defaultContractOptionsFromEstimate(estimate, options = {}) {
+  const state = estimateOptionState(estimate);
+  return {
+    ...options,
+    estimate_id: options.estimate_id || estimate?.id || null,
+    admin_tasks: {
+      admin_office_filing_included: state.demolitionPermitEnabled === true,
+      resident_consent_included: state.demolitionConsentEnabled === true,
+      permit_filing_included: state.demolitionPermitEnabled === true,
+      ...(options.admin_tasks || {}),
+    },
+    protection_options: {
+      existing_finish_protection_included: state.interiorProtectionEnabled === true,
+      existing_pipe_cleaning_included: state.moveInCleaningEnabled === true,
+      ...(options.protection_options || {}),
+    },
+  };
+}
+
+function resolveContractOptionsForEstimate(options, estimate) {
+  if (options?.id) return options;
+  return defaultContractOptionsFromEstimate(estimate, options || {});
+}
+
 function areaM2Text(areaPyeong) {
   const area = Number(areaPyeong) || 0;
   return area ? `${(area * 3.3058).toFixed(2)}㎡` : "-";
@@ -1782,7 +1810,7 @@ async function refreshContractPackagePanel(estimate = selectedContractEstimate()
       loadContractOptions(estimate.id),
       loadContractPackages(estimate.id),
     ]);
-    contractOptionsState = options || { estimate_id: estimate.id };
+    contractOptionsState = resolveContractOptionsForEstimate(options, estimate);
     contractPackagesState = Array.isArray(packages) ? packages : [];
     contractPreviewState = null;
     contractOptionsDirty = false;
