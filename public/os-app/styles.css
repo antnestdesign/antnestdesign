@@ -954,6 +954,70 @@ th:last-child {
   overflow-x: auto;
 }
 
+.system-cost-accordion {
+  display: grid;
+  gap: 10px;
+}
+
+.system-cost-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.system-cost-group-header {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 0;
+  background: #f8faf9;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.system-cost-group-header strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.system-cost-group-header small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.system-cost-group.is-open .system-cost-group-header {
+  border-bottom: 1px solid var(--line);
+}
+
+.system-cost-toggle {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.system-empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .system-cost-table th,
 .system-cost-table td {
   white-space: nowrap;
@@ -977,40 +1041,45 @@ th:last-child {
 }
 
 .system-cost-table th:nth-child(2),
-.system-cost-table td:nth-child(2),
+.system-cost-table td:nth-child(2) {
+  width: 88px;
+}
+
 .system-cost-table th:nth-child(3),
 .system-cost-table td:nth-child(3) {
-  width: 78px;
+  width: 54px;
 }
 
 .system-cost-table th:nth-child(4),
 .system-cost-table td:nth-child(4),
 .system-cost-table th:nth-child(5),
 .system-cost-table td:nth-child(5) {
-  width: 72px;
+  width: 78px;
 }
 
 .system-cost-table th:nth-child(6),
-.system-cost-table td:nth-child(6) {
-  width: 58px;
-}
-
+.system-cost-table td:nth-child(6),
 .system-cost-table th:nth-child(7),
 .system-cost-table td:nth-child(7) {
-  width: 120px;
+  width: 72px;
 }
 
 .system-cost-table th:nth-child(8),
-.system-cost-table td:nth-child(8),
+.system-cost-table td:nth-child(8) {
+  width: 58px;
+}
+
 .system-cost-table th:nth-child(9),
 .system-cost-table td:nth-child(9),
 .system-cost-table th:nth-child(10),
-.system-cost-table td:nth-child(10) {
+.system-cost-table td:nth-child(10),
+.system-cost-table th:nth-child(11),
+.system-cost-table td:nth-child(11) {
   width: 82px;
 }
 
-.system-cost-table th:nth-child(11),
-.system-cost-table td:nth-child(11) {
+.system-cost-table th:nth-child(12),
+.system-cost-table td:nth-child(12) {
   width: 140px;
 }
 

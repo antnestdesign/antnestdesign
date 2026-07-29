@@ -446,6 +446,7 @@ let snapshotCalculationMissingItems = [];
 let costItemEditorMode = null;
 let costItemEditorSourceCode = null;
 let costItemActionBusy = false;
+let expandedSystemCostCategory = "";
 let costItemFilters = {
   keyword: "",
   category: "",
@@ -5310,6 +5311,17 @@ function systemCategories() {
     .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
 }
 
+function systemCategoryLabel(category = "") {
+  const value = category || "기타";
+  if (["가구", "철거", "목공", "바닥"].includes(value)) return value;
+  if (["전기", "조명"].includes(value)) return "전기·조명";
+  if (["욕실", "타일"].includes(value)) return "타일·욕실";
+  if (["도배", "필름"].includes(value)) return "도배·필름";
+  if (["도어", "중문", "창호"].includes(value)) return "도어·창호";
+  if (["마감", "기타", "상판", "설비", "인허가"].includes(value)) return "마감·기타";
+  return value;
+}
+
 function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active" } = {}) {
   return [...originalCostItems.values()].filter((row) => {
     if (scope === "category" && row.category !== category) return false;
@@ -5350,14 +5362,13 @@ function systemSubcategories(category = "") {
     .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
 }
 
-function filteredSystemCostItems() {
+function systemCostRowsForAccordion() {
   const keyword = costItemFilters.keyword.trim().toLowerCase();
   const rows = [...originalCostItems.values()].filter((row) => {
     if (keyword) {
       const haystack = `${row.item_code || ""} ${row.item_name || ""}`.toLowerCase();
       if (!haystack.includes(keyword)) return false;
     }
-    if (costItemFilters.category && row.category !== costItemFilters.category) return false;
     if (costItemFilters.subcategory && row.subcategory !== costItemFilters.subcategory) return false;
     if (costItemFilters.active === "active" && !row.is_active) return false;
     if (costItemFilters.active === "inactive" && row.is_active) return false;
@@ -5371,6 +5382,19 @@ function filteredSystemCostItems() {
       return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
     }
     return (a.sort_order || 0) - (b.sort_order || 0);
+  });
+}
+
+function groupedSystemCostRows() {
+  const groups = new Map();
+  for (const row of systemCostRowsForAccordion()) {
+    const category = row.category || "기타";
+    if (!groups.has(category)) groups.set(category, []);
+    groups.get(category).push(row);
+  }
+  return [...groups.entries()].sort(([a], [b]) => {
+    const labelCompare = systemCategoryLabel(a).localeCompare(systemCategoryLabel(b), "ko-KR");
+    return labelCompare || String(a).localeCompare(String(b), "ko-KR");
   });
 }
 
@@ -5545,9 +5569,7 @@ function ensureSystemManagementShell() {
         <div id="systemBulkMarginPanel" class="system-operation-panel"></div>
         <div id="systemCostItemTools" class="system-operation-panel"></div>
         <div id="systemCostItemEditor" class="system-operation-panel" hidden></div>
-        <div class="table-wrap system-cost-wrap"><table class="system-cost-table"><thead><tr>
-          <th>품목명</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>카테고리</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>상태</th><th>최근 수정일</th><th class="admin-system-only">작업</th>
-        </tr></thead><tbody id="systemCostRows"></tbody></table></div>
+        <div id="systemCostAccordion" class="system-cost-accordion"></div>
       </section>
       <section class="internal-card system-publish-card">
         <div class="section-heading compact-heading no-side-padding">
@@ -5677,8 +5699,7 @@ function renderCategoryCancelPanel() {
 function renderCostItemTools() {
   const panel = document.getElementById("systemCostItemTools");
   if (!panel) return;
-  const categories = systemCategories();
-  const subcategories = systemSubcategories(costItemFilters.category);
+  const subcategories = systemSubcategories(expandedSystemCostCategory);
   panel.innerHTML = `
     <div class="system-operation-header">
       <h3>품목 검색·필터</h3>
@@ -5687,12 +5708,6 @@ function renderCostItemTools() {
     <div class="system-bulk-grid cost-item-filter-grid">
       <label>검색
         <input id="costItemSearch" type="search" value="${escapeHtml(costItemFilters.keyword)}" placeholder="품목명 또는 코드">
-      </label>
-      <label>대분류
-        <select id="costItemCategoryFilter">
-          <option value="">전체</option>
-          ${categories.map((item) => `<option value="${escapeHtml(item)}" ${costItemFilters.category === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
-        </select>
       </label>
       <label>중분류
         <select id="costItemSubcategoryFilter">
@@ -5827,15 +5842,7 @@ function renderCostItemEditor() {
     </form>`;
 }
 
-function renderSystemCostRows() {
-  const tbody = document.getElementById("systemCostRows");
-  if (!tbody) return;
-  const rows = filteredSystemCostItems();
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="12">조건에 맞는 원가 품목이 없습니다.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = rows.map((row) => {
+function systemCostRowHtml(row) {
     const dirty = hasDraft(row);
     const draftCost = row.draft_cost_price ?? "";
     const draftMargin = row.draft_margin_rate ?? 0.3;
@@ -5863,18 +5870,61 @@ function renderSystemCostRows() {
     return `
       <tr class="${dirty ? "system-dirty-row" : ""} ${row.is_pending_new ? "system-pending-row" : ""}">
         <td>${escapeHtml(row.item_name || row.itemCode)}</td>
+        <td>${escapeHtml(row.subcategory || "-")}</td>
+        <td>${escapeHtml(row.unit || "-")}</td>
         <td>${won(row.cost_price)}</td>
         <td>${draftCostCell}</td>
         <td>${percentText(row.default_margin_rate)}</td>
         <td>${draftMarginCell}</td>
         <td class="admin-system-only">${actionCell}</td>
-        <td>${escapeHtml(row.category || "-")}</td>
         <td>${row.is_active ? "활성" : "비활성"}</td>
         <td>${draftActiveCell}</td>
         <td>${stateLabel}</td>
         <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
         <td class="admin-system-only">${managementActions}</td>
       </tr>`;
+}
+
+function renderSystemCostRows() {
+  const panel = document.getElementById("systemCostAccordion");
+  if (!panel) return;
+  const groups = groupedSystemCostRows();
+  if (!groups.length) {
+    expandedSystemCostCategory = "";
+    panel.innerHTML = `<div class="system-empty-state">조건에 맞는 원가 품목이 없습니다.</div>`;
+    return;
+  }
+  if (costItemFilters.keyword && !groups.some(([category]) => category === expandedSystemCostCategory)) {
+    expandedSystemCostCategory = groups[0][0];
+  }
+  panel.innerHTML = groups.map(([category, rows]) => {
+    const isOpen = expandedSystemCostCategory === category;
+    const draftCount = rows.filter(hasDraft).length;
+    const inactiveDraftCount = rows.filter((row) => row.draft_is_active === false).length;
+    const meta = [
+      `${rows.length.toLocaleString("ko-KR")}개 항목`,
+      draftCount ? `변경 예정 ${draftCount.toLocaleString("ko-KR")}개` : "",
+      inactiveDraftCount ? `비활성 예정 ${inactiveDraftCount.toLocaleString("ko-KR")}개` : "",
+    ].filter(Boolean).join(" · ");
+    return `
+      <section class="system-cost-group ${isOpen ? "is-open" : ""}">
+        <button class="system-cost-group-header" type="button" data-system-cost-category="${escapeHtml(category)}" aria-expanded="${isOpen ? "true" : "false"}">
+          <span>
+            <strong>${escapeHtml(systemCategoryLabel(category))}</strong>
+            <small>${escapeHtml(meta)}</small>
+          </span>
+          <span class="system-cost-toggle">${isOpen ? "접기" : "펼치기"}</span>
+        </button>
+        ${isOpen ? `
+          <div class="table-wrap system-cost-wrap">
+            <table class="system-cost-table">
+              <thead><tr>
+                <th>품목명</th><th>세부분류</th><th>단위</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>상태</th><th>최근 수정일</th><th class="admin-system-only">작업</th>
+              </tr></thead>
+              <tbody>${rows.map(systemCostRowHtml).join("")}</tbody>
+            </table>
+          </div>` : ""}
+      </section>`;
   }).join("");
 }
 function draftChangeText(row) {
@@ -6601,14 +6651,18 @@ async function createDeactivateDraft(itemCode) {
 }
 
 function updateCostItemFilters() {
+  const previousKeyword = costItemFilters.keyword;
   costItemFilters = {
     keyword: document.getElementById("costItemSearch")?.value || "",
-    category: document.getElementById("costItemCategoryFilter")?.value || "",
+    category: "",
     subcategory: document.getElementById("costItemSubcategoryFilter")?.value || "",
     active: document.getElementById("costItemActiveFilter")?.value || "all",
     state: document.getElementById("costItemStateFilter")?.value || "all",
     sort: document.getElementById("costItemSortFilter")?.value || "sort",
   };
+  if (costItemFilters.keyword && costItemFilters.keyword !== previousKeyword) {
+    expandedSystemCostCategory = "";
+  }
   renderCostItemTools();
   renderSystemCostRows();
 }
@@ -7313,6 +7367,16 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("[data-system-cost-category]");
+  if (!button) return;
+  const category = button.dataset.systemCostCategory || "";
+  expandedSystemCostCategory = expandedSystemCostCategory === category ? "" : category;
+  costItemFilters.subcategory = "";
+  renderCostItemTools();
+  renderSystemCostRows();
+});
+
+document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("[data-user-action]");
   if (!button) return;
   event.preventDefault();
@@ -7372,7 +7436,7 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
-  if (event.target?.matches?.("#costItemCategoryFilter, #costItemSubcategoryFilter, #costItemActiveFilter, #costItemStateFilter, #costItemSortFilter")) {
+  if (event.target?.matches?.("#costItemSubcategoryFilter, #costItemActiveFilter, #costItemStateFilter, #costItemSortFilter")) {
     updateCostItemFilters();
   }
   if (event.target?.matches?.("#costItemCategory")) {
