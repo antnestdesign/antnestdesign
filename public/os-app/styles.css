@@ -1018,6 +1018,103 @@ th:last-child {
   font-size: 13px;
 }
 
+.admin-estimate-detail-row > td {
+  background: #f8faf9;
+  padding: 14px;
+}
+
+.admin-estimate-detail-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-estimate-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.admin-estimate-summary-grid div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.admin-estimate-summary-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-estimate-summary-grid strong {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.admin-estimate-warning {
+  border: 1px solid #e4b258;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #6b4b0f;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.admin-trade-accordion {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-trade-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.admin-trade-header {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-trade-header strong,
+.admin-trade-header small {
+  display: block;
+  letter-spacing: 0;
+}
+
+.admin-trade-header small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-trade-group.is-open .admin-trade-header {
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-trade-detail table {
+  min-width: 960px;
+}
+
 .system-cost-table th,
 .system-cost-table td {
   white-space: nowrap;

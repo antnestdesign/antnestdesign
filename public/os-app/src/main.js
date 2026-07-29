@@ -438,6 +438,9 @@ let projectContractPackageMap = new Map();
 let projectContractPackageMapLoaded = false;
 let contractPackageSearchKeyword = "";
 let loadedContractEstimateState = null;
+let expandedAdminEstimateId = null;
+let expandedAdminTradeKey = null;
+const adminEstimateDetailCache = new Map();
 let contractPreviewState = null;
 let contractOptionsDirty = false;
 let contractSelectedDocumentType = "CONTRACT";
@@ -4565,7 +4568,7 @@ function buildAdminMarginGroups(estimate) {
   const details = estimate.internalDetails || [];
   const groups = new Map();
   const ensureGroup = (label) => {
-    if (!groups.has(label)) groups.set(label, { label, cost: 0, customer: 0 });
+    if (!groups.has(label)) groups.set(label, { label, cost: 0, customer: 0, count: 0, details: [] });
     return groups.get(label);
   };
 
@@ -4576,9 +4579,15 @@ function buildAdminMarginGroups(estimate) {
     group.customer += Number.isFinite(detail.customerRevenue)
       ? detail.customerRevenue
       : floorThousand(Number(detail.revenue) || 0);
+    group.count += 1;
+    group.details.push(detail);
   }
 
-  return quoteGroupOrder
+  const orderedLabels = [
+    ...quoteGroupOrder,
+    ...[...groups.keys()].filter((label) => !quoteGroupOrder.includes(label)),
+  ];
+  return orderedLabels
     .map((label) => groups.get(label))
     .filter((group) => group && (Math.abs(group.customer) >= 1 || Math.abs(group.cost) >= 1))
     .map((group) => {
@@ -4586,6 +4595,120 @@ function buildAdminMarginGroups(estimate) {
       const marginRate = group.customer > 0 ? profit / group.customer : 0;
       return { ...group, profit, marginRate };
     });
+}
+
+function storedEstimateSummary(estimate) {
+  const customerTotal = Number(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue) || 0;
+  const directCost = Number(estimate?.costTotal ?? estimate?.internalSummary?.directCost) || 0;
+  const profit = customerTotal - directCost;
+  const marginRate = customerTotal > 0 ? profit / customerTotal : 0;
+  const details = Array.isArray(estimate?.internalDetails) ? estimate.internalDetails : [];
+  const detailCustomerTotal = details.reduce((sum, detail) => {
+    const customer = Number.isFinite(detail.customerRevenue)
+      ? detail.customerRevenue
+      : floorThousand(Number(detail.revenue) || 0);
+    return sum + (Number(customer) || 0);
+  }, 0);
+  const detailCostTotal = details.reduce((sum, detail) => sum + (Number(detail.cost) || 0), 0);
+  return {
+    customerTotal,
+    directCost,
+    profit,
+    marginRate,
+    detailCount: details.length,
+    detailCustomerTotal,
+    detailCostTotal,
+    customerDiff: detailCustomerTotal - customerTotal,
+    costDiff: detailCostTotal - directCost,
+  };
+}
+
+function renderAdminEstimateDetailPanel(estimate) {
+  if (!estimate) return `<div class="admin-estimate-detail-error">내부견적 상세를 불러오지 못했습니다.</div>`;
+  const summary = storedEstimateSummary(estimate);
+  const groups = buildAdminMarginGroups(estimate);
+  const hasMismatch = Math.abs(summary.customerDiff) >= 1 || Math.abs(summary.costDiff) >= 1;
+  const warning = hasMismatch ? `
+    <div class="admin-estimate-warning">
+      내부 상세 합계와 전체 견적 합계가 일치하지 않습니다.
+      <span>고객가 차이: ${customerWon(summary.customerDiff)}</span>
+      <span>직접원가 차이: ${won(summary.costDiff)}</span>
+    </div>
+  ` : "";
+  return `
+    <div class="admin-estimate-detail-panel">
+      <div class="admin-estimate-summary-grid">
+        <div><span>고객 견적 총액</span><strong>${customerWon(summary.customerTotal)}</strong></div>
+        <div><span>직접원가 합계</span><strong>${won(summary.directCost)}</strong></div>
+        <div><span>예상 이익</span><strong>${won(summary.profit)}</strong></div>
+        <div><span>전체 마진율</span><strong>${(summary.marginRate * 100).toFixed(1)}%</strong></div>
+        <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
+      </div>
+      ${warning}
+      <div class="admin-trade-accordion">
+        ${groups.length ? groups.map((group, index) => renderAdminTradeGroup(group, index)).join("") : `<div class="system-empty-state">표시할 내부견적 상세가 없습니다.</div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminTradeGroup(group, index) {
+  const key = String(index);
+  const open = expandedAdminTradeKey === key;
+  const details = Array.isArray(group.details) ? group.details : [];
+  return `
+    <section class="admin-trade-group${open ? " is-open" : ""}">
+      <button class="admin-trade-header" type="button" data-toggle-internal-trade="${key}">
+        <span>
+          <strong>${escapeHtml(group.label)}</strong>
+          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${won(group.cost)} · 이익 ${won(group.profit)} · 마진율 ${(group.marginRate * 100).toFixed(1)}%</small>
+        </span>
+        <span class="system-cost-toggle">${open ? "접기" : "펼치기"}</span>
+      </button>
+      ${open ? `
+        <div class="admin-trade-detail table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>항목</th>
+                <th>입력값</th>
+                <th>산출량</th>
+                <th>단위 원가</th>
+                <th>직접원가</th>
+                <th>보정률</th>
+                <th>고객가</th>
+                <th>이익</th>
+                <th>마진율</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${details.map((detail) => {
+                const customer = Number.isFinite(detail.customerRevenue)
+                  ? detail.customerRevenue
+                  : floorThousand(Number(detail.revenue) || 0);
+                const cost = Number(detail.cost) || 0;
+                const profit = customer - cost;
+                const marginRate = customer > 0 ? profit / customer : 0;
+                return `
+                  <tr>
+                    <td>${escapeHtml(detail.item || "-")}</td>
+                    <td>${escapeHtml(detail.input || "-")}</td>
+                    <td>${escapeHtml(String(detail.quantity ?? "-"))}</td>
+                    <td>${won(Number(detail.unitPrice) || 0)}</td>
+                    <td>${won(cost)}</td>
+                    <td>${((Number(detail.correction) || 0) * 100).toFixed(1)}%</td>
+                    <td>${customerWon(customer)}</td>
+                    <td>${won(profit)}</td>
+                    <td>${(marginRate * 100).toFixed(1)}%</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      ` : ""}
+    </section>
+  `;
 }
 
 function renderAdminMarginTable(estimate) {
@@ -4997,12 +5120,52 @@ function renderCustomerQuote(estimate) {
   renderCostSnapshotInfo(estimate);
 }
 
+function renderSavedEstimateRow(estimate, options = {}) {
+  const admin = Boolean(options.admin);
+  const canViewInternal = Boolean(options.canViewInternal);
+  const colspan = options.colspan || 1;
+  const contract = projectContractMeta(estimate);
+  const estimateId = escapeHtml(estimate.id || "");
+  const cells = `
+    <td>${escapeHtml(estimate.projectName || "-")}</td>
+    <td>${escapeHtml(estimate.clientName || "-")}</td>
+    <td>${escapeHtml(estimate.phone || "-")}</td>
+    <td>${escapeHtml(estimate.address || "-")}</td>
+    <td>${escapeHtml(estimate.status || "상담")}</td>
+    <td>${escapeHtml(contract.statusLabel)}</td>
+    <td>${escapeHtml(contract.contractNo)}</td>
+    <td>${formatDateTime(estimate.savedAt)}</td>
+    <td><button type="button" data-open-estimate="${estimateId}">열기</button></td>
+    ${canViewInternal ? `<td><button type="button" data-toggle-internal-estimate="${estimateId}">${expandedAdminEstimateId === estimate.id ? "내부견적 닫기" : "내부견적 상세 보기"}</button></td>` : ""}
+    ${admin ? `<td><button type="button" data-delete-estimate="${estimateId}">삭제</button></td>` : ""}
+  `;
+  const detail = canViewInternal && expandedAdminEstimateId === estimate.id
+    ? `<tr class="admin-estimate-detail-row"><td colspan="${colspan}">${renderAdminEstimateDetailPanel(adminEstimateDetailCache.get(estimate.id) || estimate)}</td></tr>`
+    : "";
+  return `
+    <tr>
+      ${cells}
+    </tr>
+    ${detail}
+  `;
+}
+
+function renderSavedEstimateTableRows(tbody, estimates, options = {}) {
+  const colspan = options.colspan || 1;
+  tbody.innerHTML = estimates.length
+    ? estimates.map((estimate) => renderSavedEstimateRow(estimate, { ...options, colspan })).join("")
+    : `<tr><td colspan="${colspan}">저장된 프로젝트가 없습니다.</td></tr>`;
+}
+
 async function renderSavedEstimateRows() {
   const tbody = document.getElementById("savedEstimateRows");
   if (!tbody) return;
   const admin = isAdmin();
+  const canViewInternal = canViewSystem();
   const canMergeContracts = isAdmin() || isManager();
-  const colspan = admin ? 10 : 9;
+  const colspan = 9 + (canViewInternal ? 1 : 0) + (admin ? 1 : 0);
+  expandedAdminEstimateId = null;
+  expandedAdminTradeKey = null;
   const headerRow = tbody.closest("table")?.querySelector("thead tr");
   if (headerRow) {
     headerRow.innerHTML = `
@@ -5015,6 +5178,7 @@ async function renderSavedEstimateRows() {
       <th>계약번호</th>
       <th>저장일</th>
       <th>열기</th>
+      ${canViewInternal ? "<th>내부견적</th>" : ""}
       ${admin ? "<th>삭제</th>" : ""}
     `;
   }
@@ -5040,37 +5204,7 @@ async function renderSavedEstimateRows() {
       }
     }
     renderProjectSearchResults();
-    tbody.innerHTML = estimates.length
-      ? estimates.map((estimate) => {
-        const contract = projectContractMeta(estimate);
-        return admin ? `
-        <tr>
-          <td>${escapeHtml(estimate.projectName || "-")}</td>
-          <td>${escapeHtml(estimate.clientName || "-")}</td>
-          <td>${escapeHtml(estimate.phone || "-")}</td>
-          <td>${escapeHtml(estimate.address || "-")}</td>
-          <td>${estimate.status || "상담"}</td>
-          <td>${escapeHtml(contract.statusLabel)}</td>
-          <td>${escapeHtml(contract.contractNo)}</td>
-          <td>${formatDateTime(estimate.savedAt)}</td>
-          <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
-          <td><button type="button" data-delete-estimate="${estimate.id}">삭제</button></td>
-        </tr>
-      ` : `
-        <tr>
-          <td>${escapeHtml(estimate.projectName || "-")}</td>
-          <td>${escapeHtml(estimate.clientName || "-")}</td>
-          <td>${escapeHtml(estimate.phone || "-")}</td>
-          <td>${escapeHtml(estimate.address || "-")}</td>
-          <td>${estimate.status || "상담"}</td>
-          <td>${escapeHtml(contract.statusLabel)}</td>
-          <td>${escapeHtml(contract.contractNo)}</td>
-          <td>${formatDateTime(estimate.savedAt)}</td>
-          <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
-        </tr>
-      `;
-      }).join("")
-      : `<tr><td colspan="${colspan}">저장된 프로젝트가 없습니다.</td></tr>`;
+    renderSavedEstimateTableRows(tbody, estimates, { admin, canViewInternal, colspan });
   } catch (error) {
     console.error("견적 조회 실패", error);
     tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록 조회에 실패했습니다.</td></tr>`;
@@ -7161,7 +7295,20 @@ document.getElementById("logoutButton")?.addEventListener("click", async () => {
   document.getElementById("loginPassword").value = "";
 });
 
-el.projectSearch?.addEventListener("input", renderProjectSearchResults);
+el.projectSearch?.addEventListener("input", () => {
+  renderProjectSearchResults();
+  if (!expandedAdminEstimateId) return;
+  expandedAdminEstimateId = null;
+  expandedAdminTradeKey = null;
+  const tbody = document.getElementById("savedEstimateRows");
+  if (tbody && cachedEstimates.length) {
+    renderSavedEstimateTableRows(tbody, cachedEstimates, {
+      admin: isAdmin(),
+      canViewInternal: canViewSystem(),
+      colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+    });
+  }
+});
 
 document.getElementById("loadProjectButton")?.addEventListener("click", async () => {
   const id = el.projectSearchResults.value;
@@ -7470,6 +7617,63 @@ document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("#compareCostSnapshotButton");
   if (!button) return;
   renderCostSnapshotComparison(activeQuoteEstimate);
+});
+
+document.addEventListener("click", async (event) => {
+  const button = event.target?.closest?.("[data-toggle-internal-estimate]");
+  if (!button || !canViewSystem()) return;
+  const estimateId = button.dataset.toggleInternalEstimate;
+  if (!estimateId) return;
+  const tbody = document.getElementById("savedEstimateRows");
+  if (!tbody) return;
+  if (expandedAdminEstimateId === estimateId) {
+    expandedAdminEstimateId = null;
+    expandedAdminTradeKey = null;
+    renderSavedEstimateTableRows(tbody, cachedEstimates, {
+      admin: isAdmin(),
+      canViewInternal: canViewSystem(),
+      colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+    });
+    return;
+  }
+  expandedAdminEstimateId = estimateId;
+  expandedAdminTradeKey = null;
+  const cached = cachedEstimates.find((estimate) => estimate.id === estimateId);
+  if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, cached);
+  renderSavedEstimateTableRows(tbody, cachedEstimates, {
+    admin: isAdmin(),
+    canViewInternal: canViewSystem(),
+    colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+  });
+  if (!adminEstimateDetailCache.has(estimateId)) {
+    try {
+      const estimate = await getEstimate(estimateId);
+      if (estimate) adminEstimateDetailCache.set(estimateId, estimate);
+    } catch (error) {
+      console.error("내부견적 상세 조회 실패", error);
+      alert("내부견적 상세를 불러오지 못했습니다.");
+    }
+    renderSavedEstimateTableRows(tbody, cachedEstimates, {
+      admin: isAdmin(),
+      canViewInternal: canViewSystem(),
+      colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+    });
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("[data-toggle-internal-trade]");
+  if (!button || !canViewSystem()) return;
+  expandedAdminTradeKey = expandedAdminTradeKey === button.dataset.toggleInternalTrade
+    ? null
+    : button.dataset.toggleInternalTrade;
+  const tbody = document.getElementById("savedEstimateRows");
+  if (!tbody) return;
+  renderSavedEstimateTableRows(tbody, cachedEstimates, {
+    admin: isAdmin(),
+    canViewInternal: canViewSystem(),
+    colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+  });
 });
 
 document.addEventListener("click", async (event) => {
