@@ -4635,18 +4635,107 @@ function storedEstimateSummary(estimate) {
   };
 }
 
+function hasPipeCleaningLegacyCostGap(estimate, summary) {
+  const pipeRows = (estimate?.internalDetails || []).filter((detail) => detail.item === PIPE_CLEANING_ITEM_NAME);
+  return pipeRows.some((detail) => (
+    moneyAmount(detail.cost) === PIPE_CLEANING_AMOUNT
+    && internalDetailCustomerAmount(detail) === PIPE_CLEANING_AMOUNT
+  ))
+    && summary.customerDiff === 0
+    && summary.costDiff === PIPE_CLEANING_AMOUNT;
+}
+
+function adjustmentEvidence(estimate) {
+  const adjustment = moneyAmount(estimate?.inputs?.manualAdjustment ?? estimate?.manualAdjustment);
+  if (adjustment !== 0) {
+    return { label: adjustment < 0 ? "할인" : "총액 조정", amount: Math.abs(adjustment) };
+  }
+  const quoteGroups = Array.isArray(estimate?.customerQuote?.groups) ? estimate.customerQuote.groups : [];
+  const adjustmentItem = quoteGroups
+    .flatMap((group) => Array.isArray(group.items) ? group.items : [])
+    .find((item) => /상담 보정|수동 보정|총액 조정|할인|절사/.test(item.name || ""));
+  if (adjustmentItem) {
+    return { label: adjustmentItem.name || "총액 조정", amount: Math.abs(moneyAmount(adjustmentItem.amount)) };
+  }
+  return null;
+}
+
+function findMatchingCostDetail(estimate, amount) {
+  return (estimate?.internalDetails || []).find((detail) => moneyAmount(detail.cost) === Math.abs(amount));
+}
+
+function buildEstimateDiagnostics(estimate, summary) {
+  const diagnostics = [];
+  if (hasPipeCleaningLegacyCostGap(estimate, summary)) {
+    diagnostics.push({
+      title: "구버전 견적 원가 누락",
+      causeLabel: "원인",
+      cause: "기존 배관 청소 직접원가 300,000원이 상세견적에는 포함됐지만, 저장된 전체 직접원가에는 반영되지 않았습니다.",
+      impact: "예상 이익이 300,000원 높게 표시되고 전체 마진율이 실제보다 높게 표시됩니다.",
+      action: "계약 전 테스트 견적이면 현재 기준으로 다시 계산해 저장하세요. 계약 완료 견적이면 자동 수정하지 말고 관리자 검토가 필요합니다.",
+    });
+  }
+
+  if (summary.customerDiff !== 0) {
+    const evidence = adjustmentEvidence(estimate);
+    if (evidence) {
+      diagnostics.push({
+        title: "고객 견적 총액 조정",
+        causeLabel: "원인",
+        cause: `상세견적 합계에서 ${customerWon(Math.abs(summary.customerDiff))} ${evidence.label}이 적용되었습니다.`,
+        impact: `상세 항목 합계와 최종 고객 견적 총액이 ${customerWon(Math.abs(summary.customerDiff))} 다릅니다.`,
+        action: "의도된 조정이면 총액 조정 내역으로 관리하세요.",
+      });
+    } else {
+      diagnostics.push({
+        title: "고객가 저장값 불일치",
+        causeLabel: "추정 원인",
+        cause: "과거 견적의 총액 절사, 수동 조정 또는 구버전 저장 방식으로 인해 상세 고객가 합계와 저장된 고객 견적 총액이 다를 수 있습니다.",
+        impact: `차액: ${customerWon(summary.customerDiff)}`,
+        action: "상세 고객가 합계, 저장된 customerQuote.total, 계약 패키지 총액, 계약 문서 총액을 확인하세요.",
+      });
+    }
+  }
+
+  if (summary.costDiff !== 0 && !hasPipeCleaningLegacyCostGap(estimate, summary)) {
+    const matched = findMatchingCostDetail(estimate, summary.costDiff);
+    diagnostics.push({
+      title: "직접원가 저장값 불일치",
+      causeLabel: matched ? "추정 원인" : "추정 원인",
+      cause: matched
+        ? `${matched.item || "일부 상세 항목"} ${won(moneyAmount(matched.cost))}이 전체 costTotal에 반영되지 않았을 가능성이 있습니다.`
+        : "일부 상세 항목의 원가가 전체 costTotal에 반영되지 않았거나, 과거 저장 구조에서 합계 필드가 갱신되지 않았을 가능성이 있습니다.",
+      impact: `상세 직접원가 합계와 저장된 전체 직접원가가 ${won(summary.costDiff)} 다릅니다.`,
+      action: "계약 전 견적이면 현재 기준 재계산 저장 여부를 검토하고, 계약 완료 견적이면 관리자 검토가 필요합니다.",
+    });
+  }
+
+  return diagnostics;
+}
+
+function renderEstimateDiagnostics(estimate, summary) {
+  if (!canViewSystem()) return "";
+  const diagnostics = buildEstimateDiagnostics(estimate, summary);
+  if (!diagnostics.length) return "";
+  return `
+    <div class="admin-estimate-diagnostics">
+      ${diagnostics.map((item) => `
+        <article class="admin-estimate-diagnostic">
+          <h4>${escapeHtml(item.title)}</h4>
+          <p><strong>${escapeHtml(item.causeLabel)}:</strong> ${escapeHtml(item.cause)}</p>
+          <p><strong>영향:</strong> ${escapeHtml(item.impact)}</p>
+          <p><strong>권장 조치:</strong> ${escapeHtml(item.action)}</p>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderAdminEstimateDetailPanel(estimate) {
   if (!estimate) return `<div class="admin-estimate-detail-error">내부견적 상세를 불러오지 못했습니다.</div>`;
   const summary = storedEstimateSummary(estimate);
   const groups = buildAdminMarginGroups(estimate);
-  const hasMismatch = Math.abs(summary.customerDiff) >= 1 || Math.abs(summary.costDiff) >= 1;
-  const warning = hasMismatch ? `
-    <div class="admin-estimate-warning">
-      내부 상세 합계와 전체 견적 합계가 일치하지 않습니다.
-      <span>고객가 차이: ${customerWon(summary.customerDiff)}</span>
-      <span>직접원가 차이: ${won(summary.costDiff)}</span>
-    </div>
-  ` : "";
+  const diagnostics = renderEstimateDiagnostics(estimate, summary);
   return `
     <div class="admin-estimate-detail-panel">
       <div class="admin-estimate-summary-grid">
@@ -4656,7 +4745,7 @@ function renderAdminEstimateDetailPanel(estimate) {
         <div><span>전체 마진율</span><strong>${(summary.marginRate * 100).toFixed(1)}%</strong></div>
         <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
       </div>
-      ${warning}
+      ${diagnostics}
       <div class="admin-trade-accordion">
         ${groups.length ? groups.map((group, index) => renderAdminTradeGroup(group, index)).join("") : `<div class="system-empty-state">표시할 내부견적 상세가 없습니다.</div>`}
       </div>

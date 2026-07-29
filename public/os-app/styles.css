@@ -1055,17 +1055,31 @@ th:last-child {
   letter-spacing: 0;
 }
 
-.admin-estimate-warning {
+.admin-estimate-diagnostics {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-estimate-diagnostic {
   border: 1px solid #e4b258;
   border-radius: 8px;
   background: #fff8e8;
   color: #6b4b0f;
   padding: 10px 12px;
   font-size: 13px;
-  font-weight: 800;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
+  display: grid;
+  gap: 5px;
+}
+
+.admin-estimate-diagnostic h4,
+.admin-estimate-diagnostic p {
+  margin: 0;
+}
+
+.admin-estimate-diagnostic h4 {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .admin-trade-accordion {
