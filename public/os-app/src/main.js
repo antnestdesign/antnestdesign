@@ -431,6 +431,8 @@ let loadedEstimateBaseline = null;
 let contractOptionsState = null;
 let contractPackagesState = [];
 let allContractPackagesState = [];
+let projectContractPackageMap = new Map();
+let projectContractPackageMapLoaded = false;
 let contractPackageSearchKeyword = "";
 let loadedContractEstimateState = null;
 let contractPreviewState = null;
@@ -953,6 +955,19 @@ function contractDocumentLabel(type) {
   return { CONTRACT: "계약서", QUOTE: "견적서", SPEC: "공사사양서" }[type] || type || "-";
 }
 
+function projectContractStatusLabel(status, hasPackage = false) {
+  if (!hasPackage) return "계약 전";
+  return {
+    DRAFT: "계약 준비",
+    PREVIEWED: "계약 준비",
+    READY: "계약 준비",
+    CONTRACTED: "계약 완료",
+    CHANGE_PENDING: "변경 진행",
+    SUPERSEDED: "변경 완료",
+    CANCELLED: "계약 취소",
+  }[status] || "계약 준비";
+}
+
 function contractPackageSummary(item = {}) {
   const info = item.contract_info || {};
   const estimate = item.estimate_snapshot || {};
@@ -969,6 +984,50 @@ function contractPackageSummary(item = {}) {
     constructionType: info.construction_type || "-",
     status: item.status || "-",
     updatedAt: item.updated_at || item.created_at || null,
+  };
+}
+
+function contractPackageSortValue(item = {}) {
+  const version = Number(item.package_version) || 0;
+  const updatedAt = Date.parse(item.updated_at || item.created_at || "") || 0;
+  return { version, updatedAt };
+}
+
+function buildLatestContractPackageMap(packages = []) {
+  const map = new Map();
+  for (const item of packages) {
+    const estimateId = item?.estimate_id;
+    if (!estimateId) continue;
+    const current = map.get(estimateId);
+    if (!current) {
+      map.set(estimateId, item);
+      continue;
+    }
+    const nextValue = contractPackageSortValue(item);
+    const currentValue = contractPackageSortValue(current);
+    if (
+      nextValue.version > currentValue.version ||
+      (nextValue.version === currentValue.version && nextValue.updatedAt > currentValue.updatedAt)
+    ) {
+      map.set(estimateId, item);
+    }
+  }
+  return map;
+}
+
+function projectContractMeta(estimate) {
+  const item = projectContractPackageMap.get(estimate?.id);
+  if (!projectContractPackageMapLoaded) {
+    return {
+      package: null,
+      statusLabel: "-",
+      contractNo: "-",
+    };
+  }
+  return {
+    package: item || null,
+    statusLabel: projectContractStatusLabel(item?.status, Boolean(item)),
+    contractNo: item?.contract_no || "-",
   };
 }
 
@@ -4806,40 +4865,80 @@ async function renderSavedEstimateRows() {
   const tbody = document.getElementById("savedEstimateRows");
   if (!tbody) return;
   const admin = isAdmin();
-  const colspan = admin ? 7 : 8;
-  tbody.innerHTML = `<tr><td colspan="${colspan}">저장된 견적을 불러오는 중입니다.</td></tr>`;
+  const canMergeContracts = isAdmin() || isManager();
+  const colspan = admin ? 10 : 9;
+  const headerRow = tbody.closest("table")?.querySelector("thead tr");
+  if (headerRow) {
+    headerRow.innerHTML = `
+      <th>프로젝트명</th>
+      <th>고객명</th>
+      <th>연락처</th>
+      <th>주소</th>
+      <th>견적 상태</th>
+      <th>계약 상태</th>
+      <th>계약번호</th>
+      <th>저장일</th>
+      <th>열기</th>
+      ${admin ? "<th>삭제</th>" : ""}
+    `;
+  }
+  const heading = tbody.closest(".internal-card")?.querySelector(".section-heading h2");
+  const description = tbody.closest(".internal-card")?.querySelector(".section-heading p");
+  if (heading) heading.textContent = "프로젝트 목록";
+  if (description) description.textContent = "저장된 견적과 연결된 계약 상태를 함께 확인합니다.";
+  tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록을 불러오는 중입니다.</td></tr>`;
   try {
     const estimates = await loadEstimates();
     cachedEstimates = estimates;
+    projectContractPackageMap = new Map();
+    projectContractPackageMapLoaded = false;
+    if (canMergeContracts) {
+      try {
+        const packages = await loadContractPackages(null);
+        projectContractPackageMap = buildLatestContractPackageMap(Array.isArray(packages) ? packages : []);
+        projectContractPackageMapLoaded = true;
+      } catch (error) {
+        console.warn("프로젝트 계약 상태 조회 실패", error);
+        projectContractPackageMap = new Map();
+        projectContractPackageMapLoaded = false;
+      }
+    }
     renderProjectSearchResults();
     tbody.innerHTML = estimates.length
-      ? estimates.map((estimate) => admin ? `
+      ? estimates.map((estimate) => {
+        const contract = projectContractMeta(estimate);
+        return admin ? `
         <tr>
-          <td>${estimate.projectName}</td>
-          <td>${formatDateTime(estimate.savedAt)}</td>
-          <td>${estimate.areaPyeong}평</td>
-          <td>${estimate.totalText}</td>
+          <td>${escapeHtml(estimate.projectName || "-")}</td>
+          <td>${escapeHtml(estimate.clientName || "-")}</td>
+          <td>${escapeHtml(estimate.phone || "-")}</td>
+          <td>${escapeHtml(estimate.address || "-")}</td>
           <td>${estimate.status || "상담"}</td>
+          <td>${escapeHtml(contract.statusLabel)}</td>
+          <td>${escapeHtml(contract.contractNo)}</td>
+          <td>${formatDateTime(estimate.savedAt)}</td>
           <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
           <td><button type="button" data-delete-estimate="${estimate.id}">삭제</button></td>
         </tr>
       ` : `
         <tr>
-          <td>${estimate.projectName || "-"}</td>
-          <td>${estimate.clientName || "-"}</td>
-          <td>${estimate.phone || "-"}</td>
-          <td>${estimate.areaPyeong || "-"}평</td>
+          <td>${escapeHtml(estimate.projectName || "-")}</td>
+          <td>${escapeHtml(estimate.clientName || "-")}</td>
+          <td>${escapeHtml(estimate.phone || "-")}</td>
+          <td>${escapeHtml(estimate.address || "-")}</td>
           <td>${estimate.status || "상담"}</td>
-          <td>${estimate.totalText}</td>
+          <td>${escapeHtml(contract.statusLabel)}</td>
+          <td>${escapeHtml(contract.contractNo)}</td>
           <td>${formatDateTime(estimate.savedAt)}</td>
           <td><button type="button" data-open-estimate="${estimate.id}">열기</button></td>
         </tr>
-      `).join("")
-      : `<tr><td colspan="${colspan}">저장된 견적이 없습니다.</td></tr>`;
+      `;
+      }).join("")
+      : `<tr><td colspan="${colspan}">저장된 프로젝트가 없습니다.</td></tr>`;
   } catch (error) {
     console.error("견적 조회 실패", error);
-    tbody.innerHTML = `<tr><td colspan="${colspan}">견적 조회에 실패했습니다.</td></tr>`;
-    alert("견적 조회에 실패했습니다.");
+    tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록 조회에 실패했습니다.</td></tr>`;
+    alert("프로젝트 목록 조회에 실패했습니다.");
   }
 }
 
@@ -6757,8 +6856,12 @@ function renderProjectSearchResults() {
   select.innerHTML = `<option value="">${matches.length ? "프로젝트 선택" : "검색 결과 없음"}</option>`;
   for (const estimate of matches) {
     const option = document.createElement("option");
+    const contract = projectContractMeta(estimate);
+    const contractText = contract.contractNo === "-"
+      ? contract.statusLabel
+      : `${contract.statusLabel} ${contract.contractNo}`;
     option.value = estimate.id;
-    option.textContent = `${estimate.projectName} · ${estimate.clientName || "고객명 없음"} · ${estimate.totalText}`;
+    option.textContent = `${estimate.projectName} · ${estimate.clientName || "고객명 없음"} · ${estimate.totalText} · ${contractText}`;
     select.appendChild(option);
   }
 }
