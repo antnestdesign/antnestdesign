@@ -1863,6 +1863,10 @@ async function previewContractPackageFromForm() {
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canPreviewContractPackage()) return;
   if (contractBusy) return;
+  if (currentPipeCleaningDerivedEstimate()) {
+    contractStatus("기존 배관 청소 변경사항을 수정 저장한 뒤 3종 문서 미리보기를 생성해 주세요.", "error");
+    return;
+  }
   try {
     contractBusy = true;
     const payload = collectContractOptionsPayload();
@@ -1899,6 +1903,10 @@ async function createContractPackageFromForm() {
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canCreateContractPackage()) return;
   if (contractBusy) return;
+  if (currentPipeCleaningDerivedEstimate()) {
+    contractStatus("기존 배관 청소 변경사항을 수정 저장한 뒤 계약 패키지를 확정 저장해 주세요.", "error");
+    return;
+  }
   try {
     contractBusy = true;
     const currentPackage = contractPreviewState?.snapshot?.id ? contractPreviewState.snapshot : null;
@@ -4430,6 +4438,85 @@ function buildEstimateSnapshot(result, options = {}) {
   };
 }
 
+const PIPE_CLEANING_ITEM_NAME = "기존 배관 청소";
+const PIPE_CLEANING_AMOUNT = 300000;
+
+function cloneJson(value) {
+  if (value == null) return value;
+  return JSON.parse(JSON.stringify(value));
+}
+
+function pipeCleaningEnabledFromInputs(inputs = {}) {
+  return inputs.existingPipeCleaningEnabled === true;
+}
+
+function canonicalInputsExceptPipeCleaning(inputs = {}) {
+  const normalized = { ...inputs };
+  delete normalized.existingPipeCleaningEnabled;
+  return canonicalInputValues(normalized);
+}
+
+function onlyPipeCleaningChanged() {
+  if (!loadedEstimateBaseline?.estimate?.customerQuote) return false;
+  const baselineInputs = loadedEstimateBaseline.estimate.inputs || {};
+  return canonicalInputsExceptPipeCleaning(baselineInputs) === canonicalInputsExceptPipeCleaning(collectInputValues()) &&
+    pipeCleaningEnabledFromInputs(baselineInputs) !== Boolean(el.existingPipeCleaningEnabled?.checked);
+}
+
+function applyPipeCleaningToCustomerQuote(quote, enabled) {
+  const nextQuote = cloneJson(quote) || {};
+  const groups = Array.isArray(nextQuote.groups) ? nextQuote.groups : [];
+  let miscGroup = groups.find((group) => group.label === "기타");
+  if (!miscGroup && enabled) {
+    miscGroup = { label: "기타", total: 0, totalText: customerWon(0), items: [] };
+    groups.push(miscGroup);
+  }
+  if (miscGroup) {
+    const items = Array.isArray(miscGroup.items) ? miscGroup.items : [];
+    miscGroup.items = enabled
+      ? [
+        ...items.filter((item) => item.name !== PIPE_CLEANING_ITEM_NAME),
+        { name: PIPE_CLEANING_ITEM_NAME, amount: PIPE_CLEANING_AMOUNT, amountText: customerWon(PIPE_CLEANING_AMOUNT) },
+      ]
+      : items.filter((item) => item.name !== PIPE_CLEANING_ITEM_NAME);
+    miscGroup.total = miscGroup.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    miscGroup.totalText = customerWon(miscGroup.total);
+  }
+  nextQuote.groups = quoteGroupOrder.map((label) => groups.find((group) => group.label === label)).filter(Boolean);
+  nextQuote.total = nextQuote.groups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
+  nextQuote.totalText = customerWon(nextQuote.total);
+  return nextQuote;
+}
+
+function derivePipeCleaningEstimateSnapshot(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) {
+  const next = cloneJson(estimate);
+  if (!next?.customerQuote) return null;
+  const inputs = { ...(next.inputs || {}) };
+  inputs.existingPipeCleaningEnabled = Boolean(enabled);
+  next.inputs = inputs;
+  next.customerQuote = applyPipeCleaningToCustomerQuote(next.customerQuote, enabled);
+  next.total = next.customerQuote.total;
+  next.totalText = next.customerQuote.totalText;
+  const costTotal = Number(next.costTotal ?? next.internalSummary?.directCost) || 0;
+  const customerRevenue = Number(next.total) || 0;
+  const profit = customerRevenue - costTotal;
+  const marginRate = customerRevenue > 0 ? Number(((profit / customerRevenue) * 100).toFixed(2)) : 0;
+  next.marginRate = marginRate;
+  next.internalSummary = {
+    ...(next.internalSummary || {}),
+    directCost: costTotal,
+    customerRevenue,
+    profit,
+    marginRate,
+  };
+  return next;
+}
+
+function currentPipeCleaningDerivedEstimate() {
+  if (!onlyPipeCleaningChanged()) return null;
+  return derivePipeCleaningEstimateSnapshot(loadedEstimateBaseline.estimate);
+}
+
 function renderCustomerQuoteTable(quote, rows, groupTotals) {
   rows.innerHTML = "";
   groupTotals.innerHTML = "";
@@ -5336,6 +5423,11 @@ function syncLoadedEstimateSnapshot() {
   if (!loadedEstimateBaseline?.estimate) return false;
   if (loadedEstimateMatchesCurrentInputs()) {
     activeQuoteEstimate = loadedEstimateBaseline.estimate;
+    return true;
+  }
+  const derived = currentPipeCleaningDerivedEstimate();
+  if (derived) {
+    activeQuoteEstimate = derived;
     return true;
   }
   if (activeQuoteEstimate?.id === loadedEstimateBaseline.id) {
@@ -7045,14 +7137,15 @@ async function handleSaveEstimate(mode = "update") {
   try {
     setSaveStatus("저장 준비 중입니다.");
     const isUpdate = mode === "update";
-    const result = calculateForCurrentEstimate();
-    if (isUpdate && shouldUseLoadedCostSnapshot() && snapshotCalculationMissingItems.length) {
+    const pipeCleaningSnapshot = isUpdate ? currentPipeCleaningDerivedEstimate() : null;
+    const result = pipeCleaningSnapshot ? null : calculateForCurrentEstimate();
+    if (!pipeCleaningSnapshot && isUpdate && shouldUseLoadedCostSnapshot() && snapshotCalculationMissingItems.length) {
       const message = `저장 당시 원가 스냅샷에 ${snapshotCalculationMissingItems.join(", ")} 품목이 없어 현재 원가와 섞어 저장하지 않았습니다. 새 기준 재계산 기능에서 처리해 주세요.`;
       setSaveStatus(message);
       alert(message);
       return;
     }
-    const snapshot = buildEstimateSnapshot(result, {
+    const snapshot = pipeCleaningSnapshot || buildEstimateSnapshot(result, {
       costSnapshot: isUpdate && shouldUseLoadedCostSnapshot()
         ? loadedEstimateBaseline?.estimate?.costSnapshot
         : undefined,
