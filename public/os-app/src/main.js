@@ -4583,13 +4583,7 @@ function buildAdminMarginGroups(estimate) {
   const groupedCost = [...groups.values()].reduce((sum, group) => sum + group.cost, 0);
   const customerDiff = customerTotal - groupedCustomer;
   const costDiff = costTotal - groupedCost;
-  if (Math.abs(customerDiff) >= 1 || Math.abs(costDiff) >= 1) {
-    const group = ensureGroup("기타");
-    group.customer += customerDiff;
-    group.cost += costDiff;
-  }
-
-  return quoteGroupOrder
+  const orderedGroups = quoteGroupOrder
     .map((label) => groups.get(label))
     .filter((group) => group && (Math.abs(group.customer) >= 1 || Math.abs(group.cost) >= 1))
     .map((group) => {
@@ -4597,6 +4591,17 @@ function buildAdminMarginGroups(estimate) {
       const marginRate = group.customer > 0 ? profit / group.customer : 0;
       return { ...group, profit, marginRate };
     });
+  if (Math.abs(customerDiff) >= 1 || Math.abs(costDiff) >= 1) {
+    const profit = customerDiff - costDiff;
+    orderedGroups.push({
+      label: "합계 보정",
+      customer: customerDiff,
+      cost: costDiff,
+      profit,
+      marginRate: customerDiff > 0 ? profit / customerDiff : 0,
+    });
+  }
+  return orderedGroups;
 }
 
 function renderAdminMarginTable(estimate) {
