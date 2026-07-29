@@ -10,7 +10,7 @@ export default function AndOsPage() {
   return (
     <main className="h-screen w-full overflow-hidden bg-black">
       <iframe
-        src="/os-app/index.html?v=and-os-21"
+        src="/os-app/index.html?v=and-os-22"
         title="AND OS"
         className="h-full w-full border-0"
         allow="clipboard-read; clipboard-write"

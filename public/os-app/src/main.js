@@ -35,6 +35,7 @@ import {
   loadContractPackage,
   previewContractPackage,
   createContractPackage,
+  confirmContractPackage,
   createOsUser,
   updateOsUser,
   resetOsUserPassword,
@@ -773,7 +774,7 @@ function ensureContractPackagePanel() {
         </section>
         <div id="contractWriteActions" class="admin-action-row contract-actions">
           <button id="saveContractOptionsButton" type="button">계약 옵션 저장</button>
-          <button id="createContractPackageButton" type="button">계약 패키지 저장</button>
+          <button id="createContractPackageButton" type="button">계약 확정 및 저장</button>
           <button id="previewContractPackageButton" type="button">3종 문서 미리보기</button>
         </div>
         <p id="contractReadonlyNote" class="system-readonly-note" hidden><span>매니저는 계약 정보를 조회만 할 수 있습니다.</span></p>
@@ -806,7 +807,7 @@ function ensureContractPackagePanel() {
       <section class="contract-panel">
         <div class="contract-panel-heading">
           <h3>계약 패키지 목록</h3>
-          <p>확정 기능은 이번 단계에서 제공하지 않습니다.</p>
+          <p>확정된 계약 패키지는 계약번호를 유지하며 다시 출력할 수 있습니다.</p>
         </div>
         <div class="table-wrap">
           <table class="contract-package-table">
@@ -1814,12 +1815,24 @@ async function createContractPackageFromForm() {
   if (contractBusy) return;
   try {
     contractBusy = true;
+    const currentPackage = contractPreviewState?.snapshot?.id ? contractPreviewState.snapshot : null;
+    if (currentPackage?.status === "CONTRACTED") {
+      contractStatus(`${currentPackage.contract_no || "계약"}은 이미 확정되어 있습니다.`, "success");
+      return;
+    }
     const payload = collectContractOptionsPayload();
     validateContractOptionsForPreview(payload);
-    contractStatus("계약 패키지를 저장하는 중입니다.");
-    const contractPackage = await createContractPackage(estimate.id, payload);
+    contractStatus("계약 패키지를 확정 저장하는 중입니다.");
+    const draftPackage = currentPackage || await createContractPackage(estimate.id, payload);
+    const confirmedPackage = await confirmContractPackage(draftPackage.id);
+    const contractPackage = {
+      ...draftPackage,
+      ...confirmedPackage,
+      status: confirmedPackage.status || "CONTRACTED",
+      confirmed_at: confirmedPackage.confirmed_at || draftPackage.confirmed_at,
+    };
     contractPreviewState = {
-      status: contractPackage.status || "READY",
+      status: contractPackage.status || "CONTRACTED",
       snapshot: contractPackage,
       documents: contractPackage.contract_document_versions || [],
     };
@@ -1828,15 +1841,15 @@ async function createContractPackageFromForm() {
     await refreshContractPackagePanel(estimate);
     await refreshAllContractPackages();
     contractPreviewState = {
-      status: contractPackage.status || "READY",
+      status: contractPackage.status || "CONTRACTED",
       snapshot: contractPackage,
       documents: contractPackage.contract_document_versions || [],
     };
     renderContractPackagePanel(estimate);
-    contractStatus(`${contractPackage.contract_no || "계약 패키지"}를 저장했습니다.`, "success");
+    contractStatus(`${contractPackage.contract_no || "계약 패키지"}를 확정 저장했습니다.`, "success");
   } catch (error) {
-    console.error("계약 패키지 저장 실패", error);
-    contractStatus(error.message || "계약 패키지 저장에 실패했습니다.", "error");
+    console.error("계약 확정 저장 실패", error);
+    contractStatus(error.message || "계약 확정 저장에 실패했습니다.", "error");
   } finally {
     contractBusy = false;
   }

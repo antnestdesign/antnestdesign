@@ -142,6 +142,12 @@ export async function createContractPackage(estimateId, options) {
   });
 }
 
+export async function confirmContractPackage(packageId) {
+  return requestOsApi(`/contract-packages/${encodeURIComponent(packageId)}/confirm`, {
+    method: "POST",
+  });
+}
+
 export async function createOsUser(payload) {
   return requestOsApi("/users", {
     method: "POST",
