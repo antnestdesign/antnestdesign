@@ -4451,6 +4451,21 @@ function applyPipeCleaningToCustomerQuote(quote, enabled) {
   return nextQuote;
 }
 
+function pipeCleaningInternalDetail() {
+  return {
+    group: "misc",
+    item: PIPE_CLEANING_ITEM_NAME,
+    input: "1식",
+    quantity: "1식",
+    unitPrice: PIPE_CLEANING_AMOUNT,
+    cost: PIPE_CLEANING_AMOUNT,
+    correction: 0,
+    revenue: PIPE_CLEANING_AMOUNT,
+    customerRevenue: PIPE_CLEANING_AMOUNT,
+    profit: 0,
+  };
+}
+
 function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) {
   const next = cloneJson(estimate);
   if (!next?.customerQuote) return null;
@@ -4460,7 +4475,15 @@ function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.exis
   next.customerQuote = applyPipeCleaningToCustomerQuote(next.customerQuote, enabled);
   next.total = next.customerQuote.total;
   next.totalText = next.customerQuote.totalText;
-  const costTotal = Number(next.costTotal ?? next.internalSummary?.directCost) || 0;
+  const originalDetails = Array.isArray(next.internalDetails) ? next.internalDetails : [];
+  const removedPipeCleaningCost = originalDetails
+    .filter((item) => item.item === PIPE_CLEANING_ITEM_NAME)
+    .reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+  const nextDetails = originalDetails.filter((item) => item.item !== PIPE_CLEANING_ITEM_NAME);
+  if (enabled) nextDetails.push(pipeCleaningInternalDetail());
+  next.internalDetails = nextDetails;
+  const baseCostTotal = Number(next.costTotal ?? next.internalSummary?.directCost) || 0;
+  const costTotal = baseCostTotal - removedPipeCleaningCost + (enabled ? PIPE_CLEANING_AMOUNT : 0);
   const customerRevenue = Number(next.total) || 0;
   const profit = customerRevenue - costTotal;
   const marginRate = customerRevenue > 0 ? Number(((profit / customerRevenue) * 100).toFixed(2)) : 0;
