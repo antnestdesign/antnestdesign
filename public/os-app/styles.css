@@ -1518,6 +1518,10 @@ th:last-child {
   min-width: 760px;
 }
 
+.contract-print-actions {
+  padding: 0;
+}
+
 @media (max-width: 900px) {
   .user-management-layout {
     grid-template-columns: 1fr;
@@ -1541,5 +1545,162 @@ th:last-child {
   .contract-json-row {
     grid-template-columns: 1fr;
     display: grid;
+  }
+}
+
+@media print {
+  .contract-print-page {
+    position: relative;
+    break-after: page;
+    page-break-after: always;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+    color: #111;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    counter-increment: contract-page;
+  }
+
+  .contract-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .contract-print-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding-bottom: 10mm;
+    margin-bottom: 7mm;
+    border-bottom: 2px solid #111;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .contract-print-header p {
+    margin: 0 0 3mm;
+    font-size: 9pt;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .contract-print-header h1 {
+    margin: 0;
+    font-size: 22pt;
+    line-height: 1.2;
+  }
+
+  .contract-print-header dl,
+  .contract-print-grid {
+    display: grid;
+    gap: 2mm;
+    margin: 0;
+  }
+
+  .contract-print-header dl {
+    min-width: 65mm;
+    font-size: 9pt;
+  }
+
+  .contract-print-header div,
+  .contract-print-grid div {
+    display: grid;
+    grid-template-columns: 24mm 1fr;
+    gap: 3mm;
+  }
+
+  .contract-print-page dt,
+  .contract-print-page dd {
+    margin: 0;
+  }
+
+  .contract-print-page dt {
+    color: #555;
+    font-weight: 800;
+  }
+
+  .contract-print-section {
+    margin: 0 0 7mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .contract-print-section h2 {
+    margin: 0 0 3mm;
+    font-size: 13pt;
+    letter-spacing: 0;
+  }
+
+  .contract-print-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+  }
+
+  .contract-print-table th,
+  .contract-print-table td {
+    padding: 2.4mm 2mm;
+    border: 1px solid #ccc;
+    vertical-align: top;
+    letter-spacing: 0;
+  }
+
+  .contract-print-table th {
+    background: #f2f2f2;
+    font-weight: 900;
+  }
+
+  .contract-print-table tr,
+  .contract-clause-list li,
+  .contract-print-signature {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .contract-subtotal-row td {
+    background: #fafafa;
+    font-weight: 900;
+  }
+
+  .contract-clause-list {
+    display: grid;
+    gap: 2.2mm;
+    margin: 0;
+    padding-left: 6mm;
+  }
+
+  .contract-print-signature {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10mm;
+    margin-top: 12mm;
+  }
+
+  .contract-print-signature div {
+    display: grid;
+    grid-template-columns: 18mm 1fr 22mm;
+    gap: 4mm;
+    align-items: end;
+    min-height: 18mm;
+    border-bottom: 1px solid #111;
+  }
+
+  .contract-print-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8mm;
+    margin-top: 8mm;
+    padding-top: 3mm;
+    border-top: 1px solid #ddd;
+    color: #555;
+    font-size: 8.5pt;
+  }
+
+  .contract-print-footer::after {
+    content: "Page " counter(contract-page);
+  }
+
+  .contract-spec-print-table {
+    font-size: 8.5pt;
   }
 }
