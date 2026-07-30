@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import BackToTop from "../../components/BackToTop";
 import { projectList, type Project } from "../../data/projects";
+import ProjectHero from "./ProjectHero";
 
 type ProjectLayoutProps = {
   slug: string;
@@ -127,62 +128,57 @@ export default function ProjectLayout({
           {project.title}
         </h1>
 
-        <div className="flex gap-10 text-neutral-500">
+        <div className="flex flex-wrap gap-x-10 gap-y-3 text-neutral-500 uppercase tracking-[0.08em]">
           <span>{project.area}</span>
           <span>{project.year}</span>
+          <span>{project.status}</span>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-8 md:px-16 mb-28 md:mb-32">
-        <div
-          className="relative bg-[#d8d2cb] overflow-hidden"
-          style={{ aspectRatio: project.heroAspectRatio ?? "16 / 9" }}
-        >
-          <Image
-            src={project.heroImage}
-            alt={project.title}
-            fill
-            priority
-            quality={86}
-            sizes="(max-width: 768px) 100vw, 1120px"
-            className="object-cover"
-          />
-        </div>
+        <ProjectHero
+          src={project.heroImage}
+          alt={project.title}
+          aspectRatio={project.heroAspectRatio}
+          animation={project.heroAnimation}
+        />
       </section>
 
       {children}
 
-      <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-24 md:pb-28">
-        <div className="grid md:grid-cols-2 gap-16">
-          <div>
-            <p className="uppercase tracking-[0.3em] text-xs">
-              Project Information
-            </p>
+      {!project.hideProjectInformation && (
+        <section className="max-w-5xl mx-auto px-8 md:px-16 border-t border-neutral-300 pt-20 pb-24 md:pb-28">
+          <div className="grid md:grid-cols-2 gap-16">
+            <div>
+              <p className="uppercase tracking-[0.3em] text-xs">
+                Project Information
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex justify-between gap-8">
+                <span>Type</span>
+                <span className="text-right">{project.category}</span>
+              </div>
+
+              <div className="flex justify-between gap-8">
+                <span>Area</span>
+                <span className="text-right">{project.area}</span>
+              </div>
+
+              <div className="flex justify-between gap-8">
+                <span>Year</span>
+                <span className="text-right">{project.year}</span>
+              </div>
+
+              <div className="flex justify-between gap-8">
+                <span>Status</span>
+                <span className="text-right">{project.status}</span>
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-6">
-            <div className="flex justify-between gap-8">
-              <span>Type</span>
-              <span className="text-right">{project.category}</span>
-            </div>
-
-            <div className="flex justify-between gap-8">
-              <span>Area</span>
-              <span className="text-right">{project.area}</span>
-            </div>
-
-            <div className="flex justify-between gap-8">
-              <span>Year</span>
-              <span className="text-right">{project.year}</span>
-            </div>
-
-            <div className="flex justify-between gap-8">
-              <span>Status</span>
-              <span className="text-right">{project.status}</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {previousProject && nextProject && (
         <section className="max-w-7xl mx-auto px-8 md:px-16 pb-40 md:pb-48">
