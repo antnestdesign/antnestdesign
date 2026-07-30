@@ -107,8 +107,8 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-hoban-4-33a": {
-    title: "인천 청라 호반4차 33A 인테리어 제안",
-    cardTitle: "청라 호반4차 33A 인테리어 제안",
+    title: "인천 청라 호반4차 33A",
+    cardTitle: "인천 청라 호반4차 33A",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Design Proposal",
@@ -139,11 +139,11 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-lynn-strauss": {
-    title: "청라 린 스트라우스 41평",
-    cardTitle: "청라 린 스트라우스 41평",
+    title: "인천 청라 린 스트라우스 41평",
+    cardTitle: "인천 청라 린 스트라우스 41평",
     category: "Residential Interior",
     projectGroup: "Residential",
-    type: "Interior Design Concept Proposal",
+    type: "Design Proposal",
     year: "2026",
     area: "41평",
     images: 13,
