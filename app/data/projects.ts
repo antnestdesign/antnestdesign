@@ -149,7 +149,7 @@ export const projects: Record<string, Project> = {
     images: 13,
     heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
     thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
-    heroAspectRatio: "2048 / 486",
+    heroAspectRatio: "16 / 9",
     heroAnimation: "pan-horizontal",
     hideProjectInformation: true,
     overview:
