@@ -10,7 +10,6 @@
   heroImage: string;
   thumbnailImage?: string;
   heroAspectRatio?: string;
-  heroAnimation?: "pan-horizontal";
   hideProjectInformation?: boolean;
   overview: string;
   gallery: string[];
@@ -149,8 +148,7 @@ export const projects: Record<string, Project> = {
     images: 13,
     heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
     thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
-    heroAspectRatio: "16 / 9",
-    heroAnimation: "pan-horizontal",
+    heroAspectRatio: "2048 / 486",
     hideProjectInformation: true,
     overview:
       "인천 청라 린 스트라우스 41평을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",

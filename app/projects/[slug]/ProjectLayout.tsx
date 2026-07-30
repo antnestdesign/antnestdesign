@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import BackToTop from "../../components/BackToTop";
 import { projectList, type Project } from "../../data/projects";
-import ProjectHero from "./ProjectHero";
 
 type ProjectLayoutProps = {
   slug: string;
@@ -136,12 +135,20 @@ export default function ProjectLayout({
       </section>
 
       <section className="max-w-7xl mx-auto px-8 md:px-16 mb-28 md:mb-32">
-        <ProjectHero
-          src={project.heroImage}
-          alt={project.title}
-          aspectRatio={project.heroAspectRatio}
-          animation={project.heroAnimation}
-        />
+        <div
+          className="relative bg-[#d8d2cb] overflow-hidden"
+          style={{ aspectRatio: project.heroAspectRatio ?? "16 / 9" }}
+        >
+          <Image
+            src={project.heroImage}
+            alt={project.title}
+            fill
+            priority
+            quality={86}
+            sizes="(max-width: 768px) 100vw, 1120px"
+            className="object-cover"
+          />
+        </div>
       </section>
 
       {children}
