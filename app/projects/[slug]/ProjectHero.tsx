@@ -128,7 +128,7 @@ export default function ProjectHero({
             height: 100% !important;
             max-width: none !important;
             transform: translate3d(0, 0, 0);
-            animation: projectHeroPan 18s ease-in-out infinite alternate;
+            animation: projectHeroPan 16s ease-in-out infinite alternate;
             will-change: transform;
           }
 
@@ -151,13 +151,6 @@ export default function ProjectHero({
                 0,
                 0
               );
-            }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            .project-hero-pan {
-              animation: none;
-              transform: translate3d(0, 0, 0);
             }
           }
         `}</style>
