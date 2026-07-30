@@ -8,6 +8,8 @@
   area: string;
   images: number;
   heroImage: string;
+  thumbnailImage?: string;
+  heroAspectRatio?: string;
   overview: string;
   gallery: string[];
   beforeImages: string[];
@@ -128,8 +130,45 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 3,
+    featuredOrder: 4,
     status: "Rendering Proposal",
+    residentialFeatured: true,
+    residentialOrder: 4,
+  },
+
+  "cheongna-lynn-strauss": {
+    title: "청라 린 스트라우스 41평",
+    cardTitle: "청라 린 스트라우스 41평",
+    category: "Residential Interior",
+    projectGroup: "Residential",
+    type: "Interior Design Concept Proposal",
+    year: "2026",
+    area: "41평",
+    images: 13,
+    heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
+    thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
+    heroAspectRatio: "2048 / 486",
+    overview:
+      "인천 청라 린 스트라우스 41평을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
+    gallery: [
+      "/projects/cheongna-lynn-strauss/01-hero.webp",
+      "/projects/cheongna-lynn-strauss/02-living-room.webp",
+      "/projects/cheongna-lynn-strauss/03-living-window.webp",
+      "/projects/cheongna-lynn-strauss/04-dressing-vanity.webp",
+      "/projects/cheongna-lynn-strauss/05-dressing-room.webp",
+      "/projects/cheongna-lynn-strauss/06-entry-corridor.webp",
+      "/projects/cheongna-lynn-strauss/07-master-bedroom-night.webp",
+      "/projects/cheongna-lynn-strauss/08-master-bedroom-day.webp",
+      "/projects/cheongna-lynn-strauss/09-kitchen.webp",
+      "/projects/cheongna-lynn-strauss/10-kitchen-storage.webp",
+      "/projects/cheongna-lynn-strauss/11-entry.webp",
+      "/projects/cheongna-lynn-strauss/12-master-bathroom.webp",
+      "/projects/cheongna-lynn-strauss/13-master-bathroom-detail.webp",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 3,
+    status: "Concept Proposal",
     residentialFeatured: true,
     residentialOrder: 3,
   },
@@ -154,7 +193,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Completed",
   },
 
@@ -181,7 +220,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Completed",
   },
 
@@ -200,7 +239,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Completed",
   },
 
@@ -219,7 +258,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Completed",
   },
 };

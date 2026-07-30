@@ -134,7 +134,10 @@ export default function ProjectLayout({
       </section>
 
       <section className="max-w-7xl mx-auto px-8 md:px-16 mb-28 md:mb-32">
-        <div className="relative aspect-[16/9] bg-[#d8d2cb] overflow-hidden">
+        <div
+          className="relative bg-[#d8d2cb] overflow-hidden"
+          style={{ aspectRatio: project.heroAspectRatio ?? "16 / 9" }}
+        >
           <Image
             src={project.heroImage}
             alt={project.title}
@@ -201,8 +204,8 @@ export default function ProjectLayout({
                 className="group block"
               >
                 <div className="relative aspect-[16/10] bg-[#d8d2cb] overflow-hidden mb-4 md:mb-5">
-                  <Image
-                    src={item.heroImage}
+                    <Image
+                    src={item.thumbnailImage ?? item.heroImage}
                     alt={item.title}
                     fill
                     quality={78}

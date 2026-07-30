@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
 import CheongnaHoban4 from "./CheongnaHoban4";
+import CheongnaLynnStrauss from "./CheongnaLynnStrauss";
 import LuxuryHouse from "./LuxuryHouse";
 import PrivateHouse from "./PrivateHouse";
 import ProjectLayout from "./ProjectLayout";
@@ -82,6 +83,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     slug === "apartment-a" ||
     slug === "apartment-b" ||
     slug === "cheongna-hoban-4-33a" ||
+    slug === "cheongna-lynn-strauss" ||
     slug === "luxury-house" ||
     slug === "private-house";
 
@@ -90,6 +92,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
       {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
+      {slug === "cheongna-lynn-strauss" && <CheongnaLynnStrauss />}
       {slug === "luxury-house" && <LuxuryHouse project={project} />}
       {slug === "private-house" && <PrivateHouse project={project} />}
 

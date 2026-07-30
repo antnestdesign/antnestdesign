@@ -92,7 +92,7 @@ function MobileProjects() {
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#d8d1ca] mb-3">
                 <Image
-                  src={project.heroImage}
+                  src={project.thumbnailImage ?? project.heroImage}
                   alt={project.title}
                   fill
                   priority={currentPage === 1 && index < 2}
@@ -278,7 +278,7 @@ function DesktopProjects() {
               className="group relative flex-1 min-h-0 overflow-hidden bg-[#d8d1ca]"
             >
               <Image
-                src={active.heroImage}
+                src={active.thumbnailImage ?? active.heroImage}
                 alt={active.title}
                 fill
                 priority={currentPage === 1 && activeIndex === 0}
