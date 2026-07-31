@@ -42,6 +42,7 @@ type FigureProps = {
   place: string;
   caption: string;
   priority?: boolean;
+  imageClassName?: string;
 };
 
 function Figure({
@@ -51,6 +52,7 @@ function Figure({
   place,
   caption,
   priority = false,
+  imageClassName = "md:max-h-[70vh]",
 }: FigureProps) {
   return (
     <figure>
@@ -61,7 +63,7 @@ function Figure({
         height={height}
         sizes="(max-width: 768px) 100vw, 80vw"
         priority={priority}
-        className="h-auto w-full"
+        className={`h-auto w-full md:mx-auto md:w-auto md:max-w-full ${imageClassName}`}
       />
       <figcaption>
         <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-500 md:text-xs">
@@ -95,35 +97,35 @@ function Chapter({
   return (
     <section
       className={`mx-auto max-w-7xl px-5 md:px-16 ${
-        last ? "pb-32 md:pb-48" : "mb-28 md:mb-40"
+        last ? "pb-32 md:pb-48" : "mb-28 lg:mb-32 2xl:mb-40"
       }`}
     >
-      <div className="grid gap-8 md:grid-cols-12 md:gap-12">
-        <div className="md:col-span-5">
+      <div className="mx-auto grid max-w-3xl gap-8 2xl:max-w-none 2xl:grid-cols-12 2xl:gap-12">
+        <div className="2xl:col-span-5">
           <p className="mb-5 text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
             {number}
           </p>
-          <h2 className="text-3xl font-light leading-[1.12] tracking-[-0.025em] text-[#4A433D] break-keep md:text-5xl">
+          <h2 className="text-3xl font-light leading-[1.16] tracking-[-0.025em] text-[#4A433D] break-keep lg:text-[40px] 2xl:text-5xl">
             {title}
           </h2>
         </div>
-        <div className="space-y-5 md:col-span-6 md:col-start-7 md:space-y-6">
+        <div className="space-y-4 md:space-y-[18px] 2xl:col-span-6 2xl:col-start-7">
           {paragraphs.map((paragraph) => (
             <p
               key={paragraph}
-              className="text-[15px] leading-7 text-neutral-600 break-keep md:text-base md:leading-8"
+              className="text-[15px] leading-7 text-[#4A433D] break-keep md:text-[17px] md:leading-[1.82]"
             >
               {paragraph}
             </p>
           ))}
           {emphasis && (
-            <p className="mt-10 border-l border-[#675B56]/60 pl-5 text-xl font-light leading-[1.7] text-[#675B56] break-keep md:mt-14 md:pl-7 md:text-2xl">
+            <p className="mt-10 max-w-[680px] border-l border-[#675B56]/60 pl-5 text-xl font-light leading-[1.7] text-[#675B56] break-keep md:pl-7 md:text-[21px] 2xl:mt-14 2xl:text-2xl">
               {emphasis}
             </p>
           )}
         </div>
       </div>
-      <div className="mt-12 md:mt-20">{children}</div>
+      <div className="mt-12 lg:mt-14 2xl:mt-20">{children}</div>
     </section>
   );
 }
@@ -160,10 +162,7 @@ const breadcrumbJsonLd = {
 
 export default function LightingNaturalLightPage() {
   return (
-    <main
-      id="standard-scroll-container"
-      className="h-[100svh] overflow-y-auto bg-[#F3F0EB] text-[#4A433D]"
-    >
+    <main className="min-h-screen bg-[#F3F0EB] text-[#4A433D]">
       <Header />
       <script
         type="application/ld+json"
@@ -174,14 +173,14 @@ export default function LightingNaturalLightPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <section className="mx-auto max-w-7xl px-5 pb-24 pt-36 md:px-16 md:pb-36 md:pt-52">
+      <section className="mx-auto max-w-7xl px-5 pb-24 pt-36 md:px-16 md:pb-28 md:pt-44 2xl:pb-36 2xl:pt-52">
         <p className="mb-6 text-[10px] uppercase tracking-[0.35em] text-neutral-500 md:mb-8 md:text-xs">
           AND STANDARD 01
         </p>
-        <h1 className="max-w-5xl text-4xl font-light leading-[1.18] tracking-[-0.035em] break-keep md:text-6xl">
+        <h1 className="max-w-5xl text-4xl font-light leading-[1.18] tracking-[-0.035em] break-keep lg:text-[52px] 2xl:text-6xl">
           조명은 자연광을 닮아야 합니다
         </h1>
-        <p className="mt-8 max-w-3xl text-base leading-8 text-neutral-600 break-keep md:mt-10 md:text-xl md:leading-[2]">
+        <p className="mt-8 max-w-[720px] text-base leading-8 text-neutral-600 break-keep md:mt-10 md:text-xl md:leading-[2]">
           매일 아침 따사로운 햇살을 기다리듯,
           <br />
           매일 저녁에는 조명이 새롭게 드러내는 공간을 기다립니다.
@@ -199,7 +198,7 @@ export default function LightingNaturalLightPage() {
         ]}
         emphasis="빛이 공간보다 먼저 보여서는 안 됩니다."
       >
-        <div className="grid items-end gap-8 md:grid-cols-12 md:gap-10">
+        <div className="mx-auto grid max-w-5xl items-end gap-8 md:grid-cols-12 md:gap-10">
           <div className="md:col-span-5">
             <Figure
               src="01a-suwon-entrance-natural-light.webp"
@@ -240,7 +239,7 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 md:gap-8">
+        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2 md:gap-8">
           <Figure
             src="02a-uniform-downlight-grid.webp"
             width={706}
@@ -270,13 +269,14 @@ export default function LightingNaturalLightPage() {
           "자연광과 인공조명이 서로 다른 높이와 방향에서 겹치면서 높은 천장과 긴 동선, 가구 사이의 깊이가 더욱 극적으로 읽힙니다.",
         ]}
       >
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto md:max-w-[560px]">
           <Figure
             src="03-aman-tokyo-lobby.webp"
             width={1080}
             height={1421}
             place="AMAN TOKYO · LOBBY"
             caption="자연광과 실내조명이 서로 다른 높이와 방향에서 만나 공간의 볼륨을 드러냅니다."
+            imageClassName="md:max-h-[72vh]"
           />
         </div>
       </Chapter>
@@ -294,16 +294,17 @@ export default function LightingNaturalLightPage() {
           "광원을 감춘다는 것은 등기구를 없애는 일이 아닙니다. 필요한 방향으로 빛을 전달하고, 불필요한 방향으로 새어 나오는 빛을 다듬는 일에 가깝습니다.",
         ]}
       >
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto md:max-w-[960px]">
           <Figure
             src="04a-suwon-kitchen-task-light.webp"
             width={2048}
             height={1536}
             place="SUWON APARTMENT · KITCHEN"
             caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
+            imageClassName="md:max-h-[72vh]"
           />
         </div>
-        <div className="mt-8 grid items-end gap-8 md:mt-12 md:grid-cols-12 md:gap-10">
+        <div className="mx-auto mt-8 grid max-w-5xl items-end gap-8 md:mt-12 md:grid-cols-12 md:gap-10">
           <div className="md:col-span-8">
             <Figure
               src="04b-karimoku-research-kitchen.webp"
@@ -336,7 +337,7 @@ export default function LightingNaturalLightPage() {
           "밝은 공간을 원하는 요구를 잘못된 취향이라고 생각하지 않습니다. 그래서 AND는 모든 조명을 한 번에 켜야만 하는 공간이 아니라, 생활 장면에 따라 필요한 빛을 선택할 수 있는 공간을 계획합니다.",
         ]}
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto md:max-w-[520px]">
           <Figure
             src="05-dongtan-master-bedroom.webp"
             width={1086}
@@ -365,7 +366,7 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto md:max-w-[400px]">
           <Figure
             src="06-kitte-marunouchi-wood-corridor.webp"
             width={1151}
@@ -395,7 +396,7 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto md:max-w-[520px]">
           <Figure
             src="07-hermes-ginza-natural-light.webp"
             width={1535}
@@ -423,7 +424,7 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto md:max-w-[520px]">
           <Figure
             src="08-aman-tokyo-elevator-lobby.webp"
             width={1536}
@@ -446,13 +447,14 @@ export default function LightingNaturalLightPage() {
         ]}
         last
       >
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto md:max-w-[960px]">
           <Figure
             src="09-dongtan-living-night-final.webp"
             width={1448}
             height={1086}
             place="DONGTAN APARTMENT · LIVING ROOM"
             caption="필요한 영역의 빛만 남겨 낮과 다른 깊이를 만든 거실"
+            imageClassName="md:max-h-[75vh]"
           />
         </div>
         <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-light leading-[1.65] tracking-[-0.025em] text-[#4A433D] break-keep md:mt-28 md:text-4xl">
@@ -464,7 +466,7 @@ export default function LightingNaturalLightPage() {
         </p>
       </Chapter>
 
-      <BackToTop targetId="standard-scroll-container" />
+      <BackToTop />
     </main>
   );
 }
