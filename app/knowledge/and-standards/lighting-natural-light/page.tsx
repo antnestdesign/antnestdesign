@@ -52,7 +52,7 @@ function Figure({
   place,
   caption,
   priority = false,
-  imageClassName = "md:max-h-[70vh]",
+  imageClassName = "",
 }: FigureProps) {
   return (
     <figure>
@@ -63,7 +63,7 @@ function Figure({
         height={height}
         sizes="(max-width: 768px) 100vw, 80vw"
         priority={priority}
-        className={`h-auto w-full md:mx-auto md:w-auto md:max-w-full ${imageClassName}`}
+        className={`h-auto w-full md:mx-auto md:w-auto md:max-w-full md:max-h-[70vh] lg:w-full lg:max-h-none ${imageClassName}`}
       />
       <figcaption>
         <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-500 md:text-xs">
@@ -83,8 +83,66 @@ type ChapterProps = {
   paragraphs: string[];
   emphasis?: React.ReactNode;
   children: React.ReactNode;
+  layout: "01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09";
   last?: boolean;
 };
+
+const desktopLayout = {
+  "01": {
+    title: "lg:col-span-7 lg:col-start-6 lg:row-start-1",
+    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
+    media: "lg:col-span-12 lg:row-start-3 lg:mt-3",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-4 lg:mt-2",
+  },
+  "02": {
+    title: "lg:col-span-10 lg:row-start-1",
+    body: "lg:col-span-5 lg:row-start-2",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-start-2 lg:self-center",
+    emphasis: "lg:col-span-9 lg:col-start-2 lg:row-start-3 lg:mt-3",
+  },
+  "03": {
+    title: "lg:col-span-5 lg:row-start-1",
+    body: "lg:col-span-5 lg:row-start-2 lg:self-end",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1",
+    emphasis: "lg:col-span-5 lg:row-start-3",
+  },
+  "04": {
+    title: "lg:col-span-5 lg:row-start-1",
+    body: "lg:col-span-5 lg:row-start-2",
+    media: "lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1",
+    emphasis: "lg:col-span-5 lg:row-start-3",
+  },
+  "05": {
+    title: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:mt-16",
+    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
+    media: "lg:col-span-5 lg:row-span-3 lg:row-start-1 lg:self-start",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3",
+  },
+  "06": {
+    title: "lg:col-span-8 lg:row-start-1",
+    body: "lg:col-span-5 lg:row-start-2",
+    media: "lg:col-span-4 lg:col-start-7 lg:row-span-3 lg:row-start-2",
+    emphasis: "lg:col-span-5 lg:row-start-3 lg:self-center",
+  },
+  "07": {
+    title: "lg:col-span-7 lg:row-start-1",
+    body: "lg:col-span-7 lg:row-start-2",
+    media: "lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1",
+    emphasis: "lg:col-span-7 lg:row-start-3",
+  },
+  "08": {
+    title: "lg:col-span-6 lg:col-start-7 lg:row-start-1",
+    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
+    media: "lg:col-span-5 lg:row-span-3 lg:row-start-1",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3",
+  },
+  "09": {
+    title: "lg:col-span-5 lg:row-start-1",
+    body: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
+    media: "lg:col-span-10 lg:col-start-2 lg:row-start-2 lg:mt-4",
+    emphasis: "lg:col-span-8 lg:col-start-3 lg:row-start-3",
+  },
+} as const;
 
 function Chapter({
   number,
@@ -92,24 +150,27 @@ function Chapter({
   paragraphs,
   emphasis,
   children,
+  layout,
   last = false,
 }: ChapterProps) {
+  const placement = desktopLayout[layout];
+
   return (
     <section
-      className={`mx-auto max-w-7xl px-5 md:px-16 ${
-        last ? "pb-32 md:pb-48" : "mb-28 lg:mb-32 2xl:mb-40"
+      className={`mx-auto max-w-7xl px-5 md:px-16 lg:px-10 xl:px-16 ${
+        last ? "pb-32 md:pb-48" : "mb-28 lg:mb-28 xl:mb-32"
       }`}
     >
-      <div className="mx-auto grid max-w-3xl gap-8 2xl:max-w-none 2xl:grid-cols-12 2xl:gap-12">
-        <div className="2xl:col-span-5">
+      <div className="mx-auto max-w-3xl lg:hidden">
+        <div>
           <p className="mb-5 text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
             {number}
           </p>
-          <h2 className="text-3xl font-light leading-[1.16] tracking-[-0.025em] text-[#4A433D] break-keep lg:text-[40px] 2xl:text-5xl">
+          <h2 className="text-3xl font-light leading-[1.16] tracking-[-0.025em] text-[#4A433D] break-keep">
             {title}
           </h2>
         </div>
-        <div className="space-y-4 md:space-y-[18px] 2xl:col-span-6 2xl:col-start-7">
+        <div className="mt-8 space-y-4 md:space-y-[18px]">
           {paragraphs.map((paragraph) => (
             <p
               key={paragraph}
@@ -124,8 +185,40 @@ function Chapter({
             </p>
           )}
         </div>
+        <div className="mt-12">{children}</div>
       </div>
-      <div className="mt-12 lg:mt-14 2xl:mt-20">{children}</div>
+
+      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-x-8 lg:gap-y-10 xl:gap-x-12 xl:gap-y-12">
+        <div className={placement.title}>
+          <p className="mb-5 text-xs font-medium tracking-[0.28em] text-neutral-500">
+            {number}
+          </p>
+          <h2 className="text-[clamp(36px,3vw,44px)] font-light leading-[1.17] tracking-[-0.025em] text-[#4A433D] break-keep">
+            {title}
+          </h2>
+        </div>
+
+        <div className={`${placement.body} max-w-[520px] space-y-4`}>
+          {paragraphs.map((paragraph) => (
+            <p
+              key={paragraph}
+              className="text-base leading-[1.88] text-neutral-600 break-keep"
+            >
+              {paragraph}
+            </p>
+          ))}
+        </div>
+
+        <div className={placement.media}>{children}</div>
+
+        {emphasis && (
+          <p
+            className={`${placement.emphasis} max-w-[560px] border-l border-[#675B56]/60 pl-6 text-[21px] font-light leading-[1.7] text-[#675B56] break-keep`}
+          >
+            {emphasis}
+          </p>
+        )}
+      </div>
     </section>
   );
 }
@@ -188,6 +281,7 @@ export default function LightingNaturalLightPage() {
       </section>
 
       <Chapter
+        layout="01"
         number="01"
         title="자연광은 광원을 드러내지 않습니다"
         paragraphs={[
@@ -198,8 +292,8 @@ export default function LightingNaturalLightPage() {
         ]}
         emphasis="빛이 공간보다 먼저 보여서는 안 됩니다."
       >
-        <div className="mx-auto grid max-w-5xl items-end gap-8 md:grid-cols-12 md:gap-10">
-          <div className="md:col-span-5">
+        <div className="mx-auto grid max-w-5xl items-start gap-8 md:grid-cols-12 md:gap-10">
+          <div className="md:col-span-5 lg:mt-20">
             <Figure
               src="01a-suwon-entrance-natural-light.webp"
               width={1536}
@@ -222,6 +316,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="02"
         number="02"
         title="공간 전체를 하나의 빛으로 밝히지 않습니다"
         paragraphs={[
@@ -258,6 +353,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="03"
         number="03"
         title="빛과 어둠은 공간의 볼륨을 만듭니다"
         paragraphs={[
@@ -276,12 +372,12 @@ export default function LightingNaturalLightPage() {
             height={1421}
             place="AMAN TOKYO · LOBBY"
             caption="자연광과 실내조명이 서로 다른 높이와 방향에서 만나 공간의 볼륨을 드러냅니다."
-            imageClassName="md:max-h-[72vh]"
           />
         </div>
       </Chapter>
 
       <Chapter
+        layout="04"
         number="04"
         title="좋은 조명은 반드시 어두운 조명이 아닙니다"
         paragraphs={[
@@ -301,7 +397,6 @@ export default function LightingNaturalLightPage() {
             height={1536}
             place="SUWON APARTMENT · KITCHEN"
             caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
-            imageClassName="md:max-h-[72vh]"
           />
         </div>
         <div className="mx-auto mt-8 grid max-w-5xl items-end gap-8 md:mt-12 md:grid-cols-12 md:gap-10">
@@ -327,6 +422,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="05"
         number="05"
         title="같은 공간도 생활에 따라 달라져야 합니다"
         paragraphs={[
@@ -349,6 +445,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="06"
         number="06"
         title="좋은 재료와 공간은 좋은 빛을 만났을 때 드러납니다"
         paragraphs={[
@@ -378,6 +475,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="07"
         number="07"
         title="조명은 공간설계와 함께 시작되어야 합니다"
         paragraphs={[
@@ -408,6 +506,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="08"
         number="08"
         title="서로 다른 빛은 공간의 질서를 만듭니다"
         paragraphs={[
@@ -436,6 +535,7 @@ export default function LightingNaturalLightPage() {
       </Chapter>
 
       <Chapter
+        layout="09"
         number="09"
         title="밤이 기다려지는 공간"
         paragraphs={[
@@ -454,7 +554,7 @@ export default function LightingNaturalLightPage() {
             height={1086}
             place="DONGTAN APARTMENT · LIVING ROOM"
             caption="필요한 영역의 빛만 남겨 낮과 다른 깊이를 만든 거실"
-            imageClassName="md:max-h-[75vh]"
+            imageClassName="lg:max-h-[65vh] lg:w-auto lg:max-w-full lg:mx-auto"
           />
         </div>
         <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-light leading-[1.65] tracking-[-0.025em] text-[#4A433D] break-keep md:mt-28 md:text-4xl">
