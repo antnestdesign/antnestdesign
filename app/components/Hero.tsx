@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -71,30 +70,6 @@ export default function Hero() {
       <div className="absolute bottom-8 md:bottom-10 left-1/2 -translate-x-1/2">
         <div className="scroll-line-indicator scroll-line-indicator-light" />
       </div>
-
-      <nav
-        aria-label="Primary page links"
-        className="absolute bottom-16 md:bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-5 md:gap-10 text-[9px] md:text-[11px] font-medium tracking-[0.24em] text-white/80 whitespace-nowrap"
-      >
-        <Link href="/about" className="transition-colors hover:text-white">
-          ABOUT
-        </Link>
-        <span aria-hidden="true" className="text-white/40">
-          ·
-        </span>
-        <Link
-          href="/knowledge/and-standards/lighting-natural-light"
-          className="transition-colors hover:text-white"
-        >
-          STANDARD
-        </Link>
-        <span aria-hidden="true" className="text-white/40">
-          ·
-        </span>
-        <Link href="/projects" className="transition-colors hover:text-white">
-          PROJECTS
-        </Link>
-      </nav>
     </section>
   );
 }
