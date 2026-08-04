@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 import { MouseEvent, useEffect, useState } from "react";
 
 const navItems = [
+  { label: "EVENTS", href: "/events/cheongna-launch" },
   { label: "ABOUT", href: "/about" },
   { label: "PROJECTS", href: "/projects" },
   {
     label: "STANDARD",
     href: "/knowledge/and-standards/lighting-natural-light",
   },
-  { label: "CONTACT", href: "/contact" },
+  { label: "CONSULTATION", href: "/consultation" },
 ];
 
 export default function Header() {
@@ -21,7 +22,9 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   const isHome = pathname === "/";
-  const isHeroState = isHome && !scrolled && !menuOpen;
+  const isOverlayHero =
+    isHome || pathname === "/events/cheongna-launch";
+  const isHeroState = isOverlayHero && !scrolled && !menuOpen;
 
   const handleLogoClick = (event: MouseEvent<HTMLAnchorElement>) => {
     setMenuOpen(false);
@@ -91,7 +94,7 @@ export default function Header() {
 
       <div className="relative max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
         <Link href="/" className="shrink-0" onClick={handleLogoClick}>
-          {isHome ? (
+          {isOverlayHero ? (
             <>
               <Image
                 src="/logo-hero-white.png"
@@ -133,7 +136,7 @@ export default function Header() {
 
         <nav
           className="hidden md:flex items-center text-[11px] md:text-[13px] tracking-[0.22em]"
-          style={{ columnGap: "clamp(42px, 7vw, 110px)" }}
+          style={{ columnGap: "clamp(22px, 4vw, 56px)" }}
         >
           {navItems.map((item) => {
             const isActive = pathname === item.href;
