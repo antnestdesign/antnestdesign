@@ -96,11 +96,11 @@ const desktopLayout = {
   "01": {
     text: "lg:col-span-5 lg:col-start-7 lg:row-start-2 lg:mt-20",
     media: "lg:contents",
-    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3 lg:mt-10",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3 lg:mt-8",
   },
   "02": {
     text: "lg:col-span-5 lg:row-start-1",
-    media: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:pt-9",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1 lg:pt-9",
     emphasis: "lg:col-span-5 lg:row-start-2",
   },
   "03": {
@@ -125,12 +125,12 @@ const desktopLayout = {
   },
   "07": {
     text: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
-    media: "lg:col-span-5 lg:row-start-1 lg:pt-9",
+    media: "lg:col-span-5 lg:row-span-2 lg:row-start-1 lg:pt-9",
     emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
   },
   "08": {
     text: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
-    media: "lg:col-span-5 lg:row-start-1 lg:pt-9",
+    media: "lg:col-span-5 lg:row-span-2 lg:row-start-1 lg:pt-9",
     emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
   },
   "09": {
@@ -154,14 +154,18 @@ function Chapter({
   return (
     <section
       className={`mx-auto max-w-[1240px] px-5 md:px-16 lg:px-10 xl:px-16 ${
-        last ? "pb-32 md:pb-48" : "mb-28 lg:mb-28 xl:mb-32"
+        last ? "pb-32 md:pb-48" : "mb-28"
       } ${layout === "01" ? "lg:contents" : ""}`}
     >
       <div
         className={`grid grid-cols-1 gap-y-10 ${
           layout === "01"
             ? "lg:contents"
-            : "lg:grid-cols-12 lg:items-start lg:gap-x-20 lg:gap-y-8 xl:gap-x-24"
+            : `lg:grid-cols-12 lg:items-start lg:gap-x-20 lg:gap-y-8 xl:gap-x-24 ${
+                layout === "02" || layout === "07" || layout === "08"
+                  ? "lg:grid-rows-[auto_1fr]"
+                  : ""
+              }`
         }`}
       >
         <div className={placement.text}>
@@ -256,7 +260,7 @@ export default function LightingNaturalLightPage() {
       />
 
       <article>
-      <div className="lg:mx-auto lg:mb-28 lg:grid lg:max-w-[1240px] lg:grid-cols-12 lg:items-start lg:gap-x-20 lg:px-10 lg:pt-44 xl:mb-32 xl:gap-x-24 xl:px-16 2xl:pt-52">
+      <div className="lg:mx-auto lg:mb-28 lg:grid lg:max-w-[1240px] lg:grid-cols-12 lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-20 lg:px-10 lg:pt-44 xl:gap-x-24 xl:px-16 2xl:pt-52">
       <header className="mx-auto max-w-[1240px] px-5 pb-20 pt-36 md:px-16 md:pb-24 md:pt-44 lg:col-span-5 lg:row-start-1 lg:mx-0 lg:max-w-none lg:px-0 lg:pb-0 lg:pt-0 xl:px-0">
         <p className="mb-6 text-[10px] uppercase tracking-[0.35em] text-neutral-500 md:mb-8 md:text-xs">
           AND STANDARD 01
@@ -287,7 +291,7 @@ export default function LightingNaturalLightPage() {
         emphasis="빛이 공간보다 먼저 보여서는 안 됩니다."
       >
         <div className="mx-auto grid max-w-5xl items-start gap-8 md:grid-cols-12 md:gap-10 lg:contents">
-          <div className="order-2 md:col-span-5 lg:order-1 lg:col-span-5 lg:row-start-2 lg:mt-20">
+          <div className="order-2 md:col-span-5 lg:order-1 lg:col-span-5 lg:row-span-2 lg:row-start-2 lg:mt-20">
             <Figure
               src="01a-suwon-entrance-natural-light.webp"
               width={1536}
@@ -331,7 +335,7 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2 md:gap-8">
+        <div className="mx-auto grid w-full max-w-[407px] gap-8 lg:gap-5">
           <Figure
             src="02a-uniform-downlight-grid.webp"
             width={706}
@@ -339,7 +343,7 @@ export default function LightingNaturalLightPage() {
             place="COMPARISON · DOWNLIGHT GRID"
             caption="공간과 생활의 구분 없이 반복된 다운라이트"
             alt="천장 전체에 일정한 간격으로 반복 배치된 다운라이트"
-            imageClassName="lg:aspect-[4/3] lg:object-cover"
+            imageClassName="lg:aspect-[16/9] lg:object-cover"
           />
           <Figure
             src="02b-uniform-ceiling-light.webp"
@@ -348,7 +352,7 @@ export default function LightingNaturalLightPage() {
             place="COMPARISON · CEILING LIGHT"
             caption="하나의 강한 광원으로 공간 전체를 동일하게 밝히는 방식"
             alt="중앙 천장등 하나가 실내 전체를 고르게 밝히는 공간"
-            imageClassName="lg:aspect-[4/3] lg:object-cover"
+            imageClassName="lg:aspect-[16/9] lg:object-cover"
           />
         </div>
       </Chapter>
@@ -392,18 +396,16 @@ export default function LightingNaturalLightPage() {
           "광원을 감춘다는 것은 등기구를 없애는 일이 아닙니다. 필요한 방향으로 빛을 전달하고, 불필요한 방향으로 새어 나오는 빛을 다듬는 일에 가깝습니다.",
         ]}
       >
-        <div className="mx-auto max-w-[560px]">
-          <Figure
-            src="04a-suwon-kitchen-task-light.webp"
-            width={2048}
-            height={1536}
-            place="SUWON APARTMENT · KITCHEN"
-            caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
-            alt="수원 아파트 주방 상부장 아래 조명이 조리대 작업면을 밝히는 모습"
-          />
-        </div>
-        <div className="mx-auto mt-8 grid max-w-[560px] grid-cols-1 gap-8">
-          <div>
+        <div className="mx-auto grid max-w-[560px] grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-5">
+          <div className="grid gap-8 lg:gap-5">
+            <Figure
+              src="04a-suwon-kitchen-task-light.webp"
+              width={2048}
+              height={1536}
+              place="SUWON APARTMENT · KITCHEN"
+              caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
+              alt="수원 아파트 주방 상부장 아래 조명이 조리대 작업면을 밝히는 모습"
+            />
             <Figure
               src="04b-karimoku-research-kitchen.webp"
               width={2048}
@@ -413,7 +415,7 @@ export default function LightingNaturalLightPage() {
               alt="카리모쿠 리서치 센터 주방 아일랜드의 상부 반사광과 하부 작업광"
             />
           </div>
-          <div>
+          <div className="lg:pt-0">
             <Figure
               src="04c-karimoku-research-pendant-detail.webp"
               width={1536}
@@ -489,12 +491,9 @@ export default function LightingNaturalLightPage() {
         title="조명은 공간설계와 함께 시작되어야 합니다"
         paragraphs={[
           "조명계획은 공간설계가 끝난 뒤 천장에 등기구를 배치하는 작업이 아닙니다.",
-          "비추고자 하는 공간과 재료, 가구의 위치가 정해져야 빛의 위치와 방향도 결정할 수 있습니다. 식탁의 위치가 정해져야 그 위의 빛을 계획할 수 있고, 침대와 소파의 방향이 정해져야 사람의 시야에 광원이 들어오는지 확인할 수 있습니다.",
-          "생활 장면에 따라 조명을 나누어 사용하려면 전기배선과 스위치 구성도 설계 초기부터 함께 검토되어야 합니다.",
-          "평면과 가구 배치를 모두 결정한 뒤 남은 천장에 조명 위치를 표시하는 것만으로는 충분하지 않습니다. 공간의 구획과 동선, 재료와 가구, 조명과 스위치는 하나의 계획 안에서 함께 움직여야 합니다.",
-          "AND는 가능하면 광원이 사람의 주요 시야에 직접 노출되지 않도록 계획합니다. 그렇다고 모든 등기구를 반드시 감추지는 않습니다.",
-          "광원을 숨기기 위해 필요 이상의 구조와 비용을 사용하는 것도 효율적인 설계라고 보기 어렵습니다. 등기구 자체가 공간의 중심을 만들거나 필요한 기능을 해결하고, 공간의 볼륨을 형성하는 분명한 역할이 있다면 드러낼 수 있습니다.",
-          "반대로 등기구가 보여야 할 이유가 충분하지 않다면 더 절제된 방식으로 대체합니다.",
+          "공간과 재료, 가구의 위치가 정해져야 빛의 위치와 방향도 결정할 수 있습니다. 식탁과 침대, 소파의 배치는 필요한 밝기뿐 아니라 사람의 시야에 광원이 직접 들어오는지도 좌우합니다.",
+          "생활 장면에 따라 조명을 나누어 사용하려면 전기배선과 스위치 구성 역시 설계 초기부터 함께 검토되어야 합니다. 공간의 구획과 동선, 재료와 가구, 조명과 스위치는 하나의 계획 안에서 움직여야 합니다.",
+          "AND는 광원이 사람의 주요 시야에 직접 노출되지 않도록 계획하지만, 모든 등기구를 감추지는 않습니다. 등기구가 필요한 기능을 해결하거나 공간의 중심과 볼륨을 만드는 분명한 역할이 있다면 드러낼 수 있습니다. 반대로 보여야 할 이유가 충분하지 않다면 불필요한 구조와 비용을 더하지 않고 더 절제된 방식으로 대체합니다.",
         ]}
         emphasis={
           <>
@@ -557,7 +556,6 @@ export default function LightingNaturalLightPage() {
           "지금 머무는 장소에 필요한 빛, 바라보고 싶은 재료와 가구를 드러내는 빛만 남아도 공간은 충분히 편안할 수 있습니다.",
           "밤의 공간은 낮보다 어두워진 공간이 아닙니다. 계획된 빛을 통해 낮에는 보이지 않았던 또 다른 깊이와 표정이 드러나는 공간입니다.",
         ]}
-        last
       >
         <div className="mx-auto md:max-w-[960px]">
           <Figure
@@ -569,14 +567,13 @@ export default function LightingNaturalLightPage() {
             alt="벽과 가구 주변의 조명만 남겨 깊이와 편안함을 만든 동탄 아파트 야간 거실"
           />
         </div>
-        <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-light leading-[1.65] tracking-[-0.025em] text-[#4A433D] break-keep md:mt-28 md:text-4xl">
-          매일 아침 따사로운 햇살을 기다리듯,
-          <br />
-          매일 저녁 해가 질 때에는 조명이 새롭게 드러내는
-          <br />
-          공간의 깊이와 볼륨을 기대할 수 있기를 바랍니다.
-        </p>
       </Chapter>
+
+      <div className="mx-auto max-w-[1240px] px-5 pb-32 md:px-16 md:pb-48 lg:px-10 xl:px-16">
+        <p className="mx-auto max-w-[340px] text-center text-[22px] font-light leading-[1.72] tracking-[-0.035em] text-[#4A433D] break-keep md:max-w-[920px] md:text-[32px] md:leading-[1.65] md:tracking-[-0.04em]">
+          매일 아침 따사로운 햇살을 기다리듯, 매일 저녁 해가 질 때에는 조명이 새롭게 드러내는 공간의 깊이와 볼륨을 기대할 수 있기를 바랍니다.
+        </p>
+      </div>
 
       </article>
 
