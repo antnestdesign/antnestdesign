@@ -5,16 +5,19 @@ import BackToTop from "../../../components/BackToTop";
 
 const path = "/knowledge/and-standards/lighting-natural-light";
 const canonicalUrl = `https://www.antnestdesign.com${path}`;
+const pageTitle =
+  "조명은 자연광을 닮아야 합니다 | 주거 조명 설계 기준 | ANTNEST DESIGN";
 const description =
-  "ANTNEST DESIGN이 생각하는 좋은 주거 조명의 기준. 자연광의 경험을 닮은 빛과 생활 장면, 재료와 공간의 깊이를 함께 설계하는 방법을 소개합니다.";
+  "자연광, 간접조명, 다운라이트, 주방 작업조명과 침실 조명까지. ANTNEST DESIGN이 생활과 공간을 기준으로 계획하는 주거 조명 설계 원칙을 소개합니다.";
 const imageRoot = path;
 
 export const metadata: Metadata = {
-  title: "조명은 자연광을 닮아야 합니다 | AND STANDARD",
+  title: { absolute: pageTitle },
   description,
   alternates: { canonical: path },
+  robots: { index: true, follow: true },
   openGraph: {
-    title: "조명은 자연광을 닮아야 합니다 | AND STANDARD",
+    title: pageTitle,
     description,
     url: canonicalUrl,
     type: "article",
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "조명은 자연광을 닮아야 합니다 | AND STANDARD",
+    title: pageTitle,
     description,
     images: [`${canonicalUrl}/09-dongtan-living-night-final.webp`],
   },
@@ -41,6 +44,7 @@ type FigureProps = {
   height: number;
   place: string;
   caption: string;
+  alt?: string;
   priority?: boolean;
   imageClassName?: string;
 };
@@ -51,6 +55,7 @@ function Figure({
   height,
   place,
   caption,
+  alt,
   priority = false,
   imageClassName = "",
 }: FigureProps) {
@@ -58,18 +63,18 @@ function Figure({
     <figure>
       <Image
         src={`${imageRoot}/${src}`}
-        alt={caption}
+        alt={alt ?? caption}
         width={width}
         height={height}
         sizes="(max-width: 768px) 100vw, 80vw"
         priority={priority}
-        className={`h-auto w-full md:mx-auto md:w-auto md:max-w-full md:max-h-[70vh] lg:w-full lg:max-h-none ${imageClassName}`}
+        className={`h-auto w-full ${imageClassName}`}
       />
       <figcaption>
-        <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-500 md:text-xs">
+        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-500 md:text-xs">
           {place}
         </p>
-        <p className="mt-2 text-[13px] leading-6 text-neutral-600 break-keep md:text-sm md:leading-7">
+        <p className="mt-2 max-w-full text-[13px] leading-6 text-neutral-600 break-keep md:text-sm md:leading-7">
           {caption}
         </p>
       </figcaption>
@@ -89,58 +94,49 @@ type ChapterProps = {
 
 const desktopLayout = {
   "01": {
-    title: "lg:col-span-7 lg:col-start-6 lg:row-start-1",
-    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
-    media: "lg:col-span-12 lg:row-start-3 lg:mt-3",
-    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-4 lg:mt-2",
+    text: "lg:col-span-5 lg:col-start-7 lg:row-start-2 lg:mt-20",
+    media: "lg:contents",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3 lg:mt-10",
   },
   "02": {
-    title: "lg:col-span-10 lg:row-start-1",
-    body: "lg:col-span-5 lg:row-start-2",
-    media: "lg:col-span-6 lg:col-start-7 lg:row-start-2 lg:self-center",
-    emphasis: "lg:col-span-9 lg:col-start-2 lg:row-start-3 lg:mt-3",
+    text: "lg:col-span-5 lg:row-start-1",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:row-start-2",
   },
   "03": {
-    title: "lg:col-span-5 lg:row-start-1",
-    body: "lg:col-span-5 lg:row-start-2 lg:self-end",
-    media: "lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1",
-    emphasis: "lg:col-span-5 lg:row-start-3",
+    text: "lg:col-span-5 lg:row-start-1",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:row-start-2",
   },
   "04": {
-    title: "lg:col-span-5 lg:row-start-1",
-    body: "lg:col-span-5 lg:row-start-2",
-    media: "lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1",
-    emphasis: "lg:col-span-5 lg:row-start-3",
+    text: "lg:col-span-5 lg:row-start-1",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:row-start-2",
   },
   "05": {
-    title: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:mt-16",
-    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
-    media: "lg:col-span-5 lg:row-span-3 lg:row-start-1 lg:self-start",
-    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3",
+    text: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
+    media: "lg:col-span-5 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
   },
   "06": {
-    title: "lg:col-span-8 lg:row-start-1",
-    body: "lg:col-span-5 lg:row-start-2",
-    media: "lg:col-span-4 lg:col-start-7 lg:row-span-3 lg:row-start-2",
-    emphasis: "lg:col-span-5 lg:row-start-3 lg:self-center",
+    text: "lg:col-span-5 lg:row-start-1",
+    media: "lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:row-start-2",
   },
   "07": {
-    title: "lg:col-span-7 lg:row-start-1",
-    body: "lg:col-span-7 lg:row-start-2",
-    media: "lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1",
-    emphasis: "lg:col-span-7 lg:row-start-3",
+    text: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
+    media: "lg:col-span-5 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
   },
   "08": {
-    title: "lg:col-span-6 lg:col-start-7 lg:row-start-1",
-    body: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
-    media: "lg:col-span-5 lg:row-span-3 lg:row-start-1",
-    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-3",
+    text: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
+    media: "lg:col-span-5 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:col-start-7 lg:row-start-2",
   },
   "09": {
-    title: "lg:col-span-5 lg:row-start-1",
-    body: "lg:col-span-5 lg:col-start-7 lg:row-start-1",
-    media: "lg:col-span-10 lg:col-start-2 lg:row-start-2 lg:mt-4",
-    emphasis: "lg:col-span-8 lg:col-start-3 lg:row-start-3",
+    text: "lg:col-span-5 lg:row-start-1",
+    media: "lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:pt-9",
+    emphasis: "lg:col-span-5 lg:row-start-2",
   },
 } as const;
 
@@ -157,63 +153,48 @@ function Chapter({
 
   return (
     <section
-      className={`mx-auto max-w-7xl px-5 md:px-16 lg:px-10 xl:px-16 ${
+      className={`mx-auto max-w-[1240px] px-5 md:px-16 lg:px-10 xl:px-16 ${
         last ? "pb-32 md:pb-48" : "mb-28 lg:mb-28 xl:mb-32"
-      }`}
+      } ${layout === "01" ? "lg:contents" : ""}`}
     >
-      <div className="mx-auto max-w-3xl lg:hidden">
-        <div>
-          <p className="mb-5 text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
+      <div
+        className={`grid grid-cols-1 gap-y-10 ${
+          layout === "01"
+            ? "lg:contents"
+            : "lg:grid-cols-12 lg:items-start lg:gap-x-20 lg:gap-y-8 xl:gap-x-24"
+        }`}
+      >
+        <div className={placement.text}>
+          <p
+            className={`mb-5 text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs ${
+              layout === "01" ? "lg:mb-4" : ""
+            }`}
+          >
             {number}
           </p>
-          <h2 className="text-3xl font-light leading-[1.16] tracking-[-0.025em] text-[#4A433D] break-keep">
+          <h2 className="text-3xl font-light leading-[1.16] tracking-[-0.025em] text-[#4A433D] break-keep lg:text-[32px] xl:text-[36px]">
             {title}
           </h2>
+          <div
+            className={`mt-7 max-w-[520px] space-y-4 ${
+              layout === "01" ? "lg:mt-6" : ""
+            }`}
+          >
+            {paragraphs.map((paragraph) => (
+              <p
+                key={paragraph}
+                className="text-[15px] leading-7 text-neutral-600 break-keep lg:text-base lg:leading-[1.88]"
+              >
+                {paragraph}
+              </p>
+            ))}
+          </div>
         </div>
-        <div className="mt-8 space-y-4 md:space-y-[18px]">
-          {paragraphs.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="text-[15px] leading-7 text-[#4A433D] break-keep md:text-[17px] md:leading-[1.82]"
-            >
-              {paragraph}
-            </p>
-          ))}
-          {emphasis && (
-            <p className="mt-10 max-w-[680px] border-l border-[#675B56]/60 pl-5 text-xl font-light leading-[1.7] text-[#675B56] break-keep md:pl-7 md:text-[21px] 2xl:mt-14 2xl:text-2xl">
-              {emphasis}
-            </p>
-          )}
-        </div>
-        <div className="mt-12">{children}</div>
-      </div>
-
-      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-x-8 lg:gap-y-10 xl:gap-x-12 xl:gap-y-12">
-        <div className={placement.title}>
-          <p className="mb-5 text-xs font-medium tracking-[0.28em] text-neutral-500">
-            {number}
-          </p>
-          <h2 className="text-[clamp(36px,3vw,44px)] font-light leading-[1.17] tracking-[-0.025em] text-[#4A433D] break-keep">
-            {title}
-          </h2>
-        </div>
-
-        <div className={`${placement.body} max-w-[520px] space-y-4`}>
-          {paragraphs.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="text-base leading-[1.88] text-neutral-600 break-keep"
-            >
-              {paragraph}
-            </p>
-          ))}
-        </div>
-
-        <div className={placement.media}>{children}</div>
+        <div className={`order-2 lg:order-none ${placement.media}`}>{children}</div>
 
         {emphasis && (
           <p
-            className={`${placement.emphasis} max-w-[560px] border-l border-[#675B56]/60 pl-6 text-[21px] font-light leading-[1.7] text-[#675B56] break-keep`}
+            className={`order-3 max-w-[560px] border-l border-[#675B56]/60 pl-5 text-xl font-light leading-[1.7] text-[#675B56] break-keep lg:order-none lg:pl-6 lg:text-[21px] ${placement.emphasis}`}
           >
             {emphasis}
           </p>
@@ -229,8 +210,16 @@ const articleJsonLd = {
   headline: "조명은 자연광을 닮아야 합니다",
   description,
   image: `${canonicalUrl}/09-dongtan-living-night-final.webp`,
+  inLanguage: "ko-KR",
   author: { "@type": "Organization", name: "ANTNEST DESIGN" },
-  publisher: { "@type": "Organization", name: "ANTNEST DESIGN" },
+  publisher: {
+    "@type": "Organization",
+    name: "ANTNEST DESIGN",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://www.antnestdesign.com/logo.png",
+    },
+  },
   mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
 };
 
@@ -266,7 +255,9 @@ export default function LightingNaturalLightPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <section className="mx-auto max-w-7xl px-5 pb-24 pt-36 md:px-16 md:pb-28 md:pt-44 2xl:pb-36 2xl:pt-52">
+      <article>
+      <div className="lg:mx-auto lg:mb-28 lg:grid lg:max-w-[1240px] lg:grid-cols-12 lg:items-start lg:gap-x-20 lg:px-10 lg:pt-44 xl:mb-32 xl:gap-x-24 xl:px-16 2xl:pt-52">
+      <header className="mx-auto max-w-[1240px] px-5 pb-20 pt-36 md:px-16 md:pb-24 md:pt-44 lg:col-span-5 lg:row-start-1 lg:mx-0 lg:max-w-none lg:px-0 lg:pb-0 lg:pt-0 xl:px-0">
         <p className="mb-6 text-[10px] uppercase tracking-[0.35em] text-neutral-500 md:mb-8 md:text-xs">
           AND STANDARD 01
         </p>
@@ -278,7 +269,10 @@ export default function LightingNaturalLightPage() {
           <br />
           매일 저녁에는 조명이 새롭게 드러내는 공간을 기다립니다.
         </p>
-      </section>
+        <p className="mt-8 max-w-[600px] text-[14px] leading-7 text-neutral-600 break-keep md:text-[15px] md:leading-8">
+          AND의 주거 조명 설계는 간접조명이나 다운라이트의 수를 정하는 데서 시작하지 않습니다. 거실과 침실, 주방에서 이루어지는 생활과 사람의 시선, 자연광의 방향과 재료의 질감을 먼저 살펴봅니다. 필요한 작업면에는 충분한 밝기를 확보하고, 휴식 공간에서는 광원의 직접 노출을 줄이며, 생활 장면에 따라 조명을 나누어 사용할 수 있도록 스위치와 회로를 함께 계획합니다.
+        </p>
+      </header>
 
       <Chapter
         layout="01"
@@ -292,28 +286,31 @@ export default function LightingNaturalLightPage() {
         ]}
         emphasis="빛이 공간보다 먼저 보여서는 안 됩니다."
       >
-        <div className="mx-auto grid max-w-5xl items-start gap-8 md:grid-cols-12 md:gap-10">
-          <div className="md:col-span-5 lg:mt-20">
+        <div className="mx-auto grid max-w-5xl items-start gap-8 md:grid-cols-12 md:gap-10 lg:contents">
+          <div className="order-2 md:col-span-5 lg:order-1 lg:col-span-5 lg:row-start-2 lg:mt-20">
             <Figure
               src="01a-suwon-entrance-natural-light.webp"
               width={1536}
               height={2048}
               place="SUWON APARTMENT · ENTRANCE"
               caption="목재 벽과 바닥 위로 방향과 그림자를 만드는 자연광"
+              alt="수원 아파트 현관의 목재 벽과 바닥에 길게 드리운 자연광과 그림자"
               priority
             />
           </div>
-          <div className="md:col-span-7">
+          <div className="order-1 md:col-span-7 lg:order-2 lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:mt-12">
             <Figure
               src="01b-karimoku-commons-diffused-light.webp"
               width={2048}
               height={1366}
               place="KARIMOKU COMMONS · TOKYO"
               caption="얇은 커튼을 통과해 가구와 공간을 부드럽게 감싸는 확산광"
+              alt="얇은 커튼을 통과한 확산광이 소파와 거실을 부드럽게 밝히는 카리모쿠 커먼스"
             />
           </div>
         </div>
       </Chapter>
+      </div>
 
       <Chapter
         layout="02"
@@ -341,6 +338,8 @@ export default function LightingNaturalLightPage() {
             height={413}
             place="COMPARISON · DOWNLIGHT GRID"
             caption="공간과 생활의 구분 없이 반복된 다운라이트"
+            alt="천장 전체에 일정한 간격으로 반복 배치된 다운라이트"
+            imageClassName="lg:aspect-[4/3] lg:object-cover"
           />
           <Figure
             src="02b-uniform-ceiling-light.webp"
@@ -348,6 +347,8 @@ export default function LightingNaturalLightPage() {
             height={512}
             place="COMPARISON · CEILING LIGHT"
             caption="하나의 강한 광원으로 공간 전체를 동일하게 밝히는 방식"
+            alt="중앙 천장등 하나가 실내 전체를 고르게 밝히는 공간"
+            imageClassName="lg:aspect-[4/3] lg:object-cover"
           />
         </div>
       </Chapter>
@@ -372,6 +373,7 @@ export default function LightingNaturalLightPage() {
             height={1421}
             place="AMAN TOKYO · LOBBY"
             caption="자연광과 실내조명이 서로 다른 높이와 방향에서 만나 공간의 볼륨을 드러냅니다."
+            alt="높은 천장의 아만 도쿄 로비에서 자연광과 낮은 실내조명이 만든 명암과 깊이"
           />
         </div>
       </Chapter>
@@ -390,32 +392,35 @@ export default function LightingNaturalLightPage() {
           "광원을 감춘다는 것은 등기구를 없애는 일이 아닙니다. 필요한 방향으로 빛을 전달하고, 불필요한 방향으로 새어 나오는 빛을 다듬는 일에 가깝습니다.",
         ]}
       >
-        <div className="mx-auto md:max-w-[960px]">
+        <div className="mx-auto max-w-[560px]">
           <Figure
             src="04a-suwon-kitchen-task-light.webp"
             width={2048}
             height={1536}
             place="SUWON APARTMENT · KITCHEN"
             caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
+            alt="수원 아파트 주방 상부장 아래 조명이 조리대 작업면을 밝히는 모습"
           />
         </div>
-        <div className="mx-auto mt-8 grid max-w-5xl items-end gap-8 md:mt-12 md:grid-cols-12 md:gap-10">
-          <div className="md:col-span-8">
+        <div className="mx-auto mt-8 grid max-w-[560px] grid-cols-1 gap-8">
+          <div>
             <Figure
               src="04b-karimoku-research-kitchen.webp"
               width={2048}
               height={1536}
               place="KARIMOKU RESEARCH CENTER · KITCHEN"
               caption="상부 반사광과 하부 작업광을 함께 사용한 아일랜드 조명"
+              alt="카리모쿠 리서치 센터 주방 아일랜드의 상부 반사광과 하부 작업광"
             />
           </div>
-          <div className="md:col-span-4">
+          <div>
             <Figure
               src="04c-karimoku-research-pendant-detail.webp"
               width={1536}
               height={2048}
               place="KARIMOKU RESEARCH CENTER · LIGHTING DETAIL"
               caption="광원의 직접 노출을 줄이며 위와 아래로 역할을 나눈 조명 구조"
+              alt="빛을 위와 아래로 나누고 광원의 직접 노출을 줄인 펜던트 조명 디테일"
             />
           </div>
         </div>
@@ -433,13 +438,15 @@ export default function LightingNaturalLightPage() {
           "밝은 공간을 원하는 요구를 잘못된 취향이라고 생각하지 않습니다. 그래서 AND는 모든 조명을 한 번에 켜야만 하는 공간이 아니라, 생활 장면에 따라 필요한 빛을 선택할 수 있는 공간을 계획합니다.",
         ]}
       >
-        <div className="mx-auto md:max-w-[520px]">
+        <div className="mx-auto w-full max-w-[370px]">
           <Figure
             src="05-dongtan-master-bedroom.webp"
             width={1086}
             height={1448}
             place="DONGTAN APARTMENT · BEDROOM"
             caption="누웠을 때의 시선을 고려해 천장 조명을 줄이고, 벽등과 침대 하부의 간접광으로 필요한 밝기를 만듭니다."
+            alt="벽등과 침대 하부 간접광으로 편안한 밝기를 만든 동탄 아파트 침실"
+            imageClassName="lg:aspect-[3/4] lg:w-full lg:object-cover"
           />
         </div>
       </Chapter>
@@ -463,13 +470,15 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto md:max-w-[400px]">
+        <div className="mx-auto w-full max-w-[370px]">
           <Figure
             src="06-kitte-marunouchi-wood-corridor.webp"
             width={1151}
             height={2048}
             place="KITTE MARUNOUCHI · TOKYO"
             caption="벽 상부의 간접광이 목재의 결을 드러내고, 필요한 위치의 조명이 복도의 밝기와 방향성을 보완합니다."
+            alt="벽 상부 간접광이 목재 결을 따라 이어지며 깊이를 만드는 KITTE 마루노우치 복도"
+            imageClassName="aspect-[3/4] w-full object-cover object-[50%_42%] lg:object-center"
           />
         </div>
       </Chapter>
@@ -494,13 +503,15 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto md:max-w-[520px]">
+        <div className="mx-auto w-full max-w-[370px]">
           <Figure
             src="07-hermes-ginza-natural-light.webp"
             width={1535}
             height={2048}
             place="HERMÈS GINZA · TOKYO"
             caption="외피와 보이드, 재료와 이동 동선이 빛의 흐름과 함께 계획된 공간"
+            alt="유리 외피와 보이드를 따라 자연광이 흐르는 에르메스 긴자 내부 공간"
+            imageClassName="lg:aspect-[3/4] lg:w-full lg:object-cover"
           />
         </div>
       </Chapter>
@@ -530,6 +541,7 @@ export default function LightingNaturalLightPage() {
             height={2048}
             place="AMAN TOKYO · ELEVATOR LOBBY"
             caption="천장 간접광은 공간의 분위기를 만들고, 벽면을 비추는 빛은 재료를 드러내며, 엘리베이터 앞에 모인 빛은 이동 방향을 안내합니다."
+            alt="천장 간접광과 벽면 조명, 바닥의 빛이 이동 방향을 만드는 아만 도쿄 엘리베이터 로비"
           />
         </div>
       </Chapter>
@@ -554,7 +566,7 @@ export default function LightingNaturalLightPage() {
             height={1086}
             place="DONGTAN APARTMENT · LIVING ROOM"
             caption="필요한 영역의 빛만 남겨 낮과 다른 깊이를 만든 거실"
-            imageClassName="lg:max-h-[65vh] lg:w-auto lg:max-w-full lg:mx-auto"
+            alt="벽과 가구 주변의 조명만 남겨 깊이와 편안함을 만든 동탄 아파트 야간 거실"
           />
         </div>
         <p className="mx-auto mt-20 max-w-4xl text-center text-2xl font-light leading-[1.65] tracking-[-0.025em] text-[#4A433D] break-keep md:mt-28 md:text-4xl">
@@ -565,6 +577,8 @@ export default function LightingNaturalLightPage() {
           공간의 깊이와 볼륨을 기대할 수 있기를 바랍니다.
         </p>
       </Chapter>
+
+      </article>
 
       <BackToTop />
     </main>
