@@ -91,7 +91,6 @@
 .supportCopy h2,
 .standardTitle,
 .finalCta h2 {
-  font-family: "Batang", "바탕", serif;
   font-weight: 400;
 }
 
@@ -104,7 +103,6 @@
 
 .heroLead {
   margin: 0;
-  font-family: "Batang", "바탕", serif;
   font-size: clamp(28px, 2.3vw, 34px);
   line-height: 1.5;
   letter-spacing: -0.045em;
@@ -224,7 +222,6 @@
 .benefitsTitle {
   margin: 0 0 25px;
   text-align: center;
-  font-family: "Batang", "바탕", serif;
   font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.035em;
@@ -271,7 +268,6 @@
   inset: 0;
   display: grid;
   place-items: center;
-  font-family: Georgia, serif;
   font-size: 20px;
 }
 
@@ -367,13 +363,11 @@
 .benefitNumber {
   margin: 0 0 4px;
   color: var(--event-brown);
-  font-family: Georgia, serif;
   font-size: 18px;
 }
 
 .benefitText h3 {
   margin: 0 0 13px;
-  font-family: "Batang", "바탕", serif;
   font-size: 22px;
   font-weight: 400;
   letter-spacing: -0.035em;
@@ -567,7 +561,6 @@
 .eligibility h2,
 .process h2 {
   margin: 0 0 25px;
-  font-family: "Batang", "바탕", serif;
   font-size: 21px;
   font-weight: 400;
 }
@@ -630,7 +623,6 @@
   border: 1px solid var(--event-line);
   border-radius: 50%;
   color: var(--event-muted);
-  font-family: Georgia, serif;
   font-size: 12px;
 }
 
