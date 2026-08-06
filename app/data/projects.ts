@@ -106,8 +106,8 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-central-eileens-garden-84a": {
-    title: "청라 센트럴에일린의뜰 84A",
-    cardTitle: "청라 센트럴에일린의뜰 84A",
+    title: "인천 청라 센트럴에일린의뜰 84A",
+    cardTitle: "인천 청라 센트럴에일린의뜰 84A",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Design Proposal",
@@ -198,7 +198,6 @@ export const projects: Record<string, Project> = {
     heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
     thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
     heroAspectRatio: "2048 / 486",
-    hideProjectInformation: true,
     overview:
       "인천 청라 린 스트라우스 41평을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
     gallery: [
