@@ -105,6 +105,55 @@ export const projects: Record<string, Project> = {
     residentialOrder: 2,
   },
 
+  "cheongna-central-eileens-garden-84a": {
+    title: "청라 센트럴에일린의뜰 84A",
+    cardTitle: "청라 센트럴에일린의뜰 84A",
+    category: "Residential Interior",
+    projectGroup: "Residential",
+    type: "Design Proposal",
+    year: "2026",
+    area: "84A",
+    images: 24,
+    heroImage:
+      "/projects/cheongna-central-eileens-garden-84a/02-living-room.webp",
+    thumbnailImage:
+      "/projects/cheongna-central-eileens-garden-84a/02-living-room.webp",
+    heroAspectRatio: "2000 / 1100",
+    overview:
+      "인천 청라 센트럴에일린의뜰 84A를 위한 인테리어 디자인 제안입니다. 같은 평면 안에서 공용 공간과 개인 공간의 흐름을 정리하고, 아일랜드의 방향과 보조주방 구성에 따라 달라지는 두 가지 주방 계획을 함께 제안했습니다.",
+    gallery: [
+      "/projects/cheongna-central-eileens-garden-84a/01-hero.webp",
+      "/projects/cheongna-central-eileens-garden-84a/03-living-tv-wall.webp",
+      "/projects/cheongna-central-eileens-garden-84a/04-entry-corridor.webp",
+      "/projects/cheongna-central-eileens-garden-84a/05-entry-vanity.webp",
+      "/projects/cheongna-central-eileens-garden-84a/06-hallway.webp",
+      "/projects/cheongna-central-eileens-garden-84a/07-dressing-vanity.webp",
+      "/projects/cheongna-central-eileens-garden-84a/08-master-bedroom-day.webp",
+      "/projects/cheongna-central-eileens-garden-84a/09-master-bedroom-night.webp",
+      "/projects/cheongna-central-eileens-garden-84a/10-master-bedroom-side-day.webp",
+      "/projects/cheongna-central-eileens-garden-84a/11-master-bedroom-side-night.webp",
+      "/projects/cheongna-central-eileens-garden-84a/12-study-bedroom-overview.webp",
+      "/projects/cheongna-central-eileens-garden-84a/13-study-bedroom-vanity.webp",
+      "/projects/cheongna-central-eileens-garden-84a/14-dining-room-overview.webp",
+      "/projects/cheongna-central-eileens-garden-84a/15-dining-room.webp",
+      "/projects/cheongna-central-eileens-garden-84a/16-kitchen-overview-panorama.webp",
+      "/projects/cheongna-central-eileens-garden-84a/17-kitchen-front-closed.webp",
+      "/projects/cheongna-central-eileens-garden-84a/18-kitchen-front-open.webp",
+      "/projects/cheongna-central-eileens-garden-84a/19-kitchen-island-reverse.webp",
+      "/projects/cheongna-central-eileens-garden-84a/20-kitchen-island.webp",
+      "/projects/cheongna-central-eileens-garden-84a/21-utility-kitchen.webp",
+      "/projects/cheongna-central-eileens-garden-84a/22-dressing-room-storage.webp",
+      "/projects/cheongna-central-eileens-garden-84a/23-bathroom-overview.webp",
+      "/projects/cheongna-central-eileens-garden-84a/24-bathroom-perspective.webp",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 3,
+    status: "Design Proposal / Rendering",
+    residentialFeatured: true,
+    residentialOrder: 3,
+  },
+
   "cheongna-hoban-4-33a": {
     title: "인천 청라 호반4차 33A",
     cardTitle: "인천 청라 호반4차 33A",
@@ -131,10 +180,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Rendering Proposal",
     residentialFeatured: true,
-    residentialOrder: 4,
+    residentialOrder: 5,
   },
 
   "cheongna-lynn-strauss": {
@@ -168,10 +217,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 3,
+    featuredOrder: 4,
     status: "Concept Proposal",
     residentialFeatured: true,
-    residentialOrder: 3,
+    residentialOrder: 4,
   },
 
   "luxury-house": {
@@ -194,7 +243,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Completed",
   },
 
@@ -221,7 +270,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Completed",
   },
 
@@ -240,7 +289,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Completed",
   },
 
@@ -259,7 +308,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 8,
+    featuredOrder: 9,
     status: "Completed",
   },
 };
