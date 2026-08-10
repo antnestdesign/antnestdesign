@@ -11,6 +11,9 @@
   thumbnailImage?: string;
   heroAspectRatio?: string;
   hideProjectInformation?: boolean;
+  location?: string;
+  designScope?: string;
+  constructionScope?: string;
   overview: string;
   gallery: string[];
   beforeImages: string[];
@@ -105,6 +108,44 @@ export const projects: Record<string, Project> = {
     residentialOrder: 2,
   },
 
+  "antnest-design-office": {
+    title: "인천 청라 ANTNEST DESIGN OFFICE",
+    cardTitle: "인천 청라 ANTNEST DESIGN OFFICE",
+    category: "Commercial Interior",
+    projectGroup: "Commercial",
+    type: "Office Interior",
+    year: "2026",
+    area: "110㎡",
+    images: 13,
+    heroImage: "/projects/antnest-design-office/01-hero-meeting-lounge.webp",
+    thumbnailImage: "/projects/antnest-design-office/02-lounge.webp",
+    heroAspectRatio: "4 / 3",
+    location: "인천 청라",
+    designScope: "전체 인테리어",
+    constructionScope: "전체 철거 후 시공",
+    overview:
+      "인천 청라에 새롭게 문을 연 ANTNEST DESIGN의 사무실입니다. 전체 철거 후 회의, 협업, 개인 업무가 한 층 안에서 이어지도록 공간을 다시 구성했습니다.",
+    gallery: [
+      "/projects/antnest-design-office/04-entry-corridor.webp",
+      "/projects/antnest-design-office/05-glass-corridor-work-lounge.webp",
+      "/projects/antnest-design-office/06-glass-corridor-symmetry.webp",
+      "/projects/antnest-design-office/12-corridor-to-workspace.webp",
+      "/projects/antnest-design-office/07-meeting-room.webp",
+      "/projects/antnest-design-office/02-lounge.webp",
+      "/projects/antnest-design-office/08-lounge-seating.webp",
+      "/projects/antnest-design-office/09-private-office.webp",
+      "/projects/antnest-design-office/10-display-storage-detail.webp",
+      "/projects/antnest-design-office/11-individual-office.webp",
+    ],
+    beforeImages: [
+      "/projects/antnest-design-office/before-existing-space-wide.webp",
+      "/projects/antnest-design-office/before-demolition.webp",
+    ],
+    featured: true,
+    featuredOrder: 3,
+    status: "Completed",
+  },
+
   "cheongna-central-eileens-garden-84a": {
     title: "인천 청라 센트럴에일린의뜰 84A",
     cardTitle: "인천 청라 센트럴에일린의뜰 84A",
@@ -148,7 +189,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 3,
+    featuredOrder: 4,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
     residentialOrder: 3,
@@ -180,7 +221,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Rendering Proposal",
     residentialFeatured: true,
     residentialOrder: 5,
@@ -216,7 +257,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Concept Proposal",
     residentialFeatured: true,
     residentialOrder: 4,
@@ -242,7 +283,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Completed",
   },
 
@@ -269,7 +310,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Completed",
   },
 
@@ -288,7 +329,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 8,
+    featuredOrder: 9,
     status: "Completed",
   },
 
@@ -307,7 +348,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 9,
+    featuredOrder: 10,
     status: "Completed",
   },
 };

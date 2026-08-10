@@ -182,6 +182,29 @@ export default function ProjectLayout({
                 <span>Status</span>
                 <span className="text-right">{project.status}</span>
               </div>
+
+              {project.location && (
+                <div className="flex justify-between gap-8">
+                  <span>Location</span>
+                  <span className="text-right">{project.location}</span>
+                </div>
+              )}
+
+              {project.designScope && (
+                <div className="flex justify-between gap-8">
+                  <span>Design Scope</span>
+                  <span className="text-right">{project.designScope}</span>
+                </div>
+              )}
+
+              {project.constructionScope && (
+                <div className="flex justify-between gap-8">
+                  <span>Construction Scope</span>
+                  <span className="text-right">
+                    {project.constructionScope}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </section>

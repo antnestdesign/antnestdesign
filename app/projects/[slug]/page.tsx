@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
+import AntnestDesignOffice from "./AntnestDesignOffice";
 import CheongnaCentralEileensGarden84A from "./CheongnaCentralEileensGarden84A";
 import CheongnaHoban4 from "./CheongnaHoban4";
 import CheongnaLynnStrauss from "./CheongnaLynnStrauss";
@@ -83,6 +84,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
   const hasCustomPage =
     slug === "apartment-a" ||
     slug === "apartment-b" ||
+    slug === "antnest-design-office" ||
     slug === "cheongna-central-eileens-garden-84a" ||
     slug === "cheongna-hoban-4-33a" ||
     slug === "cheongna-lynn-strauss" ||
@@ -93,6 +95,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     <ProjectLayout slug={slug} project={project}>
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
+      {slug === "antnest-design-office" && <AntnestDesignOffice />}
       {slug === "cheongna-central-eileens-garden-84a" && (
         <CheongnaCentralEileensGarden84A />
       )}
