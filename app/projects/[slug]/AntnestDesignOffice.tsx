@@ -61,17 +61,17 @@ export default function AntnestDesignOffice() {
         />
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-8 md:space-y-12">
           <ProjectFigure
-            src={`${base}/before-existing-space-wide.webp`}
-            alt="전체 철거 전 비어 있는 기존 사무실 전경"
-            caption="전체 철거 전 기존 오픈 오피스의 전경."
+            src={`${base}/before-demolition.webp`}
+            alt="전체 철거 전 기존 집기 철거를 준비하는 사무실"
+            caption="전체 철거 전 기존 사무실의 모습."
             ratio="aspect-[4/3]"
             quality={82}
           />
           <div className="grid md:grid-cols-2 gap-8 md:gap-10">
             <ProjectFigure
-              src={`${base}/before-demolition.webp`}
-              alt="기존 집기와 마감재를 철거하는 사무실 현장"
-              caption="기존 집기와 마감재를 철거하던 현장."
+              src={`${base}/before-existing-space-wide.webp`}
+              alt="전체 철거 후 비워진 사무실 공간"
+              caption="전체 철거 후 새로운 계획을 준비하는 비워진 공간."
               ratio="aspect-[4/3]"
               quality={82}
             />
@@ -113,7 +113,7 @@ export default function AntnestDesignOffice() {
               caption="유리벽 너머 라운지와 업무공간이 함께 보이는 동선."
             />
             <ProjectFigure
-              src={`${base}/12-corridor-to-workspace.webp`}
+              src={`${base}/12-corridor-to-workspace-final.webp`}
               alt="복도 끝 업무공간으로 이어지는 유리 파티션 동선"
               caption="업무공간으로 이어지는 복도와 유리 파티션."
             />
