@@ -141,8 +141,8 @@ export default function AntnestDesignOffice() {
             />
             <ProjectFigure
               src={`${base}/08-lounge-seating.webp`}
-              alt="벽면 TV와 간접조명 수납장이 보이는 라운지 측면"
-              caption="TV 월과 간접조명 수납장이 보이는 라운지 측면."
+              alt="액자와 라운지 가구가 보이는 동일한 라운지의 다른 조도 장면"
+              caption="같은 라운지를 조도를 달리해 담은 장면."
             />
           </div>
         </div>
