@@ -129,7 +129,7 @@ export const projects: Record<string, Project> = {
       "/projects/antnest-design-office/04-entry-corridor.webp",
       "/projects/antnest-design-office/05-glass-corridor-work-lounge.webp",
       "/projects/antnest-design-office/06-glass-corridor-symmetry.webp",
-      "/projects/antnest-design-office/12-corridor-to-workspace.webp",
+      "/projects/antnest-design-office/12-corridor-to-workspace-final.webp",
       "/projects/antnest-design-office/07-meeting-room.webp",
       "/projects/antnest-design-office/02-lounge.webp",
       "/projects/antnest-design-office/08-lounge-seating.webp",
