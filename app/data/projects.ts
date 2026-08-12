@@ -109,8 +109,8 @@ export const projects: Record<string, Project> = {
   },
 
   "antnest-design-office": {
-    title: "인천 청라 ANTNEST DESIGN OFFICE",
-    cardTitle: "인천 청라 ANTNEST DESIGN OFFICE",
+    title: "인천 청라 AND OFFICE",
+    cardTitle: "인천 청라 AND OFFICE",
     category: "Commercial Interior",
     projectGroup: "Commercial",
     type: "Office Interior",
