@@ -475,7 +475,8 @@ const quantityText = (value, suffix) => {
 };
 const mText = (meters) => mmText(meters * 1000);
 const jaRounded = (mm) => (mm <= 0 ? 0 : Math.ceil(mm / 300));
-const sellPrice = (cost, margin, correction = 0) => (cost / (1 - margin)) * (1 + correction);
+const sellPrice = (cost, margin, correction = 0) => (cost * (1 + margin)) * (1 + correction);
+const markupRate = (profit, cost) => (cost > 0 ? profit / cost : 0);
 const correctionValue = (id) => numberValue(id) / 100;
 const epUnitPrice = (depth) => (depth === "shallow" ? rates.endPanelShallow : rates.endPanelDeep);
 const epDepthLabel = (depth) => (depth === "shallow" ? "400mm 이하" : "400mm 초과");
@@ -2401,7 +2402,7 @@ function repairStaticKoreanLabels() {
     siliconeEnabled: "실리콘",
     elasticEnabled: "탄성(기본 2개소)",
     elasticExtraRooms: "탄성 추가 개소",
-    targetMargin: "목표 마진(%)",
+    targetMargin: "목표 원가 가산율(%)",
     manualAdjustment: "고객가 수동 보정",
     baseCorrection: "가구 보정률(%)",
     islandCorrection: "아일랜드 보정률(%)",
@@ -2632,7 +2633,7 @@ function repairStaticKoreanLabels() {
     ["#internalProfit", "예상마진"],
     ["#internalMargin", "마진율"],
     ["#discountRoom", "할인 가능 금액"],
-    ["#marginStatus", "목표 마진 상태"],
+    ["#marginStatus", "목표 원가 가산율 상태"],
   ].forEach(([selector, text]) => {
     const dt = document.querySelector(selector)?.previousElementSibling;
     if (dt) dt.textContent = text;
@@ -4121,8 +4122,8 @@ function calculate() {
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
   const customerRevenue = floorThousand(Math.max(0, rawRevenue));
   const profit = customerRevenue - directCost;
-  const actualMargin = customerRevenue > 0 ? profit / customerRevenue : 0;
-  const targetRevenue = directCost / (1 - margin);
+  const actualMargin = markupRate(profit, directCost);
+  const targetRevenue = directCost * (1 + margin);
   const discountRoom = Math.max(0, customerRevenue - targetRevenue);
   const groupTotal = (group) => groupTotalFromDetails(details, group);
   const usesStoneSlab =
@@ -4187,9 +4188,9 @@ function calculate() {
   if (details.length === 0) {
     warnings.push("선택한 항목이 없습니다.");
   } else if (actualMargin + 0.0001 < margin) {
-    warnings.push(`목표 마진 ${(margin * 100).toFixed(1)}% 미달: 현재 ${(actualMargin * 100).toFixed(1)}%`);
+    warnings.push(`목표 원가 가산율 ${(margin * 100).toFixed(1)}% 미달: 현재 ${(actualMargin * 100).toFixed(1)}%`);
   }
-  if (warnings.length === 0) warnings.push("목표 마진 기준 정상입니다.");
+  if (warnings.length === 0) warnings.push("목표 원가 가산율 기준 정상입니다.");
 
   return {
     state,
@@ -4502,7 +4503,7 @@ function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.exis
   const costTotal = baseCostTotal - removedPipeCleaningCost + (enabled ? PIPE_CLEANING_AMOUNT : 0);
   const customerRevenue = Number(next.total) || 0;
   const profit = customerRevenue - costTotal;
-  const marginRate = customerRevenue > 0 ? Number(((profit / customerRevenue) * 100).toFixed(2)) : 0;
+  const marginRate = Number((markupRate(profit, costTotal) * 100).toFixed(2));
   next.costTotal = costTotal;
   next.marginRate = marginRate;
   next.internalSummary = {
@@ -4602,7 +4603,7 @@ function buildAdminMarginGroups(estimate) {
     .filter((group) => group && (Math.abs(group.customer) >= 1 || Math.abs(group.cost) >= 1))
     .map((group) => {
       const profit = group.customer - group.cost;
-      const marginRate = group.customer > 0 ? profit / group.customer : 0;
+      const marginRate = markupRate(profit, group.cost);
       return { ...group, profit, marginRate };
     });
 }
@@ -4617,7 +4618,7 @@ function storedEstimateSummary(estimate) {
   const customerTotal = moneyAmount(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue);
   const directCost = moneyAmount(estimate?.costTotal ?? estimate?.internalSummary?.directCost);
   const profit = customerTotal - directCost;
-  const marginRate = customerTotal > 0 ? profit / customerTotal : 0;
+  const marginRate = markupRate(profit, directCost);
   const details = Array.isArray(estimate?.internalDetails) ? estimate.internalDetails : [];
   const groups = buildAdminMarginGroups(estimate);
   const detailCustomerTotal = groups.reduce((sum, group) => sum + moneyAmount(group.customer), 0);
@@ -4787,7 +4788,7 @@ function renderAdminTradeGroup(group, index) {
                 const customer = internalDetailCustomerAmount(detail);
                 const cost = moneyAmount(detail.cost);
                 const profit = customer - cost;
-                const marginRate = customer > 0 ? profit / customer : 0;
+                const marginRate = markupRate(profit, cost);
                 return `
                   <tr>
                     <td>${escapeHtml(detail.item || "-")}</td>
@@ -4840,7 +4841,7 @@ function renderAdminMarginTable(estimate) {
   const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
   const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
   const totalProfit = totalCustomer - totalCost;
-  const totalMarginRate = totalCustomer > 0 ? totalProfit / totalCustomer : 0;
+  const totalMarginRate = markupRate(totalProfit, totalCost);
   const totalRow = document.createElement("tr");
   totalRow.className = "quote-total-row";
   totalRow.innerHTML = `
@@ -4868,7 +4869,7 @@ function renderStoredInternalSummary(estimate) {
   const profit = Number.isFinite(summary.profit) ? summary.profit : customerRevenue - directCost;
   const marginRate = Number.isFinite(summary.marginRate)
     ? summary.marginRate
-    : (customerRevenue > 0 ? (profit / customerRevenue) * 100 : Number(estimate.marginRate) || 0);
+    : (directCost > 0 ? markupRate(profit, directCost) * 100 : Number(estimate.marginRate) || 0);
   setText("internalCost", won(directCost));
   setText("internalRevenue", customerWon(customerRevenue));
   setText("internalProfit", won(profit));
@@ -5046,7 +5047,7 @@ function renderAdminInternalPrint(estimate) {
   const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
   const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
   const totalProfit = totalCustomer - totalCost;
-  const totalMarginRate = totalCustomer > 0 ? totalProfit / totalCustomer : 0;
+  const totalMarginRate = markupRate(totalProfit, totalCost);
   sheet.innerHTML = `
     <header>
       <p>내부견적</p>
