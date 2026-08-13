@@ -248,6 +248,7 @@ const ids = [
   "wallpaperBaseCoatEnabled",
   "filmPreset",
   "flooringArea",
+  "bathroomPlumbingRelocationEnabled",
   "bathroomUnits",
   "bathroomFanType",
   "bathroomBathtubUnits",
@@ -2295,6 +2296,7 @@ function repairStaticKoreanLabels() {
     sectionBathroomEnabled: "욕실",
     tileEnabled: "타일(AND표준 포세린)",
     tileGroutEnabled: "메지 포함",
+    bathroomPlumbingRelocationEnabled: "욕실 설비 위치조정",
     bathroomUnits: "욕실 칸",
     bathroomFanType: "환풍기",
     bathroomBathtubUnits: "욕조",
@@ -2977,6 +2979,7 @@ function readState() {
     tileEnabled: bathroomSection && checkedValue("tileEnabled"),
     tileBathroomUnits: integerValue("bathroomUnits"),
     tileGroutEnabled: bathroomSection && checkedValue("tileGroutEnabled"),
+    bathroomPlumbingRelocationEnabled: bathroomSection && checkedValue("bathroomPlumbingRelocationEnabled"),
     wallpaperEnabled: wallpaperSection,
     wallpaperPreset: el.wallpaperPreset.value,
     wallpaperBaseCoatEnabled: wallpaperSection && checkedValue("wallpaperBaseCoatEnabled"),
@@ -4339,6 +4342,13 @@ function restoreInputValues(inputs = {}) {
       input.value = value;
     }
   }
+  if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomPlumbingRelocationEnabled") && el.bathroomPlumbingRelocationEnabled) {
+    el.bathroomPlumbingRelocationEnabled.checked = Boolean(
+      inputs.sectionBathroomEnabled ||
+      inputs.bathroomEnabled ||
+      Number(inputs.bathroomUnits || 0) > 0
+    );
+  }
   syncSectionLocks();
   syncBlockLocks();
 }
@@ -4409,7 +4419,10 @@ function buildEstimateSnapshot(result, options = {}) {
       user_email: currentProfile?.email || getAuthSession()?.user?.email || "",
       role: currentProfile?.role || "",
     },
-    inputs: collectInputValues(),
+    inputs: {
+      ...collectInputValues(),
+      ...result.state,
+    },
     internalSummary: {
       directCost: result.directCost,
       customerRevenue: result.customerRevenue,
@@ -5671,8 +5684,15 @@ function canonicalInputValues(inputs = {}) {
     }, {}));
 }
 
+function currentEstimateInputValues() {
+  return {
+    ...collectInputValues(),
+    ...readState(),
+  };
+}
+
 function currentInputKey() {
-  return canonicalInputValues(collectInputValues());
+  return canonicalInputValues(currentEstimateInputValues());
 }
 
 function loadedEstimateMatchesCurrentInputs() {

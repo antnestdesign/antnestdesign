@@ -7,7 +7,7 @@ export function bathroomDetails(state, rates) {
 
   return [
     ["욕실 포세린 타일 자재+잡자재", rates.porcelainTileMaterial, units, `${units}칸`],
-    ["욕실 설비 위치조정", rates.plumbingRelocation, units, `${units}칸`],
+    ["욕실 설비 위치조정", rates.plumbingRelocation, state.bathroomPlumbingRelocationEnabled ? units : 0, `${units}칸`],
     ["도기·수전·장식장·악세사리 기본세트", rates.fixtureSet, units, `${units}칸`],
     ["도기·수전·장식장·악세사리 설치비", rates.fixtureInstall, units, `${units}칸`],
     ["SMC 천장돔 설치비", rates.smcCeiling, units, `${units}칸`],
