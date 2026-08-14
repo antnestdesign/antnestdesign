@@ -4332,6 +4332,7 @@ function collectInputValues() {
 }
 
 function restoreInputValues(inputs = {}) {
+  const hadFractionalTargetMargin = Number(inputs.targetMargin) > 0 && Number(inputs.targetMargin) <= 1;
   for (const [id, value] of Object.entries(inputs)) {
     if (isEstimateInputExcluded(id)) continue;
     const input = el[id];
@@ -4354,6 +4355,7 @@ function restoreInputValues(inputs = {}) {
   }
   syncSectionLocks();
   syncBlockLocks();
+  return { hadFractionalTargetMargin };
 }
 
 function groupedCustomerItems(details, lines) {
@@ -7359,7 +7361,7 @@ function renderProjectSearchResults() {
 function loadEstimateIntoUi(estimate) {
   pipeCleaningAdjustmentDirty = false;
   lastRenderedEstimateSnapshot = null;
-  restoreInputValues(estimate.inputs);
+  const restoreInfo = restoreInputValues(estimate.inputs);
   el.projectName.value = estimate.projectName || "";
   el.areaPyeong.value = estimate.areaPyeong ?? "";
   el.clientName.value = estimate.clientName || "";
@@ -7370,13 +7372,15 @@ function loadEstimateIntoUi(estimate) {
   loadedContractEstimateState = null;
   refresh();
   const hasStoredResult = estimate.customerQuote || estimate.internalSummary || estimate.internalDetails;
-  const displayEstimate = hasStoredResult
+  const shouldRecalculateCorruptedMarginSnapshot = restoreInfo?.hadFractionalTargetMargin;
+  const displayEstimate = hasStoredResult && !shouldRecalculateCorruptedMarginSnapshot
     ? estimate
     : {
       ...estimate,
       ...buildEstimateSnapshot(calculate()),
       id: estimate.id,
       savedAt: estimate.savedAt,
+      costSnapshot: estimate.costSnapshot,
   };
   activeQuoteEstimate = displayEstimate;
   lastRenderedEstimateSnapshot = displayEstimate;
