@@ -4550,6 +4550,33 @@ function renderEstimateSnapshotOnly(estimate) {
   lastRenderedEstimateSnapshot = estimate;
 }
 
+function hasFractionalStoredTargetMargin(estimate) {
+  return Number(estimate?.inputs?.targetMargin) > 0 && Number(estimate?.inputs?.targetMargin) <= 1;
+}
+
+function normalizedEstimateForDisplay(estimate) {
+  if (!hasFractionalStoredTargetMargin(estimate)) return estimate;
+  const previousEditingId = currentEditingEstimateId;
+  const previousActiveEstimate = activeQuoteEstimate;
+  const previousLastSnapshot = lastRenderedEstimateSnapshot;
+  const previousPipeDirty = pipeCleaningAdjustmentDirty;
+  const previousInputs = collectInputValues();
+  restoreInputValues(estimate.inputs || {});
+  const snapshot = {
+    ...estimate,
+    ...buildEstimateSnapshot(calculate()),
+    id: estimate.id,
+    savedAt: estimate.savedAt,
+    costSnapshot: estimate.costSnapshot,
+  };
+  restoreInputValues(previousInputs);
+  currentEditingEstimateId = previousEditingId;
+  activeQuoteEstimate = previousActiveEstimate;
+  lastRenderedEstimateSnapshot = previousLastSnapshot;
+  pipeCleaningAdjustmentDirty = previousPipeDirty;
+  return snapshot;
+}
+
 function renderCustomerQuoteTable(quote, rows, groupTotals) {
   rows.innerHTML = "";
   groupTotals.innerHTML = "";
@@ -5300,7 +5327,7 @@ async function renderSavedEstimateRows() {
   tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록을 불러오는 중입니다.</td></tr>`;
   try {
     const estimates = await loadEstimates();
-    cachedEstimates = estimates;
+    cachedEstimates = estimates.map((estimate) => normalizedEstimateForDisplay(estimate));
     projectContractPackageMap = new Map();
     projectContractPackageMapLoaded = false;
     if (canMergeContracts) {
@@ -5315,7 +5342,7 @@ async function renderSavedEstimateRows() {
       }
     }
     renderProjectSearchResults();
-    renderSavedEstimateTableRows(tbody, estimates, { admin, canViewInternal, colspan });
+    renderSavedEstimateTableRows(tbody, cachedEstimates, { admin, canViewInternal, colspan });
   } catch (error) {
     console.error("견적 조회 실패", error);
     tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록 조회에 실패했습니다.</td></tr>`;
@@ -7347,13 +7374,14 @@ function renderProjectSearchResults() {
   }).slice(0, 30);
   select.innerHTML = `<option value="">${matches.length ? "프로젝트 선택" : "검색 결과 없음"}</option>`;
   for (const estimate of matches) {
+    const displayEstimate = normalizedEstimateForDisplay(estimate);
     const option = document.createElement("option");
-    const contract = projectContractMeta(estimate);
+    const contract = projectContractMeta(displayEstimate);
     const contractText = contract.contractNo === "-"
       ? contract.statusLabel
       : `${contract.statusLabel} ${contract.contractNo}`;
-    option.value = estimate.id;
-    option.textContent = `${estimate.projectName} · ${estimate.clientName || "고객명 없음"} · ${estimate.totalText} · ${contractText}`;
+    option.value = displayEstimate.id;
+    option.textContent = `${displayEstimate.projectName} · ${displayEstimate.clientName || "고객명 없음"} · ${displayEstimate.totalText} · ${contractText}`;
     select.appendChild(option);
   }
 }
@@ -7788,7 +7816,7 @@ document.addEventListener("click", async (event) => {
   expandedAdminEstimateId = estimateId;
   expandedAdminTradeKey = null;
   const cached = cachedEstimates.find((estimate) => estimate.id === estimateId);
-  if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, cached);
+  if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, normalizedEstimateForDisplay(cached));
   renderSavedEstimateTableRows(tbody, cachedEstimates, {
     admin: isAdmin(),
     canViewInternal: canViewSystem(),
@@ -7797,7 +7825,7 @@ document.addEventListener("click", async (event) => {
   if (!adminEstimateDetailCache.has(estimateId)) {
     try {
       const estimate = await getEstimate(estimateId);
-      if (estimate) adminEstimateDetailCache.set(estimateId, estimate);
+      if (estimate) adminEstimateDetailCache.set(estimateId, normalizedEstimateForDisplay(estimate));
     } catch (error) {
       console.error("내부견적 상세 조회 실패", error);
       alert("내부견적 상세를 불러오지 못했습니다.");
