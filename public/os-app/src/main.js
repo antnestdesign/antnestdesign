@@ -4550,31 +4550,30 @@ function renderEstimateSnapshotOnly(estimate) {
   lastRenderedEstimateSnapshot = estimate;
 }
 
-function hasFractionalStoredTargetMargin(estimate) {
-  return Number(estimate?.inputs?.targetMargin) > 0 && Number(estimate?.inputs?.targetMargin) <= 1;
-}
-
-function normalizedEstimateForDisplay(estimate) {
-  if (!hasFractionalStoredTargetMargin(estimate)) return estimate;
-  const previousEditingId = currentEditingEstimateId;
-  const previousActiveEstimate = activeQuoteEstimate;
-  const previousLastSnapshot = lastRenderedEstimateSnapshot;
-  const previousPipeDirty = pipeCleaningAdjustmentDirty;
-  const previousInputs = collectInputValues();
-  restoreInputValues(estimate.inputs || {});
-  const snapshot = {
-    ...estimate,
-    ...buildEstimateSnapshot(calculate()),
-    id: estimate.id,
-    savedAt: estimate.savedAt,
-    costSnapshot: estimate.costSnapshot,
+async function repairCorruptedTargetMarginEstimate(estimate) {
+  if (!estimate?.id) return null;
+  setSaveStatus("오염된 견적 마진 스냅샷을 정상 기준으로 수정 저장 중입니다.");
+  const saved = await updateEstimate(estimate.id, { ...estimate, id: estimate.id });
+  cachedEstimates = cachedEstimates.map((item) => (item.id === saved.id ? saved : item));
+  adminEstimateDetailCache.set(saved.id, saved);
+  activeQuoteEstimate = saved;
+  lastRenderedEstimateSnapshot = saved;
+  loadedEstimateBaseline = {
+    id: saved.id || null,
+    inputs: currentInputKey(),
+    estimate: saved,
   };
-  restoreInputValues(previousInputs);
-  currentEditingEstimateId = previousEditingId;
-  activeQuoteEstimate = previousActiveEstimate;
-  lastRenderedEstimateSnapshot = previousLastSnapshot;
-  pipeCleaningAdjustmentDirty = previousPipeDirty;
-  return snapshot;
+  renderProjectSearchResults();
+  const tbody = document.getElementById("savedEstimateRows");
+  if (tbody && cachedEstimates.length) {
+    renderSavedEstimateTableRows(tbody, cachedEstimates, {
+      admin: isAdmin(),
+      canViewInternal: canViewSystem(),
+      colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
+    });
+  }
+  setSaveStatus(`${formatDateTime(saved.savedAt)} 오염된 견적 마진 스냅샷 수정 저장 완료`);
+  return saved;
 }
 
 function renderCustomerQuoteTable(quote, rows, groupTotals) {
@@ -5327,7 +5326,7 @@ async function renderSavedEstimateRows() {
   tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록을 불러오는 중입니다.</td></tr>`;
   try {
     const estimates = await loadEstimates();
-    cachedEstimates = estimates.map((estimate) => normalizedEstimateForDisplay(estimate));
+    cachedEstimates = estimates;
     projectContractPackageMap = new Map();
     projectContractPackageMapLoaded = false;
     if (canMergeContracts) {
@@ -7374,14 +7373,13 @@ function renderProjectSearchResults() {
   }).slice(0, 30);
   select.innerHTML = `<option value="">${matches.length ? "프로젝트 선택" : "검색 결과 없음"}</option>`;
   for (const estimate of matches) {
-    const displayEstimate = normalizedEstimateForDisplay(estimate);
     const option = document.createElement("option");
-    const contract = projectContractMeta(displayEstimate);
+    const contract = projectContractMeta(estimate);
     const contractText = contract.contractNo === "-"
       ? contract.statusLabel
       : `${contract.statusLabel} ${contract.contractNo}`;
-    option.value = displayEstimate.id;
-    option.textContent = `${displayEstimate.projectName} · ${displayEstimate.clientName || "고객명 없음"} · ${displayEstimate.totalText} · ${contractText}`;
+    option.value = estimate.id;
+    option.textContent = `${estimate.projectName} · ${estimate.clientName || "고객명 없음"} · ${estimate.totalText} · ${contractText}`;
     select.appendChild(option);
   }
 }
@@ -7423,7 +7421,15 @@ function loadEstimateIntoUi(estimate) {
   renderStoredInternalSummary(displayEstimate);
   renderInternalRows(displayEstimate.internalDetails || []);
   renderPurchaseOrder(displayEstimate);
-  setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
+  if (shouldRecalculateCorruptedMarginSnapshot) {
+    setSaveStatus("오염된 견적 마진 스냅샷을 정상 기준으로 표시했습니다. 수정 저장을 진행합니다.");
+    repairCorruptedTargetMarginEstimate(displayEstimate).catch((error) => {
+      console.error("오염 견적 수정 저장 실패", error);
+      setSaveStatus("오염된 견적을 표시 기준으로 재계산했지만 자동 수정 저장에는 실패했습니다.");
+    });
+  } else {
+    setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
+  }
   refreshContractPackagePanel(displayEstimate).catch((error) => console.error("계약 패키지 갱신 실패", error));
 }
 
@@ -7816,7 +7822,7 @@ document.addEventListener("click", async (event) => {
   expandedAdminEstimateId = estimateId;
   expandedAdminTradeKey = null;
   const cached = cachedEstimates.find((estimate) => estimate.id === estimateId);
-  if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, normalizedEstimateForDisplay(cached));
+  if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, cached);
   renderSavedEstimateTableRows(tbody, cachedEstimates, {
     admin: isAdmin(),
     canViewInternal: canViewSystem(),
@@ -7825,7 +7831,7 @@ document.addEventListener("click", async (event) => {
   if (!adminEstimateDetailCache.has(estimateId)) {
     try {
       const estimate = await getEstimate(estimateId);
-      if (estimate) adminEstimateDetailCache.set(estimateId, normalizedEstimateForDisplay(estimate));
+      if (estimate) adminEstimateDetailCache.set(estimateId, estimate);
     } catch (error) {
       console.error("내부견적 상세 조회 실패", error);
       alert("내부견적 상세를 불러오지 못했습니다.");
