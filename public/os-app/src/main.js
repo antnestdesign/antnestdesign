@@ -249,6 +249,7 @@ const ids = [
   "filmPreset",
   "flooringArea",
   "bathroomPlumbingRelocationEnabled",
+  "bathroomFixtureGrade",
   "bathroomUnits",
   "bathroomFanType",
   "bathroomBathtubUnits",
@@ -2297,6 +2298,7 @@ function repairStaticKoreanLabels() {
     tileEnabled: "타일(AND표준 포세린)",
     tileGroutEnabled: "메지 포함",
     bathroomPlumbingRelocationEnabled: "욕실 설비 위치조정",
+    bathroomFixtureGrade: "욕실 도기·수전 등급",
     bathroomUnits: "욕실 칸",
     bathroomFanType: "환풍기",
     bathroomBathtubUnits: "욕조",
@@ -2439,6 +2441,7 @@ function repairStaticKoreanLabels() {
     demolitionFloorMaterial: { wood: "마루", vinyl: "장판", decoTile: "데코타일" },
     electricalAgeType: { under10: "준공 10년 이하", over10: "준공 10년 이상" },
     bathroomFanType: { normal: "일반 환풍기", hugent: "휴젠트" },
+    bathroomFixtureGrade: { value: "AND 실속(대림급)", standard: "AND 표준(아메리칸 스탠다드급)", premium: "AND 고급(수전 그로헤급)" },
     wallpaperPreset: { p20: "20평대", p30: "30평대", p40: "40평대", p50: "50평 이상" },
     wallpaperMaterialGrade: { besti: "베스띠급", diamant: "디아망급", fortis: "디아망 포티스급" },
     filmPreset: { p20: "20평대", p30: "30평대", p40: "40평대", p50: "50평 이상" },
@@ -2989,6 +2992,7 @@ function readState() {
     flooringArea: numberValue("flooringArea"),
     bathroomEnabled: bathroomSection,
     bathroomUnits: integerValue("bathroomUnits"),
+    bathroomFixtureGrade: el.bathroomFixtureGrade?.value || "standard",
     bathroomFanType: el.bathroomFanType.value,
     bathroomBathtubUnits: integerValue("bathroomBathtubUnits"),
     bathroomGlassBoothUnits: integerValue("bathroomGlassBoothUnits"),
@@ -3211,6 +3215,8 @@ const customerItemNames = {
   "타일 메지": "줄눈 마감",
   "욕실 포세린 타일 자재+잡자재": "AND표준 포세린 타일",
   "도기·수전·장식장·악세사리 기본세트": "AND표준 욕실 도기 및 수전",
+  "도기·수전·장식장·악세사리 기본세트(AND 실속)": "AND실속 욕실 도기 및 수전",
+  "도기·수전·장식장·악세사리 기본세트(AND 고급)": "AND고급 욕실 도기 및 수전",
   "도기·수전·장식장·악세사리 설치비": "욕실 도기 및 수전 시공",
   "휴젠트 옵션": "휴젠트 설치비",
   "AND 표준설비 설치비": "주방 설비 시공",
@@ -4346,6 +4352,9 @@ function restoreInputValues(inputs = {}) {
   }
   if (el.targetMargin && Number(el.targetMargin.value) > 0 && Number(el.targetMargin.value) <= 1) {
     el.targetMargin.value = String(Number(el.targetMargin.value) * 100);
+  }
+  if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomFixtureGrade") && el.bathroomFixtureGrade) {
+    el.bathroomFixtureGrade.value = "standard";
   }
   if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomPlumbingRelocationEnabled") && el.bathroomPlumbingRelocationEnabled) {
     el.bathroomPlumbingRelocationEnabled.checked = Boolean(

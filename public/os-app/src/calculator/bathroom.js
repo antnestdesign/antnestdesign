@@ -4,11 +4,28 @@ export function bathroomDetails(state, rates) {
   const fanUnit = state.bathroomFanType === "hugent"
     ? rates.hugentMachine + rates.hugentInstallExtra
     : rates.fanNormal;
+  const fixtureSet = {
+    value: {
+      item: "도기·수전·장식장·악세사리 기본세트(AND 실속)",
+      unitPrice: rates.fixtureSet * 0.75,
+    },
+    standard: {
+      item: "도기·수전·장식장·악세사리 기본세트",
+      unitPrice: rates.fixtureSet,
+    },
+    premium: {
+      item: "도기·수전·장식장·악세사리 기본세트(AND 고급)",
+      unitPrice: rates.fixtureSet + 700000,
+    },
+  }[state.bathroomFixtureGrade] || {
+    item: "도기·수전·장식장·악세사리 기본세트",
+    unitPrice: rates.fixtureSet,
+  };
 
   return [
     ["욕실 포세린 타일 자재+잡자재", rates.porcelainTileMaterial, units, `${units}칸`],
     ["욕실 설비 위치조정", rates.plumbingRelocation, state.bathroomPlumbingRelocationEnabled ? units : 0, `${units}칸`],
-    ["도기·수전·장식장·악세사리 기본세트", rates.fixtureSet, units, `${units}칸`],
+    [fixtureSet.item, fixtureSet.unitPrice, units, `${units}칸`],
     ["도기·수전·장식장·악세사리 설치비", rates.fixtureInstall, units, `${units}칸`],
     ["SMC 천장돔 설치비", rates.smcCeiling, units, `${units}칸`],
     [state.bathroomFanType === "hugent" ? "휴젠트 옵션" : "일반 환풍기", fanUnit, units, `${units}칸`],
