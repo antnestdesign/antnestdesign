@@ -4342,6 +4342,9 @@ function restoreInputValues(inputs = {}) {
       input.value = value;
     }
   }
+  if (el.targetMargin && Number(el.targetMargin.value) > 0 && Number(el.targetMargin.value) <= 1) {
+    el.targetMargin.value = String(Number(el.targetMargin.value) * 100);
+  }
   if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomPlumbingRelocationEnabled") && el.bathroomPlumbingRelocationEnabled) {
     el.bathroomPlumbingRelocationEnabled.checked = Boolean(
       inputs.sectionBathroomEnabled ||
@@ -4402,6 +4405,7 @@ function buildEstimateSnapshot(result, options = {}) {
   const savedAt = new Date().toISOString();
   const customerGroups = groupedCustomerItems(result.details, result.quoteLines);
   const customerTotal = customerGroups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
+  const inputOverrides = effectiveEstimateInputOverrides(result.state);
   const snapshot = {
     projectName: result.state.projectName,
     areaPyeong: result.state.areaPyeong,
@@ -4421,7 +4425,7 @@ function buildEstimateSnapshot(result, options = {}) {
     },
     inputs: {
       ...collectInputValues(),
-      ...result.state,
+      ...inputOverrides,
     },
     internalSummary: {
       directCost: result.directCost,
@@ -5684,10 +5688,38 @@ function canonicalInputValues(inputs = {}) {
     }, {}));
 }
 
+function effectiveEstimateInputOverrides(state = readState()) {
+  return {
+    demolitionFloorEnabled: state.demolitionFloorEnabled,
+    demolitionFurnitureEnabled: state.demolitionFurnitureEnabled,
+    demolitionBathroomEnabled: state.demolitionBathroomEnabled,
+    demolitionCeilingEnabled: state.demolitionCeilingEnabled,
+    demolitionElevatorProtectEnabled: state.demolitionElevatorProtectEnabled,
+    demolitionElevatorProtectRemovalEnabled: state.demolitionElevatorProtectRemovalEnabled,
+    demolitionPermitEnabled: state.demolitionPermitEnabled,
+    demolitionConsentEnabled: state.demolitionConsentEnabled,
+    electricalEnabled: state.electricalEnabled,
+    standardLightingEnabled: state.standardLightingEnabled,
+    standardSwitchEnabled: state.standardSwitchEnabled,
+    standardBedWallLightEnabled: state.standardBedWallLightEnabled,
+    tileEnabled: state.tileEnabled,
+    tileGroutEnabled: state.tileGroutEnabled,
+    bathroomPlumbingRelocationEnabled: state.bathroomPlumbingRelocationEnabled,
+    wallpaperBaseCoatEnabled: state.wallpaperBaseCoatEnabled,
+    kitchenEnabled: state.kitchenEnabled,
+    generalWasteEnabled: state.generalWasteEnabled,
+    interiorProtectionEnabled: state.interiorProtectionEnabled,
+    moveInCleaningEnabled: state.moveInCleaningEnabled,
+    existingPipeCleaningEnabled: state.existingPipeCleaningEnabled,
+    siliconeEnabled: state.siliconeEnabled,
+    elasticEnabled: state.elasticEnabled,
+  };
+}
+
 function currentEstimateInputValues() {
   return {
     ...collectInputValues(),
-    ...readState(),
+    ...effectiveEstimateInputOverrides(),
   };
 }
 
