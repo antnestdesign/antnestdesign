@@ -4,14 +4,18 @@ export function wallpaperMaterialDetail(state, rates) {
   const ceilingArea = state.areaPyeong * rates.pyeongToSquareMeter;
   const requiredArea = (wallArea + ceilingArea) * rates.wasteFactor;
   const rolls = requiredArea > 0 ? Math.ceil(requiredArea / rates.wallpaperRollArea) : 0;
-  const unitPrice = state.wallpaperMaterialGrade === "fortis" ? rates.wallpaperFortis : rates.wallpaperDiamant;
+  const grade = {
+    besti: { item: "도배지(베스띠급)", unitPrice: rates.wallpaperBesti },
+    diamant: { item: "도배지(디아망급)", unitPrice: rates.wallpaperDiamant },
+    fortis: { item: "도배지(디아망 포티스급)", unitPrice: rates.wallpaperFortis },
+  }[state.wallpaperMaterialGrade] || { item: "도배지(디아망급)", unitPrice: rates.wallpaperDiamant };
   return {
     group: "wallpaper",
-    item: state.wallpaperMaterialGrade === "fortis" ? "도배지(디아망 포티스급)" : "도배지(디아망급)",
+    item: grade.item,
     input: `${requiredArea.toFixed(1)}㎡ / 15% 로스 포함`,
     quantity: `${rolls}롤`,
-    unitPrice,
-    cost: rolls * unitPrice,
+    unitPrice: grade.unitPrice,
+    cost: rolls * grade.unitPrice,
   };
 }
 

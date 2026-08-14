@@ -1,5 +1,6 @@
 export const finishMaterialRates = {
   wallpaperMaterialPerPyeong: 10000,
+  wallpaperBesti: 45000,
   wallpaperDiamant: 60000,
   wallpaperFortis: 90000,
   wallpaperRollArea: 15,
