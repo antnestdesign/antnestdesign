@@ -5050,6 +5050,39 @@ function renderPrintQuote(quote) {
       <p>※ 부가세 별도 금액입니다.</p>
       <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
     </footer>
+    <section class="and-print-footer" aria-label="ANTNEST DESIGN company information">
+      <div class="and-print-footer-grid">
+        <div class="and-print-footer-brand">
+          <img src="/logo.png" alt="ANTNEST DESIGN" />
+          <p>Architecture of Everyday Life</p>
+        </div>
+        <div>
+          <p class="and-print-footer-title">Company</p>
+          <p>AND · ANTNEST DESIGN</p>
+          <p>주식회사 앤트네스트디자인</p>
+          <p>대표자 이민영</p>
+          <p>사업자등록번호 149-85-03105</p>
+        </div>
+        <div>
+          <p class="and-print-footer-title">Contact</p>
+          <p>TEL 032.321.6722</p>
+          <p>FAX 032.321.6895</p>
+          <p>antnestdesign@naver.com</p>
+        </div>
+        <div class="and-print-footer-address">
+          <p class="and-print-footer-title">Address</p>
+          <p>인천 서구 중봉대로 612번길 10-20</p>
+          <p>506호 (청라동, 청라프라자1)</p>
+        </div>
+      </div>
+      <div class="and-print-footer-bottom">
+        <div>
+          <span>개인정보처리방침</span>
+          <span>© 2026 ANTNEST DESIGN</span>
+        </div>
+        <p>Interior · Architecture · Construction Management</p>
+      </div>
+    </section>
   `;
 }
 
