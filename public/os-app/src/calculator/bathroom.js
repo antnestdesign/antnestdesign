@@ -30,7 +30,7 @@ export function bathroomDetails(state, rates) {
     ["SMC 천장돔 설치비", rates.smcCeiling, units, `${units}칸`],
     [state.bathroomFanType === "hugent" ? "휴젠트 옵션" : "일반 환풍기", fanUnit, units, `${units}칸`],
     ["욕조", rates.bathtub, state.bathroomBathtubUnits, `${state.bathroomBathtubUnits}개`],
-    ["유리부스", rates.glassBooth, state.bathroomGlassBoothUnits, `${state.bathroomGlassBoothUnits}개`],
+    ["유리파티션+유리문", rates.glassBooth, state.bathroomGlassBoothUnits, `${state.bathroomGlassBoothUnits}개`],
     ["유리파티션", rates.glassPartition, state.bathroomGlassPartitionUnits, `${state.bathroomGlassPartitionUnits}개`],
   ].filter((item) => item[2] > 0).map(([item, unitPrice, units, quantity]) => ({
     group: "bathroom",

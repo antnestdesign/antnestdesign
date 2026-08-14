@@ -2302,7 +2302,7 @@ function repairStaticKoreanLabels() {
     bathroomUnits: "욕실 칸",
     bathroomFanType: "환풍기",
     bathroomBathtubUnits: "욕조",
-    bathroomGlassBoothUnits: "유리부스",
+    bathroomGlassBoothUnits: "유리파티션+유리문",
     bathroomGlassPartitionUnits: "유리파티션",
     bathroomMasonryWallUnits: "조적벽",
     sectionWallpaperEnabled: "도배",
