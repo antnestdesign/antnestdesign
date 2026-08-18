@@ -28,7 +28,7 @@ export default function ApartmentA({ project }: { project: Project }) {
       <section className="max-w-4xl mx-auto px-8 md:px-16 mb-28 md:mb-36">
         <div className="space-y-6">
           {[
-            "부부와 초등학생 자녀가 거주하는 37평형 아파트로, 2베이 구조가 가진 수납과 동선의 한계를 정리하는 데 중점을 둔 프로젝트입니다.",
+            "부부와 초등학생 자녀가 거주하는 전용 99 타입 아파트로, 2베이 구조가 가진 수납과 동선의 한계를 정리하는 데 중점을 둔 프로젝트입니다.",
             "기존 공간에서 턱없이 부족했던 수납을 보완하기 위해 주방, 현관, 안방의 기능을 다시 나누고, 가족의 일상이 더 단정하게 유지될 수 있는 구조로 계획했습니다.",
           ].map((paragraph) => (
             <p

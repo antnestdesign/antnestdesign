@@ -53,7 +53,7 @@ export default function CheongnaHanwhaKkumegreen39A() {
       <section className="max-w-4xl mx-auto px-8 md:px-16 mb-28 md:mb-36">
         <div className="space-y-6">
           <p className="text-lg md:text-xl leading-[2] md:leading-[2.2] text-neutral-700 break-keep">
-            인천 청라 한화꿈에그린 39A는 준신축 3Bay 구조에서 주방 폭이
+            인천 청라 한화꿈에그린 100A는 준신축 3Bay 구조에서 주방 폭이
             제한적이고, 안방의 기존 드레스룸만으로는 수납이 부족한 두 가지
             문제에서 출발한 아파트 인테리어 디자인 제안입니다.
           </p>
@@ -77,20 +77,20 @@ export default function CheongnaHanwhaKkumegreen39A() {
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-10 md:space-y-14">
           <ProjectFigure
             src={images.entrySlidingDoor}
-            alt="인천 청라 한화꿈에그린 39A 현관의 블랙 프레임 중문과 화분"
+            alt="인천 청라 한화꿈에그린 100A 현관의 블랙 프레임 중문과 화분"
             ratio="aspect-[1307/1100]"
           />
 
           <div className="grid md:grid-cols-[1.4fr_0.6fr] gap-8 md:gap-10 items-start">
             <ProjectFigure
               src={images.entryStorage}
-              alt="월넛 수납장과 하부 간접조명이 보이는 인천 청라 한화꿈에그린 39A 현관"
+              alt="월넛 수납장과 하부 간접조명이 보이는 인천 청라 한화꿈에그린 100A 현관"
               ratio="aspect-[1421/1106]"
             />
 
             <ProjectFigure
               src={images.entryCorridor}
-              alt="현관에서 거실 방향으로 이어지는 인천 청라 한화꿈에그린 39A 복도"
+              alt="현관에서 거실 방향으로 이어지는 인천 청라 한화꿈에그린 100A 복도"
               ratio="aspect-[567/1125]"
             />
           </div>
@@ -108,14 +108,14 @@ export default function CheongnaHanwhaKkumegreen39A() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure
               src={images.livingDiningDay}
-              alt="파벽 아트월과 다이닝 테이블, 소파가 함께 보이는 인천 청라 한화꿈에그린 39A 거실 주간 장면"
+              alt="파벽 아트월과 다이닝 테이블, 소파가 함께 보이는 인천 청라 한화꿈에그린 100A 거실 주간 장면"
               ratio="aspect-[2000/1081]"
               caption="Day"
             />
 
             <ProjectFigure
               src={images.livingDiningNight}
-              alt="다이닝 테이블과 소파가 함께 보이는 인천 청라 한화꿈에그린 39A 거실 야간 장면"
+              alt="다이닝 테이블과 소파가 함께 보이는 인천 청라 한화꿈에그린 100A 거실 야간 장면"
               ratio="aspect-[1706/922]"
               caption="Night"
             />
@@ -123,7 +123,7 @@ export default function CheongnaHanwhaKkumegreen39A() {
 
           <ProjectFigure
             src={images.livingRoomSofa}
-            alt="파벽 아트월과 파이프 선반, 브라운 소파가 보이는 인천 청라 한화꿈에그린 39A 거실"
+            alt="파벽 아트월과 파이프 선반, 브라운 소파가 보이는 인천 청라 한화꿈에그린 100A 거실"
             ratio="aspect-[2000/1075]"
           />
         </div>
@@ -139,7 +139,7 @@ export default function CheongnaHanwhaKkumegreen39A() {
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectFigure
             src={images.kitchen}
-            alt="전면 월넛 수납장과 싱크가 있는 아일랜드가 보이는 인천 청라 한화꿈에그린 39A 주방"
+            alt="전면 월넛 수납장과 싱크가 있는 아일랜드가 보이는 인천 청라 한화꿈에그린 100A 주방"
             ratio="aspect-[1672/941]"
           />
         </div>
@@ -155,7 +155,7 @@ export default function CheongnaHanwhaKkumegreen39A() {
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectFigure
             src={images.studyRoom}
-            alt="월넛 벽면 수납과 책상, 라운지 체어가 보이는 인천 청라 한화꿈에그린 39A 서재"
+            alt="월넛 벽면 수납과 책상, 라운지 체어가 보이는 인천 청라 한화꿈에그린 100A 서재"
             ratio="aspect-[1944/954]"
           />
         </div>
@@ -172,14 +172,14 @@ export default function CheongnaHanwhaKkumegreen39A() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure
               src={images.masterBedroomDay}
-              alt="침대 헤드 가벽과 양측 통행로가 보이는 인천 청라 한화꿈에그린 39A 안방 주간 장면"
+              alt="침대 헤드 가벽과 양측 통행로가 보이는 인천 청라 한화꿈에그린 100A 안방 주간 장면"
               ratio="aspect-[1672/1125]"
               caption="Day"
             />
 
             <ProjectFigure
               src={images.masterBedroomNight}
-              alt="침대 헤드 가벽 상부 간접조명이 켜진 인천 청라 한화꿈에그린 39A 안방 야간 장면"
+              alt="침대 헤드 가벽 상부 간접조명이 켜진 인천 청라 한화꿈에그린 100A 안방 야간 장면"
               ratio="aspect-[1671/1125]"
               caption="Night"
             />
@@ -197,21 +197,21 @@ export default function CheongnaHanwhaKkumegreen39A() {
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-12 md:space-y-16">
           <ProjectFigure
             src={images.dressingRoomExtension}
-            alt="조명 선반이 있는 확장 옷장과 양측 통로가 보이는 인천 청라 한화꿈에그린 39A 안방"
+            alt="조명 선반이 있는 확장 옷장과 양측 통로가 보이는 인천 청라 한화꿈에그린 100A 안방"
             ratio="aspect-[1708/1125]"
           />
 
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure
               src={images.dressingRoomStorage}
-              alt="조명 선반과 서랍이 있는 인천 청라 한화꿈에그린 39A 기존 드레스룸 옷장"
+              alt="조명 선반과 서랍이 있는 인천 청라 한화꿈에그린 100A 기존 드레스룸 옷장"
               ratio="aspect-[775/1125]"
               caption="Existing Dressing"
             />
 
             <ProjectFigure
               src={images.dressingVanity}
-              alt="거울 수납장과 서랍장이 보이는 인천 청라 한화꿈에그린 39A 화장대"
+              alt="거울 수납장과 서랍장이 보이는 인천 청라 한화꿈에그린 100A 화장대"
               ratio="aspect-[659/956]"
               caption="Vanity"
             />
@@ -230,14 +230,14 @@ export default function CheongnaHanwhaKkumegreen39A() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure
               src={images.bathroomOverview}
-              alt="세면대와 양변기, 유리 샤워문이 보이는 인천 청라 한화꿈에그린 39A 욕실"
+              alt="세면대와 양변기, 유리 샤워문이 보이는 인천 청라 한화꿈에그린 100A 욕실"
               ratio="aspect-[668/1125]"
               caption="Overview"
             />
 
             <ProjectFigure
               src={images.bathroomShower}
-              alt="샤워 수전과 매립 선반, 블랙 프레임 출입문이 보이는 인천 청라 한화꿈에그린 39A 욕실"
+              alt="샤워 수전과 매립 선반, 블랙 프레임 출입문이 보이는 인천 청라 한화꿈에그린 100A 욕실"
               ratio="aspect-[733/1125]"
               caption="Detail"
             />

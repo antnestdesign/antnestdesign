@@ -27,13 +27,13 @@
 
 export const projects: Record<string, Project> = {
   "apartment-a": {
-    title: "수원 살구골 현대7단지 37평",
-    cardTitle: "수원 살구골 현대7단지 아파트",
+    title: "수원 살구골 현대7단지 99",
+    cardTitle: "수원 살구골 현대7단지 99",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "37평형",
+    area: "99",
     images: 18,
     heroImage: "/projects/apartment-a/01-hero.webp",
     overview:
@@ -68,13 +68,13 @@ export const projects: Record<string, Project> = {
   },
 
   "apartment-b": {
-    title: "화성 동탄역 모아미래도 34평",
-    cardTitle: "화성 동탄역 모아미래도 아파트",
+    title: "화성 동탄역 모아미래도 84A",
+    cardTitle: "화성 동탄역 모아미래도 84A",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2025",
-    area: "34평형",
+    area: "84A",
     images: 19,
     heroImage: "/projects/apartment-b/12-kitchen-front.webp",
     overview:
@@ -197,13 +197,13 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-hanwha-kkumegreen-39a": {
-    title: "인천 청라 한화꿈에그린 39A",
-    cardTitle: "인천 청라 한화꿈에그린 39A",
+    title: "인천 청라 한화꿈에그린 100A",
+    cardTitle: "인천 청라 한화꿈에그린 100A",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "39A",
+    area: "100A",
     images: 16,
     heroImage:
       "/projects/cheongna-hanwha-kkumegreen-39a/04-kitchen-dining-overview-panorama.webp",
@@ -212,7 +212,7 @@ export const projects: Record<string, Project> = {
     thumbnailObjectPosition: "30% center",
     heroAspectRatio: "1926 / 816",
     overview:
-      "인천 청라 한화꿈에그린 39A를 위한 아파트 인테리어 디자인 제안입니다. 3Bay 구조의 제한된 주방 폭과 부족한 안방 수납을 다이닝 재배치와 침대 헤드 가벽 뒤 드레스룸 확장으로 해결하고, 인더스트리얼 모던의 디자인 언어로 공간 전체를 연결했습니다.",
+      "인천 청라 한화꿈에그린 100A를 위한 아파트 인테리어 디자인 제안입니다. 3Bay 구조의 제한된 주방 폭과 부족한 안방 수납을 다이닝 재배치와 침대 헤드 가벽 뒤 드레스룸 확장으로 해결하고, 인더스트리얼 모던의 디자인 언어로 공간 전체를 연결했습니다.",
     gallery: [
       "/projects/cheongna-hanwha-kkumegreen-39a/04-kitchen-dining-overview-panorama.webp",
       "/projects/cheongna-hanwha-kkumegreen-39a/14-entry-sliding-door.webp",
@@ -240,17 +240,17 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-hoban-4-33a": {
-    title: "인천 청라 호반4차 33A",
-    cardTitle: "인천 청라 호반4차 33A",
+    title: "인천 청라 호반4차 84A",
+    cardTitle: "인천 청라 호반4차 84A",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "33A",
+    area: "84A",
     images: 10,
     heroImage: "/projects/cheongna-hoban-4-33a/01-hero.webp",
     overview:
-      "인천 청라 호반4차 33A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다. 거실과 주방을 하나의 열린 생활 공간으로 정리하고, 현관은 신발장과 팬트리 영역을 확장해 벤치가 있는 수납공간으로 구성했으며, 안방은 장으로 분할해 드레스룸 공간을 확장했습니다.",
+      "인천 청라 호반4차 84A 실제 평면을 기준으로 계획한 인테리어 디자인 제안입니다. 거실과 주방을 하나의 열린 생활 공간으로 정리하고, 현관은 신발장과 팬트리 영역을 확장해 벤치가 있는 수납공간으로 구성했으며, 안방은 장으로 분할해 드레스룸 공간을 확장했습니다.",
     gallery: [
       "/projects/cheongna-hoban-4-33a/01-hero.webp",
       "/projects/cheongna-hoban-4-33a/02-living-room.webp",
@@ -272,19 +272,19 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-lynn-strauss": {
-    title: "인천 청라 린 스트라우스 41평",
-    cardTitle: "인천 청라 린 스트라우스 41평",
+    title: "인천 청라 린 스트라우스 101",
+    cardTitle: "인천 청라 린 스트라우스 101",
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "41평",
+    area: "101",
     images: 13,
     heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
     thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
     heroAspectRatio: "2048 / 486",
     overview:
-      "인천 청라 린 스트라우스 41평을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
+      "인천 청라 린 스트라우스 101을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
     gallery: [
       "/projects/cheongna-lynn-strauss/02-living-room.webp",
       "/projects/cheongna-lynn-strauss/03-living-window.webp",
