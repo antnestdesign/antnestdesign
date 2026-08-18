@@ -9,6 +9,7 @@
 html {
   font-family: "Pretendard", sans-serif;
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {

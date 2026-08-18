@@ -97,12 +97,12 @@ export default function Header() {
           {isOverlayHero ? (
             <>
               <Image
-                src="/logo-hero-white.png"
+                src="/and-logo-horizontal-white.png"
                 alt="ANTNEST DESIGN"
-                width={620}
-                height={180}
+                width={3000}
+                height={1117}
                 priority
-                className={`w-[150px] md:w-[220px] h-auto transition-all duration-500 ${
+                className={`w-[112px] md:w-[148px] h-auto transition-all duration-500 ${
                   isHeroState
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-95 absolute pointer-events-none"
