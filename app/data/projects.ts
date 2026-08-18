@@ -190,10 +190,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 3,
+    residentialOrder: 4,
   },
 
   "cheongna-hanwha-kkumegreen-39a": {
@@ -233,10 +233,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 4,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 4,
+    residentialOrder: 3,
   },
 
   "cheongna-hoban-4-33a": {
