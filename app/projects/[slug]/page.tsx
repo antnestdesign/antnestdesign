@@ -4,6 +4,7 @@ import ApartmentA from "./ApartmentA";
 import ApartmentB from "./ApartmentB";
 import AntnestDesignOffice from "./AntnestDesignOffice";
 import CheongnaCentralEileensGarden84A from "./CheongnaCentralEileensGarden84A";
+import CheongnaHanwhaKkumegreen39A from "./CheongnaHanwhaKkumegreen39A";
 import CheongnaHoban4 from "./CheongnaHoban4";
 import CheongnaLynnStrauss from "./CheongnaLynnStrauss";
 import LuxuryHouse from "./LuxuryHouse";
@@ -86,6 +87,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     slug === "apartment-b" ||
     slug === "antnest-design-office" ||
     slug === "cheongna-central-eileens-garden-84a" ||
+    slug === "cheongna-hanwha-kkumegreen-39a" ||
     slug === "cheongna-hoban-4-33a" ||
     slug === "cheongna-lynn-strauss" ||
     slug === "luxury-house" ||
@@ -98,6 +100,9 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       {slug === "antnest-design-office" && <AntnestDesignOffice />}
       {slug === "cheongna-central-eileens-garden-84a" && (
         <CheongnaCentralEileensGarden84A />
+      )}
+      {slug === "cheongna-hanwha-kkumegreen-39a" && (
+        <CheongnaHanwhaKkumegreen39A />
       )}
       {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
       {slug === "cheongna-lynn-strauss" && <CheongnaLynnStrauss />}

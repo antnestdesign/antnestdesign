@@ -99,6 +99,9 @@ function MobileProjects() {
                   quality={68}
                   sizes="50vw"
                   className="object-cover"
+                  style={{
+                    objectPosition: project.thumbnailObjectPosition ?? "center",
+                  }}
                 />
 
                 <div className="absolute inset-0 bg-black/10" />
@@ -285,6 +288,9 @@ function DesktopProjects() {
                 quality={78}
                 sizes="58vw"
                 className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
+                style={{
+                  objectPosition: active.thumbnailObjectPosition ?? "center",
+                }}
               />
 
               <div className="absolute inset-0 bg-black/20" />

@@ -237,6 +237,9 @@ export default function ProjectLayout({
                     quality={78}
                     sizes="(max-width: 768px) 100vw, 560px"
                     className="object-cover transition duration-700 group-hover:scale-105"
+                    style={{
+                      objectPosition: item.thumbnailObjectPosition ?? "center",
+                    }}
                   />
 
                   <div className="absolute inset-0 bg-black/25 transition duration-500 group-hover:bg-black/15" />

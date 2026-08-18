@@ -9,6 +9,7 @@
   images: number;
   heroImage: string;
   thumbnailImage?: string;
+  thumbnailObjectPosition?: string;
   heroAspectRatio?: string;
   hideProjectInformation?: boolean;
   location?: string;
@@ -195,6 +196,49 @@ export const projects: Record<string, Project> = {
     residentialOrder: 3,
   },
 
+  "cheongna-hanwha-kkumegreen-39a": {
+    title: "인천 청라 한화꿈에그린 39A",
+    cardTitle: "인천 청라 한화꿈에그린 39A",
+    category: "Residential Interior",
+    projectGroup: "Residential",
+    type: "Apartment Renovation",
+    year: "2026",
+    area: "39A",
+    images: 16,
+    heroImage:
+      "/projects/cheongna-hanwha-kkumegreen-39a/04-kitchen-dining-overview-panorama.webp",
+    thumbnailImage:
+      "/projects/cheongna-hanwha-kkumegreen-39a/01-hero.webp",
+    thumbnailObjectPosition: "30% center",
+    heroAspectRatio: "1926 / 816",
+    overview:
+      "인천 청라 한화꿈에그린 39A를 위한 아파트 인테리어 디자인 제안입니다. 3Bay 구조의 제한된 주방 폭과 부족한 안방 수납을 다이닝 재배치와 침대 헤드 가벽 뒤 드레스룸 확장으로 해결하고, 인더스트리얼 모던의 디자인 언어로 공간 전체를 연결했습니다.",
+    gallery: [
+      "/projects/cheongna-hanwha-kkumegreen-39a/04-kitchen-dining-overview-panorama.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/14-entry-sliding-door.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/13-entry-storage.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/12-entry-corridor.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/01-hero.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/02-living-dining-night.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/03-living-room-sofa.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/05-kitchen-island.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/11-study-room-overview.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/07-master-bedroom-day.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/08-master-bedroom-night.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/09-master-bedroom-dressing-room-extension.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/10-dressing-room-storage.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/06-dressing-vanity.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/15-bathroom-overview.webp",
+      "/projects/cheongna-hanwha-kkumegreen-39a/16-bathroom-shower.webp",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 5,
+    status: "Design Proposal / Rendering",
+    residentialFeatured: true,
+    residentialOrder: 4,
+  },
+
   "cheongna-hoban-4-33a": {
     title: "인천 청라 호반4차 33A",
     cardTitle: "인천 청라 호반4차 33A",
@@ -221,10 +265,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Rendering Proposal",
     residentialFeatured: true,
-    residentialOrder: 5,
+    residentialOrder: 6,
   },
 
   "cheongna-lynn-strauss": {
@@ -257,10 +301,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Concept Proposal",
     residentialFeatured: true,
-    residentialOrder: 4,
+    residentialOrder: 5,
   },
 
   "luxury-house": {
@@ -283,7 +327,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Completed",
   },
 
@@ -310,7 +354,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 8,
+    featuredOrder: 9,
     status: "Completed",
   },
 
@@ -329,7 +373,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 9,
+    featuredOrder: 10,
     status: "Completed",
   },
 
@@ -348,7 +392,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 10,
+    featuredOrder: 11,
     status: "Completed",
   },
 };
