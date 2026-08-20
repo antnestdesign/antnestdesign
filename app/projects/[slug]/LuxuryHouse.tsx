@@ -77,10 +77,37 @@ export default function LuxuryHouse({ project }: { project: Project }) {
         <SectionHeading
           eyebrow="Arrival"
           title="부모님의 앞으로를 생각한 공간"
-          description="처음부터 전용 엘리베이터를 계획했습니다. 현재뿐 아니라 앞으로의 시간을 생각하면 계단보다 편안한 이동이 더 중요하다고 판단했습니다. 긴 복도와 넓은 홀은 이동을 위한 공간이 아니라, 집에 들어서는 순간부터 여유를 느끼도록 계획된 공간입니다."
+          description="지하 주차장에서 실내로 바로 이어지고, 전용 엘리베이터를 통해 각 층으로 편안하게 이동할 수 있도록 계획했습니다. 현재뿐 아니라 앞으로의 시간을 생각하면 계단보다 편안한 이동이 더 중요하다고 판단했습니다. 긴 복도와 넓은 홀은 이동을 위한 공간이 아니라, 집에 들어서는 순간부터 여유를 느끼도록 계획된 공간입니다."
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">
+          <ProjectImage
+            src="/projects/luxury-house/10-b1-private-garage-access.webp"
+            alt={`${project.title} 지하 주차장과 실내 연결 동선`}
+            ratio="aspect-[16/10]"
+          />
+
+          <div className="grid md:grid-cols-12 gap-8 md:gap-12 mt-10 md:mt-12 mb-16 md:mb-20">
+            <div className="md:col-span-5">
+              <p className="uppercase tracking-[0.3em] text-[9px] md:text-[10px] text-neutral-400 mb-4">
+                B1 Private Access
+              </p>
+
+              <h3 className="text-2xl md:text-4xl font-light leading-[1.2] break-keep">
+                차에서 집 안까지 이어지는
+                <br />
+                프라이빗 동선
+              </h3>
+            </div>
+
+            <p className="md:col-span-6 md:col-start-7 text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
+              차량으로 지하 주차장에 진입한 뒤 외부를 거치지 않고 실내로
+              바로 연결되는 동선을 계획했습니다. 날씨와 관계없이 편안하게
+              이동할 수 있으며, 주차부터 실내 진입과 각 층 이동까지 하나의
+              연속된 귀가 경험으로 이어집니다.
+            </p>
+          </div>
+
           <ProjectImage
             src="/projects/luxury-house/02-1f-ev-hall.webp"
             alt={`${project.title} 1층 엘리베이터 홀`}
