@@ -1,6 +1,10 @@
 ﻿export type Project = {
   title: string;
   cardTitle: string;
+  seo?: {
+    title: string;
+    description: string;
+  };
   category: string;
   projectGroup: string;
   type: string;
@@ -29,11 +33,16 @@ export const projects: Record<string, Project> = {
   "apartment-a": {
     title: "수원 살구골 현대7단지 99",
     cardTitle: "수원 살구골 현대7단지 99",
+    seo: {
+      title: "수원 영통 살구골 현대7단지 36평 인테리어",
+      description:
+        "수원 영통 살구골 현대7단지 전용 99.58㎡·36평형 인테리어 프로젝트입니다. 2Bay 구조의 부족한 수납과 동선을 주방, 현관, 안방을 중심으로 다시 구성했습니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "99",
+    area: "99.58㎡ · 36평형",
     images: 18,
     heroImage: "/projects/apartment-a/01-hero.webp",
     overview:
@@ -70,11 +79,16 @@ export const projects: Record<string, Project> = {
   "apartment-b": {
     title: "화성 동탄역 모아미래도 84A",
     cardTitle: "화성 동탄역 모아미래도 84A",
+    seo: {
+      title: "동탄역 모아미래도 33평 아파트 인테리어",
+      description:
+        "동탄역 모아미래도 84A·33평형을 부부와 두 아이의 생활에 맞춰 재구성한 완공 인테리어 프로젝트입니다. 3m 아일랜드와 서재, 드레스룸으로 가족의 생활 동선을 다시 설계했습니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2025",
-    area: "84A",
+    area: "84A · 33평형",
     images: 19,
     heroImage: "/projects/apartment-b/12-kitchen-front.webp",
     overview:
@@ -150,11 +164,16 @@ export const projects: Record<string, Project> = {
   "cheongna-central-eileens-garden-84a": {
     title: "인천 청라 센트럴에일린의뜰 84A",
     cardTitle: "인천 청라 센트럴에일린의뜰 84A",
+    seo: {
+      title: "청라 센트럴에일린의뜰 35평 인테리어 디자인",
+      description:
+        "청라 센트럴에일린의뜰 84A·35평형을 기준으로 아일랜드 중심 A안과 분리형 보조주방 B안, 두 가지 주방 구성을 제안한 인테리어 디자인 프로젝트입니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "84A",
+    area: "84A · 35평형",
     images: 24,
     heroImage:
       "/projects/cheongna-central-eileens-garden-84a/02-living-room.webp",
@@ -199,11 +218,16 @@ export const projects: Record<string, Project> = {
   "cheongna-hanwha-kkumegreen-39a": {
     title: "인천 청라 한화꿈에그린 100A",
     cardTitle: "인천 청라 한화꿈에그린 100A",
+    seo: {
+      title: "청라 한화꿈에그린 39평 인테리어 디자인",
+      description:
+        "청라 한화꿈에그린 100A·39평형의 제한된 주방 폭과 안방 수납 문제를 다이닝 재배치와 침대 헤드 가벽으로 풀어낸 인테리어 디자인 제안입니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "100A",
+    area: "100A · 39평형",
     images: 16,
     heroImage:
       "/projects/cheongna-hanwha-kkumegreen-39a/04-kitchen-dining-overview-panorama.webp",
@@ -242,11 +266,16 @@ export const projects: Record<string, Project> = {
   "cheongna-hoban-4-33a": {
     title: "인천 청라 호반4차 84A",
     cardTitle: "인천 청라 호반4차 84A",
+    seo: {
+      title: "청라 호반4차 34평 인테리어 디자인",
+      description:
+        "청라 호반4차 84A·34평형 실제 평면을 바탕으로 현관 수납, 거실과 주방의 동선, 안방 드레스룸을 다시 계획한 ANTNEST DESIGN의 인테리어 디자인 제안입니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "84A",
+    area: "84A · 34평형",
     images: 10,
     heroImage: "/projects/cheongna-hoban-4-33a/01-hero.webp",
     overview:
@@ -274,17 +303,22 @@ export const projects: Record<string, Project> = {
   "cheongna-lynn-strauss": {
     title: "인천 청라 린 스트라우스 101",
     cardTitle: "인천 청라 린 스트라우스 101",
+    seo: {
+      title: "청라 린스트라우스 41평 인테리어 디자인",
+      description:
+        "청라 린스트라우스 101㎡·41평형에서 수납과 기능을 면 안에 통합하고 자연광과 낮은 조도를 중심으로 계획한 주거 인테리어 디자인 제안입니다.",
+    },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Renovation",
     year: "2026",
-    area: "101",
+    area: "101㎡ · 41평형",
     images: 13,
     heroImage: "/projects/cheongna-lynn-strauss/01-hero.webp",
     thumbnailImage: "/projects/cheongna-lynn-strauss/02-living-room.webp",
     heroAspectRatio: "2048 / 486",
     overview:
-      "인천 청라 린 스트라우스 101을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
+      "청라 린 스트라우스 101㎡·41평형을 위한 인테리어 디자인 제안입니다. 넓은 면과 통합된 수납, 자연광을 닮은 조명 계획을 중심으로 거실과 주방, 드레스룸, 욕실의 흐름을 정리했습니다.",
     gallery: [
       "/projects/cheongna-lynn-strauss/02-living-room.webp",
       "/projects/cheongna-lynn-strauss/03-living-window.webp",
@@ -407,6 +441,8 @@ export const projectList = Object.entries(projects)
 export const featuredProjects = projectList.filter(
   (project) => project.featured
 );
+
+export const PROJECTS_PER_PAGE = 5;
 
 export const residentialProjects = projectList
   .filter((project) => project.residentialFeatured)

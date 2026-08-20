@@ -32,7 +32,7 @@ export default function CheongnaLynnStrauss() {
       <section className="max-w-4xl mx-auto px-8 md:px-16 mb-28 md:mb-36">
         <div className="space-y-6">
           <p className="text-lg md:text-xl leading-[2] md:leading-[2.2] text-neutral-700 break-keep">
-            청라 린 스트라우스 101을 위한 인테리어 디자인 제안입니다. 넓은
+            청라 린 스트라우스 101㎡·41평형을 위한 인테리어 디자인 제안입니다. 넓은
             면과 제한된 재료를 바탕으로 수납과 기능을 공간 안에 통합하고,
             각각의 요소가 입체적으로 드러나기보다 하나의 배경으로 작동하도록
             계획했습니다.

@@ -14,6 +14,10 @@ import { projects } from "../../data/projects";
 
 const siteUrl = "https://www.antnestdesign.com";
 
+function serializeJsonLd(value: unknown) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
 type ProjectPageParams = {
   params: Promise<{ slug: string }>;
 };
@@ -31,25 +35,25 @@ export async function generateMetadata({
     };
   }
 
-  const title = project.title;
-  const brandedTitle = `${project.title} | ANTNEST DESIGN`;
-  const description =
-    project.overview ||
-    `${project.title} 프로젝트입니다. ANTNEST DESIGN의 ${project.category} 포트폴리오를 확인해보세요.`;
+  const metadataTitle = project.seo?.title ?? project.title;
+  const metadataDescription =
+    project.seo?.description ??
+    (project.overview ||
+      `${project.title} 프로젝트입니다. ANTNEST DESIGN의 ${project.category} 포트폴리오를 확인해보세요.`);
 
   const projectUrl = `${siteUrl}/projects/${slug}`;
 
   return {
-    title,
-    description,
+    title: metadataTitle,
+    description: metadataDescription,
 
     alternates: {
       canonical: `/projects/${slug}`,
     },
 
     openGraph: {
-      title: brandedTitle,
-      description,
+      title: metadataTitle,
+      description: metadataDescription,
       url: projectUrl,
       siteName: "ANTNEST DESIGN",
       locale: "ko_KR",
@@ -57,8 +61,6 @@ export async function generateMetadata({
       images: [
         {
           url: project.heroImage,
-          width: 1200,
-          height: 800,
           alt: project.title,
         },
       ],
@@ -66,8 +68,8 @@ export async function generateMetadata({
 
     twitter: {
       card: "summary_large_image",
-      title: brandedTitle,
-      description,
+      title: metadataTitle,
+      description: metadataDescription,
       images: [project.heroImage],
     },
   };
@@ -82,6 +84,72 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     notFound();
   }
 
+  const projectUrl = `${siteUrl}/projects/${slug}`;
+  const projectDescription = project.seo?.description ?? project.overview;
+  const projectImageUrl = new URL(project.heroImage, siteUrl).toString();
+
+  const creativeWorkJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "@id": `${projectUrl}#project`,
+    name: project.title,
+    description: projectDescription,
+    url: projectUrl,
+    image: projectImageUrl,
+    creator: {
+      "@id": `${siteUrl}/#organization`,
+    },
+    genre: project.category,
+    about: project.type,
+    additionalProperty: [
+      {
+        "@type": "PropertyValue",
+        name: "Area",
+        value: project.area,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Type",
+        value: project.type,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Year",
+        value: project.year,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Status",
+        value: project.status,
+      },
+    ],
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Projects",
+        item: `${siteUrl}/projects`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: project.title,
+        item: projectUrl,
+      },
+    ],
+  };
+
   const hasCustomPage =
     slug === "apartment-a" ||
     slug === "apartment-b" ||
@@ -95,6 +163,18 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
 
   return (
     <ProjectLayout slug={slug} project={project}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(creativeWorkJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(breadcrumbJsonLd),
+        }}
+      />
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
       {slug === "antnest-design-office" && <AntnestDesignOffice />}

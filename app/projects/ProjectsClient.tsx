@@ -5,19 +5,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import MiniFooter from "../components/MiniFooter";
-import { featuredProjects } from "../data/projects";
-
-const PROJECTS_PER_PAGE = 5;
+import { featuredProjects, PROJECTS_PER_PAGE } from "../data/projects";
 
 function Pagination({
   currentPage,
   totalPages,
-  onChange,
   className = "",
 }: {
   currentPage: number;
   totalPages: number;
-  onChange: (page: number) => void;
   className?: string;
 }) {
   if (totalPages <= 1) {
@@ -31,28 +27,26 @@ function Pagination({
         const isActive = currentPage === page;
 
         return (
-          <button
+          <Link
             key={page}
-            type="button"
-            onClick={() => onChange(page)}
-            className={`h-8 w-8 border text-[11px] transition ${
+            href={page === 1 ? "/projects" : `/projects?page=${page}`}
+            className={`inline-flex h-8 w-8 items-center justify-center border text-[11px] transition ${
               isActive
                 ? "border-[#4A433D] bg-[#4A433D] text-[#F3F0EB]"
                 : "border-neutral-300 text-neutral-500 hover:border-[#4A433D] hover:text-[#4A433D]"
             }`}
             aria-label={`Go to project page ${page}`}
+            aria-current={isActive ? "page" : undefined}
           >
             {page}
-          </button>
+          </Link>
         );
       })}
     </div>
   );
 }
 
-function MobileProjects() {
-  const [currentPage, setCurrentPage] = useState(1);
-
+function MobileProjects({ currentPage }: { currentPage: number }) {
   const projects = featuredProjects;
   const totalPages = Math.ceil(projects.length / PROJECTS_PER_PAGE);
 
@@ -131,10 +125,6 @@ function MobileProjects() {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onChange={(page) => {
-            setCurrentPage(page);
-            window.scrollTo({ top: 0, behavior: "auto" });
-          }}
           className="justify-center mt-10"
         />
 
@@ -151,8 +141,7 @@ function MobileProjects() {
   );
 }
 
-function DesktopProjects() {
-  const [currentPage, setCurrentPage] = useState(1);
+function DesktopProjects({ currentPage }: { currentPage: number }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const projects = featuredProjects;
@@ -262,10 +251,6 @@ function DesktopProjects() {
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onChange={(page) => {
-                  setActiveIndex(0);
-                  setCurrentPage(page);
-                }}
               />
 
               <p className="text-[10px] text-neutral-500 tracking-[0.25em] uppercase">
@@ -333,7 +318,11 @@ function DesktopProjects() {
   );
 }
 
-export default function ProjectsClient() {
+export default function ProjectsClient({
+  currentPage,
+}: {
+  currentPage: number;
+}) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -355,8 +344,12 @@ export default function ProjectsClient() {
   }, []);
 
   if (!mounted) {
-    return <MobileProjects />;
+    return <MobileProjects currentPage={currentPage} />;
   }
 
-  return isDesktop ? <DesktopProjects /> : <MobileProjects />;
+  return isDesktop ? (
+    <DesktopProjects key={currentPage} currentPage={currentPage} />
+  ) : (
+    <MobileProjects currentPage={currentPage} />
+  );
 }
