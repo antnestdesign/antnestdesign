@@ -451,7 +451,6 @@ async function submitIndexNow(urlList, key) {
     requestUrl.search = new URLSearchParams({
       url: urlList[0],
       key,
-      keyLocation: KEY_LOCATION,
     }).toString();
     response = await fetch(requestUrl);
   } else {
@@ -461,7 +460,6 @@ async function submitIndexNow(urlList, key) {
       body: JSON.stringify({
         host: SITE_HOST,
         key,
-        keyLocation: KEY_LOCATION,
         urlList,
       }),
     });
