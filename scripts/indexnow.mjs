@@ -444,16 +444,28 @@ function describeResponse(status) {
 async function submitIndexNow(urlList, key) {
   await verifyProductionKey(key);
 
-  const response = await fetch(INDEXNOW_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      host: SITE_HOST,
+  let response;
+
+  if (urlList.length === 1) {
+    const requestUrl = new URL(INDEXNOW_ENDPOINT);
+    requestUrl.search = new URLSearchParams({
+      url: urlList[0],
       key,
       keyLocation: KEY_LOCATION,
-      urlList,
-    }),
-  });
+    }).toString();
+    response = await fetch(requestUrl);
+  } else {
+    response = await fetch(INDEXNOW_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host: SITE_HOST,
+        key,
+        keyLocation: KEY_LOCATION,
+        urlList,
+      }),
+    });
+  }
   const result = describeResponse(response.status);
 
   console.log(`IndexNow submitted URLs: ${urlList.length}`);
@@ -493,6 +505,9 @@ async function main() {
 
   console.log(`Detected public indexable URLs: ${urlList.length}`);
   for (const url of urlList) console.log(`- ${url}`);
+  console.log(
+    `IndexNow request method: ${urlList.length === 1 ? "GET" : "POST"}`,
+  );
 
   if (options.dryRun) {
     console.log("Dry run: no IndexNow request was sent.");
