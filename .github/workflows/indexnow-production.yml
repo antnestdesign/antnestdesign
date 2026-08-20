@@ -1,0 +1,35 @@
+name: Notify Naver IndexNow after Production
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: indexnow-production
+  cancel-in-progress: false
+
+jobs:
+  notify-indexnow:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production' &&
+      github.event.deployment.creator.login == 'vercel[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the deployed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+          fetch-depth: 0
+
+      - name: Detect changed public URLs and notify IndexNow
+        run: >-
+          node scripts/indexnow.mjs
+          --deployment-id "${{ github.event.deployment.id }}"
+          --head "${{ github.event.deployment.sha }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
