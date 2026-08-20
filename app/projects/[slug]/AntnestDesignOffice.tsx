@@ -38,8 +38,9 @@ export default function AntnestDesignOffice() {
 
           <div className="md:col-span-8 md:col-start-5 space-y-7 text-[15px] md:text-lg leading-8 md:leading-9 text-neutral-700 break-keep">
             <p>
-              인천 청라에 새롭게 문을 연 ANTNEST DESIGN의 사무실입니다. 전체 철거 후 회의,
-              협업, 개인 업무가 한 층 안에서 자연스럽게 이어지도록 공간을 다시 구성했습니다.
+              인천 청라 110㎡ 규모의 ANTNEST DESIGN 사무실 인테리어 프로젝트입니다. 전체
+              철거 후 회의, 협업, 개인 업무가 한 층 안에서 자연스럽게 이어지도록 공간을 다시
+              구성했습니다.
             </p>
             <p>
               유리 파티션으로 복도와 각 실의 시선을 연결하고, 회의실과 라운지를 하나의 중심

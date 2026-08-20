@@ -34,6 +34,7 @@ export default function LuxuryHouse({ project }: { project: Project }) {
       <section className="max-w-4xl mx-auto px-8 md:px-16 mb-28 md:mb-40">
         <div className="space-y-6">
           {[
+            "화성에 완공한 600㎡ 규모의 고급주택 건축 프로젝트입니다.",
             "이 집의 시작은 화려한 고급주택을 짓기 위한 계획이 아니었습니다.",
             "건축주는 오랜 시간 가족을 위해 살아오신 부모님께 앞으로의 삶을 선물하고 싶었습니다.",
             "편안하게 이동할 수 있는 동선, 시간이 지나도 변하지 않는 견고한 자재, 가족 모두가 자연스럽게 모일 수 있는 공간. 모든 계획은 부모님의 일상에서 시작되었습니다.",

@@ -126,6 +126,11 @@ export const projects: Record<string, Project> = {
   "antnest-design-office": {
     title: "인천 청라 AND OFFICE",
     cardTitle: "인천 청라 AND OFFICE",
+    seo: {
+      title: "청라 사무실 인테리어 110㎡",
+      description:
+        "인천 청라 110㎡ 규모의 ANTNEST DESIGN 사무실을 전체 철거 후 회의, 협업, 개인 업무가 자연스럽게 이어지도록 재구성한 사무실 인테리어 프로젝트입니다.",
+    },
     category: "Commercial Interior",
     projectGroup: "Commercial",
     type: "Office Interior",
@@ -344,6 +349,11 @@ export const projects: Record<string, Project> = {
   "luxury-house": {
     title: "화성 효행구 고급주택 신축공사",
     cardTitle: "화성 효행구 고급주택 신축공사",
+    seo: {
+      title: "화성 고급주택 건축 600㎡",
+      description:
+        "화성 600㎡ 규모의 고급주택 건축 프로젝트입니다. 8m 층고의 거실과 전용 엘리베이터, 맞춤 주방, 스크린골프장과 실외 수영장을 가족의 생활에 맞춰 계획했습니다.",
+    },
     category: "Architecture",
     projectGroup: "Architecture",
     type: "Luxury House",
@@ -368,6 +378,11 @@ export const projects: Record<string, Project> = {
   "private-house": {
     title: "인천 청라 단독주택 신축공사",
     cardTitle: "인천 청라 단독주택 신축공사",
+    seo: {
+      title: "인천 청라 단독주택 건축",
+      description:
+        "인천 청라에 완공한 390㎡ 단독주택 건축 프로젝트입니다. 높은 층고의 거실과 시스템창호, 벽난로, 보조주방을 가족의 생활 방식에 맞춰 계획했습니다.",
+    },
     category: "Architecture",
     projectGroup: "Architecture",
     type: "Private House",
