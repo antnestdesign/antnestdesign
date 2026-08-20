@@ -35,6 +35,7 @@ function Pagination({
                 ? "border-[#4A433D] bg-[#4A433D] text-[#F3F0EB]"
                 : "border-neutral-300 text-neutral-500 hover:border-[#4A433D] hover:text-[#4A433D]"
             }`}
+            style={isActive ? { color: "#F3F0EB" } : undefined}
             aria-label={`Go to project page ${page}`}
             aria-current={isActive ? "page" : undefined}
           >
