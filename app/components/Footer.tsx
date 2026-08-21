@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="bg-[#2E2A26] text-white">
       <div className="max-w-7xl mx-auto px-8 md:px-16 py-7 md:py-8">
         <div className="grid md:grid-cols-4 gap-6 md:gap-8 items-start">
-          <div>
+          <div className="w-fit flex flex-col items-center">
             <Image
               src="/logo.png"
               alt="ANTNEST DESIGN"
@@ -16,7 +16,7 @@ export default function Footer() {
               className="w-[110px] md:w-[145px] h-auto mb-3 brightness-0 invert"
             />
 
-            <p className="text-white/60 text-sm">
+            <p className="w-full text-center text-white/60 text-sm">
               Architecture of Everyday Life
             </p>
           </div>
