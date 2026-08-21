@@ -11,7 +11,7 @@ const navItems = [
   { label: "PROJECTS", href: "/projects" },
   {
     label: "STANDARD",
-    href: "/knowledge/and-standards/lighting-natural-light",
+    href: "/knowledge/and-standards",
   },
   { label: "CONSULTATION", href: "/consultation" },
 ];

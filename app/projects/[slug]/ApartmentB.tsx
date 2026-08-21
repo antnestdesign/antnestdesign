@@ -120,6 +120,15 @@ export default function ApartmentB() {
           description="기존 주방은 조리 공간과 수납이 모두 부족했고, 거실에는 활용도가 낮은 팬트리가 자리하고 있었습니다. 우리는 팬트리를 과감히 비우고 주방의 중심에 3m 풀사이즈 아일랜드를 계획했습니다."
         />
 
+        <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-10">
+          <Link
+            href="/knowledge/and-standards/storage-flow"
+            className="inline-block border-b border-neutral-300 pb-1 text-[13px] leading-7 text-neutral-600 transition-colors hover:border-neutral-600 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+          >
+            행동의 순서와 가족의 생활로 주방 동선을 설계하는 기준 →
+          </Link>
+        </div>
+
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <ProjectImage
             src="/projects/apartment-b/12-kitchen-front.webp"

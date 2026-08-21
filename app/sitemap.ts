@@ -48,7 +48,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
 
     {
+      url: `${baseUrl}/knowledge/and-standards`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+
+    {
       url: `${baseUrl}/knowledge/and-standards/lighting-natural-light`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+
+    {
+      url: `${baseUrl}/knowledge/and-standards/storage-flow`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.85,

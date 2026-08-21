@@ -290,6 +290,15 @@ export default function CheongnaCentralEileensGarden84A() {
           description="B안은 다이닝과 메인 주방, 문으로 구분된 보조주방이 이어지는 구성입니다."
         />
 
+        <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-10">
+          <Link
+            href="/knowledge/and-standards/storage-flow"
+            className="inline-block border-b border-neutral-300 pb-1 text-[13px] leading-7 text-neutral-600 transition-colors hover:border-neutral-600 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+          >
+            생활의 우선순위에 따라 달라지는 수납과 공간 계획의 기준 →
+          </Link>
+        </div>
+
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-12 md:space-y-16">
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure

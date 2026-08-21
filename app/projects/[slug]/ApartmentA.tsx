@@ -324,6 +324,15 @@ export default function ApartmentA({ project }: { project: Project }) {
             description="현관 좌측에는 새롭게 벽을 세워 넓은 팬트리 수납을 확보했습니다. 거실 쪽에서는 TV가 반매립되는 정돈된 벽면으로 보이고, 신발장 쪽에서는 부족했던 수납을 보완하는 팬트리로 기능하도록 계획했습니다."
           />
 
+          <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-10">
+            <Link
+              href="/knowledge/and-standards/storage-flow"
+              className="inline-block border-b border-neutral-300 pb-1 text-[13px] leading-7 text-neutral-600 transition-colors hover:border-neutral-600 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+            >
+              생활의 우선순위로 수납과 동선을 판단하는 AND의 기준 →
+            </Link>
+          </div>
+
           <div className="max-w-7xl mx-auto px-8 md:px-16">
             <div className="grid md:grid-cols-2 gap-8 md:gap-10">
               {entranceOverview && (

@@ -185,6 +185,15 @@ export default function CheongnaHanwhaKkumegreen39A() {
           description="수납을 늘리면서도 침실의 개방감과 양측 통행로를 유지할 수 있을까. 침대 헤드에 새로운 가벽을 세워 정면에는 대형 박판타일로 중심면을 만들고, 뒤쪽에는 추가 수납 공간을 계획했습니다. 주간 장면은 가벽과 양측 동선의 관계를, 야간 장면은 같은 구조에 간접조명이 더해진 변화를 보여줍니다."
         />
 
+        <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-10">
+          <Link
+            href="/knowledge/and-standards/storage-flow"
+            className="inline-block border-b border-neutral-300 pb-1 text-[13px] leading-7 text-neutral-600 transition-colors hover:border-neutral-600 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+          >
+            수납을 공간의 경계로 사용하는 AND의 설계 기준 →
+          </Link>
+        </div>
+
         <div className="max-w-7xl mx-auto px-8 md:px-16">
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <ProjectFigure
