@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 import type { Project } from "../../data/projects";
 
@@ -140,7 +141,13 @@ export default function LuxuryHouse({ project }: { project: Project }) {
 
           <div className="max-w-4xl ml-auto mt-12 md:mt-16">
             <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-              높은 층고와 간접조명은 시선의 흐름을 자연스럽게 위로 이끌며,
+              <Link
+                href="/knowledge/and-standards/lighting-natural-light"
+                className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+              >
+                높은 층고와 간접조명
+              </Link>
+              은 시선의 흐름을 자연스럽게 위로 이끌며,
               공간 전체의 깊이를 만들어냅니다. 이 집의 동선은 단순한 이동이
               아니라, 공간을 천천히 경험하는 과정으로 계획되었습니다.
             </p>

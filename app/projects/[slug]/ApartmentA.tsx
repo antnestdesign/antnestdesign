@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 import type { Project } from "../../data/projects";
 
@@ -61,8 +62,15 @@ export default function ApartmentA({ project }: { project: Project }) {
                 <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                   모든 공간에는 확산형 조명을 배제하고, COB 다운라이트와
                   10구 사각 매입등을 중심으로 조도를 계획했습니다. 각 구획마다
-                  간접조명을 함께 배치해 필요한 밝기는 확보하면서도, 광원의
-                  직접 노출은 최소화했습니다.
+                  간접조명을 함께 배치해{" "}
+                  <Link
+                    href="/knowledge/and-standards/lighting-natural-light"
+                    className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                  >
+                    필요한 밝기는 확보하면서도, 광원의 직접 노출은
+                    최소화했습니다
+                  </Link>
+                  .
                 </p>
 
                 <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">

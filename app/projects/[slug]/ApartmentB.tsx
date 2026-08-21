@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 function SmallBefore({ src, alt }: { src: string; alt: string }) {
@@ -333,8 +334,14 @@ export default function ApartmentB() {
               </p>
 
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
-                반대로 침실은 천장 조명을 최소화하고 벽등과 침대 하부
-                간접조명을 적용해 눈부심 없이 편안한 분위기를 만들었습니다.
+                반대로 침실은{" "}
+                <Link
+                  href="/knowledge/and-standards/lighting-natural-light"
+                  className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                >
+                  천장 조명을 최소화하고 벽등과 침대 하부 간접조명을 적용해
+                </Link>{" "}
+                눈부심 없이 편안한 분위기를 만들었습니다.
                 밝은 공간보다 오래 머물고 싶은 공간을 만드는 것이 이번
                 프로젝트의 조명 철학입니다.
               </p>

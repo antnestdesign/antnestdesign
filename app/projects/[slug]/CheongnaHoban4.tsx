@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 const images = {
@@ -37,7 +38,20 @@ export default function CheongnaHoban4() {
         <SectionHeading
           eyebrow="Living Area"
           title="거실과 주방이 이어지는 열린 생활 공간"
-          description="거실은 대형 창을 통해 들어오는 자연광과 아파트 단지의 풍경을 적극적으로 받아들이는 공간으로 계획했습니다. 우드 마감의 TV 월과 낮은 조도의 간접조명을 통해 시선이 머무는 중심 벽면을 만들고, 주방과 자연스럽게 연결되는 넓은 생활 공간으로 구성했습니다."
+          description={
+            <>
+              거실은 대형 창을 통해 들어오는 자연광과 아파트 단지의 풍경을
+              적극적으로 받아들이는 공간으로 계획했습니다. 우드 마감의 TV
+              월과{" "}
+              <Link
+                href="/knowledge/and-standards/lighting-natural-light"
+                className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+              >
+                낮은 조도의 간접조명을 통해 시선이 머무는 중심 벽면을 만들고
+              </Link>
+              , 주방과 자연스럽게 연결되는 넓은 생활 공간으로 구성했습니다.
+            </>
+          }
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">

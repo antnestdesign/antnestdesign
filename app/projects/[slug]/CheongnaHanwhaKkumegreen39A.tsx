@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 const base = "/projects/cheongna-hanwha-kkumegreen-39a";
@@ -101,7 +102,23 @@ export default function CheongnaHanwhaKkumegreen39A() {
         <SectionHeading
           eyebrow="Living & Dining"
           title="다이닝을 옮겨 다시 만든 거실의 경계"
-          description="다이닝을 거실 쪽으로 옮기면서도 공용공간의 경계를 흐리지 않을 수 있을까. 하부장 라인을 다이닝 선에 맞춰 소파 영역과 식사·주방 영역을 자연스럽게 나누고, 파벽 아트월과 파이프 선반으로 거실의 인더스트리얼 성격을 더했습니다. 같은 구도의 낮과 밤은 재배치된 두 영역이 조명에 따라 다르게 읽히는 모습을 보여줍니다. 좁은 주방은 프로그램의 위치를 바꿔 기능을 회복할 수 있지만, 이동한 기능의 가구선과 경계까지 함께 계획해야 합니다."
+          description={
+            <>
+              다이닝을 거실 쪽으로 옮기면서도 공용공간의 경계를 흐리지 않을
+              수 있을까. 하부장 라인을 다이닝 선에 맞춰 소파 영역과 식사·주방
+              영역을 자연스럽게 나누고, 파벽 아트월과 파이프 선반으로 거실의
+              인더스트리얼 성격을 더했습니다.{" "}
+              <Link
+                href="/knowledge/and-standards/lighting-natural-light"
+                className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+              >
+                같은 구도의 낮과 밤
+              </Link>
+              은 재배치된 두 영역이 조명에 따라 다르게 읽히는 모습을
+              보여줍니다. 좁은 주방은 프로그램의 위치를 바꿔 기능을 회복할 수
+              있지만, 이동한 기능의 가구선과 경계까지 함께 계획해야 합니다.
+            </>
+          }
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-12 md:space-y-16">

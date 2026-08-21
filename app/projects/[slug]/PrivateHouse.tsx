@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 import type { Project } from "../../data/projects";
 
@@ -152,8 +153,14 @@ export default function PrivateHouse({ project }: { project: Project }) {
             <div className="max-w-4xl ml-auto mt-12 md:mt-16 space-y-5 md:space-y-6">
               <p className="text-[13px] md:text-base leading-7 md:leading-8 text-neutral-600 break-keep">
                 거실과 주방 전체에는 대리석 바닥을 시공해 넓은 공간이 하나의
-                생활 영역으로 읽히도록 했습니다. 밝은 바닥은 창을 통해 들어온
-                빛을 부드럽게 받아내고, 높은 층고의 개방감을 더 크게
+                생활 영역으로 읽히도록 했습니다.{" "}
+                <Link
+                  href="/knowledge/and-standards/lighting-natural-light"
+                  className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+                >
+                  밝은 바닥은 창을 통해 들어온 빛을 부드럽게 받아내고
+                </Link>
+                , 높은 층고의 개방감을 더 크게
                 느끼게 합니다.
               </p>
 

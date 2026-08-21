@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 const base = "/projects/cheongna-central-eileens-garden-84a";
@@ -109,7 +110,19 @@ export default function CheongnaCentralEileensGarden84A() {
         <SectionHeading
           eyebrow="Entry & Hallway"
           title="현관과 복도의 전환"
-          description="현관은 수납장과 격자문, 조명이 만드는 깊이를 중심으로 구성하고, 복도는 공용 공간으로 갈수록 밝아지는 흐름을 유지했습니다."
+          description={
+            <>
+              현관은 수납장과 격자문, 조명이 만드는 깊이를 중심으로 구성하고,
+              복도는{" "}
+              <Link
+                href="/knowledge/and-standards/lighting-natural-light"
+                className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+              >
+                공용 공간으로 갈수록 밝아지는 흐름
+              </Link>
+              을 유지했습니다.
+            </>
+          }
         />
 
         <div className="max-w-7xl mx-auto px-8 md:px-16">

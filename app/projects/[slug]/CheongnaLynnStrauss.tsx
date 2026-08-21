@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 const images = {
@@ -39,8 +40,14 @@ export default function CheongnaLynnStrauss() {
           </p>
 
           <p className="text-lg md:text-xl leading-[2] md:leading-[2.2] text-neutral-700 break-keep">
-            조명은 사물을 과하게 드러내기보다 필요한 곳에만 빛을 두고,
-            자연광처럼 부드럽게 번지도록 구성했습니다. 밝은 곳과 어두운
+            조명은 사물을 과하게 드러내기보다{" "}
+            <Link
+              href="/knowledge/and-standards/lighting-natural-light"
+              className="border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+            >
+              필요한 곳에만 빛을 두고
+            </Link>
+            , 자연광처럼 부드럽게 번지도록 구성했습니다. 밝은 곳과 어두운
             곳의 차이를 유지하면서 일상에 필요한 안온한 시야를 만드는 것이
             이번 제안의 중요한 기준이었습니다.
           </p>

@@ -16,7 +16,7 @@ export function SectionHeading({
 }: {
   eyebrow: string;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
 }) {
   return (
     <div className="max-w-7xl mx-auto px-8 md:px-16 mb-8 md:mb-12">
