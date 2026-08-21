@@ -815,18 +815,6 @@ function ensureContractPackagePanel() {
         </div>
         <div id="contractDocumentPreview" class="contract-document-preview">미리보기를 생성해 주세요.</div>
       </section>
-      <section class="contract-panel">
-        <div class="contract-panel-heading">
-          <h3>계약 패키지 목록</h3>
-          <p>확정된 계약 패키지는 계약번호를 유지하며 다시 출력할 수 있습니다.</p>
-        </div>
-        <div class="table-wrap">
-          <table class="contract-package-table">
-            <thead><tr><th>계약번호</th><th>버전</th><th>상태</th><th>생성일</th><th>문서</th><th>작업</th></tr></thead>
-            <tbody id="contractPackageRows"></tbody>
-          </table>
-        </div>
-      </section>
     </div>
   `;
   savedList.insertAdjacentElement("afterend", section);
@@ -1897,6 +1885,8 @@ async function previewContractPackageFromForm() {
 function estimateFromContractPackage(contractPackage) {
   const summary = contractPackageSummary(contractPackage);
   const estimate = contractPackage.estimate_snapshot || {};
+  const customerQuote = estimate.customer_quote || {};
+  const total = Number(estimate.total_price ?? summary.totalAmount) || 0;
   return {
     id: contractPackage.estimate_id || estimate.estimate_id || "",
     projectName: summary.projectName,
@@ -1905,7 +1895,13 @@ function estimateFromContractPackage(contractPackage) {
     clientPhone: summary.customerPhone,
     address: summary.siteAddress,
     areaPyeong: estimate.area_pyeong || contractPackage.contract_info?.area_pyeong || 0,
-    totalText: estimate.total_text || won(Number(summary.totalAmount) || 0),
+    status: estimate.status || "계약",
+    total,
+    totalText: estimate.total_text || won(total),
+    customerQuote,
+    savedAt: estimate.estimate_revision || contractPackage.updated_at || contractPackage.created_at || null,
+    contractPackageId: contractPackage.id || null,
+    contractNo: contractPackage.contract_no || summary.contractNo,
   };
 }
 
@@ -1967,6 +1963,13 @@ async function loadContractPackageToPreview(packageId) {
     const contractPackage = await loadContractPackage(packageId);
     loadedContractEstimateState = estimateFromContractPackage(contractPackage);
     currentEditingEstimateId = loadedContractEstimateState.id;
+    activeQuoteEstimate = loadedContractEstimateState;
+    lastRenderedEstimateSnapshot = loadedContractEstimateState;
+    loadedEstimateBaseline = {
+      id: loadedContractEstimateState.id || null,
+      inputs: null,
+      estimate: loadedContractEstimateState,
+    };
     contractOptionsState = contractPackage.document_options_snapshot || { estimate_id: loadedContractEstimateState.id };
     contractPackagesState = [contractPackage];
     contractPreviewState = {
@@ -1976,6 +1979,11 @@ async function loadContractPackageToPreview(packageId) {
     };
     contractSelectedDocumentType = "CONTRACT";
     contractOptionsDirty = false;
+    setText("clientTotal", customerWon(Number(loadedContractEstimateState.total) || 0));
+    renderCustomerQuote(loadedContractEstimateState);
+    renderStoredInternalSummary(loadedContractEstimateState);
+    renderInternalRows([]);
+    renderPurchaseOrder(loadedContractEstimateState);
     renderContractPackagePanel(loadedContractEstimateState);
     contractStatus(`${contractPackage.contract_no || "계약 패키지"}를 불러왔습니다.`, "success");
   } catch (error) {
@@ -2713,8 +2721,8 @@ function repairStaticKoreanLabels() {
     actions.id = "adminPrintActions";
     actions.innerHTML = `
       <div class="section-heading compact-heading no-side-padding">
-        <h2>출력</h2>
-        <p>관리용 견적서와 발주내역서를 구분해서 출력합니다.</p>
+        <h2>관리용 출력</h2>
+        <p>현재 열려 있는 프로젝트의 관리용 상세견적, 내부견적, 발주내역을 출력합니다.</p>
       </div>
       <div class="admin-action-row">
         <button id="printAdminDetailButton" type="button">상세견적 출력</button>
