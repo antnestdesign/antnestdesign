@@ -45,7 +45,6 @@ type FigureProps = {
   height: number;
   place: string;
   placeHref?: string;
-  status?: string;
   caption: string;
   alt?: string;
   priority?: boolean;
@@ -58,7 +57,6 @@ function Figure({
   height,
   place,
   placeHref,
-  status,
   caption,
   alt,
   priority = false,
@@ -67,7 +65,7 @@ function Figure({
   return (
     <figure>
       <Image
-        src={src.startsWith("/") ? src : `${imageRoot}/${src}`}
+        src={`${imageRoot}/${src}`}
         alt={alt ?? caption}
         width={width}
         height={height}
@@ -80,14 +78,16 @@ function Figure({
           {placeHref ? (
             <Link
               href={placeHref}
-              className="rounded-sm border-b border-neutral-300 transition-colors hover:border-neutral-600 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
+              className="group rounded-sm border-b border-neutral-300 transition-colors hover:border-neutral-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-500 focus-visible:ring-offset-2"
             >
-              {place}
+              {place}{" "}
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
             </Link>
           ) : (
             place
           )}
-          {status && <span> · {status}</span>}
         </p>
         <p className="mt-2 max-w-full text-[13px] leading-6 text-neutral-600 break-keep md:text-sm md:leading-7">
           {caption}
@@ -350,36 +350,24 @@ export default function LightingNaturalLightPage() {
           </>
         }
       >
-        <div className="mx-auto grid w-full max-w-[720px] gap-10 lg:gap-12">
-          <div className="mx-auto grid w-full max-w-[407px] gap-8 lg:gap-5">
-            <Figure
-              src="02a-uniform-downlight-grid.webp"
-              width={706}
-              height={413}
-              place="COMPARISON · DOWNLIGHT GRID"
-              caption="공간과 생활의 구분 없이 반복된 다운라이트"
-              alt="천장 전체에 일정한 간격으로 반복 배치된 다운라이트"
-              imageClassName="lg:aspect-[16/9] lg:object-cover"
-            />
-            <Figure
-              src="02b-uniform-ceiling-light.webp"
-              width={768}
-              height={512}
-              place="COMPARISON · CEILING LIGHT"
-              caption="하나의 강한 광원으로 공간 전체를 동일하게 밝히는 방식"
-              alt="중앙 천장등 하나가 실내 전체를 고르게 밝히는 공간"
-              imageClassName="lg:aspect-[16/9] lg:object-cover"
-            />
-          </div>
+        <div className="mx-auto grid w-full max-w-[407px] gap-8 lg:gap-5">
           <Figure
-            src="/projects/cheongna-lynn-strauss/02-living-room.webp"
-            width={2000}
-            height={1048}
-            place="청라 린 스트라우스 101 조명 제안"
-            placeHref="/projects/cheongna-lynn-strauss"
-            status="Concept Proposal"
-            caption="필요한 곳에만 빛을 두고, 자연광처럼 부드럽게 번지도록 구성했습니다."
-            alt="필요한 곳에만 빛을 배치해 명암과 깊이를 만든 청라 린 스트라우스 101 거실 조명 제안"
+            src="02a-uniform-downlight-grid.webp"
+            width={706}
+            height={413}
+            place="COMPARISON · DOWNLIGHT GRID"
+            caption="공간과 생활의 구분 없이 반복된 다운라이트"
+            alt="천장 전체에 일정한 간격으로 반복 배치된 다운라이트"
+            imageClassName="lg:aspect-[16/9] lg:object-cover"
+          />
+          <Figure
+            src="02b-uniform-ceiling-light.webp"
+            width={768}
+            height={512}
+            place="COMPARISON · CEILING LIGHT"
+            caption="하나의 강한 광원으로 공간 전체를 동일하게 밝히는 방식"
+            alt="중앙 천장등 하나가 실내 전체를 고르게 밝히는 공간"
+            imageClassName="lg:aspect-[16/9] lg:object-cover"
           />
         </div>
       </Chapter>
@@ -397,7 +385,7 @@ export default function LightingNaturalLightPage() {
           "자연광과 인공조명이 서로 다른 높이와 방향에서 겹치면서 높은 천장과 긴 동선, 가구 사이의 깊이가 더욱 극적으로 읽힙니다.",
         ]}
       >
-        <div className="mx-auto grid gap-10 md:max-w-[560px] lg:gap-12">
+        <div className="mx-auto md:max-w-[560px]">
           <Figure
             src="03-aman-tokyo-lobby.webp"
             width={1080}
@@ -405,15 +393,6 @@ export default function LightingNaturalLightPage() {
             place="AMAN TOKYO · LOBBY"
             caption="자연광과 실내조명이 서로 다른 높이와 방향에서 만나 공간의 볼륨을 드러냅니다."
             alt="높은 천장의 아만 도쿄 로비에서 자연광과 낮은 실내조명이 만든 명암과 깊이"
-          />
-          <Figure
-            src="/projects/luxury-house/05-living-room.webp"
-            width={1086}
-            height={1448}
-            place="화성 효행구 고급주택의 8m 거실"
-            placeHref="/projects/luxury-house"
-            caption="높은 층고와 간접조명은 시선의 흐름을 자연스럽게 위로 이끌며, 공간 전체의 깊이를 만들어냅니다."
-            alt="자연광과 샹들리에, 간접조명이 높은 층고의 볼륨을 드러내는 화성 효행구 고급주택 거실"
           />
         </div>
       </Chapter>
@@ -438,7 +417,7 @@ export default function LightingNaturalLightPage() {
               src="04a-suwon-kitchen-task-light.webp"
               width={2048}
               height={1536}
-              place="수원 살구골 현대7단지의 주방 계획"
+              place="PROJECT · 수원 살구골 현대7단지 · KITCHEN"
               placeHref="/projects/apartment-a"
               caption="상부장 아래에서 손이 움직이는 작업면으로 직접 도달하는 기능광"
               alt="수원 아파트 주방 상부장 아래 조명이 조리대 작업면을 밝히는 모습"
@@ -482,7 +461,7 @@ export default function LightingNaturalLightPage() {
             src="05-dongtan-master-bedroom.webp"
             width={1086}
             height={1448}
-            place="동탄역 모아미래도의 침실 조명 계획"
+            place="PROJECT · 동탄역 모아미래도 · BEDROOM"
             placeHref="/projects/apartment-b"
             caption="누웠을 때의 시선을 고려해 천장 조명을 줄이고, 벽등과 침대 하부의 간접광으로 필요한 밝기를 만듭니다."
             alt="벽등과 침대 하부 간접광으로 편안한 밝기를 만든 동탄 아파트 침실"
