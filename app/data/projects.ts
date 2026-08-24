@@ -90,7 +90,7 @@ export const projects: Record<string, Project> = {
     year: "2025",
     area: "84A · 33평형",
     images: 19,
-    heroImage: "/projects/apartment-b/12-kitchen-front.webp",
+    heroImage: "/projects/apartment-b/11-living-room-evening.webp",
     overview:
       "부부와 어린 두 아이의 생활을 중심으로 주방, 거실, 서재, 안방 동선을 다시 설계한 가족 중심 리모델링 프로젝트입니다.",
     gallery: [
