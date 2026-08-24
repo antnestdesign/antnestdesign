@@ -73,7 +73,7 @@ export default function AndStandardsPage() {
                 height={standard.height}
                 alt={standard.alt}
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="h-auto w-full"
+                className="aspect-[4/3] w-full object-cover"
               />
               <div className="mt-6 border-t border-[#675B56]/25 pt-5">
                 <p className="text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
