@@ -80,9 +80,9 @@ export const projects: Record<string, Project> = {
     title: "화성 동탄역 모아미래도 84A",
     cardTitle: "화성 동탄역 모아미래도 84A",
     seo: {
-      title: "동탄역 모아미래도 33평 아파트 인테리어",
+      title: "동탄역 모아미래도 84A 33평형 아파트 인테리어",
       description:
-        "동탄역 모아미래도 84A·33평형을 부부와 두 아이의 생활에 맞춰 재구성한 완공 인테리어 프로젝트입니다. 3m 아일랜드와 서재, 드레스룸으로 가족의 생활 동선을 다시 설계했습니다.",
+        "동탄역 모아미래도 84A · 33평형을 부부와 두 아이의 생활에 맞춰 재구성한 완공 인테리어 프로젝트입니다. 3m 아일랜드와 서재, 드레스룸으로 가족의 생활 동선을 다시 설계했습니다.",
     },
     category: "Residential Interior",
     projectGroup: "Residential",
