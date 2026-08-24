@@ -278,7 +278,7 @@ export default function LightingNaturalLightPage() {
       <div className="lg:mx-auto lg:mb-28 lg:grid lg:max-w-[1240px] lg:grid-cols-12 lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-20 lg:px-10 lg:pt-44 xl:gap-x-24 xl:px-16 2xl:pt-52">
       <header className="mx-auto max-w-[1240px] px-5 pb-20 pt-36 md:px-16 md:pb-24 md:pt-44 lg:col-span-5 lg:row-start-1 lg:mx-0 lg:max-w-none lg:px-0 lg:pb-0 lg:pt-0 xl:px-0">
         <p className="mb-6 text-[10px] uppercase tracking-[0.35em] text-neutral-500 md:mb-8 md:text-xs">
-          AND STANDARD 01
+          AND STANDARD 01 · LIGHTING
         </p>
         <h1 className="max-w-5xl text-4xl font-light leading-[1.18] tracking-[-0.035em] break-keep lg:text-[52px] 2xl:text-6xl">
           조명은 자연광을 닮아야 합니다
