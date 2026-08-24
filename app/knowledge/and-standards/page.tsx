@@ -6,7 +6,7 @@ import Header from "../../components/Header";
 const path = "/knowledge/and-standards";
 const title = "AND STANDARD | ANTNEST DESIGN";
 const description =
-  "빛, 수납과 동선 등 주거공간을 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
+  "빛, 수납과 동선, 시야와 공간의 관계를 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -44,6 +44,17 @@ const standards = [
     width: 1672,
     height: 1125,
     alt: "침대 헤드 구조가 침실의 중심면을 만드는 청라 한화꿈에그린 침실 주간 렌더링",
+  },
+  {
+    number: "03",
+    title: "공간은 보이는 방식으로 경험됩니다",
+    description:
+      "첫 장면과 시야의 끝, 공간의 관계와 전환을 통해 공간을 바라보는 기준을 이야기합니다.",
+    href: "/knowledge/and-standards/view",
+    image: "/projects/cheongna-hoban-4-33a/03-living-kitchen.webp",
+    width: 1672,
+    height: 941,
+    alt: "거실과 주방의 관계가 한 장면으로 이어지는 청라 호반4차 렌더링",
   },
 ];
 
