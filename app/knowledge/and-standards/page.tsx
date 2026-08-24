@@ -40,10 +40,10 @@ const standards = [
     description:
       "물건의 양보다 행동의 순서와 가족의 생활을 먼저 살펴 수납과 동선의 관계를 정리합니다.",
     href: "/knowledge/and-standards/storage-flow",
-    image: "/projects/apartment-b/12-kitchen-front.webp",
-    width: 1448,
-    height: 1086,
-    alt: "수납면과 아일랜드를 중심으로 생활 기능을 정리한 동탄 아파트 주방",
+    image: "/projects/cheongna-hanwha-kkumegreen-39a/07-master-bedroom-day.webp",
+    width: 1672,
+    height: 1125,
+    alt: "침대 헤드 구조가 침실의 중심면을 만드는 청라 한화꿈에그린 침실 주간 렌더링",
   },
 ];
 
