@@ -179,6 +179,10 @@ export default function CheongnaLaunchPage() {
             </Link>
           </div>
         </div>
+
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 md:bottom-10">
+          <div className="scroll-line-indicator scroll-line-indicator-light" />
+        </div>
       </section>
 
       <section className={styles.introduction} aria-labelledby="introduction-title">
