@@ -263,6 +263,7 @@ const ids = [
   "kitchenSinkBowlUnits",
   "kitchenFaucetUnits",
   "kitchenHoodUnits",
+  "kitchenCustomAppliancePrice",
   "kitchenStandardInstallEnabled",
   "middleDoorUnits",
   "standardDoorUnits",
@@ -2378,6 +2379,7 @@ function repairStaticKoreanLabels() {
     kitchenSinkBowlUnits: "싱크볼",
     kitchenFaucetUnits: "싱크수전",
     kitchenHoodUnits: "후드",
+    kitchenCustomAppliancePrice: "싱크볼·싱크수전·후드 직접입력 소비자가",
     kitchenStandardInstallEnabled: "AND 표준설비 설치",
     homebarEnabled: "홈바장",
     homebarM: "길이(mm)",
@@ -3024,6 +3026,7 @@ function readState() {
     kitchenSinkBowlUnits: integerValue("kitchenSinkBowlUnits"),
     kitchenFaucetUnits: integerValue("kitchenFaucetUnits"),
     kitchenHoodUnits: integerValue("kitchenHoodUnits"),
+    kitchenCustomAppliancePrice: numberValue("kitchenCustomAppliancePrice"),
     kitchenStandardInstallEnabled: checkedValue("kitchenStandardInstallEnabled"),
     doorWindowEnabled: carpentrySection,
     middleDoorUnits: integerValue("middleDoorUnits"),
@@ -3069,9 +3072,10 @@ function readState() {
   };
 }
 
-function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0 }) {
-  const revenue = sellPrice(cost, margin, correction);
-  const customerRevenue = floorThousand(revenue);
+function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue }) {
+  const hasFixedCustomerRevenue = Number.isFinite(Number(fixedCustomerRevenue));
+  const revenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : sellPrice(cost, margin, correction);
+  const customerRevenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : floorThousand(revenue);
   return {
     group,
     item,
@@ -3087,7 +3091,7 @@ function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, cor
 }
 
 function addDetail(details, config) {
-  if (config.cost <= 0) return;
+  if (config.cost <= 0 && !(Number(config.customerRevenue) > 0)) return;
   details.push(makeDetail(config));
 }
 
