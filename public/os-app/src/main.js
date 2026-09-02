@@ -2379,7 +2379,7 @@ function repairStaticKoreanLabels() {
     kitchenSinkBowlUnits: "싱크볼",
     kitchenFaucetUnits: "싱크수전",
     kitchenHoodUnits: "후드",
-    kitchenCustomAppliancePrice: "싱크볼·싱크수전·후드 직접입력 소비자가",
+    kitchenCustomAppliancePrice: "싱크볼·싱크수전·후드 직접입력 금액",
     kitchenStandardInstallEnabled: "AND 표준설비 설치",
     homebarEnabled: "홈바장",
     homebarM: "길이(mm)",
