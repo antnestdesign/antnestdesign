@@ -295,14 +295,28 @@
                   <input id="flooringArea" min="0" step="0.5" type="number" value="0"/>
 </label>
 <label>
-                  바닥 등급
-                  <select id="flooringMaterialGrade">
+                  바닥 종류
+                  <select id="flooringMaterialType">
+                    <option value="wood" selected>마루</option>
+                    <option value="sheet">장판</option>
+                  </select>
+</label>
+<label>
+                  장판 등급
+                  <select id="flooringSheetGrade">
                     <option value="t18">1.8T</option>
-                    <option value="t20" selected>2T</option>
+                    <option value="t20">2T</option>
                     <option value="t22">2.2T</option>
                     <option value="t32">3.2T</option>
                     <option value="t45">4.5T</option>
                     <option value="t50">5T</option>
+                  </select>
+</label>
+<label>
+                  마루 등급
+                  <select id="flooringWoodGrade">
+                    <option value="editone" selected>LX 에디톤급</option>
+                    <option value="standard">일반마루</option>
                   </select>
 </label>
 </div>
@@ -1227,6 +1241,6 @@
 </section>
 </main>
 <section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-48" type="module"></script>
+<script src="./src/main.js?v=and-os-49" type="module"></script>
 </body>
 </html>
