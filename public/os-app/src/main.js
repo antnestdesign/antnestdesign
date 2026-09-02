@@ -248,6 +248,7 @@ const ids = [
   "wallpaperBaseCoatEnabled",
   "filmPreset",
   "flooringArea",
+  "flooringMaterialGrade",
   "bathroomPlumbingRelocationEnabled",
   "bathroomFixtureGrade",
   "bathroomUnits",
@@ -2323,6 +2324,7 @@ function repairStaticKoreanLabels() {
     filmMaterialLengthM: "필름 길이(mm)",
     sectionFlooringEnabled: "바닥",
     flooringArea: "면적(평)",
+    flooringMaterialGrade: "바닥 등급",
     sectionCarpentryEnabled: "목공",
     carpentryCurtainBoxUnits: "커튼박스 신설(개소)",
     carpentryCofferType: "우물천장",
@@ -2432,7 +2434,7 @@ function repairStaticKoreanLabels() {
   sectionTextFor("sectionBathroomEnabled", "욕실 공사와 AND 표준 포세린 타일을 선택합니다.");
   sectionTextFor("sectionWallpaperEnabled", "도배 기준과 자재 등급을 선택합니다.");
   sectionTextFor("sectionFilmEnabled", "필름 기준과 시공 범위를 선택합니다.");
-  sectionTextFor("sectionFlooringEnabled", "바닥(마루 : LX에디톤 급) 시공 면적을 입력합니다.");
+  sectionTextFor("sectionFlooringEnabled", "바닥 마루 등급과 시공 면적을 입력합니다.");
   sectionTextFor("sectionCarpentryEnabled", "천장, 간접, 벽체, 도어 목공 항목을 입력합니다.");
   sectionTextFor("sectionFurnitureEnabled", "가구를 mm 단위로 입력하고 옵션을 선택합니다.");
   sectionTextFor("sectionFinishEnabled", "폐기물, 보양, 청소, 실리콘, 탄성 항목을 선택합니다.");
@@ -2998,6 +3000,7 @@ function readState() {
     filmPreset: el.filmPreset.value,
     flooringEnabled: flooringSection,
     flooringArea: numberValue("flooringArea"),
+    flooringMaterialGrade: el.flooringMaterialGrade?.value || "t20",
     bathroomEnabled: bathroomSection,
     bathroomUnits: integerValue("bathroomUnits"),
     bathroomFixtureGrade: el.bathroomFixtureGrade?.value || "standard",
@@ -3202,6 +3205,14 @@ const quoteGroupLabels = {
   hanger: "가구",
 };
 const quoteGroupOrder = ["철거", "욕실", "전기/조명", "목공", "가구", "도배", "필름", "바닥", "마감", "도어/창호", "기타"];
+const flooringGradeOptions = {
+  t18: { label: "1.8T", unitPrice: 27000 },
+  t20: { label: "2T", unitPrice: 36000 },
+  t22: { label: "2.2T", unitPrice: 46000 },
+  t32: { label: "3.2T", unitPrice: 73000 },
+  t45: { label: "4.5T", unitPrice: 90000 },
+  t50: { label: "5T", unitPrice: 100000 },
+};
 const printGroupLabels = {
   철거: "철거공사",
   욕실: "욕실공사",
@@ -3245,6 +3256,12 @@ const customerItemNames = {
   "도배지(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
   "필름 인건비": "필름 시공",
   "필름 자재(우드 무늬)": "필름(AND표준 우드)",
+  "바닥 시공(1.8T)": "바닥(1.8T)",
+  "바닥 시공(2T)": "바닥(2T)",
+  "바닥 시공(2.2T)": "바닥(2.2T)",
+  "바닥 시공(3.2T)": "바닥(3.2T)",
+  "바닥 시공(4.5T)": "바닥(4.5T)",
+  "바닥 시공(5T)": "바닥(5T)",
   "바닥 시공": "바닥(AND표준 마루)",
   "일반 폐기물": "폐기물 처리",
   "입주청소": "준공 청소",
@@ -3992,13 +4009,14 @@ function calculate() {
   });
   addModuleDetails(details, [filmMaterialDetail(state, rates.finishMaterial)], margin, state.corrections.option);
 
+  const flooringGrade = flooringGradeOptions[state.flooringMaterialGrade] || flooringGradeOptions.t20;
   addUnitDetail(details, {
     group: "flooring",
-    item: "바닥 시공",
+    item: `바닥 시공(${flooringGrade.label})`,
     enabled: state.flooringEnabled,
-    input: `${state.flooringArea}평`,
+    input: `${state.flooringArea}평 · ${flooringGrade.label}`,
     quantity: `${state.flooringArea}평`,
-    unitPrice: rates.finish.flooringPerPyeong,
+    unitPrice: flooringGrade.unitPrice,
     units: state.flooringArea,
     margin,
     correction: state.corrections.option,
