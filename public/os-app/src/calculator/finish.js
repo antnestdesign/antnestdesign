@@ -1,22 +1,60 @@
 export function wallpaperMaterialDetail(state, rates) {
-  if (!state.wallpaperMaterialEnabled) return null;
-  const wallArea = (state.wallpaperWallLengthM * rates.ceilingHeightMm) / 1000000;
-  const ceilingArea = state.areaPyeong * rates.pyeongToSquareMeter;
-  const requiredArea = (wallArea + ceilingArea) * rates.wasteFactor;
+  return wallpaperMaterialDetails(state, rates)[0] || null;
+}
+
+function wallpaperGradeOption(grade, rates, prefix = "") {
+  return {
+    besti: { item: `${prefix}도배지(베스띠급)`, unitPrice: rates.wallpaperBesti },
+    diamant: { item: `${prefix}도배지(디아망급)`, unitPrice: rates.wallpaperDiamant },
+    fortis: { item: `${prefix}도배지(디아망 포티스급)`, unitPrice: rates.wallpaperFortis },
+  }[grade] || { item: `${prefix}도배지(디아망급)`, unitPrice: rates.wallpaperDiamant };
+}
+
+function wallpaperMaterialArea(lengthMm, ceilingShareArea, rates) {
+  const wallArea = (lengthMm * rates.ceilingHeightMm) / 1000000;
+  return (wallArea + ceilingShareArea) * rates.wasteFactor;
+}
+
+function wallpaperMaterialRow({ label, grade, lengthMm, ceilingShareArea, rates }) {
+  const requiredArea = wallpaperMaterialArea(lengthMm, ceilingShareArea, rates);
   const rolls = requiredArea > 0 ? Math.ceil(requiredArea / rates.wallpaperRollArea) : 0;
-  const grade = {
-    besti: { item: "도배지(베스띠급)", unitPrice: rates.wallpaperBesti },
-    diamant: { item: "도배지(디아망급)", unitPrice: rates.wallpaperDiamant },
-    fortis: { item: "도배지(디아망 포티스급)", unitPrice: rates.wallpaperFortis },
-  }[state.wallpaperMaterialGrade] || { item: "도배지(디아망급)", unitPrice: rates.wallpaperDiamant };
+  const gradeInfo = wallpaperGradeOption(grade, rates, `${label} `);
+  if (rolls <= 0) return null;
   return {
     group: "wallpaper",
-    item: grade.item,
-    input: `${requiredArea.toFixed(1)}㎡ / 15% 로스 포함`,
+    item: gradeInfo.item,
+    input: `${requiredArea.toFixed(1)}㎡ / 벽 ${lengthMm.toLocaleString("ko-KR")}mm / 15% 로스 포함`,
     quantity: `${rolls}롤`,
-    unitPrice: grade.unitPrice,
-    cost: rolls * grade.unitPrice,
+    unitPrice: gradeInfo.unitPrice,
+    cost: rolls * gradeInfo.unitPrice,
   };
+}
+
+export function wallpaperMaterialDetails(state, rates) {
+  if (!state.wallpaperMaterialEnabled) return [];
+  const ceilingArea = state.areaPyeong * rates.pyeongToSquareMeter;
+  const publicLength = Number(state.wallpaperPublicWallLengthM) || Number(state.wallpaperWallLengthM) || 0;
+  const roomLength = Number(state.wallpaperRoomWallLengthM) || 0;
+  const totalLength = publicLength + roomLength;
+  if (totalLength <= 0) return [];
+  const publicCeilingArea = ceilingArea * (publicLength / totalLength);
+  const roomCeilingArea = ceilingArea - publicCeilingArea;
+  return [
+    wallpaperMaterialRow({
+      label: "공용부",
+      grade: state.wallpaperPublicMaterialGrade || state.wallpaperMaterialGrade,
+      lengthMm: publicLength,
+      ceilingShareArea: publicCeilingArea,
+      rates,
+    }),
+    wallpaperMaterialRow({
+      label: "각방",
+      grade: state.wallpaperRoomMaterialGrade || "besti",
+      lengthMm: roomLength,
+      ceilingShareArea: roomCeilingArea,
+      rates,
+    }),
+  ].filter(Boolean);
 }
 
 export function wallpaperSupplyDetail(state, rates) {
