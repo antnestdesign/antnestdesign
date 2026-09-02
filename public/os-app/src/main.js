@@ -248,7 +248,9 @@ const ids = [
   "wallpaperBaseCoatEnabled",
   "filmPreset",
   "flooringArea",
-  "flooringMaterialGrade",
+  "flooringMaterialType",
+  "flooringSheetGrade",
+  "flooringWoodGrade",
   "bathroomPlumbingRelocationEnabled",
   "bathroomFixtureGrade",
   "bathroomUnits",
@@ -2324,7 +2326,9 @@ function repairStaticKoreanLabels() {
     filmMaterialLengthM: "필름 길이(mm)",
     sectionFlooringEnabled: "바닥",
     flooringArea: "면적(평)",
-    flooringMaterialGrade: "바닥 등급",
+    flooringMaterialType: "바닥 종류",
+    flooringSheetGrade: "장판 등급",
+    flooringWoodGrade: "마루 등급",
     sectionCarpentryEnabled: "목공",
     carpentryCurtainBoxUnits: "커튼박스 신설(개소)",
     carpentryCofferType: "우물천장",
@@ -3000,7 +3004,9 @@ function readState() {
     filmPreset: el.filmPreset.value,
     flooringEnabled: flooringSection,
     flooringArea: numberValue("flooringArea"),
-    flooringMaterialGrade: el.flooringMaterialGrade?.value || "t20",
+    flooringMaterialType: el.flooringMaterialType?.value || "wood",
+    flooringSheetGrade: el.flooringSheetGrade?.value || "t20",
+    flooringWoodGrade: el.flooringWoodGrade?.value || "editone",
     bathroomEnabled: bathroomSection,
     bathroomUnits: integerValue("bathroomUnits"),
     bathroomFixtureGrade: el.bathroomFixtureGrade?.value || "standard",
@@ -3205,13 +3211,17 @@ const quoteGroupLabels = {
   hanger: "가구",
 };
 const quoteGroupOrder = ["철거", "욕실", "전기/조명", "목공", "가구", "도배", "필름", "바닥", "마감", "도어/창호", "기타"];
-const flooringGradeOptions = {
+const flooringSheetGradeOptions = {
   t18: { label: "1.8T", unitPrice: 27000 },
   t20: { label: "2T", unitPrice: 36000 },
   t22: { label: "2.2T", unitPrice: 46000 },
   t32: { label: "3.2T", unitPrice: 73000 },
   t45: { label: "4.5T", unitPrice: 90000 },
   t50: { label: "5T", unitPrice: 100000 },
+};
+const flooringWoodGradeOptions = {
+  editone: { label: "LX 에디톤급", unitPrice: 150000 },
+  standard: { label: "일반마루", unitPrice: 100000 },
 };
 const printGroupLabels = {
   철거: "철거공사",
@@ -3256,12 +3266,14 @@ const customerItemNames = {
   "도배지(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
   "필름 인건비": "필름 시공",
   "필름 자재(우드 무늬)": "필름(AND표준 우드)",
-  "바닥 시공(1.8T)": "바닥(1.8T)",
-  "바닥 시공(2T)": "바닥(2T)",
-  "바닥 시공(2.2T)": "바닥(2.2T)",
-  "바닥 시공(3.2T)": "바닥(3.2T)",
-  "바닥 시공(4.5T)": "바닥(4.5T)",
-  "바닥 시공(5T)": "바닥(5T)",
+  "바닥 시공(장판 1.8T)": "장판(1.8T)",
+  "바닥 시공(장판 2T)": "장판(2T)",
+  "바닥 시공(장판 2.2T)": "장판(2.2T)",
+  "바닥 시공(장판 3.2T)": "장판(3.2T)",
+  "바닥 시공(장판 4.5T)": "장판(4.5T)",
+  "바닥 시공(장판 5T)": "장판(5T)",
+  "바닥 시공(LX 에디톤급)": "마루(LX 에디톤급)",
+  "바닥 시공(일반마루)": "마루(일반마루)",
   "바닥 시공": "바닥(AND표준 마루)",
   "일반 폐기물": "폐기물 처리",
   "입주청소": "준공 청소",
@@ -4009,12 +4021,16 @@ function calculate() {
   });
   addModuleDetails(details, [filmMaterialDetail(state, rates.finishMaterial)], margin, state.corrections.option);
 
-  const flooringGrade = flooringGradeOptions[state.flooringMaterialGrade] || flooringGradeOptions.t20;
+  const flooringType = state.flooringMaterialType === "sheet" ? "sheet" : "wood";
+  const flooringGrade = flooringType === "sheet"
+    ? flooringSheetGradeOptions[state.flooringSheetGrade] || flooringSheetGradeOptions.t20
+    : flooringWoodGradeOptions[state.flooringWoodGrade] || flooringWoodGradeOptions.editone;
+  const flooringLabel = flooringType === "sheet" ? `장판 ${flooringGrade.label}` : flooringGrade.label;
   addUnitDetail(details, {
     group: "flooring",
-    item: `바닥 시공(${flooringGrade.label})`,
+    item: `바닥 시공(${flooringLabel})`,
     enabled: state.flooringEnabled,
-    input: `${state.flooringArea}평 · ${flooringGrade.label}`,
+    input: `${state.flooringArea}평 · ${flooringLabel}`,
     quantity: `${state.flooringArea}평`,
     unitPrice: flooringGrade.unitPrice,
     units: state.flooringArea,
