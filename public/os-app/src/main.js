@@ -350,9 +350,36 @@ const ids = [
   "rateTileWorkerDay",
   "rateTileHelperDay",
   "rateTileGrout",
+  "rateBathroomPorcelainTileMaterial",
+  "rateBathroomPlumbingRelocation",
+  "rateBathroomFixtureSet",
+  "rateBathroomFixtureInstall",
+  "rateBathroomSmcCeiling",
+  "rateBathroomFanNormal",
+  "rateBathroomHugentMachine",
+  "rateBathroomHugentInstallExtra",
+  "rateBathroomBathtub",
+  "rateBathroomGlassBooth",
+  "rateBathroomGlassPartition",
   "rateWallpaperWorkerDay",
+  "rateWallpaperBesti",
+  "rateWallpaperDiamant",
+  "rateWallpaperFortis",
+  "rateWallpaperMaterialPerPyeong",
   "rateFilmWorkerDay",
   "rateFlooringPerPyeong",
+  "rateFlooringSheetT18",
+  "rateFlooringSheetT20",
+  "rateFlooringSheetT22",
+  "rateFlooringSheetT32",
+  "rateFlooringSheetT45",
+  "rateFlooringSheetT50",
+  "rateFlooringWoodStandard",
+  "rateKitchenSinkBowl",
+  "rateKitchenFaucet",
+  "rateKitchenHood",
+  "rateKitchenStandardInstall",
+  "rateExistingPipeCleaning",
   "rateSilicone",
   "rateElasticBase",
   "rateElasticExtraRoom",
@@ -544,10 +571,36 @@ const COST_ITEM_DEFINITIONS = [
   ["rateTileWorkerDay", "TILE_LABOR_WORKER", "욕실", "타일", "타일 기공 1품", "품"],
   ["rateTileHelperDay", "TILE_LABOR_HELPER", "욕실", "타일", "타일 조공 1품", "품"],
   ["rateTileGrout", "TILE_GROUT", "욕실", "타일", "타일 메지", "식"],
+  ["rateBathroomPorcelainTileMaterial", "BATH_PORCELAIN_TILE_MATERIAL", "타일·욕실", "자재", "욕실 포세린 타일 자재+잡자재", "칸"],
+  ["rateBathroomPlumbingRelocation", "BATH_PLUMBING_RELOCATION", "타일·욕실", "설비", "욕실 설비 위치조정", "칸"],
+  ["rateBathroomFixtureSet", "BATH_FIXTURE_SET", "타일·욕실", "도기·수전", "욕실 도기·수전 기본세트", "칸"],
+  ["rateBathroomFixtureInstall", "BATH_FIXTURE_INSTALL", "타일·욕실", "도기·수전", "욕실 도기·수전 설치비", "칸"],
+  ["rateBathroomSmcCeiling", "BATH_SMC_CEILING", "타일·욕실", "천장", "SMC 천장돔 설치비", "칸"],
+  ["rateBathroomFanNormal", "BATH_FAN_NORMAL", "타일·욕실", "환풍기", "일반 환풍기", "칸"],
+  ["rateBathroomHugentMachine", "BATH_HUGENT_MACHINE", "타일·욕실", "휴젠트", "휴젠트 본체", "칸"],
+  ["rateBathroomHugentInstallExtra", "BATH_HUGENT_INSTALL_EXTRA", "타일·욕실", "휴젠트", "휴젠트 추가 설치비", "칸"],
+  ["rateBathroomBathtub", "BATH_BATHTUB", "타일·욕실", "욕조", "욕조", "개"],
+  ["rateBathroomGlassBooth", "BATH_GLASS_BOOTH", "타일·욕실", "유리", "유리파티션+유리문", "개"],
+  ["rateBathroomGlassPartition", "BATH_GLASS_PARTITION", "타일·욕실", "유리", "유리파티션", "개"],
   ["rateWallpaperWorkerDay", "WALLPAPER_LABOR", "도배", "인건비", "도배 1품", "품"],
+  ["rateWallpaperBesti", "WALLPAPER_ROLL_BESTI", "도배", "자재", "도배지 베스띠 1롤", "롤"],
+  ["rateWallpaperDiamant", "WALLPAPER_ROLL_DIAMANT", "도배", "자재", "도배지 디아망 1롤", "롤"],
+  ["rateWallpaperFortis", "WALLPAPER_ROLL_FORTIS", "도배", "자재", "도배지 디아망 포티스 1롤", "롤"],
   ["rateWallpaperMaterialPerPyeong", "WALLPAPER_MATERIAL_PER_PYEONG", "도배", "자재", "도배 자재 평당", "평"],
   ["rateFilmWorkerDay", "FILM_LABOR", "필름", "인건비", "필름 1품", "품"],
-  ["rateFlooringPerPyeong", "FLOORING_WOOD_PER_PYEONG", "바닥", "마루", "바닥(마루) 평단가", "평"],
+  ["rateFlooringPerPyeong", "FLOORING_WOOD_PER_PYEONG", "바닥", "마루", "마루 LX 에디톤급 평단가", "평"],
+  ["rateFlooringSheetT18", "FLOORING_SHEET_18T", "바닥", "장판", "장판 1.8T 평단가", "평"],
+  ["rateFlooringSheetT20", "FLOORING_SHEET_20T", "바닥", "장판", "장판 2T 평단가", "평"],
+  ["rateFlooringSheetT22", "FLOORING_SHEET_22T", "바닥", "장판", "장판 2.2T 평단가", "평"],
+  ["rateFlooringSheetT32", "FLOORING_SHEET_32T", "바닥", "장판", "장판 3.2T 평단가", "평"],
+  ["rateFlooringSheetT45", "FLOORING_SHEET_45T", "바닥", "장판", "장판 4.5T 평단가", "평"],
+  ["rateFlooringSheetT50", "FLOORING_SHEET_50T", "바닥", "장판", "장판 5T 평단가", "평"],
+  ["rateFlooringWoodStandard", "FLOORING_WOOD_STANDARD", "바닥", "마루", "일반마루 평단가", "평"],
+  ["rateKitchenSinkBowl", "KITCHEN_SINK_BOWL", "가구", "주방설비", "주방 싱크볼", "개"],
+  ["rateKitchenFaucet", "KITCHEN_FAUCET", "가구", "주방설비", "주방 싱크수전", "개"],
+  ["rateKitchenHood", "KITCHEN_HOOD", "가구", "주방설비", "주방 후드", "개"],
+  ["rateKitchenStandardInstall", "KITCHEN_STANDARD_INSTALL", "가구", "주방설비", "주방 AND 표준설비 설치비", "식"],
+  ["rateExistingPipeCleaning", "MISC_EXISTING_PIPE_CLEANING", "마감", "기타", "기존 배관 청소", "식"],
   ["rateSilicone", "FINISH_SILICONE", "마감", "실리콘", "실리콘 기본", "식"],
   ["rateElasticBase", "FINISH_ELASTIC_BASE", "마감", "탄성", "탄성 기본", "식"],
   ["rateElasticExtraRoom", "FINISH_ELASTIC_EXTRA_ROOM", "마감", "탄성", "탄성 추가 1개소", "개소"],
@@ -2562,9 +2615,36 @@ function repairStaticKoreanLabels() {
     rateTileWorkerDay: "타일 기공 1품",
     rateTileHelperDay: "타일 조공 1품",
     rateTileGrout: "타일 메지",
+    rateBathroomPorcelainTileMaterial: "욕실 포세린 타일 자재+잡자재",
+    rateBathroomPlumbingRelocation: "욕실 설비 위치조정",
+    rateBathroomFixtureSet: "욕실 도기·수전 기본세트",
+    rateBathroomFixtureInstall: "욕실 도기·수전 설치비",
+    rateBathroomSmcCeiling: "SMC 천장돔 설치비",
+    rateBathroomFanNormal: "일반 환풍기",
+    rateBathroomHugentMachine: "휴젠트 본체",
+    rateBathroomHugentInstallExtra: "휴젠트 추가 설치비",
+    rateBathroomBathtub: "욕조",
+    rateBathroomGlassBooth: "유리파티션+유리문",
+    rateBathroomGlassPartition: "유리파티션",
     rateWallpaperWorkerDay: "도배 1품",
+    rateWallpaperBesti: "도배지 베스띠 1롤",
+    rateWallpaperDiamant: "도배지 디아망 1롤",
+    rateWallpaperFortis: "도배지 디아망 포티스 1롤",
+    rateWallpaperMaterialPerPyeong: "도배 잡자재 평당",
     rateFilmWorkerDay: "필름 1품",
-    rateFlooringPerPyeong: "바닥(마루) 평단가",
+    rateFlooringPerPyeong: "마루 LX 에디톤급 평단가",
+    rateFlooringSheetT18: "장판 1.8T 평단가",
+    rateFlooringSheetT20: "장판 2T 평단가",
+    rateFlooringSheetT22: "장판 2.2T 평단가",
+    rateFlooringSheetT32: "장판 3.2T 평단가",
+    rateFlooringSheetT45: "장판 4.5T 평단가",
+    rateFlooringSheetT50: "장판 5T 평단가",
+    rateFlooringWoodStandard: "일반마루 평단가",
+    rateKitchenSinkBowl: "주방 싱크볼",
+    rateKitchenFaucet: "주방 싱크수전",
+    rateKitchenHood: "주방 후드",
+    rateKitchenStandardInstall: "주방 AND 표준설비 설치비",
+    rateExistingPipeCleaning: "기존 배관 청소",
     rateSilicone: "실리콘 기본",
     rateElasticBase: "탄성 기본",
     rateElasticExtraRoom: "탄성 추가 1개소",
@@ -2628,9 +2708,36 @@ function repairStaticKoreanLabels() {
     rateTileWorkerDay: "타일",
     rateTileHelperDay: "타일",
     rateTileGrout: "타일",
+    rateBathroomPorcelainTileMaterial: "욕실",
+    rateBathroomPlumbingRelocation: "욕실",
+    rateBathroomFixtureSet: "욕실",
+    rateBathroomFixtureInstall: "욕실",
+    rateBathroomSmcCeiling: "욕실",
+    rateBathroomFanNormal: "욕실",
+    rateBathroomHugentMachine: "욕실",
+    rateBathroomHugentInstallExtra: "욕실",
+    rateBathroomBathtub: "욕실",
+    rateBathroomGlassBooth: "욕실",
+    rateBathroomGlassPartition: "욕실",
     rateWallpaperWorkerDay: "도배",
+    rateWallpaperBesti: "도배",
+    rateWallpaperDiamant: "도배",
+    rateWallpaperFortis: "도배",
+    rateWallpaperMaterialPerPyeong: "도배",
     rateFilmWorkerDay: "필름",
     rateFlooringPerPyeong: "바닥",
+    rateFlooringSheetT18: "바닥",
+    rateFlooringSheetT20: "바닥",
+    rateFlooringSheetT22: "바닥",
+    rateFlooringSheetT32: "바닥",
+    rateFlooringSheetT45: "바닥",
+    rateFlooringSheetT50: "바닥",
+    rateFlooringWoodStandard: "바닥",
+    rateKitchenSinkBowl: "가구",
+    rateKitchenFaucet: "가구",
+    rateKitchenHood: "가구",
+    rateKitchenStandardInstall: "가구",
+    rateExistingPipeCleaning: "마감",
     rateSilicone: "마감",
     rateElasticBase: "마감",
     rateElasticExtraRoom: "마감",
@@ -2870,10 +2977,37 @@ function updateRatesFromAdmin() {
   rates.finish.tileWorkerDay = rateValue("rateTileWorkerDay", rates.finish.tileWorkerDay);
   rates.finish.tileHelperDay = rateValue("rateTileHelperDay", rates.finish.tileHelperDay);
   rates.finish.tileGrout = rateValue("rateTileGrout", rates.finish.tileGrout);
+  rates.bathroom.porcelainTileMaterial = rateValue("rateBathroomPorcelainTileMaterial", rates.bathroom.porcelainTileMaterial);
+  rates.bathroom.plumbingRelocation = rateValue("rateBathroomPlumbingRelocation", rates.bathroom.plumbingRelocation);
+  rates.bathroom.fixtureSet = rateValue("rateBathroomFixtureSet", rates.bathroom.fixtureSet);
+  rates.bathroom.fixtureInstall = rateValue("rateBathroomFixtureInstall", rates.bathroom.fixtureInstall);
+  rates.bathroom.smcCeiling = rateValue("rateBathroomSmcCeiling", rates.bathroom.smcCeiling);
+  rates.bathroom.fanNormal = rateValue("rateBathroomFanNormal", rates.bathroom.fanNormal);
+  rates.bathroom.hugentMachine = rateValue("rateBathroomHugentMachine", rates.bathroom.hugentMachine);
+  rates.bathroom.hugentInstallExtra = rateValue("rateBathroomHugentInstallExtra", rates.bathroom.hugentInstallExtra);
+  rates.bathroom.bathtub = rateValue("rateBathroomBathtub", rates.bathroom.bathtub);
+  rates.bathroom.glassBooth = rateValue("rateBathroomGlassBooth", rates.bathroom.glassBooth);
+  rates.bathroom.glassPartition = rateValue("rateBathroomGlassPartition", rates.bathroom.glassPartition);
   rates.finish.wallpaperWorkerDay = rateValue("rateWallpaperWorkerDay", rates.finish.wallpaperWorkerDay);
+  rates.finishMaterial.wallpaperBesti = rateValue("rateWallpaperBesti", rates.finishMaterial.wallpaperBesti);
+  rates.finishMaterial.wallpaperDiamant = rateValue("rateWallpaperDiamant", rates.finishMaterial.wallpaperDiamant);
+  rates.finishMaterial.wallpaperFortis = rateValue("rateWallpaperFortis", rates.finishMaterial.wallpaperFortis);
   rates.finishMaterial.wallpaperMaterialPerPyeong = rateValue("rateWallpaperMaterialPerPyeong", rates.finishMaterial.wallpaperMaterialPerPyeong);
   rates.finish.filmWorkerDay = rateValue("rateFilmWorkerDay", rates.finish.filmWorkerDay);
   rates.finish.flooringPerPyeong = rateValue("rateFlooringPerPyeong", rates.finish.flooringPerPyeong);
+  flooringSheetGradeOptions.t18.unitPrice = rateValue("rateFlooringSheetT18", flooringSheetGradeOptions.t18.unitPrice);
+  flooringSheetGradeOptions.t20.unitPrice = rateValue("rateFlooringSheetT20", flooringSheetGradeOptions.t20.unitPrice);
+  flooringSheetGradeOptions.t22.unitPrice = rateValue("rateFlooringSheetT22", flooringSheetGradeOptions.t22.unitPrice);
+  flooringSheetGradeOptions.t32.unitPrice = rateValue("rateFlooringSheetT32", flooringSheetGradeOptions.t32.unitPrice);
+  flooringSheetGradeOptions.t45.unitPrice = rateValue("rateFlooringSheetT45", flooringSheetGradeOptions.t45.unitPrice);
+  flooringSheetGradeOptions.t50.unitPrice = rateValue("rateFlooringSheetT50", flooringSheetGradeOptions.t50.unitPrice);
+  flooringWoodGradeOptions.editone.unitPrice = rateValue("rateFlooringPerPyeong", flooringWoodGradeOptions.editone.unitPrice);
+  flooringWoodGradeOptions.standard.unitPrice = rateValue("rateFlooringWoodStandard", flooringWoodGradeOptions.standard.unitPrice);
+  rates.kitchen.sinkBowl = rateValue("rateKitchenSinkBowl", rates.kitchen.sinkBowl);
+  rates.kitchen.faucet = rateValue("rateKitchenFaucet", rates.kitchen.faucet);
+  rates.kitchen.hood = rateValue("rateKitchenHood", rates.kitchen.hood);
+  rates.kitchen.standardInstall = rateValue("rateKitchenStandardInstall", rates.kitchen.standardInstall);
+  PIPE_CLEANING_AMOUNT = rateValue("rateExistingPipeCleaning", PIPE_CLEANING_AMOUNT);
   rates.finish.silicone = rateValue("rateSilicone", rates.finish.silicone);
   rates.finish.elasticBase = rateValue("rateElasticBase", rates.finish.elasticBase);
   rates.finish.elasticExtraRoom = rateValue("rateElasticExtraRoom", rates.finish.elasticExtraRoom);
@@ -4532,7 +4666,7 @@ function buildEstimateSnapshot(result, options = {}) {
 }
 
 const PIPE_CLEANING_ITEM_NAME = "기존 배관 청소";
-const PIPE_CLEANING_AMOUNT = 300000;
+let PIPE_CLEANING_AMOUNT = 300000;
 
 function cloneJson(value) {
   if (value == null) return value;
