@@ -6,7 +6,7 @@ import { miscRates } from "./rates/misc.js";
 import { bathroomDetails } from "./calculator/bathroom.js";
 import { kitchenDetails } from "./calculator/kitchen.js";
 import { doorDetails } from "./calculator/door.js";
-import { wallpaperMaterialDetail, wallpaperSupplyDetail, filmMaterialDetail } from "./calculator/finish.js";
+import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./calculator/finish.js";
 import { miscDetails } from "./calculator/misc.js";
 import {
   saveEstimate,
@@ -268,8 +268,10 @@ const ids = [
   "standardDoorUnits",
   "slidingDoorUnits",
   "windowNoticeEnabled",
-  "wallpaperMaterialGrade",
-  "wallpaperWallLengthM",
+  "wallpaperPublicMaterialGrade",
+  "wallpaperPublicWallLengthM",
+  "wallpaperRoomMaterialGrade",
+  "wallpaperRoomWallLengthM",
   "filmMaterialLengthM",
   "generalWasteEnabled",
   "interiorProtectionEnabled",
@@ -2319,8 +2321,10 @@ function repairStaticKoreanLabels() {
     sectionWallpaperEnabled: "도배",
     wallpaperPreset: "기준",
     wallpaperBaseCoatEnabled: "초배 포함",
-    wallpaperMaterialGrade: "자재 등급",
-    wallpaperWallLengthM: "벽 길이(mm)",
+    wallpaperPublicMaterialGrade: "공용부 자재 등급",
+    wallpaperPublicWallLengthM: "공용부 벽 길이(mm)",
+    wallpaperRoomMaterialGrade: "각방 자재 등급",
+    wallpaperRoomWallLengthM: "각방 벽 길이(mm)",
     sectionFilmEnabled: "필름",
     filmPreset: "기준",
     filmMaterialLengthM: "필름 길이(mm)",
@@ -2457,7 +2461,8 @@ function repairStaticKoreanLabels() {
     bathroomFanType: { normal: "일반 환풍기", hugent: "휴젠트" },
     bathroomFixtureGrade: { value: "AND 실속(대림급)", standard: "AND 표준(아메리칸 스탠다드급)", premium: "AND 고급(수전 그로헤급)" },
     wallpaperPreset: { p20: "20평대", p30: "30평대", p40: "40평대", p50: "50평 이상" },
-    wallpaperMaterialGrade: { besti: "베스띠급", diamant: "디아망급", fortis: "디아망 포티스급" },
+    wallpaperPublicMaterialGrade: { besti: "베스띠급", diamant: "디아망급", fortis: "디아망 포티스급" },
+    wallpaperRoomMaterialGrade: { besti: "베스띠급", diamant: "디아망급", fortis: "디아망 포티스급" },
     filmPreset: { p20: "20평대", p30: "30평대", p40: "40평대", p50: "50평 이상" },
     carpentryCofferType: { none: "없음", new: "신설", change: "변경" },
     riceCabinetUnits: { 0: "없음", 1: "600mm 1통", 2: "600mm 2통" },
@@ -3026,8 +3031,10 @@ function readState() {
     slidingDoorUnits: integerValue("slidingDoorUnits"),
     windowNoticeEnabled: carpentrySection && checkedValue("windowNoticeEnabled"),
     wallpaperMaterialEnabled: wallpaperSection,
-    wallpaperMaterialGrade: el.wallpaperMaterialGrade.value,
-    wallpaperWallLengthM: numberValue("wallpaperWallLengthM"),
+    wallpaperPublicMaterialGrade: el.wallpaperPublicMaterialGrade?.value || "diamant",
+    wallpaperPublicWallLengthM: numberValue("wallpaperPublicWallLengthM"),
+    wallpaperRoomMaterialGrade: el.wallpaperRoomMaterialGrade?.value || "besti",
+    wallpaperRoomWallLengthM: numberValue("wallpaperRoomWallLengthM"),
     filmMaterialEnabled: filmSection,
     filmMaterialLengthM: numberValue("filmMaterialLengthM"),
     generalWasteEnabled: finishSection && checkedValue("generalWasteEnabled"),
@@ -3264,6 +3271,12 @@ const customerItemNames = {
   "도배지(베스띠급)": "벽지(AND표준 베스띠급)",
   "도배지(디아망급)": "벽지(AND표준 디아망급)",
   "도배지(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
+  "공용부 도배지(베스띠급)": "공용부 벽지(베스띠급)",
+  "공용부 도배지(디아망급)": "공용부 벽지(디아망급)",
+  "공용부 도배지(디아망 포티스급)": "공용부 벽지(디아망 포티스급)",
+  "각방 도배지(베스띠급)": "각방 벽지(베스띠급)",
+  "각방 도배지(디아망급)": "각방 벽지(디아망급)",
+  "각방 도배지(디아망 포티스급)": "각방 벽지(디아망 포티스급)",
   "필름 인건비": "필름 시공",
   "필름 자재(우드 무늬)": "필름(AND표준 우드)",
   "바닥 시공(장판 1.8T)": "장판(1.8T)",
@@ -4003,7 +4016,7 @@ function calculate() {
     correction: state.corrections.option,
   });
   addModuleDetails(details, [
-    wallpaperMaterialDetail(state, rates.finishMaterial),
+    ...wallpaperMaterialDetails(state, rates.finishMaterial),
     wallpaperSupplyDetail(state, rates.finishMaterial),
   ], margin, state.corrections.option);
 
@@ -4382,7 +4395,17 @@ function collectInputValues() {
 
 function restoreInputValues(inputs = {}) {
   const hadFractionalTargetMargin = Number(inputs.targetMargin) > 0 && Number(inputs.targetMargin) <= 1;
-  for (const [id, value] of Object.entries(inputs)) {
+  const nextInputs = { ...inputs };
+  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
+    nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
+  }
+  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicWallLengthM") && nextInputs.wallpaperWallLengthM != null) {
+    nextInputs.wallpaperPublicWallLengthM = nextInputs.wallpaperWallLengthM;
+  }
+  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperRoomMaterialGrade")) {
+    nextInputs.wallpaperRoomMaterialGrade = "besti";
+  }
+  for (const [id, value] of Object.entries(nextInputs)) {
     if (isEstimateInputExcluded(id)) continue;
     const input = el[id];
     if (!input) continue;

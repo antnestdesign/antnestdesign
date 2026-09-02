@@ -252,14 +252,24 @@
 <input id="wallpaperBaseCoatEnabled" type="checkbox"/>
 <span>초배 포함</span></label>
 <label>
-                  자재 등급
-                  <select id="wallpaperMaterialGrade">
-<option value="besti">베스띠급</option><option selected="" value="diamant"></option><option value="fortis"></option>
+                  공용부 자재 등급
+                  <select id="wallpaperPublicMaterialGrade">
+<option value="besti">베스띠급</option><option selected="" value="diamant"></option><option value="fortis">디아망 포티스급</option>
 </select>
 </label>
 <label>
-                  벽 길이(mm)
-                  <input id="wallpaperWallLengthM" min="0" step="100" type="number" value="0"/>
+                  공용부 벽 길이(mm)
+                  <input id="wallpaperPublicWallLengthM" min="0" step="100" type="number" value="0"/>
+</label>
+<label>
+                  각방 자재 등급
+                  <select id="wallpaperRoomMaterialGrade">
+<option selected="" value="besti">베스띠급</option><option value="diamant">디아망급</option><option value="fortis">디아망 포티스급</option>
+</select>
+</label>
+<label>
+                  각방 벽 길이(mm)
+                  <input id="wallpaperRoomWallLengthM" min="0" step="100" type="number" value="0"/>
 </label>
 </div>
 </div>
@@ -1241,6 +1251,6 @@
 </section>
 </main>
 <section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-49" type="module"></script>
+<script src="./src/main.js?v=and-os-50" type="module"></script>
 </body>
 </html>
