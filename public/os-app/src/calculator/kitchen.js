@@ -18,7 +18,7 @@ export function kitchenDetails(state, rates) {
   return standardItems.concat({
     group: "kitchen",
     item: "싱크볼·싱크수전·후드 직접입력",
-    input: "소비자가 직접입력",
+    input: "직접입력",
     quantity: "1식",
     unitPrice: customPrice,
     cost: 0,
