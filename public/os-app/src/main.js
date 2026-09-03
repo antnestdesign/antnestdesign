@@ -3048,6 +3048,7 @@ function readState() {
   const carpentrySection = checkedValue("sectionCarpentryEnabled");
   const furnitureSection = checkedValue("sectionFurnitureEnabled");
   const finishSection = checkedValue("sectionFinishEnabled");
+  const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   return {
     projectName: el.projectName.value || "상담 프로젝트",
     areaPyeong: numberValue("areaPyeong"),
@@ -3156,11 +3157,11 @@ function readState() {
     bathroomGlassBoothUnits: integerValue("bathroomGlassBoothUnits"),
     bathroomGlassPartitionUnits: integerValue("bathroomGlassPartitionUnits"),
     bathroomMasonryWallUnits: integerValue("bathroomMasonryWallUnits"),
-    kitchenEnabled: furnitureSection && checkedValue("kitchenEnabled"),
+    kitchenEnabled: furnitureSection && (checkedValue("kitchenEnabled") || kitchenCustomAppliancePrice > 0),
     kitchenSinkBowlUnits: integerValue("kitchenSinkBowlUnits"),
     kitchenFaucetUnits: integerValue("kitchenFaucetUnits"),
     kitchenHoodUnits: integerValue("kitchenHoodUnits"),
-    kitchenCustomAppliancePrice: numberValue("kitchenCustomAppliancePrice"),
+    kitchenCustomAppliancePrice,
     kitchenStandardInstallEnabled: checkedValue("kitchenStandardInstallEnabled"),
     doorWindowEnabled: carpentrySection,
     middleDoorUnits: integerValue("middleDoorUnits"),
@@ -5598,7 +5599,7 @@ async function renderSavedEstimateRows() {
 function renderStandardCheck(state) {
   const checks = [
     ["욕실", state.bathroomEnabled || state.bathroomUnits > 0],
-    ["주방 부속/기기", state.kitchenEnabled || state.kitchenSinkBowlUnits + state.kitchenFaucetUnits + state.kitchenHoodUnits > 0 || state.kitchenStandardInstallEnabled],
+    ["주방 부속/기기", state.kitchenEnabled || state.kitchenSinkBowlUnits + state.kitchenFaucetUnits + state.kitchenHoodUnits > 0 || state.kitchenCustomAppliancePrice > 0 || state.kitchenStandardInstallEnabled],
     ["일반 폐기물", state.generalWasteEnabled],
     ["세대 내 보양", state.interiorProtectionEnabled],
     ["입주청소", state.moveInCleaningEnabled],
