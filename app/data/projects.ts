@@ -347,8 +347,8 @@ export const projects: Record<string, Project> = {
   },
 
   "cheongna-prugio": {
-    title: "인천 청라 푸르지오",
-    cardTitle: "인천 청라 푸르지오",
+    title: "인천 청라 푸르지오 139.48㎡",
+    cardTitle: "인천 청라 푸르지오 139.48㎡",
     seo: {
       title: "인천 청라 푸르지오 139.48㎡ 인테리어 디자인",
       description:

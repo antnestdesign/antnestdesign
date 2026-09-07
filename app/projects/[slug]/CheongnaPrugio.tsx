@@ -215,7 +215,7 @@ export default function CheongnaPrugio() {
       <section className="mb-28 md:mb-40">
         <SectionHeading
           eyebrow="Common Vanity & Bathroom"
-          title="씻는 기능을 나누어 만든 여유"
+          title="세면과 목욕을 분리한 공간"
           description="세면과 목욕을 분리해 각각의 공간을 차분하게 사용할 수 있도록 계획했습니다. 공용욕실 앞에는 두 사람이 함께 사용할 수 있는 건식세면대를 두고, 우드 루버와 거울 주변의 빛으로 공용부의 분위기를 이어갔습니다. 욕실 중앙에는 조적 욕조를 배치하고, 유리 파티션과 간접조명으로 시선과 빛의 흐름을 조절했습니다."
         />
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-10 md:space-y-14">
