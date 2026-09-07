@@ -73,7 +73,7 @@ export default function CheongnaPrugio() {
         <SectionHeading
           eyebrow="Entry"
           title="선을 정리하고 기능을 감춘 현관"
-          description="현관의 수납 기능을 담으면서도 집의 첫인상을 차분하게 유지할 수 있을까. 우드 벽면과 세로 루버, 석재 패턴의 선반으로 재료를 정리하고, 식재와 낮은 위치의 빛으로 작은 머무름을 만들었습니다. 팬트리 문은 벽면과 같은 마감으로 연결해 닫혔을 때 하나의 면으로 읽히도록 계획했습니다."
+          description="현관의 수납 기능을 담으면서도 집의 첫인상을 차분하게 유지할 수 있을까. 우드 벽면과 세로 루버로 재료를 정리하고, 잠시 앉아 신발을 신을 수 있는 벤치를 두었습니다. 식재와 낮은 위치의 빛으로 작은 머무름을 만들고, 팬트리 문은 벽면과 같은 마감으로 연결해 닫혔을 때 하나의 면으로 읽히도록 계획했습니다."
         />
         <div className="max-w-7xl mx-auto px-8 md:px-16 space-y-10 md:space-y-14">
           <div className="grid md:grid-cols-[0.8fr_1.2fr] gap-8 md:gap-10 items-start">
@@ -86,9 +86,9 @@ export default function CheongnaPrugio() {
 
             <ProjectFigure
               src={images.entrySide}
-              alt="인천 청라 푸르지오 현관 측면 디자인 제안"
+              alt="벤치와 식재가 있는 인천 청라 푸르지오 현관 측면 디자인 제안"
               ratio="aspect-[1542/1020]"
-              caption="Entry Detail"
+              caption="Entry Bench"
             />
           </div>
 

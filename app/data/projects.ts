@@ -214,10 +214,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 4,
+    residentialOrder: 5,
   },
 
   "cheongna-hanwha-kkumegreen-39a": {
@@ -262,10 +262,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 3,
+    residentialOrder: 4,
   },
 
   "cheongna-hoban-4-33a": {
@@ -299,10 +299,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Rendering Proposal",
     residentialFeatured: true,
-    residentialOrder: 6,
+    residentialOrder: 7,
   },
 
   "cheongna-lynn-strauss": {
@@ -340,10 +340,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Concept Proposal",
     residentialFeatured: true,
-    residentialOrder: 5,
+    residentialOrder: 6,
   },
 
   "cheongna-prugio": {
@@ -392,10 +392,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 8,
+    featuredOrder: 4,
     status: "Design Proposal",
     residentialFeatured: true,
-    residentialOrder: 7,
+    residentialOrder: 3,
   },
 
   "luxury-house": {
