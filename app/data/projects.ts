@@ -214,10 +214,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 6,
+    featuredOrder: 7,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 5,
+    residentialOrder: 6,
   },
 
   "cheongna-hanwha-kkumegreen-39a": {
@@ -262,10 +262,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 5,
+    featuredOrder: 6,
     status: "Design Proposal / Rendering",
     residentialFeatured: true,
-    residentialOrder: 4,
+    residentialOrder: 5,
   },
 
   "cheongna-hoban-4-33a": {
@@ -299,10 +299,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 8,
+    featuredOrder: 9,
     status: "Rendering Proposal",
     residentialFeatured: true,
-    residentialOrder: 7,
+    residentialOrder: 8,
   },
 
   "cheongna-lynn-strauss": {
@@ -340,10 +340,61 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 7,
+    featuredOrder: 8,
     status: "Concept Proposal",
     residentialFeatured: true,
-    residentialOrder: 6,
+    residentialOrder: 7,
+  },
+
+  "cheongna-the-sharp-lakepark": {
+    title: "인천 청라 더샵레이크파크 144.22㎡",
+    cardTitle: "인천 청라 더샵레이크파크 144.22㎡",
+    seo: {
+      title: "인천 청라 더샵레이크파크 144.22㎡ 인테리어 디자인",
+      description:
+        "인천 청라 더샵레이크파크 공급 144.22㎡, 전용 106.89㎡의 전체 인테리어 디자인 제안입니다. 그레이지와 화이트, 다크우드, 간접조명으로 현관부터 욕실까지 계획했습니다.",
+    },
+    category: "Residential Interior",
+    projectGroup: "Residential",
+    type: "Apartment Renovation",
+    year: "2026",
+    area: "전용 106.89㎡ · 공급 144.22㎡",
+    images: 18,
+    heroImage:
+      "/projects/cheongna-the-sharp-lakepark/01-hero-living-room-front-day.webp",
+    thumbnailImage:
+      "/projects/cheongna-the-sharp-lakepark/01-hero-living-room-front-day.webp",
+    heroAspectRatio: "1672 / 941",
+    location: "인천 청라",
+    designScope: "전체 인테리어 디자인",
+    overview:
+      "인천 청라 더샵레이크파크를 위한 모던 인테리어 디자인 제안입니다. 그레이지와 화이트를 바탕으로 다크우드를 반복하고, 직접 보이는 광원은 줄이면서 간접광과 상하향 조명으로 공용부와 개인 공간의 깊이를 정리했습니다.",
+    gallery: [
+      "/projects/cheongna-the-sharp-lakepark/01-hero-living-room-front-day.webp",
+      "/projects/cheongna-the-sharp-lakepark/02-living-room-front-night.webp",
+      "/projects/cheongna-the-sharp-lakepark/03-living-room-side-day.webp",
+      "/projects/cheongna-the-sharp-lakepark/04-living-room-side-night.webp",
+      "/projects/cheongna-the-sharp-lakepark/05-entry-shoe-storage.webp",
+      "/projects/cheongna-the-sharp-lakepark/06-entry-corridor.webp",
+      "/projects/cheongna-the-sharp-lakepark/07-hallway-front.webp",
+      "/projects/cheongna-the-sharp-lakepark/08-hallway-hidden-doors.webp",
+      "/projects/cheongna-the-sharp-lakepark/09-study-alpha-room.webp",
+      "/projects/cheongna-the-sharp-lakepark/10-kitchen-front.webp",
+      "/projects/cheongna-the-sharp-lakepark/11-kitchen-side.webp",
+      "/projects/cheongna-the-sharp-lakepark/12-secondary-kitchen.webp",
+      "/projects/cheongna-the-sharp-lakepark/13-master-bedroom-day.webp",
+      "/projects/cheongna-the-sharp-lakepark/14-master-bedroom-night.webp",
+      "/projects/cheongna-the-sharp-lakepark/15-master-dressing-corridor.webp",
+      "/projects/cheongna-the-sharp-lakepark/16-powder-room.webp",
+      "/projects/cheongna-the-sharp-lakepark/17-bathroom-front.webp",
+      "/projects/cheongna-the-sharp-lakepark/18-bathroom-side.webp",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 4,
+    status: "Design Proposal",
+    residentialFeatured: true,
+    residentialOrder: 3,
   },
 
   "cheongna-prugio": {
@@ -392,10 +443,10 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 4,
+    featuredOrder: 5,
     status: "Design Proposal",
     residentialFeatured: true,
-    residentialOrder: 3,
+    residentialOrder: 4,
   },
 
   "luxury-house": {
@@ -423,7 +474,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 9,
+    featuredOrder: 10,
     status: "Completed",
   },
 
@@ -455,7 +506,7 @@ export const projects: Record<string, Project> = {
     ],
     beforeImages: [],
     featured: true,
-    featuredOrder: 10,
+    featuredOrder: 11,
     status: "Completed",
   },
 
@@ -474,7 +525,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 11,
+    featuredOrder: 12,
     status: "Completed",
   },
 
@@ -493,7 +544,7 @@ export const projects: Record<string, Project> = {
     gallery: [],
     beforeImages: [],
     featured: true,
-    featuredOrder: 12,
+    featuredOrder: 13,
     status: "Completed",
   },
 };

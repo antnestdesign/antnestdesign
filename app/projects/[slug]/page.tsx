@@ -8,6 +8,7 @@ import CheongnaHanwhaKkumegreen39A from "./CheongnaHanwhaKkumegreen39A";
 import CheongnaHoban4 from "./CheongnaHoban4";
 import CheongnaLynnStrauss from "./CheongnaLynnStrauss";
 import CheongnaPrugio from "./CheongnaPrugio";
+import CheongnaTheSharpLakepark from "./CheongnaTheSharpLakepark";
 import LuxuryHouse from "./LuxuryHouse";
 import PrivateHouse from "./PrivateHouse";
 import ProjectLayout from "./ProjectLayout";
@@ -160,6 +161,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
     slug === "cheongna-hoban-4-33a" ||
     slug === "cheongna-lynn-strauss" ||
     slug === "cheongna-prugio" ||
+    slug === "cheongna-the-sharp-lakepark" ||
     slug === "luxury-house" ||
     slug === "private-house";
 
@@ -189,6 +191,9 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       {slug === "cheongna-hoban-4-33a" && <CheongnaHoban4 />}
       {slug === "cheongna-lynn-strauss" && <CheongnaLynnStrauss />}
       {slug === "cheongna-prugio" && <CheongnaPrugio />}
+      {slug === "cheongna-the-sharp-lakepark" && (
+        <CheongnaTheSharpLakepark />
+      )}
       {slug === "luxury-house" && <LuxuryHouse project={project} />}
       {slug === "private-house" && <PrivateHouse project={project} />}
 
