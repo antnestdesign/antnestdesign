@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
-const base = "/projects/cheongna-prugio";
+const base = "/projects/cheongna-prugio/refined-v2";
 
 const images = {
   entryFront: `${base}/02-entry-front.webp`,
