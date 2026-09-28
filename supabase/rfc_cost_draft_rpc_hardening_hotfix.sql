@@ -124,6 +124,7 @@ begin
   end if;
 
   perform pg_advisory_xact_lock(hashtext('and_os_cost_publish'));
+  perform set_config('request.and_os_cost_rpc', 'on', true);
 
   select count(*)
   into v_changed_count
@@ -178,8 +179,6 @@ begin
      or draft_cost_price is not null
      or draft_margin_rate is not null
      or draft_is_active is not null;
-
-  perform set_config('request.and_os_cost_rpc', 'on', true);
 
   update public.cost_items
   set
