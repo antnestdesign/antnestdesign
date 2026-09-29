@@ -30,6 +30,42 @@
 };
 
 export const projects: Record<string, Project> = {
+  "ent-clinic": {
+    title: "청라 이비인후과",
+    cardTitle: "청라 이비인후과",
+    seo: {
+      title: "청라 이비인후과 150㎡ 인테리어 디자인 | 병원이 호텔 같을 순 없을까?",
+      description: "인천 청라 150㎡ 규모의 이비인후과 디자인 제안입니다. 접수대를 리셉션처럼, 대기실을 라운지처럼, 수액실을 객실처럼. 선형 코브조명으로 동선을 안내하고 환대의 경험을 담았습니다.",
+    },
+    category: "Commercial Interior",
+    projectGroup: "Commercial",
+    type: "ENT Clinic Interior",
+    year: "2026",
+    area: "150㎡",
+    location: "인천 청라",
+    images: 10,
+    heroImage: "/projects/ent-clinic/01-reception-wide.webp",
+    thumbnailImage: "/projects/ent-clinic/05-reception-front.webp",
+    heroAspectRatio: "1951 / 806",
+    designScope: "인테리어 디자인 제안",
+    overview: "병원이 호텔 같을 순 없을까? 접수와 대기, 진료와 회복으로 이어지는 공간에 호텔의 차분한 분위기와 머무름의 감각을 담은 이비인후과 디자인 제안입니다.",
+    gallery: [
+      "/projects/ent-clinic/01-reception-wide.webp",
+      "/projects/ent-clinic/05-reception-front.webp",
+      "/projects/ent-clinic/04-corridor-bench.webp",
+      "/projects/ent-clinic/10-corridor-lounge.webp",
+      "/projects/ent-clinic/02-examination-room.webp",
+      "/projects/ent-clinic/08-respiratory-treatment.webp",
+      "/projects/ent-clinic/07-infusion-cubicles.webp",
+      "/projects/ent-clinic/09-infusion-side.webp",
+      "/projects/ent-clinic/06-recovery-bed.webp",
+      "/projects/ent-clinic/03-recovery-side.webp",
+    ],
+    beforeImages: [],
+    featured: true,
+    featuredOrder: 3.5,
+    status: "Design Proposal",
+  },
   "apartment-a": {
     title: "수원 살구골 현대7단지 99",
     cardTitle: "수원 살구골 현대7단지 99",

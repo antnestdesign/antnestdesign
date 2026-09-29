@@ -10,6 +10,7 @@ import CheongnaLynnStrauss from "./CheongnaLynnStrauss";
 import CheongnaPrugio from "./CheongnaPrugio";
 import CheongnaTheSharpLakepark from "./CheongnaTheSharpLakepark";
 import LuxuryHouse from "./LuxuryHouse";
+import EntClinic from "./EntClinic";
 import PrivateHouse from "./PrivateHouse";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
@@ -153,6 +154,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
   };
 
   const hasCustomPage =
+    slug === "ent-clinic" ||
     slug === "apartment-a" ||
     slug === "apartment-b" ||
     slug === "antnest-design-office" ||
@@ -181,6 +183,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       />
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
+      {slug === "ent-clinic" && <EntClinic />}
       {slug === "antnest-design-office" && <AntnestDesignOffice />}
       {slug === "cheongna-central-eileens-garden-84a" && (
         <CheongnaCentralEileensGarden84A />
