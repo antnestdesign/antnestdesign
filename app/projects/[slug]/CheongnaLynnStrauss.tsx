@@ -2,21 +2,21 @@ import Link from "next/link";
 import { ProjectImage, SectionHeading } from "./ProjectLayout";
 
 const images = {
-  livingRoom: "/projects/cheongna-lynn-strauss/02-living-room.webp",
-  livingWindow: "/projects/cheongna-lynn-strauss/03-living-window.webp",
-  dressingVanity: "/projects/cheongna-lynn-strauss/04-dressing-vanity.webp",
-  dressingRoom: "/projects/cheongna-lynn-strauss/05-dressing-room.webp",
-  entryCorridor: "/projects/cheongna-lynn-strauss/06-entry-corridor.webp",
+  livingRoom: "/projects/cheongna-lynn-strauss/refined-20261006/02-living-room.webp",
+  livingWindow: "/projects/cheongna-lynn-strauss/refined-20261006/03-living-window.webp",
+  dressingVanity: "/projects/cheongna-lynn-strauss/refined-20261006/04-dressing-vanity.webp",
+  dressingRoom: "/projects/cheongna-lynn-strauss/refined-20261006/05-dressing-room.webp",
+  entryCorridor: "/projects/cheongna-lynn-strauss/refined-20261006/06-entry-corridor.webp",
   masterBedroomNight:
-    "/projects/cheongna-lynn-strauss/07-master-bedroom-night.webp",
+    "/projects/cheongna-lynn-strauss/refined-20261006/07-master-bedroom-night.webp",
   masterBedroomDay:
-    "/projects/cheongna-lynn-strauss/08-master-bedroom-day.webp",
-  kitchen: "/projects/cheongna-lynn-strauss/09-kitchen.webp",
-  kitchenStorage: "/projects/cheongna-lynn-strauss/10-kitchen-storage.webp",
-  entry: "/projects/cheongna-lynn-strauss/11-entry.webp",
-  masterBathroom: "/projects/cheongna-lynn-strauss/12-master-bathroom.webp",
+    "/projects/cheongna-lynn-strauss/refined-20261006/08-master-bedroom-day.webp",
+  kitchen: "/projects/cheongna-lynn-strauss/refined-20261006/09-kitchen.webp",
+  kitchenStorage: "/projects/cheongna-lynn-strauss/refined-20261006/10-kitchen-storage.webp",
+  entry: "/projects/cheongna-lynn-strauss/refined-20261006/11-entry.webp",
+  masterBathroom: "/projects/cheongna-lynn-strauss/refined-20261006/12-master-bathroom.webp",
   masterBathroomDetail:
-    "/projects/cheongna-lynn-strauss/13-master-bathroom-detail.webp",
+    "/projects/cheongna-lynn-strauss/refined-20261006/13-master-bathroom-detail.webp",
 };
 
 function ImageNote({ children }: { children: React.ReactNode }) {
@@ -76,13 +76,13 @@ export default function CheongnaLynnStrauss() {
             <ProjectImage
               src={images.livingRoom}
               alt="청라 린 스트라우스 101 거실 TV 벽 디자인 제안"
-              ratio="aspect-[16/9]"
+              ratio="aspect-[1732/908]"
             />
 
             <ProjectImage
               src={images.livingWindow}
               alt="자연광이 들어오는 청라 린 스트라우스 거실 디자인"
-              ratio="aspect-[16/9]"
+              ratio="aspect-[1749/899]"
             />
 
             <ProjectImage
@@ -113,7 +113,7 @@ export default function CheongnaLynnStrauss() {
               <ProjectImage
                 src={images.entry}
                 alt="차분한 밝기로 계획한 청라 린 스트라우스 현관"
-                ratio="aspect-square"
+                ratio="aspect-[1226/1283]"
               />
 
               <ImageNote>제한된 빛이 만든 깊이를 유지한 현관.</ImageNote>
@@ -122,7 +122,7 @@ export default function CheongnaLynnStrauss() {
             <ProjectImage
               src={images.entryCorridor}
               alt="청라 린 스트라우스 현관에서 거실로 이어지는 복도"
-              ratio="aspect-square"
+              ratio="aspect-[1240/1269]"
               className="md:translate-y-20"
             />
           </div>
@@ -167,7 +167,7 @@ export default function CheongnaLynnStrauss() {
               <ProjectImage
                 src={images.masterBedroomDay}
                 alt="자연광이 들어오는 청라 린 스트라우스 침실 낮 장면"
-                ratio="aspect-[16/9]"
+                ratio="aspect-[1651/953]"
               />
 
               <ImageNote>
@@ -179,7 +179,7 @@ export default function CheongnaLynnStrauss() {
               <ProjectImage
                 src={images.masterBedroomNight}
                 alt="간접적인 조명으로 계획한 청라 린 스트라우스 침실 야간 장면"
-                ratio="aspect-[16/9]"
+                ratio="aspect-[1651/953]"
               />
 
               <ImageNote>
@@ -201,7 +201,7 @@ export default function CheongnaLynnStrauss() {
           <ProjectImage
             src={images.masterBathroom}
             alt="짙은 톤과 입체적인 구조로 계획한 청라 린 스트라우스 욕실"
-            ratio="aspect-[16/9]"
+            ratio="aspect-[1392/1130]"
           />
 
           <div className="mt-8 md:mt-10">
