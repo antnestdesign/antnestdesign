@@ -6,7 +6,7 @@ import Header from "../../components/Header";
 const path = "/knowledge/and-standards";
 const title = "AND STANDARD | ANTNEST DESIGN";
 const description =
-  "빛, 수납과 동선, 시야와 공간의 관계를 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
+  "빛, 수납과 동선, 시야, 재료와 공간의 관계를 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 const standards = [
   {
     number: "01",
+    category: "LIGHTING",
     title: "조명은 자연광을 닮아야 합니다",
     description:
       "사람의 시선과 생활, 재료와 공간의 깊이를 기준으로 빛을 계획하는 방법을 이야기합니다.",
@@ -36,6 +37,7 @@ const standards = [
   },
   {
     number: "02",
+    category: "STORAGE & FLOW",
     title: "수납은 생활의 흐름을 설계하는 일입니다",
     description:
       "물건의 양보다 행동의 순서와 가족의 생활을 먼저 살펴 수납과 동선의 관계를 정리합니다.",
@@ -47,6 +49,7 @@ const standards = [
   },
   {
     number: "03",
+    category: "VIEW",
     title: "공간은 보이는 방식으로 경험됩니다",
     description:
       "첫 장면과 시야의 끝, 공간의 관계와 전환을 통해 공간을 바라보는 기준을 이야기합니다.",
@@ -55,6 +58,18 @@ const standards = [
     width: 1672,
     height: 941,
     alt: "거실과 주방의 관계가 한 장면으로 이어지는 청라 호반4차 렌더링",
+  },
+  {
+    number: "04",
+    category: "MATERIAL / COMPOSITION",
+    title: "재료는 관계 속에서 완성됩니다",
+    description:
+      "재료의 종류보다 중요한 것은 그 사이의 관계입니다. 위계와 비율, 반복과 경계를 통해 서로 다른 재료가 하나의 공간을 만드는 방식을 이야기합니다.",
+    href: "/knowledge/and-standards/material-composition",
+    image: "/projects/cheongna-halla-vivaldi/05-art-wall.webp",
+    width: 1672,
+    height: 941,
+    alt: "빅슬랩과 우드 루버, 석재의 관계를 구성한 청라 한라비발디 거실 아트월",
   },
 ];
 
@@ -88,7 +103,7 @@ export default function AndStandardsPage() {
               />
               <div className="mt-6 border-t border-[#675B56]/25 pt-5">
                 <p className="text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
-                  AND STANDARD {standard.number}
+                  AND STANDARD {standard.number} · {standard.category}
                 </p>
                 <h2 className="mt-4 text-2xl font-light leading-[1.3] tracking-[-0.025em] break-keep md:text-3xl">
                   {standard.title}

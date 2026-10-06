@@ -86,11 +86,11 @@ export default function StorageFlowPage() {
           <div className="mt-14">
             <p className="mb-7 text-xs font-medium tracking-[0.24em] text-neutral-500">SAME PLAN, DIFFERENT PRIORITIES</p>
             <div className={evidencePair}>
-              <Figure src="/projects/cheongna-central-eileens-garden-84a/01-hero.webp" width={4000} height={1179} project="청라 센트럴에일린의뜰 84A · PLAN A" status="DESIGN PROPOSAL" caption="다이닝과 아일랜드, 벽면 수납과 키큰장을 함께 구성한 A안" alt="다이닝과 아일랜드, 키큰장이 함께 보이는 청라 센트럴에일린의뜰 주방 A안" priority />
-              <Figure src="/projects/cheongna-central-eileens-garden-84a/16-kitchen-overview-panorama.webp" width={4000} height={1179} project="청라 센트럴에일린의뜰 84A · PLAN B" status="DESIGN PROPOSAL" caption="다이닝과 메인 주방에 문으로 구분된 보조주방이 이어지는 B안" alt="다이닝과 메인 주방, 분리형 보조주방이 이어지는 청라 센트럴에일린의뜰 주방 B안" />
+              <Figure src="/projects/cheongna-central-eileens-garden-84a/01-hero.webp" width={4000} height={1179} project="청라 센트럴에일린의뜰 84A · PLAN A" status="Design Proposal" caption="다이닝과 아일랜드, 벽면 수납과 키큰장을 함께 구성한 A안" alt="다이닝과 아일랜드, 키큰장이 함께 보이는 청라 센트럴에일린의뜰 주방 A안" priority />
+              <Figure src="/projects/cheongna-central-eileens-garden-84a/16-kitchen-overview-panorama.webp" width={4000} height={1179} project="청라 센트럴에일린의뜰 84A · PLAN B" status="Design Proposal" caption="다이닝과 메인 주방에 문으로 구분된 보조주방이 이어지는 B안" alt="다이닝과 메인 주방, 분리형 보조주방이 이어지는 청라 센트럴에일린의뜰 주방 B안" />
             </div>
             <Copy><p className="text-xl font-light text-[#4A433D]">같은 평면이라고 같은 답이 나오는 것은 아닙니다.</p><p>A안은 다이닝과 아일랜드, 키큰장을 함께 구성하고, B안은 다이닝과 메인 주방에 문으로 구분된 보조주방이 이어집니다.</p><p>두 안 중 하나가 항상 더 좋은 것은 아닙니다.</p><p><Strong>어떤 계획이 맞는지는 그 집에서 실제로 어떻게 요리하고, 먹고, 머무는지에 따라 달라집니다.</Strong></p></Copy>
-            <ProjectLink status="DESIGN PROPOSAL" href="/projects/cheongna-central-eileens-garden-84a">청라 센트럴에일린의뜰에서 두 가지 주방 제안 비교하기 →</ProjectLink>
+            <ProjectLink status="Design Proposal" href="/projects/cheongna-central-eileens-garden-84a">청라 센트럴에일린의뜰에서 두 가지 주방 제안 비교하기 →</ProjectLink>
           </div>
         </div>
         <aside className="mt-20 border-y border-[#675B56]/25 py-10 md:mt-28 md:py-14">
@@ -171,8 +171,8 @@ export default function StorageFlowPage() {
       </div></aside>
 
       <Section><div><div className="max-w-[760px]"><Heading number="04" title="수납은 때로 공간의 경계가 됩니다" /><Copy><p>수납은 보통 남는 벽을 따라 배치하는 가구로 생각하기 쉽습니다.</p><p>하지만 공간을 다시 구성할 때 수납은 물건을 담는 장소보다 더 큰 역할을 할 수 있습니다.</p><p><Strong>수납을 포함한 하나의 구조가 두 영역을 나누고, 시선을 정리하고, 각각의 공간에 서로 다른 성격을 만들 수도 있습니다.</Strong></p><p>침실에서 가장 먼저 보이는 면은 공간의 중심을 만듭니다.</p><p>이 프로젝트에서는 침대 헤드 영역에 새로운 구조를 두고, 그 뒤의 공간에 수납과 준비 기능을 연결했습니다.</p><p>침실에서 바라보면 하나의 정돈된 중심면으로 읽히지만, 반대편에서는 다른 생활기능을 받아들이는 영역이 됩니다.</p><p><Strong>하나의 구조가 침실의 배경인 동시에 두 영역을 구분하는 경계가 되는 것입니다.</Strong></p><p>수납은 반드시 기존 벽을 따라 추가되는 가구일 필요가 없습니다.</p><p><Strong>어디에 놓이고 어떤 관계를 만드느냐에 따라 수납을 포함한 구조 자체가 새로운 공간의 시작과 끝을 만들 수 있습니다.</Strong></p></Copy></div>
-        <div className="mt-14"><p className="mb-7 text-xs font-medium tracking-[0.24em] text-neutral-500">STORAGE AS A BOUNDARY</p><div className={evidenceCanvas}><div className="grid gap-8 md:grid-cols-2 md:items-start"><Figure src="/projects/cheongna-hanwha-kkumegreen-39a/07-master-bedroom-day.webp" width={1672} height={1125} project="청라 한화꿈에그린 100A" status="DESIGN PROPOSAL" caption="침실에서는 새로운 구조가 정돈된 중심면으로 읽힙니다." alt="침대 헤드 구조가 침실의 중심면을 만드는 청라 한화꿈에그린 제안" imageClassName="md:h-[340px] md:object-contain md:object-left" /><Figure src="/projects/cheongna-hanwha-kkumegreen-39a/09-master-bedroom-dressing-room-extension.webp" width={1708} height={1125} project="청라 한화꿈에그린 100A" status="DESIGN PROPOSAL" caption="반대편에서는 수납과 준비 기능을 연결하며 두 영역의 경계가 됩니다." alt="침대 헤드 구조 뒤에 수납과 준비 영역을 연결한 청라 한화꿈에그린 제안" imageClassName="md:h-[340px] md:object-contain md:object-left" /></div>
-          <ProjectLink status="DESIGN PROPOSAL" href="/projects/cheongna-hanwha-kkumegreen-39a">청라 한화꿈에그린에서 침실과 수납공간의 관계 보기 →</ProjectLink></div>
+        <div className="mt-14"><p className="mb-7 text-xs font-medium tracking-[0.24em] text-neutral-500">STORAGE AS A BOUNDARY</p><div className={evidenceCanvas}><div className="grid gap-8 md:grid-cols-2 md:items-start"><Figure src="/projects/cheongna-hanwha-kkumegreen-39a/07-master-bedroom-day.webp" width={1672} height={1125} project="청라 한화꿈에그린 100A" status="Design Proposal" caption="침실에서는 새로운 구조가 정돈된 중심면으로 읽힙니다." alt="침대 헤드 구조가 침실의 중심면을 만드는 청라 한화꿈에그린 제안" imageClassName="md:h-[340px] md:object-contain md:object-left" /><Figure src="/projects/cheongna-hanwha-kkumegreen-39a/09-master-bedroom-dressing-room-extension.webp" width={1708} height={1125} project="청라 한화꿈에그린 100A" status="Design Proposal" caption="반대편에서는 수납과 준비 기능을 연결하며 두 영역의 경계가 됩니다." alt="침대 헤드 구조 뒤에 수납과 준비 영역을 연결한 청라 한화꿈에그린 제안" imageClassName="md:h-[340px] md:object-contain md:object-left" /></div>
+          <ProjectLink status="Design Proposal" href="/projects/cheongna-hanwha-kkumegreen-39a">청라 한화꿈에그린에서 침실과 수납공간의 관계 보기 →</ProjectLink></div>
         </div></div>
       </Section>
 
