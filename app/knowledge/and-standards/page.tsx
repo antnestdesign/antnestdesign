@@ -89,7 +89,7 @@ export default function AndStandardsPage() {
   return (
     <main className="min-h-screen bg-[#F3F0EB] text-[#4A433D]">
       <Header />
-      <header className="mx-auto max-w-[1240px] px-5 pb-16 pt-36 md:px-16 md:pb-24 md:pt-48 lg:px-10 xl:px-16">
+      <header className="mx-auto max-w-[1240px] px-5 pb-16 pt-36 md:px-16 md:pb-24 md:pt-48 lg:max-w-7xl lg:px-16 lg:pb-16 xl:px-16">
         <p className="text-[10px] uppercase tracking-[0.35em] text-neutral-500 md:text-xs">
           ANTNEST DESIGN
         </p>
@@ -98,32 +98,32 @@ export default function AndStandardsPage() {
         </h1>
       </header>
 
-      <section className="mx-auto grid max-w-[1240px] gap-16 px-5 pb-32 md:px-16 md:pb-48 lg:grid-cols-2 lg:gap-12 lg:px-10 xl:gap-16 xl:px-16">
+      <section className="mx-auto grid max-w-[1240px] gap-16 px-5 pb-32 md:px-16 md:pb-48 lg:max-w-7xl lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16 lg:px-16 xl:px-16">
         {standards.map((standard) => (
-          <article key={standard.number}>
+          <article key={standard.number} className="lg:flex">
             <Link
               href={standard.href}
-              className="group block rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#675B56] focus-visible:ring-offset-4 focus-visible:ring-offset-[#F3F0EB]"
+              className="group block rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#675B56] focus-visible:ring-offset-4 focus-visible:ring-offset-[#F3F0EB] lg:flex lg:h-full lg:w-full lg:flex-col"
             >
               <Image
                 src={standard.image}
                 width={standard.width}
                 height={standard.height}
                 alt={standard.alt}
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="aspect-[4/3] w-full object-cover"
+                sizes="(max-width: 1023px) 100vw, 33vw"
+                className="aspect-[4/3] w-full object-cover lg:shrink-0"
               />
-              <div className="mt-6 border-t border-[#675B56]/25 pt-5">
-                <p className="text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs">
+              <div className="mt-6 border-t border-[#675B56]/25 pt-5 lg:flex lg:flex-1 lg:flex-col">
+                <p className="text-[10px] font-medium tracking-[0.28em] text-neutral-500 md:text-xs lg:min-h-[3em] lg:text-[10px] lg:tracking-[0.22em]">
                   AND STANDARD {standard.number} · {standard.category}
                 </p>
-                <h2 className="mt-4 text-2xl font-light leading-[1.3] tracking-[-0.025em] break-keep md:text-3xl">
+                <h2 className="mt-4 text-2xl font-light leading-[1.3] tracking-[-0.025em] break-keep md:text-3xl lg:min-h-[2.6em] lg:text-2xl">
                   {standard.title}
                 </h2>
-                <p className="mt-4 max-w-[560px] text-sm leading-7 text-neutral-600 break-keep md:text-[15px]">
+                <p className="mt-4 max-w-[560px] text-sm leading-7 text-neutral-600 break-keep md:text-[15px] lg:text-[13px] lg:leading-6">
                   {standard.description}
                 </p>
-                <p className="mt-5 inline-block border-b border-[#675B56]/40 pb-1 text-sm transition-colors group-hover:border-[#675B56] md:text-base">
+                <p className="mt-5 inline-block border-b border-[#675B56]/40 pb-1 text-sm transition-colors group-hover:border-[#675B56] md:text-base lg:mt-auto lg:self-start lg:pt-5 lg:text-[13px]">
                   STANDARD {standard.number} 읽기 →
                 </p>
               </div>
