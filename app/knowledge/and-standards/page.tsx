@@ -6,7 +6,7 @@ import Header from "../../components/Header";
 const path = "/knowledge/and-standards";
 const title = "AND STANDARD | ANTNEST DESIGN";
 const description =
-  "빛, 수납과 동선, 시야, 재료와 공간의 관계를 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
+  "빛, 수납과 동선, 시야, 재료와 가구의 관계를 판단하는 ANTNEST DESIGN의 설계 기준을 소개합니다.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -70,6 +70,18 @@ const standards = [
     width: 1672,
     height: 941,
     alt: "빅슬랩과 우드 루버, 석재의 관계를 구성한 청라 한라비발디 거실 아트월",
+  },
+  {
+    number: "05",
+    category: "FURNITURE / BEHAVIOR",
+    title: "가구는 머무는 방식을 만듭니다",
+    description:
+      "가구는 완성된 공간에 채워 넣는 물건이 아닙니다. 시선과 자세, 거리와 관계를 통해 사람이 어디에서 어떻게 머무를지를 만듭니다.",
+    href: "/knowledge/and-standards/furniture-behavior",
+    image: "/projects/cheongna-the-sharp-lakepark/02-living-room-front-night.webp",
+    width: 1672,
+    height: 941,
+    alt: "소파와 라운지체어가 마주 보는 청라 더샵레이크파크 거실 디자인 제안",
   },
 ];
 
