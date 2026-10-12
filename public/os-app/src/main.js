@@ -4,6 +4,8 @@ import { buildAdminMarginGroups, internalDetailCustomerAmount, storedEstimateSum
 import { isEstimateInputExcluded, canonicalInputValues } from "./estimate-input.js";
 import { purchaseOrderItems } from "./purchase-order.js";
 import { costSnapshotMap } from "./cost-snapshot.js";
+import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "./estimate-form.js";
+import { buildEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides as projectEffectiveEstimateInputs } from "./estimate-state.js";
 import { bathroomRates } from "./rates/bathroom.js";
 import { kitchenRates } from "./rates/kitchen.js";
 import { doorRates } from "./rates/door.js";
@@ -499,10 +501,6 @@ let costItemFilters = {
 
 const customerWon = (...args) => currentCalculationCore().customerWon(...args);
 
-const numberValue = (id) => Number(el[id]?.value) || 0;
-const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
-const checkedValue = (id) => Boolean(el[id]?.checked);
-const rateValue = (id, fallback) => Number(el[id]?.value) || fallback;
 
 const mmText = (...args) => currentCalculationCore().mmText(...args);
 
@@ -513,7 +511,6 @@ const mText = (...args) => currentCalculationCore().mText(...args);
 
 const markupRate = (...args) => currentCalculationCore().markupRate(...args);
 
-const correctionValue = (id) => numberValue(id) / 100;
 
 
 const isSlabMaterial = (...args) => currentCalculationCore().isSlabMaterial(...args);
@@ -2834,277 +2831,18 @@ function removeLegacyAdminEstimatePanels() {
 }
 
 function updateRatesFromAdmin() {
-  rates.lowerPerJa = rateValue("rateLowerPerJa", rates.lowerPerJa);
-  rates.upperPerJa = rateValue("rateUpperPerJa", rates.upperPerJa);
-  rates.islandPerJa = rateValue("rateIslandPerJa", rates.islandPerJa);
-  rates.homebarBuildPerJa = rateValue("rateHomebarBuildPerJa", rates.homebarBuildPerJa);
-  rates.tallPerJa = rateValue("rateTallPerJa", rates.tallPerJa);
-  rates.fridgeLaundryPerJa = rateValue("rateFridgeLaundryPerJa", rates.fridgeLaundryPerJa);
-  rates.shoePerJa = rateValue("rateShoePerJa", rates.shoePerJa);
-  rates.pantryPerJa = rateValue("ratePantryPerJa", rates.pantryPerJa);
-  rates.pantryDrawer = rateValue("ratePantryDrawer", rates.pantryDrawer);
-  rates.builtInPerJa = rateValue("rateBuiltInPerJa", rates.builtInPerJa);
-  rates.hangerPerJa = rateValue("rateHangerPerJa", rates.hangerPerJa);
-  rates.riceCabinetPerUnit = rateValue("rateRiceCabinetPerUnit", rates.riceCabinetPerUnit);
-  rates.endPanelShallow = rateValue("rateEndPanelShallow", rates.endPanelShallow);
-  rates.endPanelDeep = rateValue("rateEndPanelDeep", rates.endPanelDeep);
-  rates.drawer = rateValue("rateDrawer", rates.drawer);
-  rates.bachmannOutlet = rateValue("rateBachmannOutlet", rates.bachmannOutlet);
-  rates.lightingPerCabinetUnit = rateValue("rateLightingPerCabinetUnit", rates.lightingPerCabinetUnit);
-  rates.t3LightingUnit = rateValue("rateT3LightingUnit", rates.t3LightingUnit);
-  rates.standardLighting.downlight = rateValue("rateStandardDownlight", rates.standardLighting.downlight);
-  rates.standardLighting.square = rateValue("rateStandardSquareLight", rates.standardLighting.square);
-  rates.standardLighting.cylinder = rateValue("rateStandardCylinderLight", rates.standardLighting.cylinder);
-  rates.standardLighting.t3PerM = rateValue("rateStandardT3PerM", rates.standardLighting.t3PerM);
-  rates.standardLighting.bedWallLight = rateValue("rateStandardBedWallLight", rates.standardLighting.bedWallLight);
-  rates.countertop.himacs.costPerM = rateValue("rateHimacsPerM", rates.countertop.himacs.costPerM);
-  rates.countertop.khanstone.slabCost = rateValue("rateKhanstoneSlab", rates.countertop.khanstone.slabCost);
-  rates.countertop.khanstone.factoryCost = rateValue("rateKhanstoneFactory", rates.countertop.khanstone.factoryCost);
-  rates.countertop.khanstone.installCost = rateValue("rateKhanstoneInstall", rates.countertop.khanstone.installCost);
-  rates.countertop.ceramic.slabCost = rateValue("rateCeramicSlab", rates.countertop.ceramic.slabCost);
-  rates.countertop.ceramic.factoryCost = rateValue("rateCeramicFactory", rates.countertop.ceramic.factoryCost);
-  rates.countertop.ceramic.installCost = rateValue("rateCeramicInstall", rates.countertop.ceramic.installCost);
-  rates.countertop.epPanel.costPerM = rateValue("rateEpPanelPerM", rates.countertop.epPanel.costPerM);
-  rates.demolition.floorPerPyeong = rateValue("rateDemolitionFloorPerPyeong", rates.demolition.floorPerPyeong);
-  rates.demolition.decoTilePerPyeong = rateValue("rateDemolitionDecoTilePerPyeong", rates.demolition.decoTilePerPyeong);
-  rates.demolition.furniturePerJa = rateValue("rateDemolitionFurniturePerJa", rates.demolition.furniturePerJa);
-  rates.demolition.bathroomWaterproof = rateValue("rateDemolitionBathroomWaterproof", rates.demolition.bathroomWaterproof);
-  rates.demolition.ceilingPerPyeong = rateValue("rateDemolitionCeilingPerPyeong", rates.demolition.ceilingPerPyeong);
-  rates.demolition.elevatorProtect = rateValue("rateDemolitionElevatorProtect", rates.demolition.elevatorProtect);
-  rates.demolition.elevatorProtectRemoval = rateValue("rateDemolitionElevatorProtectRemoval", rates.demolition.elevatorProtectRemoval);
-  rates.demolition.permit = rateValue("rateDemolitionPermit", rates.demolition.permit);
-  rates.demolition.consent = rateValue("rateDemolitionConsent", rates.demolition.consent);
-  rates.electrical.workerDay = rateValue("rateElectricalWorkerDay", rates.electrical.workerDay);
-  rates.electrical.helperDay = rateValue("rateElectricalHelperDay", rates.electrical.helperDay);
-  rates.electrical.under10YearsDays = rateValue("rateElectricalUnder10Days", rates.electrical.under10YearsDays);
-  rates.electrical.over10YearsDays = rateValue("rateElectricalOver10Days", rates.electrical.over10YearsDays);
-  rates.electrical.wiring = rateValue("rateElectricalWiring", rates.electrical.wiring);
-  rates.electrical.standardSwitch = rateValue("rateElectricalStandardSwitch", rates.electrical.standardSwitch);
-  rates.finish.tileWorkerDay = rateValue("rateTileWorkerDay", rates.finish.tileWorkerDay);
-  rates.finish.tileHelperDay = rateValue("rateTileHelperDay", rates.finish.tileHelperDay);
-  rates.finish.tileGrout = rateValue("rateTileGrout", rates.finish.tileGrout);
-  rates.bathroom.porcelainTileMaterial = rateValue("rateBathroomPorcelainTileMaterial", rates.bathroom.porcelainTileMaterial);
-  rates.bathroom.plumbingRelocation = rateValue("rateBathroomPlumbingRelocation", rates.bathroom.plumbingRelocation);
-  rates.bathroom.fixtureSet = rateValue("rateBathroomFixtureSet", rates.bathroom.fixtureSet);
-  rates.bathroom.fixtureInstall = rateValue("rateBathroomFixtureInstall", rates.bathroom.fixtureInstall);
-  rates.bathroom.smcCeiling = rateValue("rateBathroomSmcCeiling", rates.bathroom.smcCeiling);
-  rates.bathroom.fanNormal = rateValue("rateBathroomFanNormal", rates.bathroom.fanNormal);
-  rates.bathroom.hugentMachine = rateValue("rateBathroomHugentMachine", rates.bathroom.hugentMachine);
-  rates.bathroom.hugentInstallExtra = rateValue("rateBathroomHugentInstallExtra", rates.bathroom.hugentInstallExtra);
-  rates.bathroom.bathtub = rateValue("rateBathroomBathtub", rates.bathroom.bathtub);
-  rates.bathroom.glassBooth = rateValue("rateBathroomGlassBooth", rates.bathroom.glassBooth);
-  rates.bathroom.glassPartition = rateValue("rateBathroomGlassPartition", rates.bathroom.glassPartition);
-  rates.finish.wallpaperWorkerDay = rateValue("rateWallpaperWorkerDay", rates.finish.wallpaperWorkerDay);
-  rates.finishMaterial.wallpaperBesti = rateValue("rateWallpaperBesti", rates.finishMaterial.wallpaperBesti);
-  rates.finishMaterial.wallpaperDiamant = rateValue("rateWallpaperDiamant", rates.finishMaterial.wallpaperDiamant);
-  rates.finishMaterial.wallpaperFortis = rateValue("rateWallpaperFortis", rates.finishMaterial.wallpaperFortis);
-  rates.finishMaterial.wallpaperMaterialPerPyeong = rateValue("rateWallpaperMaterialPerPyeong", rates.finishMaterial.wallpaperMaterialPerPyeong);
-  rates.finish.filmWorkerDay = rateValue("rateFilmWorkerDay", rates.finish.filmWorkerDay);
-  rates.finish.flooringPerPyeong = rateValue("rateFlooringPerPyeong", rates.finish.flooringPerPyeong);
-  flooringSheetGradeOptions.t18.unitPrice = rateValue("rateFlooringSheetT18", flooringSheetGradeOptions.t18.unitPrice);
-  flooringSheetGradeOptions.t20.unitPrice = rateValue("rateFlooringSheetT20", flooringSheetGradeOptions.t20.unitPrice);
-  flooringSheetGradeOptions.t22.unitPrice = rateValue("rateFlooringSheetT22", flooringSheetGradeOptions.t22.unitPrice);
-  flooringSheetGradeOptions.t32.unitPrice = rateValue("rateFlooringSheetT32", flooringSheetGradeOptions.t32.unitPrice);
-  flooringSheetGradeOptions.t45.unitPrice = rateValue("rateFlooringSheetT45", flooringSheetGradeOptions.t45.unitPrice);
-  flooringSheetGradeOptions.t50.unitPrice = rateValue("rateFlooringSheetT50", flooringSheetGradeOptions.t50.unitPrice);
-  flooringWoodGradeOptions.editone.unitPrice = rateValue("rateFlooringPerPyeong", flooringWoodGradeOptions.editone.unitPrice);
-  flooringWoodGradeOptions.standard.unitPrice = rateValue("rateFlooringWoodStandard", flooringWoodGradeOptions.standard.unitPrice);
-  rates.kitchen.sinkBowl = rateValue("rateKitchenSinkBowl", rates.kitchen.sinkBowl);
-  rates.kitchen.faucet = rateValue("rateKitchenFaucet", rates.kitchen.faucet);
-  rates.kitchen.hood = rateValue("rateKitchenHood", rates.kitchen.hood);
-  rates.kitchen.standardInstall = rateValue("rateKitchenStandardInstall", rates.kitchen.standardInstall);
-  PIPE_CLEANING_AMOUNT = rateValue("rateExistingPipeCleaning", PIPE_CLEANING_AMOUNT);
-  rates.finish.silicone = rateValue("rateSilicone", rates.finish.silicone);
-  rates.finish.elasticBase = rateValue("rateElasticBase", rates.finish.elasticBase);
-  rates.finish.elasticExtraRoom = rateValue("rateElasticExtraRoom", rates.finish.elasticExtraRoom);
-  rates.carpentry.workerDay = rateValue("rateCarpentryWorkerDay", rates.carpentry.workerDay);
-  rates.carpentry.machineDay = rateValue("rateCarpentryMachineDay", rates.carpentry.machineDay);
-  rates.carpentry.lifting = rateValue("rateCarpentryLifting", rates.carpentry.lifting);
-  rates.carpentry.subsidiary = rateValue("rateCarpentrySubsidiary", rates.carpentry.subsidiary);
-  rates.carpentry.ceilingFanUnit = rateValue("rateCarpentryCeilingFanUnit", rates.carpentry.ceilingFanUnit);
-  rates.carpentry.drywallSheet = rateValue("rateCarpentryDrywallSheet", rates.carpentry.drywallSheet);
-  rates.carpentry.mdfSheet = rateValue("rateCarpentryMdfSheet", rates.carpentry.mdfSheet);
-  rates.carpentry.plywoodSheet = rateValue("rateCarpentryPlywoodSheet", rates.carpentry.plywoodSheet);
-  rates.carpentry.studBundle = rateValue("rateCarpentryStudBundle", rates.carpentry.studBundle);
+  const context = { rates, flooringSheetGradeOptions, flooringWoodGradeOptions, pipeCleaningAmount: PIPE_CLEANING_AMOUNT };
+  syncEstimateFormRates(el, context);
+  PIPE_CLEANING_AMOUNT = context.pipeCleaningAmount;
 }
 
 
 
 
-function normalizeIntegerInput(input) {
-  if (!integerIds.includes(input.id) || input.value === "") return;
-  const max = input.max === "" ? Infinity : Number(input.max);
-  input.value = String(Math.min(max, Math.max(0, Math.floor(Number(input.value) || 0))));
-}
 
 function readState() {
   updateRatesFromAdmin();
-  const demolitionSection = checkedValue("sectionDemolitionEnabled");
-  const electricalSection = checkedValue("sectionElectricalEnabled");
-  const bathroomSection = checkedValue("sectionBathroomEnabled");
-  const wallpaperSection = checkedValue("sectionWallpaperEnabled");
-  const filmSection = checkedValue("sectionFilmEnabled");
-  const flooringSection = checkedValue("sectionFlooringEnabled");
-  const carpentrySection = checkedValue("sectionCarpentryEnabled");
-  const furnitureSection = checkedValue("sectionFurnitureEnabled");
-  const finishSection = checkedValue("sectionFinishEnabled");
-  const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
-  return {
-    projectName: el.projectName.value || "상담 프로젝트",
-    areaPyeong: numberValue("areaPyeong"),
-    clientName: el.clientName.value || "",
-    clientPhone: el.clientPhone.value || "",
-    status: el.estimateStatus?.value || "견적",
-    targetMargin: (numberValue("targetMargin") || 30) / 100,
-    baseEnabled: furnitureSection && checkedValue("baseEnabled"),
-    lowerCabinetM: numberValue("lowerCabinetM"),
-    upperCabinetM: numberValue("upperCabinetM"),
-    tallCabinetM: numberValue("tallCabinetM"),
-    riceCabinetUnits: numberValue("riceCabinetUnits"),
-    baseEndPanels: numberValue("baseEndPanels"),
-    baseEpDepth: el.baseEpDepth.value,
-    baseCountertopEnabled: checkedValue("baseCountertopEnabled"),
-    baseCountertop: el.baseCountertop?.value || "himacs",
-    baseLightingUnits: integerValue("baseLightingUnits"),
-    baseT3Units: integerValue("baseT3Units"),
-    islandEnabled: furnitureSection && checkedValue("islandEnabled"),
-    islandM: numberValue("islandM"),
-    islandDepthMm: numberValue("islandDepthMm"),
-    islandCountertop: el.islandCountertop.value,
-    islandSideFinish: el.islandSideFinish.value,
-    islandSideFinishCount: Math.min(2, integerValue("islandSideFinishCount")),
-    islandDrawers: integerValue("islandDrawers"),
-    islandRiceCabinetEnabled: checkedValue("islandRiceCabinetEnabled"),
-    islandBachmannOutletEnabled: checkedValue("islandBachmannOutletEnabled"),
-    islandLightingUnits: integerValue("islandLightingUnits"),
-    islandT3Units: integerValue("islandT3Units"),
-    homebarEnabled: furnitureSection && checkedValue("homebarEnabled"),
-    homebarM: numberValue("homebarM"),
-    homebarCountertop: el.homebarCountertop.value,
-    homebarMidway: el.homebarMidway.value,
-    homebarDrawers: integerValue("homebarDrawers"),
-    homebarEndPanels: integerValue("homebarEndPanels"),
-    homebarEpDepth: el.homebarEpDepth.value,
-    homebarLightingUnits: integerValue("homebarLightingUnits"),
-    homebarT3Units: integerValue("homebarT3Units"),
-    shoeEnabled: furnitureSection && checkedValue("shoeEnabled"),
-    shoeM: numberValue("shoeM"),
-    shoeDepth: el.shoeDepth.value,
-    shoeEndPanels: integerValue("shoeEndPanels"),
-    shoeLightingUnits: integerValue("shoeLightingUnits"),
-    shoeT3Units: integerValue("shoeT3Units"),
-    fridgeLaundryEnabled: furnitureSection && checkedValue("fridgeLaundryEnabled"),
-    fridgeLaundryM: numberValue("fridgeLaundryM"),
-    fridgeLaundryDepth: el.fridgeLaundryDepth.value,
-    fridgeLaundryEndPanels: integerValue("fridgeLaundryEndPanels"),
-    fridgeLaundryLightingUnits: integerValue("fridgeLaundryLightingUnits"),
-    fridgeLaundryT3Units: integerValue("fridgeLaundryT3Units"),
-    pantryEnabled: furnitureSection && checkedValue("pantryEnabled"),
-    pantryM: numberValue("pantryM"),
-    pantryDepth: el.pantryDepth.value,
-    pantryEndPanels: integerValue("pantryEndPanels"),
-    pantryDrawerUnits: integerValue("pantryDrawerUnits"),
-    builtInEnabled: furnitureSection && checkedValue("builtInEnabled"),
-    builtInM: numberValue("builtInM"),
-    builtInDepth: el.builtInDepth.value,
-    builtInEndPanels: integerValue("builtInEndPanels"),
-    builtInLightingUnits: integerValue("builtInLightingUnits"),
-    builtInT3Units: integerValue("builtInT3Units"),
-    hangerEnabled: furnitureSection && checkedValue("hangerEnabled"),
-    hangerM: numberValue("hangerM"),
-    hangerDepth: el.hangerDepth.value,
-    hangerLightingUnits: integerValue("hangerLightingUnits"),
-    hangerT3Units: integerValue("hangerT3Units"),
-    demolitionFloorEnabled: demolitionSection && checkedValue("demolitionFloorEnabled"),
-    demolitionFloorMaterial: el.demolitionFloorMaterial.value,
-    demolitionFurnitureEnabled: demolitionSection && checkedValue("demolitionFurnitureEnabled"),
-    demolitionFurnitureM: numberValue("demolitionFurnitureM"),
-    demolitionBathroomEnabled: demolitionSection && checkedValue("demolitionBathroomEnabled"),
-    demolitionBathroomUnits: integerValue("demolitionBathroomUnits"),
-    demolitionCeilingEnabled: demolitionSection && checkedValue("demolitionCeilingEnabled"),
-    demolitionElevatorProtectEnabled: demolitionSection && checkedValue("demolitionElevatorProtectEnabled"),
-    demolitionElevatorProtectRemovalEnabled: demolitionSection && checkedValue("demolitionElevatorProtectRemovalEnabled"),
-    demolitionPermitEnabled: demolitionSection && checkedValue("demolitionPermitEnabled"),
-    demolitionConsentEnabled: demolitionSection && checkedValue("demolitionConsentEnabled"),
-    electricalEnabled: electricalSection && checkedValue("electricalEnabled"),
-    electricalAgeType: el.electricalAgeType.value,
-    standardLightingEnabled: electricalSection && checkedValue("standardLightingEnabled"),
-    standardSwitchEnabled: electricalSection && checkedValue("standardLightingEnabled") && checkedValue("standardSwitchEnabled"),
-    standardDownlightUnits: integerValue("standardDownlightUnits"),
-    standardSquareLightUnits: integerValue("standardSquareLightUnits"),
-    standardCylinderLightUnits: integerValue("standardCylinderLightUnits"),
-    standardT3M: numberValue("standardT3M"),
-    standardBedWallLightEnabled: electricalSection && checkedValue("standardBedWallLightEnabled"),
-    tileEnabled: bathroomSection && checkedValue("tileEnabled"),
-    tileBathroomUnits: integerValue("bathroomUnits"),
-    tileGroutEnabled: bathroomSection && checkedValue("tileGroutEnabled"),
-    bathroomPlumbingRelocationEnabled: bathroomSection && checkedValue("bathroomPlumbingRelocationEnabled"),
-    wallpaperEnabled: wallpaperSection,
-    wallpaperPreset: el.wallpaperPreset.value,
-    wallpaperBaseCoatEnabled: wallpaperSection && checkedValue("wallpaperBaseCoatEnabled"),
-    filmEnabled: filmSection,
-    filmPreset: el.filmPreset.value,
-    flooringEnabled: flooringSection,
-    flooringArea: numberValue("flooringArea"),
-    flooringMaterialType: el.flooringMaterialType?.value || "wood",
-    flooringSheetGrade: el.flooringSheetGrade?.value || "t20",
-    flooringWoodGrade: el.flooringWoodGrade?.value || "editone",
-    bathroomEnabled: bathroomSection,
-    bathroomUnits: integerValue("bathroomUnits"),
-    bathroomFixtureGrade: el.bathroomFixtureGrade?.value || "standard",
-    bathroomFanType: el.bathroomFanType.value,
-    bathroomBathtubUnits: integerValue("bathroomBathtubUnits"),
-    bathroomGlassBoothUnits: integerValue("bathroomGlassBoothUnits"),
-    bathroomGlassPartitionUnits: integerValue("bathroomGlassPartitionUnits"),
-    bathroomMasonryWallUnits: integerValue("bathroomMasonryWallUnits"),
-    kitchenEnabled: furnitureSection && (checkedValue("kitchenEnabled") || kitchenCustomAppliancePrice > 0),
-    kitchenSinkBowlUnits: integerValue("kitchenSinkBowlUnits"),
-    kitchenFaucetUnits: integerValue("kitchenFaucetUnits"),
-    kitchenHoodUnits: integerValue("kitchenHoodUnits"),
-    kitchenCustomAppliancePrice,
-    kitchenStandardInstallEnabled: checkedValue("kitchenStandardInstallEnabled"),
-    doorWindowEnabled: carpentrySection,
-    middleDoorUnits: integerValue("middleDoorUnits"),
-    standardDoorUnits: integerValue("standardDoorUnits"),
-    slidingDoorUnits: integerValue("slidingDoorUnits"),
-    windowNoticeEnabled: carpentrySection && checkedValue("windowNoticeEnabled"),
-    wallpaperMaterialEnabled: wallpaperSection,
-    wallpaperPublicMaterialGrade: el.wallpaperPublicMaterialGrade?.value || "diamant",
-    wallpaperPublicWallLengthM: numberValue("wallpaperPublicWallLengthM"),
-    wallpaperRoomMaterialGrade: el.wallpaperRoomMaterialGrade?.value || "besti",
-    wallpaperRoomWallLengthM: numberValue("wallpaperRoomWallLengthM"),
-    filmMaterialEnabled: filmSection,
-    filmMaterialLengthM: numberValue("filmMaterialLengthM"),
-    generalWasteEnabled: finishSection && checkedValue("generalWasteEnabled"),
-    interiorProtectionEnabled: finishSection && checkedValue("interiorProtectionEnabled"),
-    moveInCleaningEnabled: finishSection && checkedValue("moveInCleaningEnabled"),
-    existingPipeCleaningEnabled: finishSection && checkedValue("existingPipeCleaningEnabled"),
-    siliconeEnabled: finishSection && checkedValue("siliconeEnabled"),
-    elasticEnabled: finishSection && checkedValue("elasticEnabled"),
-    elasticExtraRooms: integerValue("elasticExtraRooms"),
-    carpentryCurtainBoxEnabled: carpentrySection,
-    carpentryCurtainBoxUnits: integerValue("carpentryCurtainBoxUnits"),
-    carpentryCofferType: el.carpentryCofferType.value,
-    carpentryArtwallM: numberValue("carpentryArtwallM"),
-    carpentryPartitionM: numberValue("carpentryPartitionM"),
-    carpentryHiddenDoorUnits: integerValue("carpentryHiddenDoorUnits"),
-    carpentryLineLightM: numberValue("carpentryLineLightM"),
-    carpentryIndirectLightUnits: integerValue("carpentryIndirectLightUnits"),
-    carpentryCeilingFanUnits: integerValue("carpentryCeilingFanUnits"),
-    carpentryDropCeilingUnits: integerValue("carpentryDropCeilingUnits"),
-    carpentryMoldingEnabled: carpentrySection && checkedValue("carpentryMoldingEnabled"),
-    carpentryBaseboardEnabled: carpentrySection && checkedValue("carpentryBaseboardEnabled"),
-    carpentryCeilingHeight: numberValue("carpentryCeilingHeight") || 2400,
-    carpentryTvUnits: integerValue("carpentryTvUnits"),
-    adjustment: numberValue("manualAdjustment"),
-    corrections: {
-      base: correctionValue("baseCorrection"),
-      island: correctionValue("islandCorrection"),
-      homebar: correctionValue("homebarCorrection"),
-      countertop: correctionValue("countertopCorrection"),
-      option: correctionValue("optionCorrection"),
-    },
-  };
+  return buildEstimateState(readEstimateForm(el));
 }
 
 
@@ -3312,12 +3050,7 @@ function formatDateTime(value) {
 }
 
 function collectInputValues() {
-  return Object.fromEntries(Object.entries(el)
-    .filter(([id]) => !isEstimateInputExcluded(id, COST_ITEM_BY_INPUT))
-    .map(([id, input]) => [
-    id,
-    input?.type === "checkbox" ? Boolean(input.checked) : input?.value ?? "",
-  ]));
+  return collectEstimateFormValues(el, COST_ITEM_BY_INPUT);
 }
 
 function restoreInputValues(inputs = {}) {
@@ -4483,38 +4216,12 @@ function costItemFormDefaults(source = {}) {
 }
 
 function effectiveEstimateInputOverrides(state = readState()) {
-  return {
-    demolitionFloorEnabled: state.demolitionFloorEnabled,
-    demolitionFurnitureEnabled: state.demolitionFurnitureEnabled,
-    demolitionBathroomEnabled: state.demolitionBathroomEnabled,
-    demolitionCeilingEnabled: state.demolitionCeilingEnabled,
-    demolitionElevatorProtectEnabled: state.demolitionElevatorProtectEnabled,
-    demolitionElevatorProtectRemovalEnabled: state.demolitionElevatorProtectRemovalEnabled,
-    demolitionPermitEnabled: state.demolitionPermitEnabled,
-    demolitionConsentEnabled: state.demolitionConsentEnabled,
-    electricalEnabled: state.electricalEnabled,
-    standardLightingEnabled: state.standardLightingEnabled,
-    standardSwitchEnabled: state.standardSwitchEnabled,
-    standardBedWallLightEnabled: state.standardBedWallLightEnabled,
-    tileEnabled: state.tileEnabled,
-    tileGroutEnabled: state.tileGroutEnabled,
-    bathroomPlumbingRelocationEnabled: state.bathroomPlumbingRelocationEnabled,
-    wallpaperBaseCoatEnabled: state.wallpaperBaseCoatEnabled,
-    kitchenEnabled: state.kitchenEnabled,
-    generalWasteEnabled: state.generalWasteEnabled,
-    interiorProtectionEnabled: state.interiorProtectionEnabled,
-    moveInCleaningEnabled: state.moveInCleaningEnabled,
-    existingPipeCleaningEnabled: state.existingPipeCleaningEnabled,
-    siliconeEnabled: state.siliconeEnabled,
-    elasticEnabled: state.elasticEnabled,
-  };
+  return projectEffectiveEstimateInputs(state);
 }
 
 function currentEstimateInputValues() {
-  return {
-    ...collectInputValues(),
-    ...effectiveEstimateInputOverrides(),
-  };
+  const formValues = collectInputValues();
+  return composeEstimateInputs(formValues, readState());
 }
 
 function currentInputKey() {
@@ -6706,12 +6413,12 @@ for (const input of Object.values(el)) {
     continue;
   }
   input.addEventListener("input", () => {
-    normalizeIntegerInput(input);
+    normalizeIntegerInput(input, integerIds);
     syncRateDirtyState(input);
     handleEstimateInputChanged();
   });
   input.addEventListener("change", () => {
-    normalizeIntegerInput(input);
+    normalizeIntegerInput(input, integerIds);
     syncRateDirtyState(input);
     handleEstimateInputChanged();
   });

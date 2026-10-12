@@ -1045,3 +1045,130 @@ authoritative 계산·client 내부값 불신·raw REST 차단 정책은 변경�
   readonly DOM raw collector와 순수 입력 변환을 구분하고 price/state side effect는 명시적으로 남긴다.
   canonicalInputValues의 비교용 JSON 문자열을 계산용 typed input 또는 server authorization과 혼동하지 않는다.
   save/load/restore/전체 state/권한/서버 whitelist를 동시에 이동하지 않으며 이번 단계에서는 3B-6을 시작하지 않았다.
+
+## 21. Phase 3C: Estimate Form / State Pipeline
+
+### Before / After 및 책임 경계
+
+기준 commit은 bf22db7이다. 기존 main.readState는 169행으로 rate sync, 전역 DOM 읽기,
+숫자/정수 변환, section gating, 선택값 기본값과 correction 조립을 함께 담당했다.
+호출자는 calculate, renderStandardCheck, effectiveEstimateInputOverrides이며,
+currentEstimateInputValues -> currentInputKey와 buildEstimateSnapshot도 이 경계의 소비자다.
+readState 자체는 currentProfile/loadedEstimateBaseline/cost map을 읽지 않는다.
+저장 원가 선택은 별도 calculateForCurrentEstimate가 관리한다.
+
+| 책임 | 이전 | 이후 |
+| --- | --- | --- |
+| 폼 읽기 | main의 el과 primitive helpers | estimate-form.readEstimateForm(elements), raw values/checked |
+| 숫자/정수/default/section gating | readState 내부 DOM 접근 | estimate-state.buildEstimateState(raw), 순수 변환 |
+| rate 동기화 | updateRatesFromAdmin 94행, 전역 rateValue | 명시적 rate binding + 순수 buildEstimateRateUpdates + form adapter |
+| 저장용 raw 입력 수집 | collectInputValues 8행 | collectEstimateFormValues(elements, excludedInputById) |
+| 유효 checkbox projection | effectiveEstimateInputOverrides 27행 | 순수 state projection, main은 default caller만 유지 |
+| raw + 유효 입력 조립 | currentEstimateInputValues | composeEstimateInputs(formValues, state) |
+| 비교 문자열 | estimate-input.canonicalInputValues | 기존 함수/제외 정책 그대로 재사용 |
+| 정수 input DOM 쓰기 | main.normalizeIntegerInput | form adapter, integerIds 명시적 인자; 이벤트 시점 유지 |
+| 계산/저장/로드/표시 조정 | main controllers + shared core + storage | controller와 persistence/core 변경 없음 |
+
+- main.readState: 169 -> 4행. main.js: 6,755 -> 6,462행(순감소 293행).
+- 기존 함수/primitive 책임 11개를 분해 또는 이동했다. 신규 export는 두 모듈 합계 8개다.
+  main diff는 309행 제거/16행 추가이며, 새 모듈은 193 + 308 = 501행이다.
+  추가 분량에는 명시적 form field 목록과 rate binding 목록이 포함된다. 전체 501행을 기존 코드 이동량으로 계산하지 않는다.
+- normalization/input assembly에서 main 전역 el, rates, flooringSheetGradeOptions,
+  flooringWoodGradeOptions, PIPE_CLEANING_AMOUNT에 대한 직접 의존을 제거했다(5개 context).
+  앱 전체 전역을 삭제한 것은 아니다. DOM adapter와 orchestration은 이 값들을 인자로 받는다.
+- 새 module은 main/storage/API를 import하지 않는다. estimate-state는 import와 browser global 자체가 없다.
+  mutable rate 객체의 identity는 유지하고, update 계획 생성만 순수 함수로 분리했다.
+
+### 실제 데이터 흐름
+
+```mermaid
+flowchart TD
+  DOM[기존 el element map] --> RateRead[rate DOM values]
+  RateRead --> RatePlan[estimate-state: pure rate updates]
+  RatePlan --> RateApply[estimate-form: explicit context mutation]
+  RateApply --> Read[estimate-form: readEstimateForm]
+  Read --> Raw[raw values + checked]
+  Raw --> State[estimate-state: buildEstimateState]
+  DOM --> PersistRaw[collectEstimateFormValues + exclusion policy]
+  PersistRaw --> Compose[composeEstimateInputs]
+  State --> Compose
+  Compose --> Canonical[estimate-input: canonicalInputValues]
+  Canonical --> Compare[기존 loaded snapshot 비교]
+  State --> Core[기존 shared core.calculate typed state]
+  Core --> Snapshot[기존 buildEstimateSnapshot]
+  PersistRaw --> Snapshot
+  State --> Effective[effectiveEstimateInputOverrides]
+  Effective --> Snapshot
+  Snapshot --> Consumers[기존 render / save / load]
+```
+
+canonical JSON은 dirty 비교용 문자열이지 계산 state나 authorization schema가 아니다.
+typed state에는 기존 공정 flag/수량/선택값/adjustment/corrections가 그대로 유지된다.
+raw form은 primitive value/checked를 별도 맵으로 보관하며 숫자를 먼저 강제 변환하지 않는다.
+required select/text 20개가 누락되면 기존 TypeError를 유지하고, optional 수량/선택값은 기존 fallback을 유지한다.
+저장용 수집은 기존 el 전체(분리되어 DOM에서 제거된 내부 control reference 포함)를 읽는다.
+새 UI/state schema나 앱 store를 만들지 않았다.
+
+### Rate 순서 / 기존 의미 유지
+
+1. readState 호출 시 원가를 먼저 동기화하고, 이후 폼 값을 읽고 정규화한다.
+2. 기존 rate assignment 목록과 순서를 그대로 명시적 binding으로 옮겼다.
+   `Number(value) || previous`를 유지한다. 0/빈 값/null/undefined/NaN은 이전 설정값을 유지하고,
+   유효한 소수값은 정수화/천 원 절사 없이 유지한다.
+3. rate sync는 input DOM을 쓰지 않는다. rates/장판·마루 설정의 기존 객체 identity를 유지한다.
+   integer input 정규화만 기존 input/change 이벤트에서 DOM을 쓰며 읽기 pipeline에는 넣지 않았다.
+4. 기존 calculate 표현식의 factory-before-readState 평가 순서도 유지한다.
+   rates/grade 객체 reference와 pipe amount scalar의 전달 시점 차이를 별도 OLD/NEW 테스트로 고정했다.
+   이 단계에서 그 기존 동작을 새 정책으로 교정하지 않는다.
+5. 저장 원가 계산은 기존 controller에서 saved costPrice를 임시 DOM에 적용 -> sync -> calculate,
+   finally에서 원래 DOM값 복원 -> sync 순서 그대로다. 성공/throw 모두 복원 검증을 통과했다.
+   DOM의 값이 유효하면 이번 값이 적용되고, falsey 값이면 이전 context 값이 유지된다.
+   estimate-specific 값은 해당 임시 적용 구간에서만 우선하며 draft/default 원가 우선순위는 변경하지 않았다.
+
+### Characterization / Save / Staff 검증
+
+- 원본 제거 전 readState와 직접 dependency 원문을 캡처했다.
+  tests/os/fixtures/estimate-state-characterization.json은 기준 commit/source SHA-256,
+  테스트 전용 frozen original source와 24개 합성 fixture의 전체 기대값을 보관한다.
+  production runtime에 old implementation을 추가한 것이 아니다.
+- 총 28회 읽기: full state/rate context/persisted inputs/canonical 문자열을 원본과 deepEqual.
+  missing required select의 TypeError도 별도 동등성으로 유지한다.
+  정상/0/false/empty/null/undefined/partial/default·override·missing rate/legacy restore/
+  pipe on-off/excluded/반복 읽기/로드 context 유무/section gating/소수값을 포함한다.
+- OLD/NEW typed state를 기존 shared core.calculate에 전달하여 전체 결과를 비교했다.
+  순서 민감 fixture는 rate sync를 form read 뒤로 옮기거나 factory 순서를 바꾸면 실패한다.
+- 실제 main.calculateForCurrentEstimate/buildEstimateSnapshot/handleSaveEstimate/storage.getEstimate
+  흐름을 mock DB와 실제 HTML로 실행하여 payload shape, raw/effective inputs, 저장 원가,
+  주소, 고객 상세, 내부 상세/summary, totals와 reload typed state가 동일함을 확인했다.
+  기존 storage가 추가하는 id/clientPhone alias와 detached control 참조도 그대로 검증한다.
+- 기존 pipe 전용 이벤트/후처리 변경 없음. cost/customer +300,000원, profit 불변,
+  반복 toggle/save/reload regression 유지.
+- client 정규화와 server authorization은 여전히 독립이다. server allowedInputs/whitelist,
+  trusted calculation, staff projection, storage.staffEstimateInputs는 수정하지 않았다.
+  새 client state가 staff 입력 권한을 부여하지 않으며 주입 시도는 inputs-only 저장에서도 배제된다.
+- 기존 estimate-input AST 테스트의 'main에 collector 존재' 위치 단정만 새 form adapter 경계로 갱신했다.
+  제외 정책 reuse와 명시적 인자/서버 whitelist 독립성 검증은 유지 및 강화했다.
+- 신규 state unit 32개 + 실제 workflow integration 2개, 총 34개 추가.
+  최종 regression 523/523 PASS, Known Failure / Unexpected Fail / Skip / Unhandled Errors 0.
+- Staff Boundary는 격리 candidate Test DB에서 23/23 PASS x2. 운영 DB/실제 고객 데이터 사용 없음.
+  기존 helper probe의 ACCOUNT-STATE GAP OBSERVED는 이미 기록된 원본 정의 probe이며,
+  candidate의 비활성/비밀번호변경 fail-closed 테스트는 이번에도 PASS다.
+- DB Security/Integrity 별도 실행 없음: server/shared core/storage/SQL/API 변경 없음.
+- lint/build/syntax/diff PASS. 기존 lint warning 5개, 신규 warning 0.
+  node standalone capture/import에서 기존 MODULE_TYPELESS_PACKAGE_JSON 안내가 나올 수 있으나,
+  package type 변경은 이 단계 범위가 아니므로 추가하지 않았다.
+
+### 남은 UI 결합 / Phase 3D
+
+main에는 el/ids와 event wiring, restoreInputValues의 legacy DOM 반영,
+section/block locks, loaded baseline와 active quote 선택, saved cost DOM swap,
+render/save/계약 연계 및 staff async preview controller가 남아 있다.
+새 reader의 명시적 field 목록은 폼/typed state 추가 시 함께 점검해야 한다.
+server core의 schema 기반 readState는 서버 입력·기본값 경계이므로 client DOM reader와 합치지 않았다.
+
+Phase 3C verdict: PASS. Phase 3D 진행 준비 완료, 별도 승인 필요.
+권장 다음 범위는 estimate form restore 및 section/block lock DOM adapter의 명시적 element/config 경계다.
+legacy restore/default/체크 해제/DOM side effect 순서를 먼저 characterization하고,
+baseline/active quote의 persistence controller, staff HTTP whitelist와 계약 확정은 이동하지 않는다.
+작은 표시 helper만 추가 추출하거나 새 전역 store/저장 schema 개편으로 확대하지 않는다.
+제외 SQL 두 파일은 미접촉/unstaged이며, 이번 단계는 로컬 commit만 수행하고 push/deploy하지 않는다.
