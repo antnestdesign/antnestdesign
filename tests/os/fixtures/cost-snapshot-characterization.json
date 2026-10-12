@@ -1,0 +1,369 @@
+{
+  "capturedFrom": "73be975",
+  "sourceHash": "e9d8e46b7e66ac6988799d4e501237a31048a71803474215f1221595481e95d3",
+  "cases": [
+    {
+      "name": "normal snapshot",
+      "entries": [
+        [
+          "A",
+          {
+            "itemCode": "A",
+            "costPrice": 100,
+            "defaultMarginRate": 30,
+            "meta": {
+              "unit": "개",
+              "tags": [
+                "synthetic"
+              ]
+            }
+          }
+        ],
+        [
+          "B",
+          {
+            "itemCode": "B",
+            "costPrice": "200.5",
+            "extra": false
+          }
+        ],
+        [
+          "C",
+          {
+            "itemCode": "C",
+            "costPrice": null
+          }
+        ]
+      ],
+      "valueIndices": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "name": "single item",
+      "entries": [
+        [
+          "A",
+          {
+            "itemCode": "A",
+            "costPrice": 0
+          }
+        ]
+      ],
+      "valueIndices": [
+        0
+      ]
+    },
+    {
+      "name": "empty snapshot",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "null snapshot",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "undefined snapshot",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "empty items",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "falsey items null",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "falsey items false",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "falsey items empty string",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "falsey items zero",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "duplicate last wins first insertion order",
+      "entries": [
+        [
+          "A",
+          {
+            "itemCode": "A",
+            "costPrice": 300
+          }
+        ],
+        [
+          "B",
+          {
+            "itemCode": "B",
+            "costPrice": 200
+          }
+        ],
+        [
+          "C",
+          {
+            "itemCode": "C",
+            "costPrice": 400
+          }
+        ]
+      ],
+      "valueIndices": [
+        2,
+        1,
+        3
+      ]
+    },
+    {
+      "name": "missing code and legacy names",
+      "entries": [
+        [
+          {
+            "$snapshotType": "undefined"
+          },
+          {
+            "itemCode": {
+              "$snapshotType": "undefined"
+            },
+            "costPrice": 3
+          }
+        ]
+      ],
+      "valueIndices": [
+        2
+      ]
+    },
+    {
+      "name": "key types are not normalized",
+      "entries": [
+        [
+          1,
+          {
+            "itemCode": 1,
+            "costPrice": 1
+          }
+        ],
+        [
+          "1",
+          {
+            "itemCode": "1",
+            "costPrice": 2
+          }
+        ],
+        [
+          null,
+          {
+            "itemCode": null,
+            "costPrice": 3
+          }
+        ],
+        [
+          "",
+          {
+            "itemCode": "",
+            "costPrice": 4
+          }
+        ],
+        [
+          " A ",
+          {
+            "itemCode": " A ",
+            "costPrice": 5
+          }
+        ],
+        [
+          "A",
+          {
+            "itemCode": "A",
+            "costPrice": 6
+          }
+        ]
+      ],
+      "valueIndices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "name": "same value zero keys",
+      "entries": [
+        [
+          {
+            "$snapshotType": "number",
+            "value": "NaN"
+          },
+          {
+            "itemCode": {
+              "$snapshotType": "number",
+              "value": "NaN"
+            },
+            "costPrice": 2
+          }
+        ],
+        [
+          0,
+          {
+            "itemCode": 0,
+            "costPrice": {
+              "$snapshotType": "number",
+              "value": "Infinity"
+            }
+          }
+        ]
+      ],
+      "valueIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "name": "object key identity",
+      "entries": [
+        [
+          {
+            "marker": "same shape"
+          },
+          {
+            "itemCode": {
+              "marker": "same shape"
+            },
+            "costPrice": 3
+          }
+        ],
+        [
+          {
+            "marker": "same shape"
+          },
+          {
+            "itemCode": {
+              "marker": "same shape"
+            },
+            "costPrice": 2
+          }
+        ]
+      ],
+      "valueIndices": [
+        2,
+        1
+      ]
+    },
+    {
+      "name": "same item reference repeated",
+      "entries": [
+        [
+          "A",
+          {
+            "itemCode": "A",
+            "nested": {
+              "keep": true
+            }
+          }
+        ]
+      ],
+      "valueIndices": [
+        0
+      ]
+    },
+    {
+      "name": "primitive detail values",
+      "entries": [
+        [
+          {
+            "$snapshotType": "undefined"
+          },
+          1
+        ]
+      ],
+      "valueIndices": [
+        3
+      ]
+    },
+    {
+      "name": "legacy raw array",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "wrong wrapper",
+      "entries": [],
+      "valueIndices": []
+    },
+    {
+      "name": "truthy non-array items",
+      "error": "TypeError"
+    },
+    {
+      "name": "truthy string items",
+      "error": "TypeError"
+    },
+    {
+      "name": "null item error",
+      "error": "TypeError"
+    },
+    {
+      "name": "undefined item error",
+      "error": "TypeError"
+    },
+    {
+      "name": "sparse array error",
+      "error": "TypeError"
+    }
+  ],
+  "consumers": [
+    {
+      "name": "same prices",
+      "changed": false,
+      "missing": [],
+      "html": "\n    <table>\n      <thead>\n        <tr>\n          <th>항목명</th>\n          <th>저장 당시 단가</th>\n          <th>현재 단가</th>\n          <th>증감액</th>\n          <th>증감률</th>\n        </tr>\n      </thead>\n      <tbody>\n        <tr><td colspan=\"5\">현재 원가와 저장 당시 원가가 동일합니다.</td></tr>\n      </tbody>\n    </table>\n    <div class=\"quote-total-list\">\n      <div><span>저장 당시 직접원가</span><strong>1,000원</strong></div>\n      <div><span>현재 원가 적용 예상 직접원가</span><strong>1,000원</strong></div>\n      <div><span>예상 증감액</span><strong>0원</strong></div>\n    </div>\n  ",
+      "hidden": false,
+      "status": "비교 완료"
+    },
+    {
+      "name": "duplicate and price difference",
+      "changed": true,
+      "missing": [
+        "도배 자재비"
+      ],
+      "html": "\n    <table>\n      <thead>\n        <tr>\n          <th>항목명</th>\n          <th>저장 당시 단가</th>\n          <th>현재 단가</th>\n          <th>증감액</th>\n          <th>증감률</th>\n        </tr>\n      </thead>\n      <tbody>\n        \n          <tr>\n            <td>합성 A</td>\n            <td>100원</td>\n            <td>150원</td>\n            <td>50원</td>\n            <td>50.0%</td>\n          </tr>\n        \n      </tbody>\n    </table>\n    <div class=\"quote-total-list\">\n      <div><span>저장 당시 직접원가</span><strong>1,000원</strong></div>\n      <div><span>현재 원가 적용 예상 직접원가</span><strong>1,500원</strong></div>\n      <div><span>예상 증감액</span><strong>500원</strong></div>\n    </div>\n  ",
+      "hidden": false,
+      "status": "비교 완료"
+    },
+    {
+      "name": "missing stored item",
+      "changed": true,
+      "missing": [
+        "도배 자재비"
+      ],
+      "html": "\n    <table>\n      <thead>\n        <tr>\n          <th>항목명</th>\n          <th>저장 당시 단가</th>\n          <th>현재 단가</th>\n          <th>증감액</th>\n          <th>증감률</th>\n        </tr>\n      </thead>\n      <tbody>\n        <tr><td colspan=\"5\">현재 원가와 저장 당시 원가가 동일합니다.</td></tr>\n      </tbody>\n    </table>\n    <div class=\"quote-total-list\">\n      <div><span>저장 당시 직접원가</span><strong>1,000원</strong></div>\n      <div><span>현재 원가 적용 예상 직접원가</span><strong>1,000원</strong></div>\n      <div><span>예상 증감액</span><strong>0원</strong></div>\n    </div>\n  ",
+      "hidden": false,
+      "status": "비교 완료"
+    },
+    {
+      "name": "missing snapshot",
+      "changed": false,
+      "missing": [
+        "도배 자재비"
+      ],
+      "html": "",
+      "hidden": true,
+      "status": "원가 스냅샷이 없어 비교할 수 없습니다."
+    }
+  ]
+}

@@ -969,3 +969,79 @@ git status/diff stat/diff check로 분석 문서만 신규인지 확인한다. c
   다음 가장 작은 대상은 costSnapshotMap의 snapshot -> Map 순수 조회 변환이다.
   원가 비교/UI/state/save 전체를 같은 단계에 이동하지 않는다.
 - 제외 SQL 두 파일 미접촉. 관련 파일만 별도 로컬 commit하며 push/deploy/Production 접근 없음.
+
+## 20. Phase 3B-5 Cost Snapshot Lookup
+
+2026-10-12, 추출 전 기준 `73be975`. 이전 분석 및 추출 기록은 유지한다.
+
+### 실제 dependency와 보안 분류
+
+- 기존 main 2074-2076행, 본문 3행. `costSnapshotMap` 하나만 이동했다.
+- 입력은 snapshot의 items 배열, 출력은 새 Map. 외부 상수/mutable global/DOM/network/storage 의존 없음.
+- callee는 native Map 및 items.map뿐이다. 신규 module import 0개, application state 참조 0개.
+- estimate-summary/core/server/staff whitelist가 이 helper를 import하거나 호출하지 않는다.
+
+| 직접 caller | A: privileged browser | B: staff response | C: authoritative server | D: 과거 snapshot | E: 계약/발주/진단 |
+|---|---|---|---|---|---|
+| costSnapshotChanged | 원가 상태 표시용 boolean | 없음 | 없음 | 저장/현재 단가·마진 비교 | 계약/발주 직접 연결 없음 |
+| renderCostSnapshotComparison | 기존 내부 비교 UI | 없음 | 없음 | 저장 단가와 현재 단가 비교 | 비교 UI 내 예상 직접원가 표시, UI/계산은 이동하지 않음 |
+| requiredMissingSnapshotItems | 내부 missing-cost 진단 | 없음 | 없음 | 저장 snapshot에 도배 자재 코드가 있는지 확인 | 로드 원가 기준의 누락 진단만 연결 |
+| calculateForCurrentEstimate | 기존 비-staff browser 계산 어댑터 | staff render/save는 별도 안전 경로 | 서버와 별개 | saved costPrice를 일시 DOM에 적용 후 finally 복원 | 계산 결과의 downstream 표시/저장에 간접 연결 |
+
+기존 render는 staff일 때 renderStaffEstimate로 먼저 반환한다. renderCostSnapshotInfo는 isAdmin 검사로 제한되며
+기타 caller 접근은 기존 UI/access control 그대로다. lookup helper 자체를 새 권한 검사나 HTTP endpoint로 만들지 않았다.
+staff가 static module을 import할 수 있다는 사실과 실제 internal snapshot 데이터 접근은 별개다.
+server projectStaffEstimate의 whitelist response에는 costSnapshot/internalDetails/costTotal 등이 없고,
+authoritative 계산·client 내부값 불신·raw REST 차단 정책은 변경하지 않았다.
+
+### Key / Value / Reference 계약
+
+- key는 item.itemCode 그대로다. inputId/id/item_code/category/composite key fallback, trim/string 변환 없음.
+- 값은 item 전체의 원본 reference. shallow/deep clone 및 costPrice 정규화 없음. nested reference도 유지한다.
+- 같은 key는 last value wins, Map iteration 위치는 첫 삽입 위치 유지.
+- missing itemCode는 undefined key. 여러 missing-code item은 동일 키로 합쳐진다.
+- native Map의 SameValueZero 유지: 숫자 1과 문자열 1은 별도, NaN끼리 및 -0/+0끼리는 동일 키.
+  object/Symbol key는 identity 기준이다. JSON 가능한 업무 코드만 가정해 새 validation을 넣지 않았다.
+- null/undefined/missing/falsey items는 빈 Map. legacy raw array/wrong wrapper는 별도 items가 없어 빈 Map.
+  truthy 비배열/null·undefined item/sparse hole의 기존 TypeError도 유지한다.
+- 매 호출 새 Map이며 input array/object/nested object를 변경하지 않는다.
+  Map 구조의 set/delete는 snapshot 배열과 독립이지만 value reference를 외부에서 수정하면 원본과 공유된다는 기존 alias 의미는 유지한다.
+- 현재 네 caller는 get/has와 필드 읽기만 사용한다. map value를 변경하는 caller는 없다.
+
+### 구현 및 검증
+
+- 신규 `public/os-app/src/cost-snapshot.js`: 3행. 이동 함수 1개, 추가 helper/constant 0개.
+- main.js 6,758 -> 6,755행. import 선언 1개 추가, 정의 제거 외 caller/계산/저장/role/UI 변경 없음.
+- 제거 전 실제 main 함수에서 합성 snapshot 24개와 기존 consumer 4개를 캡처했다.
+  `tests/os/fixtures/cost-snapshot-characterization.json`에 기준 commit/source hash, Map entries, input value index와 비교 HTML을 보존.
+  업무 데이터/credential을 사용하지 않았고 old runtime 구현 복사본도 남기지 않았다.
+- 신규 `tests/os/unit/cost-snapshot.test.js`: 37/37 PASS.
+  전체 entries exact comparison + original reference identity + duplicate/order/type/missing/legacy/error semantics 검증.
+- frozen 입력/deep compare 및 반복 호출 PASS. Map은 매번 새 객체지만 lookup value identity는 원래 item과 동일하다.
+- 실제 costSnapshotChanged/requiredMissingSnapshotItems/renderCostSnapshotComparison 함수 원문을 격리 consumer로 실행해
+  changed flag, missing 진단, 비교 HTML/상태를 4개 old golden과 exact 비교했다.
+  UI가 요청하는 현재 계산값은 합성 stub으로 고정했으며 계산식을 수정하거나 전체 UI E2E로 확대하지 않았다.
+- 기존 storedEstimateSummary/buildEstimateDiagnostics 모델도 lookup 전후 exact 유지 확인.
+- fresh Node import/실행 PASS. static external global은 Map만 존재, canonical 정의 1개, wrapper 없음.
+- 기존 452개 포함 regression 489/489 PASS, Known Failure / Unexpected Fail / Skip / Failed Files / Unhandled Errors 모두 0.
+- 필수 `npm run test:staff-boundary` 실행: 격리 candidate Test DB 23/23 PASS x2.
+  safe HTTP response/authoritative create-update/protected injection/raw REST 차단/권한 회귀 유지.
+- DB Security/Integrity 별도 suite 미실행: API/RLS/SQL/storage/server/shared core 수정 없음.
+- lint/build/syntax/diff PASS. 기존 lint warning 5개, 신규 0.
+- Verdict: PASS. 제외 SQL 두 파일 미접촉. 별도 로컬 commit만 수행하며 push/deploy/Production 접근 없음.
+
+### Phase 3B-6 전환 판단
+
+- 기존 Phase 3A 정적 pure named 후보 중 main에 남은 함수는 43개다. 이것을 모두 LOW라고 해석하지 않는다.
+- 명시적으로 검토한 표시/날짜/분류 전용 LOW shortlist는 11개:
+  areaM2Text, contractDocumentLabel, projectContractStatusLabel, latestDate, formatDateTime, percentText,
+  systemCategoryLabel, systemTradeOrderIndex, roleLabel, passwordStatusLabel, auditActionLabel.
+  기존 inventory의 이름을 현재 AST 정의와 대조했으며, 모두 state write/DOM/network 의존이 없는 표시 helper다.
+  전체 잔여 후보의 위험도를 다시 채점했다는 의미는 아니다. 계약 template/검증/보안/aggregate/helper는 별도 위험 검토 대상으로 남는다.
+- 위 11개는 추출 가능한 작은 표시 책임이지만, state/DOM/global price 결합을 줄이는 가치가 크지 않다.
+  pure helper 추가 추출을 다음 기본 방향으로 삼지 않는다.
+- Phase 3B-6 진입 준비: YES, 별도 승인 필요. 권장 경계는 DOM -> raw form state -> 명시적 견적 입력이다.
+  readState가 updateRatesFromAdmin부터 호출하므로 DOM 수집과 rate 동기화/section gating/기본값/숫자 변환의 현재 순서를 먼저 characterization한다.
+  readonly DOM raw collector와 순수 입력 변환을 구분하고 price/state side effect는 명시적으로 남긴다.
+  canonicalInputValues의 비교용 JSON 문자열을 계산용 typed input 또는 server authorization과 혼동하지 않는다.
+  save/load/restore/전체 state/권한/서버 whitelist를 동시에 이동하지 않으며 이번 단계에서는 3B-6을 시작하지 않았다.

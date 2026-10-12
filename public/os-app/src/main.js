@@ -3,6 +3,7 @@ import { won, moneyAmount, rateNumber, escapeHtml } from "./utils.js";
 import { buildAdminMarginGroups, internalDetailCustomerAmount, storedEstimateSummary, buildEstimateDiagnostics } from "./estimate-summary.js";
 import { isEstimateInputExcluded, canonicalInputValues } from "./estimate-input.js";
 import { purchaseOrderItems } from "./purchase-order.js";
+import { costSnapshotMap } from "./cost-snapshot.js";
 import { bathroomRates } from "./rates/bathroom.js";
 import { kitchenRates } from "./rates/kitchen.js";
 import { doorRates } from "./rates/door.js";
@@ -2069,10 +2070,6 @@ function buildCostSnapshot() {
     source: "supabase_cost_items",
     items,
   };
-}
-
-function costSnapshotMap(snapshot) {
-  return new Map((snapshot?.items || []).map((item) => [item.itemCode, item]));
 }
 
 function costSnapshotChanged(snapshot) {
