@@ -1,4 +1,5 @@
 import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "./calculator/estimate-core.js";
+import { won, moneyAmount, rateNumber, escapeHtml } from "./utils.js";
 import { bathroomRates } from "./rates/bathroom.js";
 import { kitchenRates } from "./rates/kitchen.js";
 import { doorRates } from "./rates/door.js";
@@ -491,12 +492,10 @@ let costItemFilters = {
   sort: "sort",
 };
 
-const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
 const floorThousand = (...args) => currentCalculationCore().floorThousand(...args);
 
 const customerWon = (...args) => currentCalculationCore().customerWon(...args);
 
-const moneyAmount = (value) => Math.round(Number(value) || 0);
 const numberValue = (id) => Number(el[id]?.value) || 0;
 const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
 const checkedValue = (id) => Boolean(el[id]?.checked);
@@ -2029,10 +2028,6 @@ function setRateDbInputsDisabled(disabled) {
   });
   const saveButton = document.getElementById("saveRateDbButton");
   if (saveButton) saveButton.disabled = disabled || !canEditCost();
-}
-
-function rateNumber(value) {
-  return Number(value) || 0;
 }
 
 function costItemFromRow(definition, row) {
@@ -4496,15 +4491,6 @@ function renderStaffAdminShell() {
     </section>
   `;
   staffAdminShellApplied = true;
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
 
 function percentText(value) {

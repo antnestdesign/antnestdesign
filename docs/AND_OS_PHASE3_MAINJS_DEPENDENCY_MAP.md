@@ -735,3 +735,29 @@ main.js 원문 SHA-256: `08c255207902977899a9c66a7985231c6be6d6ba0861e0e01c44d7d
 
 runtime 변경 0이므로 full test/lint/build는 재실행하지 않는다. Phase 2의 PASS를 이번에 다시 실행한 결과로 기록하지 않는다.
 git status/diff stat/diff check로 분석 문서만 신규인지 확인한다. commit/push/deploy/Production 접근 없음.
+
+## 16. Phase 3B-1 Extraction Result
+
+2026-10-12, Phase 3A 문서 checkpoint: `846b2e6`.
+위 분석과 수치는 원래 `352ab18` 기준을 유지하며, 다음은 별도 승인된 추출 결과다.
+
+- 추출 함수: `won`, `moneyAmount`, `rateNumber`, `escapeHtml` 4개만 기존 `utils.js`로 이동.
+- 본문, 이름, 인자, 반환값, 호출부 의미는 유지. main에 import 선언 1개 추가.
+- main.js: 6,947 -> 6,933행. utils.js: 1 -> 17행. 기존 `identity` 유지.
+- 저장소 전체 정의 검색: 각 함수는 utils.js에 canonical 정의 1개만 존재.
+- 신규 테스트: `tests/os/unit/formatting-utilities.test.js`, 65개.
+  won 15 / moneyAmount 15 / rateNumber 15 / escapeHtml 14 / frozen input 4 / standalone import 1 / AST import-export 연결 1.
+- 새 Node 프로세스에서 window/document/localStorage/sessionStorage 없이 import 및 실행 PASS.
+  utils.js의 외부 import 없음과 main의 네 함수 import 연결을 AST로 검사.
+- 기존 애매한 동작도 고정: won(undefined/NaN)은 NaN원, won(-0.5)은 -0원,
+  moneyAmount(-0.5)는 음의 0, Infinity는 유지, 이미 escape된 문자열은 다시 escape.
+- 신규 utility 65/65 PASS, 기존 regression 57개 포함 전체 122/122 PASS.
+  Known Failure / Unexpected Fail / Skip / Failed Files / Unhandled Errors 모두 0.
+- node syntax(main/utils/test), lint, build, git diff --check PASS.
+  lint는 기존 unused 경고 5개만 유지, 신규 경고 0.
+- 첫 Vitest 실행은 sandbox 임시 캐시 rename EPERM, 첫 build는 sandbox CSS worker 연결 오류로 중단.
+  소스 수정 없이 동일 명령을 일반 권한으로 재실행하여 통과했다.
+- DB Security / Integrity / Staff Boundary DB suite는 이번 순수 utility 추출에서 재실행하지 않았다.
+- 기존 제외 SQL 두 파일은 미접촉. API/DB/SQL/계산식/권한/계약/캐시 키 변경 없음.
+- Extraction verdict: PASS. Phase 3B-2는 별도 승인 후 진행 가능.
+  이번 단계의 두 로컬 커밋 외 push/deploy/Production 접근은 없음.
