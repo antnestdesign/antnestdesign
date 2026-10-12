@@ -1,0 +1,342 @@
+{
+  "capturedFrom": "a056a2c",
+  "sourceHash": "fbeaf8a1a50045845adcdefa4a6c6b880a12f3ce74dc07d5f575f910a6063901",
+  "excludedKeys": [
+    "rateLowerPerJa",
+    "rateUpperPerJa",
+    "rateIslandPerJa",
+    "rateHomebarBuildPerJa",
+    "rateTallPerJa",
+    "rateFridgeLaundryPerJa",
+    "rateShoePerJa",
+    "ratePantryPerJa",
+    "ratePantryDrawer",
+    "rateBuiltInPerJa",
+    "rateHangerPerJa",
+    "rateRiceCabinetPerUnit",
+    "rateEndPanelShallow",
+    "rateEndPanelDeep",
+    "rateDrawer",
+    "rateBachmannOutlet",
+    "rateLightingPerCabinetUnit",
+    "rateT3LightingUnit",
+    "rateStandardDownlight",
+    "rateStandardSquareLight",
+    "rateStandardCylinderLight",
+    "rateStandardT3PerM",
+    "rateStandardBedWallLight",
+    "rateHimacsPerM",
+    "rateKhanstoneSlab",
+    "rateKhanstoneFactory",
+    "rateKhanstoneInstall",
+    "rateCeramicSlab",
+    "rateCeramicFactory",
+    "rateCeramicInstall",
+    "rateEpPanelPerM",
+    "rateDemolitionFloorPerPyeong",
+    "rateDemolitionDecoTilePerPyeong",
+    "rateDemolitionFurniturePerJa",
+    "rateDemolitionBathroomWaterproof",
+    "rateDemolitionCeilingPerPyeong",
+    "rateDemolitionElevatorProtect",
+    "rateDemolitionElevatorProtectRemoval",
+    "rateDemolitionPermit",
+    "rateDemolitionConsent",
+    "rateElectricalWorkerDay",
+    "rateElectricalHelperDay",
+    "rateElectricalUnder10Days",
+    "rateElectricalOver10Days",
+    "rateElectricalWiring",
+    "rateElectricalStandardSwitch",
+    "rateTileWorkerDay",
+    "rateTileHelperDay",
+    "rateTileGrout",
+    "rateBathroomPorcelainTileMaterial",
+    "rateBathroomPlumbingRelocation",
+    "rateBathroomFixtureSet",
+    "rateBathroomFixtureInstall",
+    "rateBathroomSmcCeiling",
+    "rateBathroomFanNormal",
+    "rateBathroomHugentMachine",
+    "rateBathroomHugentInstallExtra",
+    "rateBathroomBathtub",
+    "rateBathroomGlassBooth",
+    "rateBathroomGlassPartition",
+    "rateWallpaperWorkerDay",
+    "rateWallpaperBesti",
+    "rateWallpaperDiamant",
+    "rateWallpaperFortis",
+    "rateWallpaperMaterialPerPyeong",
+    "rateFilmWorkerDay",
+    "rateFlooringPerPyeong",
+    "rateFlooringSheetT18",
+    "rateFlooringSheetT20",
+    "rateFlooringSheetT22",
+    "rateFlooringSheetT32",
+    "rateFlooringSheetT45",
+    "rateFlooringSheetT50",
+    "rateFlooringWoodStandard",
+    "rateKitchenSinkBowl",
+    "rateKitchenFaucet",
+    "rateKitchenHood",
+    "rateKitchenStandardInstall",
+    "rateExistingPipeCleaning",
+    "rateSilicone",
+    "rateElasticBase",
+    "rateElasticExtraRoom",
+    "rateCarpentryWorkerDay",
+    "rateCarpentryMachineDay",
+    "rateCarpentryLifting",
+    "rateCarpentrySubsidiary",
+    "rateCarpentryCeilingFanUnit",
+    "rateCarpentryDrywallSheet",
+    "rateCarpentryMdfSheet",
+    "rateCarpentryPlywoodSheet",
+    "rateCarpentryStudBundle"
+  ],
+  "exclusion": [
+    {
+      "index": 0,
+      "idLabel": "clientName",
+      "excluded": false
+    },
+    {
+      "index": 1,
+      "idLabel": "areaPyeong",
+      "excluded": false
+    },
+    {
+      "index": 2,
+      "idLabel": "existingPipeCleaningEnabled",
+      "excluded": false
+    },
+    {
+      "index": 3,
+      "idLabel": "demolitionConsentEnabled",
+      "excluded": false
+    },
+    {
+      "index": 4,
+      "idLabel": "targetMargin",
+      "excluded": false
+    },
+    {
+      "index": 5,
+      "idLabel": "manualAdjustment",
+      "excluded": false
+    },
+    {
+      "index": 6,
+      "idLabel": "baseCorrection",
+      "excluded": false
+    },
+    {
+      "index": 7,
+      "idLabel": "internalMemo",
+      "excluded": false
+    },
+    {
+      "index": 8,
+      "idLabel": "unknownKey",
+      "excluded": false
+    },
+    {
+      "index": 9,
+      "idLabel": "",
+      "excluded": false
+    },
+    {
+      "index": 10,
+      "idLabel": "rateLowerPerJa",
+      "excluded": true
+    },
+    {
+      "index": 11,
+      "idLabel": "RateLowerPerJa",
+      "excluded": false
+    },
+    {
+      "index": 12,
+      "idLabel": "rateLowerPerJaExtra",
+      "excluded": false
+    },
+    {
+      "index": 13,
+      "idLabel": "prefixrateLowerPerJa",
+      "excluded": false
+    },
+    {
+      "index": 14,
+      "idLabel": "rateUnknown",
+      "excluded": false
+    },
+    {
+      "index": 15,
+      "idLabel": "__proto__",
+      "excluded": true
+    },
+    {
+      "index": 16,
+      "idLabel": "constructor",
+      "excluded": true
+    },
+    {
+      "index": 17,
+      "idLabel": "toString",
+      "excluded": true
+    },
+    {
+      "index": 18,
+      "idLabel": "valueOf",
+      "excluded": true
+    },
+    {
+      "index": 19,
+      "idLabel": "hasOwnProperty",
+      "excluded": true
+    },
+    {
+      "index": 20,
+      "idLabel": "toJSON",
+      "excluded": false
+    },
+    {
+      "index": 21,
+      "idLabel": "null",
+      "excluded": false
+    },
+    {
+      "index": 22,
+      "idLabel": "undefined",
+      "excluded": false
+    },
+    {
+      "index": 23,
+      "idLabel": "0",
+      "excluded": false
+    },
+    {
+      "index": 24,
+      "idLabel": "false",
+      "excluded": false
+    }
+  ],
+  "cases": [
+    {
+      "name": "mixed ordinary values",
+      "output": "{\"areaPyeong\":33,\"clientName\":\"  시험 고객  \",\"demolitionConsentEnabled\":true,\"empty\":\"\",\"existingPipeCleaningEnabled\":false,\"internalMemo\":\"synthetic only\",\"manualAdjustment\":-1000,\"nullable\":null,\"targetMargin\":\"30\",\"unknownKey\":\"kept\",\"wallpaperMaterialGrade\":\"legacy\",\"zero\":0}"
+    },
+    {
+      "name": "reverse insertion order A",
+      "output": "{\"a\":1,\"m\":2,\"z\":3}"
+    },
+    {
+      "name": "reverse insertion order B",
+      "output": "{\"a\":1,\"m\":2,\"z\":3}"
+    },
+    {
+      "name": "explicit null",
+      "error": "TypeError"
+    },
+    {
+      "name": "undefined default",
+      "output": "{}"
+    },
+    {
+      "name": "empty object",
+      "output": "{}"
+    },
+    {
+      "name": "partial legacy input",
+      "output": "{\"wallpaperMaterialGrade\":\"standard\",\"wallpaperWallLengthM\":\"120.5\"}"
+    },
+    {
+      "name": "excluded and lookalike keys",
+      "output": "{\"RateLowerPerJa\":2,\"rateLowerPerJaExtra\":3,\"rateUnknown\":4}"
+    },
+    {
+      "name": "undefined values",
+      "output": "{\"kept\":1}"
+    },
+    {
+      "name": "nonfinite and negative zero",
+      "output": "{\"nan\":null,\"negative\":null,\"positive\":null,\"zero\":0}"
+    },
+    {
+      "name": "nested object ordering A",
+      "output": "{\"outer\":{\"z\":1,\"a\":2},\"sequence\":[3,1,2]}"
+    },
+    {
+      "name": "nested object ordering B",
+      "output": "{\"outer\":{\"a\":2,\"z\":1},\"sequence\":[3,1,2]}"
+    },
+    {
+      "name": "nested array undefined",
+      "output": "{\"sequence\":[null,null,false,0,\"\"]}"
+    },
+    {
+      "name": "many fields",
+      "output": "{\"field0\":399,\"field1\":398,\"field10\":389,\"field100\":299,\"field101\":298,\"field102\":297,\"field103\":296,\"field104\":295,\"field105\":294,\"field106\":293,\"field107\":292,\"field108\":291,\"field109\":290,\"field11\":388,\"field110\":289,\"field111\":288,\"field112\":287,\"field113\":286,\"field114\":285,\"field115\":284,\"field116\":283,\"field117\":282,\"field118\":281,\"field119\":280,\"field12\":387,\"field120\":279,\"field121\":278,\"field122\":277,\"field123\":276,\"field124\":275,\"field125\":274,\"field126\":273,\"field127\":272,\"field128\":271,\"field129\":270,\"field13\":386,\"field130\":269,\"field131\":268,\"field132\":267,\"field133\":266,\"field134\":265,\"field135\":264,\"field136\":263,\"field137\":262,\"field138\":261,\"field139\":260,\"field14\":385,\"field140\":259,\"field141\":258,\"field142\":257,\"field143\":256,\"field144\":255,\"field145\":254,\"field146\":253,\"field147\":252,\"field148\":251,\"field149\":250,\"field15\":384,\"field150\":249,\"field151\":248,\"field152\":247,\"field153\":246,\"field154\":245,\"field155\":244,\"field156\":243,\"field157\":242,\"field158\":241,\"field159\":240,\"field16\":383,\"field160\":239,\"field161\":238,\"field162\":237,\"field163\":236,\"field164\":235,\"field165\":234,\"field166\":233,\"field167\":232,\"field168\":231,\"field169\":230,\"field17\":382,\"field170\":229,\"field171\":228,\"field172\":227,\"field173\":226,\"field174\":225,\"field175\":224,\"field176\":223,\"field177\":222,\"field178\":221,\"field179\":220,\"field18\":381,\"field180\":219,\"field181\":218,\"field182\":217,\"field183\":216,\"field184\":215,\"field185\":214,\"field186\":213,\"field187\":212,\"field188\":211,\"field189\":210,\"field19\":380,\"field190\":209,\"field191\":208,\"field192\":207,\"field193\":206,\"field194\":205,\"field195\":204,\"field196\":203,\"field197\":202,\"field198\":201,\"field199\":200,\"field2\":397,\"field20\":379,\"field200\":199,\"field201\":198,\"field202\":197,\"field203\":196,\"field204\":195,\"field205\":194,\"field206\":193,\"field207\":192,\"field208\":191,\"field209\":190,\"field21\":378,\"field210\":189,\"field211\":188,\"field212\":187,\"field213\":186,\"field214\":185,\"field215\":184,\"field216\":183,\"field217\":182,\"field218\":181,\"field219\":180,\"field22\":377,\"field220\":179,\"field221\":178,\"field222\":177,\"field223\":176,\"field224\":175,\"field225\":174,\"field226\":173,\"field227\":172,\"field228\":171,\"field229\":170,\"field23\":376,\"field230\":169,\"field231\":168,\"field232\":167,\"field233\":166,\"field234\":165,\"field235\":164,\"field236\":163,\"field237\":162,\"field238\":161,\"field239\":160,\"field24\":375,\"field240\":159,\"field241\":158,\"field242\":157,\"field243\":156,\"field244\":155,\"field245\":154,\"field246\":153,\"field247\":152,\"field248\":151,\"field249\":150,\"field25\":374,\"field250\":149,\"field251\":148,\"field252\":147,\"field253\":146,\"field254\":145,\"field255\":144,\"field256\":143,\"field257\":142,\"field258\":141,\"field259\":140,\"field26\":373,\"field260\":139,\"field261\":138,\"field262\":137,\"field263\":136,\"field264\":135,\"field265\":134,\"field266\":133,\"field267\":132,\"field268\":131,\"field269\":130,\"field27\":372,\"field270\":129,\"field271\":128,\"field272\":127,\"field273\":126,\"field274\":125,\"field275\":124,\"field276\":123,\"field277\":122,\"field278\":121,\"field279\":120,\"field28\":371,\"field280\":119,\"field281\":118,\"field282\":117,\"field283\":116,\"field284\":115,\"field285\":114,\"field286\":113,\"field287\":112,\"field288\":111,\"field289\":110,\"field29\":370,\"field290\":109,\"field291\":108,\"field292\":107,\"field293\":106,\"field294\":105,\"field295\":104,\"field296\":103,\"field297\":102,\"field298\":101,\"field299\":100,\"field3\":396,\"field30\":369,\"field300\":99,\"field301\":98,\"field302\":97,\"field303\":96,\"field304\":95,\"field305\":94,\"field306\":93,\"field307\":92,\"field308\":91,\"field309\":90,\"field31\":368,\"field310\":89,\"field311\":88,\"field312\":87,\"field313\":86,\"field314\":85,\"field315\":84,\"field316\":83,\"field317\":82,\"field318\":81,\"field319\":80,\"field32\":367,\"field320\":79,\"field321\":78,\"field322\":77,\"field323\":76,\"field324\":75,\"field325\":74,\"field326\":73,\"field327\":72,\"field328\":71,\"field329\":70,\"field33\":366,\"field330\":69,\"field331\":68,\"field332\":67,\"field333\":66,\"field334\":65,\"field335\":64,\"field336\":63,\"field337\":62,\"field338\":61,\"field339\":60,\"field34\":365,\"field340\":59,\"field341\":58,\"field342\":57,\"field343\":56,\"field344\":55,\"field345\":54,\"field346\":53,\"field347\":52,\"field348\":51,\"field349\":50,\"field35\":364,\"field350\":49,\"field351\":48,\"field352\":47,\"field353\":46,\"field354\":45,\"field355\":44,\"field356\":43,\"field357\":42,\"field358\":41,\"field359\":40,\"field36\":363,\"field360\":39,\"field361\":38,\"field362\":37,\"field363\":36,\"field364\":35,\"field365\":34,\"field366\":33,\"field367\":32,\"field368\":31,\"field369\":30,\"field37\":362,\"field370\":29,\"field371\":28,\"field372\":27,\"field373\":26,\"field374\":25,\"field375\":24,\"field376\":23,\"field377\":22,\"field378\":21,\"field379\":20,\"field38\":361,\"field380\":19,\"field381\":18,\"field382\":17,\"field383\":16,\"field384\":15,\"field385\":14,\"field386\":13,\"field387\":12,\"field388\":11,\"field389\":10,\"field39\":360,\"field390\":9,\"field391\":8,\"field392\":7,\"field393\":6,\"field394\":5,\"field395\":4,\"field396\":3,\"field397\":2,\"field398\":1,\"field399\":0,\"field4\":395,\"field40\":359,\"field41\":358,\"field42\":357,\"field43\":356,\"field44\":355,\"field45\":354,\"field46\":353,\"field47\":352,\"field48\":351,\"field49\":350,\"field5\":394,\"field50\":349,\"field51\":348,\"field52\":347,\"field53\":346,\"field54\":345,\"field55\":344,\"field56\":343,\"field57\":342,\"field58\":341,\"field59\":340,\"field6\":393,\"field60\":339,\"field61\":338,\"field62\":337,\"field63\":336,\"field64\":335,\"field65\":334,\"field66\":333,\"field67\":332,\"field68\":331,\"field69\":330,\"field7\":392,\"field70\":329,\"field71\":328,\"field72\":327,\"field73\":326,\"field74\":325,\"field75\":324,\"field76\":323,\"field77\":322,\"field78\":321,\"field79\":320,\"field8\":391,\"field80\":319,\"field81\":318,\"field82\":317,\"field83\":316,\"field84\":315,\"field85\":314,\"field86\":313,\"field87\":312,\"field88\":311,\"field89\":310,\"field9\":390,\"field90\":309,\"field91\":308,\"field92\":307,\"field93\":306,\"field94\":305,\"field95\":304,\"field96\":303,\"field97\":302,\"field98\":301,\"field99\":300}"
+    },
+    {
+      "name": "numeric keys retain JSON enumeration rules",
+      "output": "{\"1\":\"one\",\"2\":\"two\",\"10\":\"ten\",\"01\":\"leading\",\"z\":true}"
+    },
+    {
+      "name": "top-level array",
+      "output": "{\"0\":\"b\",\"1\":\"a\",\"2\":false}"
+    },
+    {
+      "name": "top-level string",
+      "output": "{\"0\":\"c\",\"1\":\"a\",\"2\":\"b\"}"
+    },
+    {
+      "name": "empty string",
+      "output": "{}"
+    },
+    {
+      "name": "top-level number",
+      "output": "{}"
+    },
+    {
+      "name": "top-level boolean",
+      "output": "{}"
+    },
+    {
+      "name": "inherited input properties are not enumerated",
+      "output": "{\"own\":1}"
+    },
+    {
+      "name": "null-prototype input",
+      "output": "{\"a\":1,\"z\":3}"
+    },
+    {
+      "name": "own prototype-like keys",
+      "output": "{\"own\":5}"
+    },
+    {
+      "name": "own enumerable toJSON retains native JSON invocation",
+      "output": "\"custom\""
+    },
+    {
+      "name": "function and symbol values",
+      "output": "{\"kept\":1}"
+    },
+    {
+      "name": "symbol key is not enumerated",
+      "output": "{\"kept\":1}"
+    },
+    {
+      "name": "date value retains JSON behavior",
+      "output": "{\"date\":\"2026-01-02T03:04:05.000Z\"}"
+    },
+    {
+      "name": "bigint retains error",
+      "error": "TypeError"
+    },
+    {
+      "name": "cycle retains error",
+      "error": "TypeError"
+    }
+  ]
+}

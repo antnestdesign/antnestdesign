@@ -1,6 +1,7 @@
 import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "./calculator/estimate-core.js";
 import { won, moneyAmount, rateNumber, escapeHtml } from "./utils.js";
 import { buildAdminMarginGroups, internalDetailCustomerAmount, storedEstimateSummary, buildEstimateDiagnostics } from "./estimate-summary.js";
+import { isEstimateInputExcluded, canonicalInputValues } from "./estimate-input.js";
 import { bathroomRates } from "./rates/bathroom.js";
 import { kitchenRates } from "./rates/kitchen.js";
 import { doorRates } from "./rates/door.js";
@@ -3312,13 +3313,9 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
-function isEstimateInputExcluded(id) {
-  return Boolean(COST_ITEM_BY_INPUT[id]);
-}
-
 function collectInputValues() {
   return Object.fromEntries(Object.entries(el)
-    .filter(([id]) => !isEstimateInputExcluded(id))
+    .filter(([id]) => !isEstimateInputExcluded(id, COST_ITEM_BY_INPUT))
     .map(([id, input]) => [
     id,
     input?.type === "checkbox" ? Boolean(input.checked) : input?.value ?? "",
@@ -3338,7 +3335,7 @@ function restoreInputValues(inputs = {}) {
     nextInputs.wallpaperRoomMaterialGrade = "besti";
   }
   for (const [id, value] of Object.entries(nextInputs)) {
-    if (isEstimateInputExcluded(id)) continue;
+    if (isEstimateInputExcluded(id, COST_ITEM_BY_INPUT)) continue;
     const input = el[id];
     if (!input) continue;
     if (input.type === "checkbox") {
@@ -4513,15 +4510,6 @@ function costItemFormDefaults(source = {}) {
   };
 }
 
-function canonicalInputValues(inputs = {}) {
-  return JSON.stringify(Object.keys(inputs)
-    .sort()
-    .reduce((acc, key) => {
-      if (!isEstimateInputExcluded(key)) acc[key] = inputs[key];
-      return acc;
-    }, {}));
-}
-
 function effectiveEstimateInputOverrides(state = readState()) {
   return {
     demolitionFloorEnabled: state.demolitionFloorEnabled,
@@ -4558,7 +4546,7 @@ function currentEstimateInputValues() {
 }
 
 function currentInputKey() {
-  return canonicalInputValues(currentEstimateInputValues());
+  return canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT);
 }
 
 function loadedEstimateMatchesCurrentInputs() {

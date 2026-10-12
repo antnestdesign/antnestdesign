@@ -829,3 +829,75 @@ git status/diff stat/diff check로 분석 문서만 신규인지 확인한다. c
   가장 작은 권장 대상은 isEstimateInputExcluded/canonicalInputValues 입력 정규화 경계의 사전 characterization이다.
   제외 map을 명시적으로 전달하는 범위부터 진행하고 DOM state/save/restore를 한 번에 이동하지 않는다.
 - 제외 SQL 두 파일 미접촉. push/deploy/Production 접근 없음.
+
+## 18. Phase 3B-3 Input Canonicalization Boundary
+
+2026-10-12, 추출 전 기준 `a056a2c`. 기존 분석과 이전 추출 결과는 그대로 유지한다.
+
+### 실제 dependency 및 선정 범위
+
+| 후보 / 추출 전 main 행 | 본문 행 | callers | callees | 기존 read / write | DOM/network/storage | 판정 |
+|---|---:|---|---|---|---|---|
+| isEstimateInputExcluded / 3315-3317 | 3 | collectInputValues, restoreInputValues, canonicalInputValues | Boolean | COST_ITEM_BY_INPUT read, write 없음 | 직접 의존 없음 | 원래 near-pure. map을 인자로 전달하여 추출 |
+| canonicalInputValues / 4516-4523 | 8 | currentInputKey | Object.keys, sort, reduce, isEstimateInputExcluded, JSON.stringify | 간접 exclusion map read, 입력 write 없음 | 직접 의존 없음 | exclusion map을 동일하게 전달하여 추출 |
+
+- 두 함수만 이동. 별도 helper/constant 이동 없음.
+- COST_ITEM_BY_INPUT은 추출 전 main 523행의 기존 Object.fromEntries(COST_ITEM_DEFINITIONS.map(...)) map이다.
+  원가 입력의 definition 조회에도 사용되므로 main 소유를 유지했다. 초기 own key는 91개이며 수정하지 않았다.
+- 신규 `public/os-app/src/estimate-input.js`는 12행, 정의 본문 합계 11행, import 없음.
+- main.js 6,795 -> 6,783행. import 선언 1개 추가, 호출 3곳에 동일 map 인자만 추가.
+- collectInputValues/restoreInputValues/currentInputKey의 실행 순서, DOM 처리, payload shape를 변경하지 않았다.
+- costSnapshotMap/purchaseOrderItems/readState/save/restore/state/event/contract/cost UI/storage는 이동하지 않았다.
+- `estimate-inputs.js`(복수형)의 기존 shared schema와 staff whitelist는 다른 책임이며 변경/통합하지 않았다.
+
+### 고정한 canonicalization 의미
+
+- 제외 판단은 기존 map[id]의 truthiness다. exact key이며 prefix/pattern/case-folding/trim을 추가하지 않았다.
+- 제외 map의 inherited prototype lookup도 유지: constructor/toString/__proto__ 등은 truthy로 제외될 수 있다.
+  새 hasOwn/Set 정책으로 조용히 바꾸지 않았다. 이것은 client 편의 정책이지 security whitelist가 아니다.
+- canonicalInputValues는 문자열을 반환한다. top-level own enumerable string key를 sort한 뒤 `{}`에 복사하고 JSON.stringify한다.
+- 임의 unknown/legacy/private key를 allowlist로 거부하지 않는다. 포함된 값의 parsing/trim/default/boolean 변환 없음.
+- undefined/function/symbol 값의 생략, null/false/0/빈 문자열 유지, NaN/Infinity의 null 직렬화,
+  숫자 property의 JSON enumeration order, nested object/array 순서는 원래 의미 그대로다.
+- undefined 입력의 기본 `{}` 및 null/BigInt/cycle의 기존 TypeError를 고정했다.
+- Object.keys는 input의 inherited/non-enumerable/Symbol key를 포함하지 않는다.
+- native JSON toJSON/Date 변환도 유지했다. arbitrary getter/toJSON의 부작용까지 통제하는 serializer로 재설계하지 않았다.
+  지원되는 plain 입력 및 테스트 fixture에서 mutation/determinism을 검증한 것이며 formal purity 증명은 아니다.
+
+### 보안 및 저장 관계
+
+| 분류 | 현재 관계 |
+|---|---|
+| A. 브라우저 UI 저장/비교 | isEstimateInputExcluded가 collect/restore의 원가 input 제외를 담당. canonical은 currentInputKey의 dirty/no-op/loaded matching 비교용 문자열이며 저장 inputs 자체를 새 shape로 바꾸는 함수가 아님 |
+| B. staff safe-write | collect -> currentEstimateInputValues -> staffCurrentEstimateInputs -> preview/save 연결이 있음. canonical key도 staff 저장 중 입력 변경 및 baseline 비교에 사용 |
+| C. authoritative 서버/shared 계산 | 이 두 browser helper를 import하거나 호출하지 않음. 기존 estimate-inputs schema 및 server normalizedInputs/inputValue가 독립적으로 처리 |
+| D. 과거 snapshot | restore의 제외 및 로드 후 DOM에서 만든 canonical baseline과 현재 값 비교에 관여. 원본 snapshot/contract hash/data의 canonical 구조를 재작성하지 않음 |
+
+- storage의 staffEstimateBody/preview는 기존 staffEstimateInputs whitelist를 별도로 사용한다.
+- server validateStaffBody는 allowedInputs Set에 없는 필드를 reject하며 타입/크기/권한을 다시 검사한다.
+  server authorization/whitelist의 source of truth를 client로 이동하지 않았다. SECURITY COUPLING FOUND 없음.
+- dependency: main의 기존 readonly policy 값 -> estimate-input의 인자; estimate-input 결과 -> main adapter.
+  신규 module은 main/DOM/storage/API/core import 및 application global 참조가 없다.
+- DOM collect/effective overrides/baseline/save/restore 및 project state는 여전히 main에 남는다.
+
+### 검증 및 결과
+
+- 이동 전 실제 main 함수와 map 선언을 AST로 선택해 결과를 캡처했다.
+  합성 입력 factory `tests/os/fixtures/estimate-input-cases.js`와
+  `tests/os/fixtures/estimate-input-characterization.json`에 원래 반환값/오류 이름, source hash, 기준 commit을 기록.
+  실제 고객 데이터/credential/과거 runtime 구현 복사본 없음.
+- 신규 `tests/os/unit/estimate-input.test.js` 164/164 PASS:
+  exclusion 125개(실제 키 91개 전체 포함), canonical 36개(29개 characterization 포함), 독립 import/정적/서버 경계 3개.
+- 입력 및 policy deep compare/frozen 실행, 동일 입력 반복, 정책 인자 격리 PASS.
+- browser global 없이 fresh Node import/실행 PASS. static unresolved global은 Boolean/JSON/Object만 존재.
+- 저장소 검색 및 AST 검사: 함수별 canonical 정의 1개. logic wrapper 없음.
+- 기존 254개 포함 regression 418/418 PASS. Known Failure / Unexpected Fail / Skip / Failed Files / Unhandled Errors 모두 0.
+- staff payload와 연결되므로 `npm run test:staff-boundary` 실행: 격리 candidate Test DB 23/23 PASS x2.
+  보호 필드 injection 거부, authoritative 계산, preview 비저장, safe create/update, 권한 회귀를 검증했다.
+  Production DB 또는 Production RPC 실행은 없으며 기존 runner의 로컬 fixture/schema replay/cleanup만 수행했다.
+- DB Security/Integrity 별도 suite 미실행: DB/API/RLS/storage/shared core/server path 수정 없음.
+- lint/build/syntax/diff PASS, 기존 lint warning 5개 유지, 신규 0.
+- Verdict: PASS. 별도 승인 후 Phase 3B-4 진행 가능.
+  다음 가장 작은 권장 대상은 발주용 변환 purchaseOrderItems: 공정 label 인자 및 키워드 분류 golden을 먼저 고정.
+  DOM/save/restore 전체 분리는 아직 보류한다.
+- 제외 SQL 두 파일 미접촉. 별도 로컬 extraction commit만 수행하며 push/deploy 없음.
