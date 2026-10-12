@@ -1,0 +1,445 @@
+{
+  "capturedFrom": "14e8b37",
+  "sourceHash": "2a6320ce3ac46ecd255b582dc6082772750549c1e07af7664936618860a3afaa",
+  "groupLabels": {
+    "demolition": "철거",
+    "electrical": "전기/조명",
+    "standardLighting": "전기/조명",
+    "bathroom": "욕실",
+    "tile": "욕실",
+    "kitchen": "가구",
+    "door": "도어/창호",
+    "misc": "기타",
+    "wallpaper": "도배",
+    "film": "필름",
+    "flooring": "바닥",
+    "silicone": "마감",
+    "elastic": "마감",
+    "carpentry": "목공",
+    "base": "가구",
+    "island": "가구",
+    "homebar": "가구",
+    "shoe": "가구",
+    "fridgeLaundry": "가구",
+    "pantry": "가구",
+    "builtIn": "가구",
+    "hanger": "가구"
+  },
+  "policy": {
+    "orderGroups": [
+      "base",
+      "island",
+      "homebar",
+      "shoe",
+      "fridgeLaundry",
+      "pantry",
+      "builtIn",
+      "hanger",
+      "kitchen",
+      "bathroom",
+      "wallpaper",
+      "film",
+      "flooring",
+      "standardLighting",
+      "carpentry"
+    ],
+    "materialKeywords": [
+      "자재",
+      "MDF",
+      "합판",
+      "다루끼",
+      "각재",
+      "상판",
+      "칸스톤",
+      "세라믹",
+      "하이막스",
+      "EP",
+      "싱크볼",
+      "싱크수전",
+      "후드",
+      "도기",
+      "수전",
+      "장식장",
+      "악세사리",
+      "휴젠트",
+      "벽지",
+      "필름",
+      "마루",
+      "다운라이트",
+      "매입등",
+      "실린더",
+      "콘센트",
+      "스위치",
+      "밥솥장",
+      "서랍",
+      "신발장",
+      "팬트리",
+      "붙박이",
+      "헹거",
+      "냉장고",
+      "세탁기",
+      "하부장",
+      "상부장",
+      "키큰장",
+      "홈바장",
+      "아일랜드",
+      "제작"
+    ],
+    "excludedKeywords": [
+      "인건비",
+      "기공",
+      "조공",
+      "시공",
+      "설치비",
+      "철거",
+      "방수",
+      "양중",
+      "폐기물",
+      "청소",
+      "보양",
+      "허가",
+      "동의서"
+    ]
+  },
+  "cases": [
+    {
+      "name": "null estimate",
+      "output": []
+    },
+    {
+      "name": "undefined estimate",
+      "output": []
+    },
+    {
+      "name": "empty object",
+      "output": []
+    },
+    {
+      "name": "falsey details",
+      "output": []
+    },
+    {
+      "name": "empty details",
+      "output": []
+    },
+    {
+      "name": "single item",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "합성 등급",
+          "quantity": "3롤",
+          "budget": 120000
+        }
+      ]
+    },
+    {
+      "name": "normal multi trade",
+      "output": [
+        {
+          "process": "바닥",
+          "item": "마루",
+          "spec": "시험 등급",
+          "quantity": "10평",
+          "budget": 1000000
+        },
+        {
+          "process": "가구",
+          "item": "하부장 제작",
+          "spec": "합성 사양",
+          "quantity": "4자",
+          "budget": 400000
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "시험 등급",
+          "quantity": "3롤",
+          "budget": 120000
+        },
+        {
+          "process": "욕실",
+          "item": "도기",
+          "spec": "시험 제품급",
+          "quantity": "1개",
+          "budget": 100000
+        }
+      ]
+    },
+    {
+      "name": "no matching rows",
+      "output": []
+    },
+    {
+      "name": "mixed zero optional and unknown",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "0수량",
+          "quantity": 0,
+          "budget": 0
+        },
+        {
+          "process": "가구",
+          "item": "싱크볼",
+          "spec": "선택 안 함",
+          "quantity": "1개",
+          "budget": -10
+        },
+        {
+          "process": "필름",
+          "item": "작업",
+          "spec": "필름",
+          "quantity": "0m",
+          "budget": 0
+        }
+      ]
+    },
+    {
+      "name": "order A",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "A",
+          "quantity": "1롤",
+          "budget": 10
+        },
+        {
+          "process": "가구",
+          "item": "하부장",
+          "spec": "B",
+          "quantity": "2자",
+          "budget": 20
+        }
+      ]
+    },
+    {
+      "name": "order B",
+      "output": [
+        {
+          "process": "가구",
+          "item": "하부장",
+          "spec": "B",
+          "quantity": "2자",
+          "budget": 20
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "A",
+          "quantity": "1롤",
+          "budget": 10
+        }
+      ]
+    },
+    {
+      "name": "duplicates retained",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "동일",
+          "quantity": "1롤",
+          "budget": 100
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "동일",
+          "quantity": "1롤",
+          "budget": 100
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "동일",
+          "quantity": "1롤",
+          "budget": 100
+        }
+      ]
+    },
+    {
+      "name": "legacy missing projected fields",
+      "output": [
+        {
+          "process": "도배",
+          "item": {
+            "$purchaseType": "undefined"
+          },
+          "spec": "벽지",
+          "quantity": {
+            "$purchaseType": "undefined"
+          },
+          "budget": {
+            "$purchaseType": "undefined"
+          }
+        },
+        {
+          "process": "가구",
+          "item": "하부장",
+          "spec": {
+            "$purchaseType": "undefined"
+          },
+          "quantity": "2.5자",
+          "budget": "1000.5"
+        }
+      ]
+    },
+    {
+      "name": "raw numeric values",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "음수",
+          "quantity": -1.5,
+          "budget": -100.5
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "문자열",
+          "quantity": "3.25",
+          "budget": "900.4"
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "큰 값",
+          "quantity": 1000000000,
+          "budget": 9000000000000
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "비정상 숫자",
+          "quantity": {
+            "$purchaseType": "number",
+            "value": "NaN"
+          },
+          "budget": {
+            "$purchaseType": "number",
+            "value": "Infinity"
+          }
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "음의 0",
+          "quantity": {
+            "$purchaseType": "number",
+            "value": "-0"
+          },
+          "budget": {
+            "$purchaseType": "number",
+            "value": "-0"
+          }
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "원시 값",
+          "quantity": null,
+          "budget": {
+            "$purchaseType": "undefined"
+          }
+        },
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "bigint",
+          "quantity": {
+            "$purchaseType": "bigint",
+            "value": "1"
+          },
+          "budget": {
+            "$purchaseType": "bigint",
+            "value": "123"
+          }
+        }
+      ]
+    },
+    {
+      "name": "unit price customer tax and total ignored",
+      "output": [
+        {
+          "process": "가구",
+          "item": "싱크볼",
+          "spec": "시험",
+          "quantity": "2개",
+          "budget": 100.5
+        }
+      ]
+    },
+    {
+      "name": "snapshot and flags ignored",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "시험",
+          "quantity": "1롤",
+          "budget": 45000
+        }
+      ]
+    },
+    {
+      "name": "snapshot without details",
+      "output": []
+    },
+    {
+      "name": "legacy string budgets for renderer",
+      "output": [
+        {
+          "process": "도배",
+          "item": "벽지",
+          "spec": "시험",
+          "quantity": "1롤",
+          "budget": "1000"
+        },
+        {
+          "process": "가구",
+          "item": "하부장",
+          "spec": "시험",
+          "quantity": "1자",
+          "budget": "2000"
+        }
+      ]
+    },
+    {
+      "name": "non-array details error",
+      "error": "TypeError"
+    },
+    {
+      "name": "null detail error",
+      "error": "TypeError"
+    },
+    {
+      "name": "undefined detail error",
+      "error": "TypeError"
+    }
+  ],
+  "rendering": [
+    {
+      "name": "normal multi trade",
+      "rows": "\n      <tr>\n        <td>바닥</td>\n        <td>마루</td>\n        <td>시험 등급</td>\n        <td>10평</td>\n        <td>1,000,000원</td>\n      </tr>\n    \n      <tr>\n        <td>가구</td>\n        <td>하부장 제작</td>\n        <td>합성 사양</td>\n        <td>4자</td>\n        <td>400,000원</td>\n      </tr>\n    \n      <tr>\n        <td>도배</td>\n        <td>벽지</td>\n        <td>시험 등급</td>\n        <td>3롤</td>\n        <td>120,000원</td>\n      </tr>\n    \n      <tr>\n        <td>욕실</td>\n        <td>도기</td>\n        <td>시험 제품급</td>\n        <td>1개</td>\n        <td>100,000원</td>\n      </tr>\n    ",
+      "summary": "\n    <div><span>발주 품목</span><strong>4개</strong></div>\n    <div><span>예상 원가</span><strong>1,620,000원</strong></div>\n  ",
+      "print": "\n    <header>\n      <p>발주내역서</p>\n      <h1>합성 발주 프로젝트</h1>\n      <dl>\n        <div><dt>평형</dt><dd>33평</dd></div>\n        <div><dt>작성일</dt><dd>2026. 1. 2. 오후 12:04</dd></div>\n      </dl>\n    </header>\n    <table>\n      <thead>\n        <tr><th>공정</th><th>품목</th><th>사양</th><th>수량</th><th>예상 원가</th></tr>\n      </thead>\n      <tbody>\n        \n          <tr>\n            <td>바닥</td>\n            <td>마루</td>\n            <td>시험 등급</td>\n            <td>10평</td>\n            <td>1,000,000원</td>\n          </tr>\n        \n          <tr>\n            <td>가구</td>\n            <td>하부장 제작</td>\n            <td>합성 사양</td>\n            <td>4자</td>\n            <td>400,000원</td>\n          </tr>\n        \n          <tr>\n            <td>도배</td>\n            <td>벽지</td>\n            <td>시험 등급</td>\n            <td>3롤</td>\n            <td>120,000원</td>\n          </tr>\n        \n          <tr>\n            <td>욕실</td>\n            <td>도기</td>\n            <td>시험 제품급</td>\n            <td>1개</td>\n            <td>100,000원</td>\n          </tr>\n        \n      </tbody>\n    </table>\n    <footer>\n      <div><span>발주 품목</span><strong>4개</strong></div>\n      <div><span>예상 원가</span><strong>1,620,000원</strong></div>\n    </footer>\n  "
+    },
+    {
+      "name": "empty details",
+      "rows": "<tr><td colspan=\"5\">발주 필요 품목이 없습니다.</td></tr>",
+      "summary": "\n    <div><span>발주 품목</span><strong>0개</strong></div>\n    <div><span>예상 원가</span><strong>0원</strong></div>\n  ",
+      "print": "\n    <header>\n      <p>발주내역서</p>\n      <h1>합성 발주 프로젝트</h1>\n      <dl>\n        <div><dt>평형</dt><dd>33평</dd></div>\n        <div><dt>작성일</dt><dd>2026. 1. 2. 오후 12:04</dd></div>\n      </dl>\n    </header>\n    <table>\n      <thead>\n        <tr><th>공정</th><th>품목</th><th>사양</th><th>수량</th><th>예상 원가</th></tr>\n      </thead>\n      <tbody>\n        <tr><td colspan=\"5\">발주 필요 품목이 없습니다.</td></tr>\n      </tbody>\n    </table>\n    <footer>\n      <div><span>발주 품목</span><strong>0개</strong></div>\n      <div><span>예상 원가</span><strong>0원</strong></div>\n    </footer>\n  "
+    },
+    {
+      "name": "legacy string budgets for renderer",
+      "rows": "\n      <tr>\n        <td>도배</td>\n        <td>벽지</td>\n        <td>시험</td>\n        <td>1롤</td>\n        <td>1,000원</td>\n      </tr>\n    \n      <tr>\n        <td>가구</td>\n        <td>하부장</td>\n        <td>시험</td>\n        <td>1자</td>\n        <td>2,000원</td>\n      </tr>\n    ",
+      "summary": "\n    <div><span>발주 품목</span><strong>2개</strong></div>\n    <div><span>예상 원가</span><strong>10,002,000원</strong></div>\n  ",
+      "print": "\n    <header>\n      <p>발주내역서</p>\n      <h1>합성 발주 프로젝트</h1>\n      <dl>\n        <div><dt>평형</dt><dd>33평</dd></div>\n        <div><dt>작성일</dt><dd>2026. 1. 2. 오후 12:04</dd></div>\n      </dl>\n    </header>\n    <table>\n      <thead>\n        <tr><th>공정</th><th>품목</th><th>사양</th><th>수량</th><th>예상 원가</th></tr>\n      </thead>\n      <tbody>\n        \n          <tr>\n            <td>도배</td>\n            <td>벽지</td>\n            <td>시험</td>\n            <td>1롤</td>\n            <td>1,000원</td>\n          </tr>\n        \n          <tr>\n            <td>가구</td>\n            <td>하부장</td>\n            <td>시험</td>\n            <td>1자</td>\n            <td>2,000원</td>\n          </tr>\n        \n      </tbody>\n    </table>\n    <footer>\n      <div><span>발주 품목</span><strong>2개</strong></div>\n      <div><span>예상 원가</span><strong>10,002,000원</strong></div>\n    </footer>\n  "
+    }
+  ]
+}

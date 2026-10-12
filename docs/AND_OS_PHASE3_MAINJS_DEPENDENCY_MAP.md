@@ -901,3 +901,71 @@ git status/diff stat/diff check로 분석 문서만 신규인지 확인한다. c
   다음 가장 작은 권장 대상은 발주용 변환 purchaseOrderItems: 공정 label 인자 및 키워드 분류 golden을 먼저 고정.
   DOM/save/restore 전체 분리는 아직 보류한다.
 - 제외 SQL 두 파일 미접촉. 별도 로컬 extraction commit만 수행하며 push/deploy 없음.
+
+## 19. Phase 3B-4 Purchase Order Transformation
+
+2026-10-12, 추출 전 기준 `14e8b37`. 기존 분석과 이전 단계는 삭제하거나 재작성하지 않는다.
+
+### 실제 dependency와 경계
+
+| 함수 / 추출 전 main 행 | 본문 행 | callers | callees | global read/write | DOM/network/storage | 관련 module |
+|---|---:|---|---|---|---|---|
+| purchaseOrderItems / 3893-3917 | 25 | renderPurchaseOrder, renderPurchaseOrderPrint | Set/has, filter, some/includes, map | immutable quoteGroupLabels read만 존재, write 없음 | 없음 | costSnapshot/estimate-summary/estimate-input/estimate-core 직접 의존 없음 |
+
+- 입력: estimate의 internalDetails 배열. 실제 읽는 detail 필드는 group/item/input/quantity/cost뿐이다.
+- 출력: `{ process, item, spec, quantity, budget }` 배열.
+  process는 label map lookup, item/spec/quantity/budget은 각각 원본 item/input/quantity/cost의 raw 값이다.
+- 신규 `public/os-app/src/purchase-order.js`: 함수 1개, 25행. 이동 정의 본문 25행.
+- 별도 helper/외부 constant 이동 없음. 함수 전용 Set/포함·제외 배열은 원래처럼 함수 본문 안에서 매번 생성한다.
+- quoteGroupLabels은 여러 화면이 공유하므로 main에 그대로 두고 두 consumer가 명시적으로 전달한다.
+- main.js 6,783 -> 6,758행. import 선언 1개 및 호출 두 곳의 인자 추가 외 주변 코드 변경 없음.
+- renderPurchaseOrder/renderPurchaseOrderPrint 및 formatDateTime은 main에 유지한다.
+  현재 견적 fallback/DOM/총액 표시/print button/event/window.print/권한/저장 흐름은 이동하지 않았다.
+- costSnapshotMap/readState/save/load/storage/계약/원가 관리/core/server/auth/초기화도 변경 없음.
+
+### 고정한 classification 및 숫자 의미
+
+- 허용 group 15개: base/island/homebar/shoe/fridgeLaundry/pantry/builtIn/hanger/kitchen/bathroom/
+  wallpaper/film/flooring/standardLighting/carpentry. 다른 group은 제외한다.
+- `${item.item} ${item.input} ${item.quantity}` 문자열에서 원래 포함 키워드 40개 중 하나가 있어야 한다.
+  원래 제외 키워드 13개 중 하나가 있으면 제외한다. 포함과 제외가 동시에 맞으면 제외가 우선이다.
+- 제외 키워드: 인건비/기공/조공/시공/설치비/철거/방수/양중/폐기물/청소/보양/허가/동의서.
+- case-sensitive substring 규칙 유지. category/item_code/active/include_in_order_sheet/snapshot은 분류에 사용하지 않는다.
+- 별도 grouping/sort/merge 없음. 필터 통과한 입력 순서를 유지하고 동일 품목/동일 객체 중복도 각각 남긴다.
+- budget은 단가가 아니라 detail.cost의 원래 값이다. quantity 곱셈, 고객가/단가/total/VAT 계산 없음.
+  수량 단위는 quantity에 들어 있는 문자열 등을 그대로 사용하며 별도 unit 필드를 만들지 않았다.
+- 0/음수/소수/문자열/undefined/NaN/Infinity/BigInt/음의 0도 변환하거나 기본값으로 대체하지 않는다.
+  0수량·0원·비활성 flag만으로 제외하지 않는 기존 동작도 유지했다.
+- null/undefined estimate, 누락/falsey internalDetails는 빈 배열. truthy 비배열이나 null/undefined detail은 기존 TypeError.
+  부분 detail은 조건을 통과하면 missing field를 undefined로 가진 같은 5-key shape를 반환한다.
+- process fallback은 기존 label || group || 기타. 실제 허용 group은 모두 non-empty string이므로
+  label이 누락/falsey인 경우 group 문자열로 돌아가는 경로를 검증했다.
+- 화면/print consumer의 원가 표시·기존 문자열 budget reduce 동작도 개선하지 않고 고정했다.
+
+### Golden 및 consumer 검증
+
+- 제거 전 실제 main 함수와 label 선언을 AST로 골라 합성 사례 21개 전체 모델 또는 오류를 캡처했다.
+  기준 commit/source hash와 함께 `tests/os/fixtures/purchase-order-characterization.json`에 보존.
+  undefined own field/NaN/Infinity/BigInt/음의 0을 typed fixture encoding으로 보존하여 전체 shape를 strict 비교한다.
+  실제 고객/원가DB 행/credential은 사용하지 않았다.
+- 신규 `tests/os/unit/purchase-order.test.js` 34/34 PASS:
+  golden 21개 + branch 계약 8개 + 실제 consumer HTML 3개 + pure import/정적 경계 2개.
+- table-driven loop로 허용 group 15개 전체, 포함 키워드 40개 전체, 제외 키워드 13개 전체를 검증한다.
+  키워드는 item/input/quantity 세 필드 각각에서 검사. 입력 순서/중복/raw 숫자/label 격리도 고정했다.
+- frozen 입력 및 estimate/details/배열/label deep compare, 반복 호출 PASS. 출력은 새 row 객체이며 원본을 변경하지 않는다.
+- 기존 main의 renderPurchaseOrder/renderPurchaseOrderPrint/formatDateTime 함수 원문을 격리 DOM에서 실행했다.
+  일반/빈/legacy 문자열 원가 3개 사례의 화면 rows/summary/print HTML이 제거 전 golden과 exact 일치.
+  명시적 estimate 및 currentEstimateForPrint fallback도 검증했다.
+  전체 OS UI나 실제 브라우저 print dialog 테스트로 확대하지 않았다.
+- fresh Node import/실행 PASS. 새 module의 import는 0개, static external global은 Set뿐이다.
+- repository 검색 및 AST 검사에서 canonical 정의 1개. main wrapper/logic 복사본 없음.
+- dependency: estimate detail + main의 label policy -> purchase-order -> 기존 main consumer.
+  DOM/storage/API/core/main 역import 및 mutable application state 직접 참조 없음.
+- 기존 418개 포함 regression 452/452 PASS.
+  Known Failure / Unexpected Fail / Skip / Failed Files / Unhandled Errors 모두 0.
+- lint/build/syntax/diff PASS. 기존 lint warning 5개, 신규 0.
+- DB Security/Integrity/Staff Boundary 미실행: shared core/staff server/storage/DB/API 수정이 없고 내부 표시 변환만 추출했다.
+- Verdict: PASS. Phase 3B-5는 별도 승인 후 진행 가능.
+  다음 가장 작은 대상은 costSnapshotMap의 snapshot -> Map 순수 조회 변환이다.
+  원가 비교/UI/state/save 전체를 같은 단계에 이동하지 않는다.
+- 제외 SQL 두 파일 미접촉. 관련 파일만 별도 로컬 commit하며 push/deploy/Production 접근 없음.
