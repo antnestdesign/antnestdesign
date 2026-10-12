@@ -1,0 +1,1297 @@
+{
+  "capturedFrom": "531978c",
+  "sourceHash": "6d5e2b6a6844e4ddf8f17b33682bca59f6a9b16d64dea3e367b75143af4ea442",
+  "groupLabels": {
+    "demolition": "철거",
+    "electrical": "전기/조명",
+    "standardLighting": "전기/조명",
+    "bathroom": "욕실",
+    "tile": "욕실",
+    "kitchen": "가구",
+    "door": "도어/창호",
+    "misc": "기타",
+    "wallpaper": "도배",
+    "film": "필름",
+    "flooring": "바닥",
+    "silicone": "마감",
+    "elastic": "마감",
+    "carpentry": "목공",
+    "base": "가구",
+    "island": "가구",
+    "homebar": "가구",
+    "shoe": "가구",
+    "fridgeLaundry": "가구",
+    "pantry": "가구",
+    "builtIn": "가구",
+    "hanger": "가구"
+  },
+  "groupOrder": [
+    "철거",
+    "욕실",
+    "전기/조명",
+    "목공",
+    "가구",
+    "도배",
+    "필름",
+    "바닥",
+    "마감",
+    "도어/창호",
+    "기타"
+  ],
+  "cases": [
+    {
+      "name": "null estimate",
+      "estimate": null,
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": []
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 0
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 0,
+            "directCost": 0,
+            "profit": 0,
+            "marginRate": 0,
+            "detailCount": 0,
+            "detailCustomerTotal": 0,
+            "detailCostTotal": 0,
+            "customerDiff": 0,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": []
+        }
+      }
+    },
+    {
+      "name": "missing estimate",
+      "missing": true,
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": []
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 0
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 0,
+            "directCost": 0,
+            "profit": 0,
+            "marginRate": 0,
+            "detailCount": 0,
+            "detailCustomerTotal": 0,
+            "detailCostTotal": 0,
+            "customerDiff": 0,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": []
+        }
+      }
+    },
+    {
+      "name": "empty estimate",
+      "estimate": {},
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": []
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 0
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 0,
+            "directCost": 0,
+            "profit": 0,
+            "marginRate": 0,
+            "detailCount": 0,
+            "detailCustomerTotal": 0,
+            "detailCostTotal": 0,
+            "customerDiff": 0,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": []
+        }
+      }
+    },
+    {
+      "name": "normal single misc",
+      "estimate": {
+        "total": 300000,
+        "costTotal": 300000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "기존 배관 청소",
+            "cost": 300000,
+            "customerRevenue": 300000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 300000,
+              "customer": 300000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "기존 배관 청소",
+                  "cost": 300000,
+                  "customerRevenue": 300000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 0,
+              "marginRate": 0
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 300000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 300000,
+            "directCost": 300000,
+            "profit": 0,
+            "marginRate": 0,
+            "detailCount": 1,
+            "detailCustomerTotal": 300000,
+            "detailCostTotal": 300000,
+            "customerDiff": 0,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": []
+        }
+      }
+    },
+    {
+      "name": "ordered multiple and unknown groups",
+      "estimate": {
+        "total": 255,
+        "costTotal": 180,
+        "internalDetails": [
+          {
+            "group": "custom-b",
+            "item": "추가 B",
+            "cost": 10,
+            "customerRevenue": 20,
+            "quantity": "1식"
+          },
+          {
+            "group": "misc",
+            "item": "기타",
+            "cost": 50,
+            "customerRevenue": 70,
+            "quantity": "1식"
+          },
+          {
+            "group": "electrical",
+            "item": "전기",
+            "cost": 100,
+            "customerRevenue": 130,
+            "quantity": "1식"
+          },
+          {
+            "group": "standardLighting",
+            "item": "조명",
+            "cost": 20,
+            "customerRevenue": 35,
+            "quantity": "1식"
+          },
+          {
+            "group": "custom-a",
+            "item": "추가 A",
+            "cost": -5,
+            "customerRevenue": -10,
+            "quantity": "1식"
+          },
+          {
+            "group": "wallpaper",
+            "item": "영점",
+            "cost": 0,
+            "customerRevenue": 0,
+            "quantity": "1식"
+          },
+          {
+            "group": "custom-zero",
+            "item": "상쇄",
+            "cost": 5,
+            "customerRevenue": 10,
+            "quantity": "1식"
+          },
+          {
+            "group": "custom-zero",
+            "item": "상쇄 반대",
+            "cost": -5,
+            "customerRevenue": -10,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "전기/조명",
+              "cost": 120,
+              "customer": 165,
+              "count": 2,
+              "details": [
+                {
+                  "group": "electrical",
+                  "item": "전기",
+                  "cost": 100,
+                  "customerRevenue": 130,
+                  "quantity": "1식"
+                },
+                {
+                  "group": "standardLighting",
+                  "item": "조명",
+                  "cost": 20,
+                  "customerRevenue": 35,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 45,
+              "marginRate": 0.375
+            },
+            {
+              "label": "기타",
+              "cost": 50,
+              "customer": 70,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "기타",
+                  "cost": 50,
+                  "customerRevenue": 70,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20,
+              "marginRate": 0.4
+            },
+            {
+              "label": "custom-b",
+              "cost": 10,
+              "customer": 20,
+              "count": 1,
+              "details": [
+                {
+                  "group": "custom-b",
+                  "item": "추가 B",
+                  "cost": 10,
+                  "customerRevenue": 20,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 10,
+              "marginRate": 1
+            },
+            {
+              "label": "custom-a",
+              "cost": -5,
+              "customer": -10,
+              "count": 1,
+              "details": [
+                {
+                  "group": "custom-a",
+                  "item": "추가 A",
+                  "cost": -5,
+                  "customerRevenue": -10,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": -5,
+              "marginRate": 0
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 20
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 255,
+            "directCost": 180,
+            "profit": 75,
+            "marginRate": 0.4166666666666667,
+            "detailCount": 8,
+            "detailCustomerTotal": 245,
+            "detailCostTotal": 175,
+            "customerDiff": -10,
+            "costDiff": -5
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": true,
+          "value": {
+            "group": "custom-zero",
+            "item": "상쇄",
+            "cost": 5,
+            "customerRevenue": 10,
+            "quantity": "1식"
+          }
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "과거 견적의 총액 절사, 수동 조정 또는 구버전 저장 방식으로 인해 상세 고객가 합계와 저장된 고객 견적 총액이 다를 수 있습니다.",
+              "impact": "차액: -1,000원",
+              "action": "상세 고객가 합계, 저장된 customerQuote.total, 계약 패키지 총액, 계약 문서 총액을 확인하세요."
+            },
+            {
+              "title": "직접원가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "상쇄 5원이 전체 costTotal에 반영되지 않았을 가능성이 있습니다.",
+              "impact": "상세 직접원가 합계와 저장된 전체 직접원가가 -5원 다릅니다.",
+              "action": "계약 전 견적이면 현재 기준 재계산 저장 여부를 검토하고, 계약 완료 견적이면 관리자 검토가 필요합니다."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "legacy fractional revenue fallback",
+      "estimate": {
+        "customerQuote": {
+          "total": 3001
+        },
+        "total": 999999,
+        "costTotal": 2001,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "신형",
+            "cost": 1000.5,
+            "customerRevenue": 2000.5,
+            "quantity": "1식"
+          },
+          {
+            "group": "misc",
+            "item": "구형 문자열",
+            "cost": "1000.4",
+            "customerRevenue": "2000.5",
+            "revenue": "1999.9"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 2001,
+              "customer": 3001,
+              "count": 2,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "신형",
+                  "cost": 1000.5,
+                  "customerRevenue": 2000.5,
+                  "quantity": "1식"
+                },
+                {
+                  "group": "misc",
+                  "item": "구형 문자열",
+                  "cost": "1000.4",
+                  "customerRevenue": "2000.5",
+                  "revenue": "1999.9"
+                }
+              ],
+              "profit": 1000,
+              "marginRate": 0.49975012493753124
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 2001
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 3001,
+            "directCost": 2001,
+            "profit": 1000,
+            "marginRate": 0.49975012493753124,
+            "detailCount": 2,
+            "detailCustomerTotal": 3001,
+            "detailCostTotal": 2001,
+            "customerDiff": 0,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": []
+        }
+      }
+    },
+    {
+      "name": "pipe legacy cost gap",
+      "estimate": {
+        "customerQuote": {
+          "total": 98283000
+        },
+        "costTotal": 68612000,
+        "internalDetails": [
+          {
+            "group": "flooring",
+            "item": "시험 바닥",
+            "cost": 68612000,
+            "customerRevenue": 97983000,
+            "quantity": "1식"
+          },
+          {
+            "group": "misc",
+            "item": "기존 배관 청소",
+            "cost": 300000,
+            "customerRevenue": 300000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "바닥",
+              "cost": 68612000,
+              "customer": 97983000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "flooring",
+                  "item": "시험 바닥",
+                  "cost": 68612000,
+                  "customerRevenue": 97983000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 29371000,
+              "marginRate": 0.428073806331254
+            },
+            {
+              "label": "기타",
+              "cost": 300000,
+              "customer": 300000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "기존 배관 청소",
+                  "cost": 300000,
+                  "customerRevenue": 300000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 0,
+              "marginRate": 0
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 97983000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 98283000,
+            "directCost": 68612000,
+            "profit": 29671000,
+            "marginRate": 0.4324462193202355,
+            "detailCount": 2,
+            "detailCustomerTotal": 98283000,
+            "detailCostTotal": 68912000,
+            "customerDiff": 0,
+            "costDiff": 300000
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": true
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": true,
+          "value": {
+            "group": "misc",
+            "item": "기존 배관 청소",
+            "cost": 300000,
+            "customerRevenue": 300000,
+            "quantity": "1식"
+          }
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "구버전 견적 원가 누락",
+              "causeLabel": "원인",
+              "cause": "기존 배관 청소 직접원가 300,000원이 상세견적에는 포함됐지만, 저장된 전체 직접원가에는 반영되지 않았습니다.",
+              "impact": "예상 이익이 300,000원 높게 표시되고 전체 마진율이 실제보다 높게 표시됩니다.",
+              "action": "계약 전 테스트 견적이면 현재 기준으로 다시 계산해 저장하세요. 계약 완료 견적이면 자동 수정하지 말고 관리자 검토가 필요합니다."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "manual discount",
+      "estimate": {
+        "total": 90000,
+        "costTotal": 80000,
+        "inputs": {
+          "manualAdjustment": -10000
+        },
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "시험 항목",
+            "cost": 80000,
+            "customerRevenue": 100000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 80000,
+              "customer": 100000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "시험 항목",
+                  "cost": 80000,
+                  "customerRevenue": 100000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20000,
+              "marginRate": 0.25
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 100000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 90000,
+            "directCost": 80000,
+            "profit": 10000,
+            "marginRate": 0.125,
+            "detailCount": 1,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": 10000,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": {
+            "label": "할인",
+            "amount": 10000
+          }
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객 견적 총액 조정",
+              "causeLabel": "원인",
+              "cause": "상세견적 합계에서 10,000원 할인이 적용되었습니다.",
+              "impact": "상세 항목 합계와 최종 고객 견적 총액이 10,000원 다릅니다.",
+              "action": "의도된 조정이면 총액 조정 내역으로 관리하세요."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "quote adjustment first matching row",
+      "estimate": {
+        "customerQuote": {
+          "total": 110000,
+          "groups": [
+            {
+              "items": [
+                {
+                  "name": "상담 보정",
+                  "amount": 10000
+                },
+                {
+                  "name": "할인",
+                  "amount": -5000
+                }
+              ]
+            }
+          ]
+        },
+        "costTotal": 80000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "시험 항목",
+            "cost": 80000,
+            "customerRevenue": 100000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 80000,
+              "customer": 100000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "시험 항목",
+                  "cost": 80000,
+                  "customerRevenue": 100000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20000,
+              "marginRate": 0.25
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 100000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 110000,
+            "directCost": 80000,
+            "profit": 30000,
+            "marginRate": 0.375,
+            "detailCount": 1,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": -10000,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": {
+            "label": "상담 보정",
+            "amount": 10000
+          }
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객 견적 총액 조정",
+              "causeLabel": "원인",
+              "cause": "상세견적 합계에서 10,000원 상담 보정이 적용되었습니다.",
+              "impact": "상세 항목 합계와 최종 고객 견적 총액이 10,000원 다릅니다.",
+              "action": "의도된 조정이면 총액 조정 내역으로 관리하세요."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "explicit zero suppresses top level adjustment",
+      "estimate": {
+        "total": 90000,
+        "costTotal": 80000,
+        "inputs": {
+          "manualAdjustment": 0
+        },
+        "manualAdjustment": -10000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "시험 항목",
+            "cost": 80000,
+            "customerRevenue": 100000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 80000,
+              "customer": 100000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "시험 항목",
+                  "cost": 80000,
+                  "customerRevenue": 100000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20000,
+              "marginRate": 0.25
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 100000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 90000,
+            "directCost": 80000,
+            "profit": 10000,
+            "marginRate": 0.125,
+            "detailCount": 1,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": 10000,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "과거 견적의 총액 절사, 수동 조정 또는 구버전 저장 방식으로 인해 상세 고객가 합계와 저장된 고객 견적 총액이 다를 수 있습니다.",
+              "impact": "차액: 10,000원",
+              "action": "상세 고객가 합계, 저장된 customerQuote.total, 계약 패키지 총액, 계약 문서 총액을 확인하세요."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "positive adjustment",
+      "estimate": {
+        "total": 110000,
+        "costTotal": 80000,
+        "manualAdjustment": 10000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "시험 항목",
+            "cost": 80000,
+            "customerRevenue": 100000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 80000,
+              "customer": 100000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "시험 항목",
+                  "cost": 80000,
+                  "customerRevenue": 100000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20000,
+              "marginRate": 0.25
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 100000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 110000,
+            "directCost": 80000,
+            "profit": 30000,
+            "marginRate": 0.375,
+            "detailCount": 1,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": -10000,
+            "costDiff": 0
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": {
+            "label": "총액 조정",
+            "amount": 10000
+          }
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객 견적 총액 조정",
+              "causeLabel": "원인",
+              "cause": "상세견적 합계에서 10,000원 총액 조정이 적용되었습니다.",
+              "impact": "상세 항목 합계와 최종 고객 견적 총액이 10,000원 다릅니다.",
+              "action": "의도된 조정이면 총액 조정 내역으로 관리하세요."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "unknown customer and matching cost gap",
+      "estimate": {
+        "total": 95000,
+        "costTotal": 60000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "항목 A",
+            "cost": 20000,
+            "customerRevenue": 30000,
+            "quantity": "1식"
+          },
+          {
+            "group": "demolition",
+            "item": "항목 B",
+            "cost": 60000,
+            "customerRevenue": 70000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "철거",
+              "cost": 60000,
+              "customer": 70000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "demolition",
+                  "item": "항목 B",
+                  "cost": 60000,
+                  "customerRevenue": 70000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 10000,
+              "marginRate": 0.16666666666666666
+            },
+            {
+              "label": "기타",
+              "cost": 20000,
+              "customer": 30000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "항목 A",
+                  "cost": 20000,
+                  "customerRevenue": 30000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 10000,
+              "marginRate": 0.5
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 30000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 95000,
+            "directCost": 60000,
+            "profit": 35000,
+            "marginRate": 0.5833333333333334,
+            "detailCount": 2,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": 5000,
+            "costDiff": 20000
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": true,
+          "value": {
+            "group": "misc",
+            "item": "항목 A",
+            "cost": 20000,
+            "customerRevenue": 30000,
+            "quantity": "1식"
+          }
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "고객가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "과거 견적의 총액 절사, 수동 조정 또는 구버전 저장 방식으로 인해 상세 고객가 합계와 저장된 고객 견적 총액이 다를 수 있습니다.",
+              "impact": "차액: 5,000원",
+              "action": "상세 고객가 합계, 저장된 customerQuote.total, 계약 패키지 총액, 계약 문서 총액을 확인하세요."
+            },
+            {
+              "title": "직접원가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "항목 A 20,000원이 전체 costTotal에 반영되지 않았을 가능성이 있습니다.",
+              "impact": "상세 직접원가 합계와 저장된 전체 직접원가가 20,000원 다릅니다.",
+              "action": "계약 전 견적이면 현재 기준 재계산 저장 여부를 검토하고, 계약 완료 견적이면 관리자 검토가 필요합니다."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "unknown cost gap",
+      "estimate": {
+        "total": 100000,
+        "costTotal": 75000,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "시험 항목",
+            "cost": 80000,
+            "customerRevenue": 100000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 80000,
+              "customer": 100000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "시험 항목",
+                  "cost": 80000,
+                  "customerRevenue": 100000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 20000,
+              "marginRate": 0.25
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 100000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 100000,
+            "directCost": 75000,
+            "profit": 25000,
+            "marginRate": 0.3333333333333333,
+            "detailCount": 1,
+            "detailCustomerTotal": 100000,
+            "detailCostTotal": 80000,
+            "customerDiff": 0,
+            "costDiff": 5000
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": false
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": false
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "직접원가 저장값 불일치",
+              "causeLabel": "추정 원인",
+              "cause": "일부 상세 항목의 원가가 전체 costTotal에 반영되지 않았거나, 과거 저장 구조에서 합계 필드가 갱신되지 않았을 가능성이 있습니다.",
+              "impact": "상세 직접원가 합계와 저장된 전체 직접원가가 5,000원 다릅니다.",
+              "action": "계약 전 견적이면 현재 기준 재계산 저장 여부를 검토하고, 계약 완료 견적이면 관리자 검토가 필요합니다."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "different live pipe amount",
+      "pipeCleaningAmount": 400000,
+      "estimate": {
+        "total": 400000,
+        "costTotal": 0,
+        "internalDetails": [
+          {
+            "group": "misc",
+            "item": "기존 배관 청소",
+            "cost": 400000,
+            "customerRevenue": 400000,
+            "quantity": "1식"
+          }
+        ]
+      },
+      "expected": {
+        "buildAdminMarginGroups": {
+          "defined": true,
+          "value": [
+            {
+              "label": "기타",
+              "cost": 400000,
+              "customer": 400000,
+              "count": 1,
+              "details": [
+                {
+                  "group": "misc",
+                  "item": "기존 배관 청소",
+                  "cost": 400000,
+                  "customerRevenue": 400000,
+                  "quantity": "1식"
+                }
+              ],
+              "profit": 0,
+              "marginRate": 0
+            }
+          ]
+        },
+        "internalDetailCustomerAmount": {
+          "defined": true,
+          "value": 400000
+        },
+        "storedEstimateSummary": {
+          "defined": true,
+          "value": {
+            "customerTotal": 400000,
+            "directCost": 0,
+            "profit": 400000,
+            "marginRate": 0,
+            "detailCount": 1,
+            "detailCustomerTotal": 400000,
+            "detailCostTotal": 400000,
+            "customerDiff": 0,
+            "costDiff": 400000
+          }
+        },
+        "hasPipeCleaningLegacyCostGap": {
+          "defined": true,
+          "value": true
+        },
+        "adjustmentEvidence": {
+          "defined": true,
+          "value": null
+        },
+        "findMatchingCostDetail": {
+          "defined": true,
+          "value": {
+            "group": "misc",
+            "item": "기존 배관 청소",
+            "cost": 400000,
+            "customerRevenue": 400000,
+            "quantity": "1식"
+          }
+        },
+        "buildEstimateDiagnostics": {
+          "defined": true,
+          "value": [
+            {
+              "title": "구버전 견적 원가 누락",
+              "causeLabel": "원인",
+              "cause": "기존 배관 청소 직접원가 300,000원이 상세견적에는 포함됐지만, 저장된 전체 직접원가에는 반영되지 않았습니다.",
+              "impact": "예상 이익이 300,000원 높게 표시되고 전체 마진율이 실제보다 높게 표시됩니다.",
+              "action": "계약 전 테스트 견적이면 현재 기준으로 다시 계산해 저장하세요. 계약 완료 견적이면 자동 수정하지 말고 관리자 검토가 필요합니다."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

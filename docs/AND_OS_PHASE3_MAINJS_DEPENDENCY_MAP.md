@@ -761,3 +761,71 @@ git status/diff stat/diff check로 분석 문서만 신규인지 확인한다. c
 - 기존 제외 SQL 두 파일은 미접촉. API/DB/SQL/계산식/권한/계약/캐시 키 변경 없음.
 - Extraction verdict: PASS. Phase 3B-2는 별도 승인 후 진행 가능.
   이번 단계의 두 로컬 커밋 외 push/deploy/Production 접근은 없음.
+
+## 17. Phase 3B-2 Summary And Diagnostic Extraction
+
+2026-10-12, 추출 전 기준 `531978c`. 기존 분석을 대체하지 않는 별도 승인 결과다.
+
+### 후보 재확인
+
+다음 행 범위는 추출 전 main.js 기준이다. 선정한 7개 모두 DOM, network/storage, global write가 없다.
+기존 global read는 아래 config 열에 명시했다. 나머지 호출 의존은 pure helper 또는 같은 묶음이다.
+
+| 후보 / 추출 전 행 | 본문 행 | callers | callees | 기존 config/global read | 분리 판단 / 위험 |
+|---|---:|---|---|---|---|
+| buildAdminMarginGroups / 3493-3523 | 31 | renderAdminEstimateDetailPanel, renderAdminInternalPrint, renderAdminMarginTable, storedEstimateSummary | internalDetailCustomerAmount, markupRate, moneyAmount | quoteGroupLabels, quoteGroupOrder | near-pure, 공정 설정을 인자로 전달 / MEDIUM |
+| internalDetailCustomerAmount / 3525-3529 | 5 | buildAdminMarginGroups, hasPipeCleaningLegacyCostGap, renderAdminTradeGroup | floorThousand, moneyAmount | 없음 | pure / LOW |
+| storedEstimateSummary / 3531-3551 | 21 | renderAdminEstimateDetailPanel | buildAdminMarginGroups, markupRate, moneyAmount | 간접 공정 설정 | near-pure, options 전달 / MEDIUM |
+| hasPipeCleaningLegacyCostGap / 3553-3561 | 9 | buildEstimateDiagnostics | internalDetailCustomerAmount, moneyAmount | PIPE_CLEANING_ITEM_NAME, mutable PIPE_CLEANING_AMOUNT | near-pure, 현재 이름/금액을 인자로 전달 / MEDIUM |
+| adjustmentEvidence / 3563-3576 | 14 | buildEstimateDiagnostics | moneyAmount | 없음 | pure / LOW |
+| findMatchingCostDetail / 3578-3580 | 3 | buildEstimateDiagnostics | moneyAmount | 없음 | pure / LOW |
+| buildEstimateDiagnostics / 3582-3629 | 48 | renderEstimateDiagnostics | hasPipeCleaningLegacyCostGap, adjustmentEvidence, findMatchingCostDetail, customerWon, moneyAmount, won | 간접 배관 청소 설정 | near-pure, options 전달 / MEDIUM |
+
+기존 shared core와 summary/diagnostic 구현 중복은 없다. floorThousand/customerWon/markupRate는
+기존 core factory가 반환하는 동일 helper를 사용하며 계산이나 배관 후처리를 복사하지 않는다.
+
+검토 후 제외한 후보:
+
+| 후보 / 추출 전 행 | 본문 행 | 제외 이유 |
+|---|---:|---|
+| costSnapshotMap / 2072-2074 | 3 | 원가 snapshot adapter 책임이며 내부 진단 묶음과 별개 |
+| isEstimateInputExcluded / 3315-3317 | 3 | COST_ITEM_BY_INPUT 판별과 collect/restore/canonical 입력 경계는 별도 단계 |
+| canonicalInputValues / 4654-4661 | 8 | 변경 감지의 직렬화/제외 정책이며 summary 책임과 별개 |
+| purchaseOrderItems / 4034-4058 | 25 | 발주 키워드/배제/공정 변환 책임을 이번 진단 추출에 섞지 않음 |
+
+### 실제 결과와 경계
+
+- 신규 module: `public/os-app/src/estimate-summary.js` 1개, 142행.
+- 이동 함수는 위 7개, 정의 본문 합계 131행. main.js 6,933 -> 6,795행.
+- main에 import 선언 1개 추가, 직접 소비 함수 4개 import. 별도 logic wrapper 없음.
+- 공정명/순서와 배관 이름/현재 단가는 호출부에서 전달. main의 config owner를 변경하지 않았다.
+- utils -> summary, shared core -> summary, summary -> main/UI 방향.
+  새 module은 utils/core 외 import가 없고 main/DOM/storage/API 역참조가 없다.
+- core factory의 pure helper만 사용한다. summary가 calculate 또는 배관 후처리를 실행하지 않는다.
+- 추출로 미사용이 된 main의 floorThousand core 위임 1줄만 제거했다.
+  core 원본은 유지하며 새로운 구현이나 추가 함수 추출은 없다.
+- labels/order config 및 DOM 렌더링, 권한 검사, estimate state/save/restore는 main에 남는다.
+  요약 API는 전달된 detail 참조를 기존처럼 반환하며 입력을 수정하지 않는다.
+
+### Behavior Freeze 및 검증
+
+- 이동 전 실제 구현을 AST로 선택해 합성 fixture 14개 x 함수 7개 결과를 캡처했다.
+  `tests/os/fixtures/estimate-summary-characterization.json`에 531978c 및 source hash와 함께 고정.
+  실제 고객 데이터나 credential은 포함하지 않는다. 과거 구현 복사본을 runtime/test에 남기지 않았다.
+- 신규 `tests/os/unit/estimate-summary.test.js`: 132개 PASS.
+  characterization 98개 + rounding/fallback/order/empty/negative/large/error/config isolation/pure boundary 34개.
+- frozen input 및 반복 호출로 mutation/determinism 검증. 독립 Node import 및 함수 7개 실행 PASS.
+- 정적 scope 검사에서 외부 global은 Array/Map/Math/Number만 허용.
+  DOM/browser/application global/network/storage 직접 참조 없음. canonical 함수 정의는 각 1개.
+- 기존 122개 포함 regression 254/254 PASS.
+  Known Failure / Unexpected Fail / Skip / Failed Files / Unhandled Errors 모두 0.
+- syntax(main/module/test), lint, build, diff 검사 PASS. 기존 lint warning 5개 유지, 신규 0.
+- shared core/server path/storage/auth/DB 변경이 없어 DB Security/Integrity/Staff Boundary DB suite는 재실행하지 않았다.
+- 현재 behavior 유지: margin은 profit/cost, 행별 원 단위 반올림 및 legacy revenue 천원 절사,
+  숫자 문자열 customerRevenue의 fallback, 0 순합계 그룹 제외, malformed details TypeError,
+  explicit zero 조정 우선, 첫 조정 행 우선, 현재 금액과 별개인 고정 300,000원 진단 문구.
+  이를 이번 작업에서 개선하거나 수정하지 않았다.
+- Verdict: PASS. Phase 3B-3는 별도 승인 후 진행 가능.
+  가장 작은 권장 대상은 isEstimateInputExcluded/canonicalInputValues 입력 정규화 경계의 사전 characterization이다.
+  제외 map을 명시적으로 전달하는 범위부터 진행하고 DOM state/save/restore를 한 번에 이동하지 않는다.
+- 제외 SQL 두 파일 미접촉. push/deploy/Production 접근 없음.
