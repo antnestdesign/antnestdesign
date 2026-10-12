@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import {
   assertPassword,
   errorResponse,
-  getUserContext,
+  getPasswordChangeContext,
   json,
   profileAuditData,
   supabaseFetch,
@@ -11,7 +11,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const context = await getUserContext(request);
+    const context = await getPasswordChangeContext(request);
     const { authUser, profile } = context;
     const body = (await request.json()) as Record<string, unknown>;
     const password = assertPassword(body.password ?? body.newPassword);

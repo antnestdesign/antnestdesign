@@ -1,0 +1,38 @@
+import { expect, test } from "vitest";
+import { latestEstimate, testProfile } from "../fixtures/estimates.js";
+import { createEstimateDatabase, flushAsyncWork, mountOs } from "../helpers/os-harness.js";
+import { clearRequestLog, mutations } from "../helpers/network.js";
+
+test("P0-3 checkbox -> save -> GET uses one snapshot without other trade recalculation", async () => {
+  const fixture = latestEstimate();
+  const database = createEstimateDatabase(fixture);
+  const { main, storage } = await mountOs(database, testProfile());
+  main.loadEstimateIntoUi(await storage.getEstimate(fixture.id));
+  await flushAsyncWork();
+  clearRequestLog();
+  const checkbox = document.getElementById("existingPipeCleaningEnabled");
+  checkbox.checked = true;
+  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+  expect(document.getElementById("clientTotal").textContent).toBe("4,070,000원");
+  expect(mutations()).toEqual([]);
+  await main.handleSaveEstimate("update");
+  await flushAsyncWork();
+  const restored = await storage.getEstimate(fixture.id);
+  expect(restored.total).toBe(4070000);
+  expect(restored.costTotal).toBe(3200000);
+  expect(restored.internalSummary.profit).toBe(870000);
+  expect(restored.inputs.existingPipeCleaningEnabled).toBe(true);
+  expect(restored.internalDetails.filter((row) => row.item !== "기존 배관 청소")).toEqual(fixture.internalDetails);
+  main.loadEstimateIntoUi(restored);
+  await flushAsyncWork();
+  expect(document.getElementById("clientTotal").textContent).toBe("4,070,000원");
+  checkbox.checked = false;
+  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+  await main.handleSaveEstimate("update");
+  await flushAsyncWork();
+  const disabled = await storage.getEstimate(fixture.id);
+  expect(disabled.inputs.existingPipeCleaningEnabled).toBe(false);
+  expect(disabled.total).toBe(3770000);
+  expect(disabled.costTotal).toBe(2900000);
+  expect(disabled.internalDetails).toEqual(fixture.internalDetails);
+});

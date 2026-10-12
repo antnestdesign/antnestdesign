@@ -1,7 +1,9 @@
 import { createHash } from "crypto";
+import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
+import fixedTermLines from "./contract-fixed-terms.json";
 import { ApiError, UserContext, UserRole, supabaseFetch } from "../../_lib/server";
 
-export const CONTRACT_TEMPLATE_VERSION = "RFC-005-2026.07.20";
+export const CONTRACT_TEMPLATE_VERSION = "RFC-005-2026.10.12-snapshot";
 export const CONTRACT_RULE_VERSION = "RFC-006-2026.07.20";
 export const DOCUMENT_TYPES = ["CONTRACT", "QUOTE", "SPEC"] as const;
 
@@ -668,6 +670,7 @@ export function renderDocumentJson(type: ContractDocumentType, snapshot: Record<
           site_manager: snapshot.site_manager,
           clauses: snapshot.clause_snapshot,
           payment_schedule: snapshot.payment_schedule,
+          fixed_term_lines: [...fixedTermLines],
         },
   };
 }
@@ -715,19 +718,27 @@ function staffEstimateSnapshot(value: unknown) {
     total_price: estimate.total_price,
     total_text: estimate.total_text,
     status: estimate.status,
-    customer_quote: estimate.customer_quote,
+    customer_quote: customerQuoteProjection(objectValue(estimate.customer_quote)),
     quote_items: estimate.quote_items,
   };
 }
 
 function projectDocument(row: Record<string, unknown>, role: UserRole) {
   if (role === "staff") {
+    const content = objectValue(row.content_json);
+    const projectedContent = row.document_type === "QUOTE" ? {
+      document_type: content.document_type, title: content.title, template_version: content.template_version,
+      rule_version: content.rule_version, project_name: content.project_name, contract_no: content.contract_no,
+      estimate_id: content.estimate_id, estimate_revision: content.estimate_revision,
+      total_amount: content.total_amount,
+      generated_sections: customerQuoteProjection(objectValue(content.generated_sections)),
+    } : content;
     return {
       id: row.id,
       document_type: row.document_type,
       package_version: row.package_version,
       generation_status: row.generation_status,
-      content_json: row.content_json,
+      content_json: projectedContent,
       file_path: row.file_path,
       file_url: row.file_url,
       mime_type: row.mime_type,

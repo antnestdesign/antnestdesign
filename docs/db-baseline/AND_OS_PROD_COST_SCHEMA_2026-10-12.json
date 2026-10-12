@@ -1,0 +1,1220 @@
+{
+  "tables": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "oid": "17827",
+      "name": "cost_item_history",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_item_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_item_history_item_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_item_history_item_idx ON public.cost_item_history USING btree (cost_item_id, changed_at DESC)"
+        },
+        {
+          "name": "cost_item_history_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_item_history_pkey ON public.cost_item_history USING btree (id)"
+        },
+        {
+          "name": "cost_item_history_version_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_item_history_version_idx ON public.cost_item_history USING btree (cost_version, changed_at DESC)"
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_item_history",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_item_history_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_item_history_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_item_history_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON public.cost_item_history FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "function_oid": "17921",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_item_history_changed_by_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (changed_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_item_history_cost_item_id_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (cost_item_id) REFERENCES cost_items(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "cost_item_history_pkey",
+          "type": "p",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "oid": "17800",
+      "name": "cost_items",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "category",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "subcategory",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_code",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "unit",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_price",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "default_margin_rate",
+          "type": "numeric",
+          "default": "0.35",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "order_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_customer_quote",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_internal_quote",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_order_sheet",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_material",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_labor",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_service",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_phone",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_active",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "sort_order",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_updated_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "calculation_basis",
+          "type": "text",
+          "default": "'manual_input'::text",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "calculation_multiplier",
+          "type": "numeric",
+          "default": "1",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "min_quantity",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "rounding_method",
+          "type": "text",
+          "default": "'none'::text",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_pending_new",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "source_cost_item_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_items_active_sort_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_active_sort_idx ON public.cost_items USING btree (is_active, sort_order, category)"
+        },
+        {
+          "name": "cost_items_category_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_category_idx ON public.cost_items USING btree (category, subcategory)"
+        },
+        {
+          "name": "cost_items_draft_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_draft_idx ON public.cost_items USING btree (draft_updated_at DESC) WHERE (draft_updated_at IS NOT NULL)"
+        },
+        {
+          "name": "cost_items_item_code_key",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_items_item_code_key ON public.cost_items USING btree (item_code)"
+        },
+        {
+          "name": "cost_items_pending_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_pending_idx ON public.cost_items USING btree (is_pending_new, draft_updated_at DESC) WHERE (is_pending_new = true)"
+        },
+        {
+          "name": "cost_items_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_items_pkey ON public.cost_items USING btree (id)"
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_items",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_items_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_items_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_items_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON public.cost_items FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "function_oid": "17921",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        },
+        {
+          "name": "set_cost_items_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER set_cost_items_updated_at BEFORE UPDATE ON public.cost_items FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+          "function_oid": "17846",
+          "called_function": "set_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_items_calculation_basis_check",
+          "type": "c",
+          "validated": true,
+          "definition": "CHECK ((calculation_basis = ANY (ARRAY['fixed'::text, 'apartment_pyeong'::text, 'flooring_pyeong'::text, 'length_mm'::text, 'length_m'::text, 'area_sqm'::text, 'count'::text, 'bathroom_count'::text, 'lower_cabinet_length'::text, 'upper_cabinet_length'::text, 'homebar_length'::text, 'island_length'::text, 'partition_length'::text, 'manual_input'::text])))"
+        },
+        {
+          "name": "cost_items_calculation_multiplier_check",
+          "type": "c",
+          "validated": true,
+          "definition": "CHECK ((calculation_multiplier >= (0)::numeric))"
+        },
+        {
+          "name": "cost_items_draft_updated_by_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (draft_updated_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_items_item_code_key",
+          "type": "u",
+          "validated": true,
+          "definition": "UNIQUE (item_code)"
+        },
+        {
+          "name": "cost_items_min_quantity_check",
+          "type": "c",
+          "validated": true,
+          "definition": "CHECK (((min_quantity IS NULL) OR (min_quantity >= (0)::numeric)))"
+        },
+        {
+          "name": "cost_items_pkey",
+          "type": "p",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "cost_items_rounding_method_check",
+          "type": "c",
+          "validated": true,
+          "definition": "CHECK ((rounding_method = ANY (ARRAY['none'::text, 'ceil'::text, 'floor'::text, 'round'::text])))"
+        },
+        {
+          "name": "cost_items_source_cost_item_id_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (source_cost_item_id) REFERENCES cost_items(id)"
+        },
+        {
+          "name": "cost_items_updated_by_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "oid": "17877",
+      "name": "cost_publish_log",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "published_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_item_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "price_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "margin_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "active_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "duration_ms",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_publish_log_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_publish_log_pkey ON public.cost_publish_log USING btree (id)"
+        },
+        {
+          "name": "cost_publish_log_published_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_publish_log_published_idx ON public.cost_publish_log USING btree (published_at DESC)"
+        },
+        {
+          "name": "cost_publish_log_version_key",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_publish_log_version_key ON public.cost_publish_log USING btree (version)"
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_publish_log",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_publish_log_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_publish_log_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_publish_log_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON public.cost_publish_log FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "function_oid": "17921",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_publish_log_counts_check",
+          "type": "c",
+          "validated": true,
+          "definition": "CHECK (((changed_item_count >= 0) AND (price_change_count >= 0) AND (margin_change_count >= 0) AND (active_change_count >= 0) AND ((duration_ms IS NULL) OR (duration_ms >= 0))))"
+        },
+        {
+          "name": "cost_publish_log_pkey",
+          "type": "p",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "cost_publish_log_published_by_fkey",
+          "type": "f",
+          "validated": true,
+          "definition": "FOREIGN KEY (published_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_publish_log_version_key",
+          "type": "u",
+          "validated": true,
+          "definition": "UNIQUE (version)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    }
+  ],
+  "database": "postgres",
+  "functions": [
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17921",
+      "name": "and_os_require_cost_rpc_mutation",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.and_os_require_cost_rpc_mutation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if coalesce(current_setting('request.and_os_cost_rpc', true), '') <> 'on' then\r\n    raise exception 'AND OS cost data mutation must use approved RPC';\r\n  end if;\r\n\r\n  if tg_op = 'DELETE' then\r\n    return old;\r\n  end if;\r\n\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "anon_execute": true,
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17909",
+      "name": "cancel_all_cost_drafts",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.cancel_all_cost_drafts()\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_count integer;\r\n  v_changed_count integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  delete from public.cost_items\r\n  where is_pending_new = true;\r\n\r\n  get diagnostics v_count = row_count;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null\r\n  where draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  get diagnostics v_changed_count = row_count;\r\n  v_count := v_count + v_changed_count;\r\n  return v_count;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "integer",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17908",
+      "name": "cancel_cost_item_draft",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.cancel_cost_item_draft(p_cost_item_id uuid)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  select * into v_row from public.cost_items where id = p_cost_item_id;\r\n  if v_row.id is null then\r\n    raise exception 'cost item not found';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  if v_row.is_pending_new then\r\n    delete from public.cost_items where id = p_cost_item_id;\r\n    return v_row;\r\n  end if;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17997",
+      "name": "create_cost_item_pending",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false, p_source_cost_item_id uuid DEFAULT NULL::uuid",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.create_cost_item_pending(p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false, p_source_cost_item_id uuid DEFAULT NULL::uuid)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_item_code text;\r\n  v_item_name text;\r\n  v_category text;\r\n  v_unit text;\r\n  v_basis text;\r\n  v_multiplier numeric;\r\n  v_rounding text;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_item_code := public.validate_and_os_cost_item_code(p_item_code);\r\n  v_item_name := nullif(trim(coalesce(p_item_name, '')), '');\r\n  v_category := nullif(trim(coalesce(p_category, '')), '');\r\n  v_unit := nullif(trim(coalesce(p_unit, '')), '');\r\n  v_basis := nullif(trim(coalesce(p_calculation_basis, '')), '');\r\n  v_multiplier := coalesce(p_calculation_multiplier, 1);\r\n  v_rounding := coalesce(nullif(trim(p_rounding_method), ''), 'none');\r\n\r\n  if v_item_name is null then raise exception 'item name is required'; end if;\r\n  if v_category is null then raise exception 'category is required'; end if;\r\n  if v_unit is null then raise exception 'unit is required'; end if;\r\n  if v_basis is null then raise exception 'calculation basis is required'; end if;\r\n  if p_cost_price is null or p_cost_price < 0 then raise exception 'cost price must be greater than or equal to zero'; end if;\r\n  if p_margin_rate is null or p_margin_rate < 0 or p_margin_rate >= 1 then raise exception 'margin rate must be greater than or equal to zero and less than one'; end if;\r\n  if v_multiplier < 0 then raise exception 'calculation multiplier must be greater than or equal to zero'; end if;\r\n  if p_min_quantity is not null and p_min_quantity < 0 then raise exception 'minimum quantity must be greater than or equal to zero'; end if;\r\n  if v_rounding not in ('none', 'ceil', 'floor', 'round') then raise exception 'rounding method is invalid'; end if;\r\n\r\n  if exists (select 1 from public.cost_items where item_code = v_item_code) then\r\n    raise exception 'cost item code already exists';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  insert into public.cost_items (\r\n    category,\r\n    subcategory,\r\n    item_code,\r\n    item_name,\r\n    unit,\r\n    cost_price,\r\n    default_margin_rate,\r\n    customer_name,\r\n    order_name,\r\n    include_in_customer_quote,\r\n    include_in_internal_quote,\r\n    include_in_order_sheet,\r\n    is_material,\r\n    is_labor,\r\n    is_service,\r\n    is_active,\r\n    sort_order,\r\n    memo,\r\n    updated_by,\r\n    draft_is_active,\r\n    draft_updated_at,\r\n    draft_updated_by,\r\n    calculation_basis,\r\n    calculation_multiplier,\r\n    min_quantity,\r\n    rounding_method,\r\n    is_pending_new,\r\n    source_cost_item_id\r\n  )\r\n  values (\r\n    v_category,\r\n    nullif(trim(coalesce(p_subcategory, '')), ''),\r\n    v_item_code,\r\n    v_item_name,\r\n    v_unit,\r\n    p_cost_price,\r\n    p_margin_rate,\r\n    nullif(trim(coalesce(p_customer_name, '')), ''),\r\n    nullif(trim(coalesce(p_order_name, '')), ''),\r\n    coalesce(p_include_in_customer_quote, true),\r\n    coalesce(p_include_in_internal_quote, true),\r\n    coalesce(p_include_in_order_sheet, false),\r\n    coalesce(p_is_material, false),\r\n    coalesce(p_is_labor, false),\r\n    coalesce(p_is_service, false),\r\n    false,\r\n    coalesce(p_sort_order, 0),\r\n    nullif(trim(coalesce(p_memo, '')), ''),\r\n    auth.uid(),\r\n    coalesce(p_is_active, true),\r\n    timezone('Asia/Seoul', now()),\r\n    auth.uid(),\r\n    v_basis,\r\n    v_multiplier,\r\n    p_min_quantity,\r\n    v_rounding,\r\n    true,\r\n    p_source_cost_item_id\r\n  )\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean, p_source_cost_item_id uuid",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17851",
+      "name": "current_and_os_role",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "sql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.current_and_os_role()\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select coalesce((select lower(role) from public.profiles where id = auth.uid() limit 1), 'staff');\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "text",
+      "anon_execute": true,
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17852",
+      "name": "is_and_os_admin",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "sql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.is_and_os_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select public.current_and_os_role() = 'admin';\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "boolean",
+      "anon_execute": true,
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17906",
+      "name": "next_cost_publish_version",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.next_cost_publish_version()\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_prefix text;\r\n  v_last_suffix integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_prefix := to_char(timezone('Asia/Seoul', now()), 'YYYY.MM.DD');\r\n\r\n  select coalesce(max(substring(version from 12 for 3)::integer), 0)\r\n  into v_last_suffix\r\n  from public.cost_publish_log\r\n  where version like v_prefix || '-___';\r\n\r\n  return v_prefix || '-' || lpad((v_last_suffix + 1)::text, 3, '0');\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "text",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17910",
+      "name": "publish_cost_drafts",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_reason text, p_memo text DEFAULT NULL::text",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.publish_cost_drafts(p_reason text, p_memo text DEFAULT NULL::text)\n RETURNS TABLE(version text, changed_item_count integer, price_change_count integer, margin_change_count integer, active_change_count integer)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_reason text;\r\n  v_version text;\r\n  v_changed_count integer;\r\n  v_price_count integer;\r\n  v_margin_count integer;\r\n  v_active_count integer;\r\n  v_memo text;\r\n  v_started_at timestamptz;\r\n  v_duration_ms integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_started_at := clock_timestamp();\r\n\r\n  v_reason := nullif(trim(p_reason), '');\r\n  if v_reason is null then raise exception 'publish reason is required'; end if;\r\n  if char_length(v_reason) > 500 then raise exception 'publish reason must be 500 characters or fewer'; end if;\r\n\r\n  v_memo := nullif(trim(p_memo), '');\r\n  if v_memo is not null and char_length(v_memo) > 2000 then\r\n    raise exception 'publish memo must be 2000 characters or fewer';\r\n  end if;\r\n\r\n  perform pg_advisory_xact_lock(hashtext('and_os_cost_publish'));\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  select count(*)\r\n  into v_changed_count\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  if v_changed_count = 0 then raise exception 'no draft cost changes to publish'; end if;\r\n\r\n  v_version := public.next_cost_publish_version();\r\n\r\n  select\r\n    count(*) filter (where draft_cost_price is not null or is_pending_new = true),\r\n    count(*) filter (where draft_margin_rate is not null or is_pending_new = true),\r\n    count(*) filter (where draft_is_active is not null or is_pending_new = true)\r\n  into v_price_count, v_margin_count, v_active_count\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  insert into public.cost_item_history (\r\n    cost_item_id,\r\n    old_cost_price,\r\n    new_cost_price,\r\n    old_margin_rate,\r\n    new_margin_rate,\r\n    old_is_active,\r\n    new_is_active,\r\n    changed_by,\r\n    changed_at,\r\n    reason,\r\n    cost_version\r\n  )\r\n  select\r\n    id,\r\n    case when is_pending_new then null else cost_price end,\r\n    coalesce(draft_cost_price, cost_price),\r\n    case when is_pending_new then null else default_margin_rate end,\r\n    coalesce(draft_margin_rate, default_margin_rate),\r\n    case when is_pending_new then false else is_active end,\r\n    coalesce(draft_is_active, is_active),\r\n    auth.uid(),\r\n    timezone('Asia/Seoul', now()),\r\n    v_reason,\r\n    v_version\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  update public.cost_items\r\n  set\r\n    cost_price = coalesce(draft_cost_price, cost_price),\r\n    default_margin_rate = coalesce(draft_margin_rate, default_margin_rate),\r\n    is_active = coalesce(draft_is_active, is_active),\r\n    updated_by = auth.uid(),\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null,\r\n    is_pending_new = false\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  v_duration_ms := greatest(0, floor(extract(epoch from (clock_timestamp() - v_started_at)) * 1000)::integer);\r\n\r\n  insert into public.cost_publish_log (\r\n    version,\r\n    reason,\r\n    published_by,\r\n    published_at,\r\n    changed_item_count,\r\n    price_change_count,\r\n    margin_change_count,\r\n    active_change_count,\r\n    duration_ms,\r\n    memo,\r\n    created_at\r\n  ) values (\r\n    v_version,\r\n    v_reason,\r\n    auth.uid(),\r\n    timezone('Asia/Seoul', now()),\r\n    v_changed_count,\r\n    v_price_count,\r\n    v_margin_count,\r\n    v_active_count,\r\n    v_duration_ms,\r\n    v_memo,\r\n    timezone('Asia/Seoul', now())\r\n  );\r\n\r\n  return query select v_version, v_changed_count, v_price_count, v_margin_count, v_active_count;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "TABLE(version text, changed_item_count integer, price_change_count integer, margin_change_count integer, active_change_count integer)",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_reason text, p_memo text",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17907",
+      "name": "save_cost_item_draft",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid, p_draft_cost_price numeric DEFAULT NULL::numeric, p_draft_margin_rate numeric DEFAULT NULL::numeric, p_draft_is_active boolean DEFAULT NULL::boolean",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.save_cost_item_draft(p_cost_item_id uuid, p_draft_cost_price numeric DEFAULT NULL::numeric, p_draft_margin_rate numeric DEFAULT NULL::numeric, p_draft_is_active boolean DEFAULT NULL::boolean)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_has_draft boolean;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  if p_draft_cost_price is not null and p_draft_cost_price < 0 then\r\n    raise exception 'draft cost price must be greater than or equal to zero';\r\n  end if;\r\n\r\n  if p_draft_margin_rate is not null\r\n     and (p_draft_margin_rate < 0 or p_draft_margin_rate >= 1) then\r\n    raise exception 'draft margin rate must be greater than or equal to zero and less than one';\r\n  end if;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = case\r\n      when p_draft_cost_price is not null and p_draft_cost_price <> cost_price then p_draft_cost_price\r\n      else null\r\n    end,\r\n    draft_margin_rate = case\r\n      when p_draft_margin_rate is not null and p_draft_margin_rate <> default_margin_rate then p_draft_margin_rate\r\n      else null\r\n    end,\r\n    draft_is_active = case\r\n      when p_draft_is_active is not null and p_draft_is_active <> is_active then p_draft_is_active\r\n      else null\r\n    end\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  if v_row.id is null then\r\n    raise exception 'cost item not found';\r\n  end if;\r\n\r\n  v_has_draft := v_row.draft_cost_price is not null\r\n    or v_row.draft_margin_rate is not null\r\n    or v_row.draft_is_active is not null;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_updated_at = case when v_has_draft then now() else null end,\r\n    draft_updated_by = case when v_has_draft then auth.uid() else null end\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid, p_draft_cost_price numeric, p_draft_margin_rate numeric, p_draft_is_active boolean",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17846",
+      "name": "set_updated_at",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": null,
+      "definition": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "anon_execute": true,
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": "",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17999",
+      "name": "update_cost_item_pending",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.update_cost_item_pending(p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_category text;\r\n  v_unit text;\r\n  v_basis text;\r\n  v_multiplier numeric;\r\n  v_rounding text;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  select * into v_row from public.cost_items where id = p_cost_item_id;\r\n  if v_row.id is null then raise exception 'cost item not found'; end if;\r\n  if not v_row.is_pending_new then raise exception 'only pending new cost items can be edited here'; end if;\r\n\r\n  if public.validate_and_os_cost_item_code(p_item_code) <> v_row.item_code then\r\n    raise exception 'pending item code cannot be changed';\r\n  end if;\r\n\r\n  v_category := nullif(trim(coalesce(p_category, '')), '');\r\n  v_unit := nullif(trim(coalesce(p_unit, '')), '');\r\n  v_basis := nullif(trim(coalesce(p_calculation_basis, '')), '');\r\n  v_multiplier := coalesce(p_calculation_multiplier, 1);\r\n  v_rounding := coalesce(nullif(trim(p_rounding_method), ''), 'none');\r\n\r\n  if nullif(trim(coalesce(p_item_name, '')), '') is null then raise exception 'item name is required'; end if;\r\n  if v_category is null then raise exception 'category is required'; end if;\r\n  if v_unit is null then raise exception 'unit is required'; end if;\r\n  if v_basis is null then raise exception 'calculation basis is required'; end if;\r\n  if p_cost_price is null or p_cost_price < 0 then raise exception 'cost price must be greater than or equal to zero'; end if;\r\n  if p_margin_rate is null or p_margin_rate < 0 or p_margin_rate >= 1 then raise exception 'margin rate must be greater than or equal to zero and less than one'; end if;\r\n  if v_multiplier < 0 then raise exception 'calculation multiplier must be greater than or equal to zero'; end if;\r\n  if p_min_quantity is not null and p_min_quantity < 0 then raise exception 'minimum quantity must be greater than or equal to zero'; end if;\r\n  if v_rounding not in ('none', 'ceil', 'floor', 'round') then raise exception 'rounding method is invalid'; end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  update public.cost_items\r\n  set\r\n    category = v_category,\r\n    subcategory = nullif(trim(coalesce(p_subcategory, '')), ''),\r\n    item_name = nullif(trim(coalesce(p_item_name, '')), ''),\r\n    unit = v_unit,\r\n    cost_price = p_cost_price,\r\n    default_margin_rate = p_margin_rate,\r\n    customer_name = nullif(trim(coalesce(p_customer_name, '')), ''),\r\n    order_name = nullif(trim(coalesce(p_order_name, '')), ''),\r\n    include_in_customer_quote = coalesce(p_include_in_customer_quote, true),\r\n    include_in_internal_quote = coalesce(p_include_in_internal_quote, true),\r\n    include_in_order_sheet = coalesce(p_include_in_order_sheet, false),\r\n    is_material = coalesce(p_is_material, false),\r\n    is_labor = coalesce(p_is_labor, false),\r\n    is_service = coalesce(p_is_service, false),\r\n    sort_order = coalesce(p_sort_order, 0),\r\n    memo = nullif(trim(coalesce(p_memo, '')), ''),\r\n    updated_by = auth.uid(),\r\n    draft_is_active = coalesce(p_is_active, true),\r\n    draft_updated_at = timezone('Asia/Seoul', now()),\r\n    draft_updated_by = auth.uid(),\r\n    calculation_basis = v_basis,\r\n    calculation_multiplier = v_multiplier,\r\n    min_quantity = p_min_quantity,\r\n    rounding_method = v_rounding\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "oid": "17996",
+      "name": "validate_and_os_cost_item_code",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_item_code text",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.validate_and_os_cost_item_code(p_item_code text)\n RETURNS text\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_code text;\r\nbegin\r\n  v_code := upper(trim(coalesce(p_item_code, '')));\r\n  if v_code = '' then\r\n    raise exception 'item code is required';\r\n  end if;\r\n  if v_code !~ '^[A-Z0-9_]+$' then\r\n    raise exception 'item code must contain only uppercase letters, numbers, and underscores';\r\n  end if;\r\n  return v_code;\r\nend;\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "text",
+      "anon_execute": false,
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_item_code text",
+      "service_role_execute": true,
+      "authenticated_execute": true
+    }
+  ],
+  "captured_at": "2026-10-12T01:28:28.929072+00:00",
+  "capture_kind": "POSTGRES_CATALOG_ONLY",
+  "server_version": "17.6"
+}

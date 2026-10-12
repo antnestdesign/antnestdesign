@@ -187,7 +187,7 @@ export async function getProfileById(id: string): Promise<Profile | null> {
   };
 }
 
-export async function getUserContext(request: NextRequest): Promise<UserContext> {
+export async function getPasswordChangeContext(request: NextRequest): Promise<UserContext> {
   const accessToken = readBearerToken(request);
   const authUser = await getAuthUser(accessToken);
   const profile = await getProfileById(authUser.id);
@@ -198,6 +198,14 @@ export async function getUserContext(request: NextRequest): Promise<UserContext>
     throw new ApiError(403, "비활성화된 계정입니다. 관리자에게 문의해 주세요.");
   }
   return { authUser, profile };
+}
+
+export async function getUserContext(request: NextRequest): Promise<UserContext> {
+  const context = await getPasswordChangeContext(request);
+  if (context.profile.must_change_password) {
+    throw new ApiError(403, "비밀번호 변경 후 이용해 주세요.");
+  }
+  return context;
 }
 
 export async function requireAdmin(request: NextRequest): Promise<UserContext> {

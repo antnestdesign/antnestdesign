@@ -1,18 +1,15 @@
-﻿import { bathroomRates } from "./rates/bathroom.js";
+import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "./calculator/estimate-core.js";
+import { bathroomRates } from "./rates/bathroom.js";
 import { kitchenRates } from "./rates/kitchen.js";
 import { doorRates } from "./rates/door.js";
 import { finishMaterialRates } from "./rates/finish.js";
 import { miscRates } from "./rates/misc.js";
-import { bathroomDetails } from "./calculator/bathroom.js";
-import { kitchenDetails } from "./calculator/kitchen.js";
-import { doorDetails } from "./calculator/door.js";
-import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./calculator/finish.js";
-import { miscDetails } from "./calculator/misc.js";
 import {
   saveEstimate,
   updateEstimate,
   loadEstimates,
   getEstimate,
+  previewStaffEstimate,
   deleteEstimate,
   loadSystemCostItems,
   loadCostItemHistory,
@@ -495,133 +492,34 @@ let costItemFilters = {
 };
 
 const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
-const floorThousand = (value) => Math.floor(value / 1000) * 1000;
-const customerWon = (value) => `${floorThousand(value).toLocaleString("ko-KR")}원`;
+const floorThousand = (...args) => currentCalculationCore().floorThousand(...args);
+
+const customerWon = (...args) => currentCalculationCore().customerWon(...args);
+
 const moneyAmount = (value) => Math.round(Number(value) || 0);
 const numberValue = (id) => Number(el[id]?.value) || 0;
 const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
 const checkedValue = (id) => Boolean(el[id]?.checked);
 const rateValue = (id, fallback) => Number(el[id]?.value) || fallback;
-const mmToM = (mm) => mm / 1000;
-const mmText = (mm) => `${Math.round(mm).toLocaleString("ko-KR")}mm`;
-const quantityText = (value, suffix) => {
-  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
-  return `${rounded.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}${suffix}`;
-};
-const mText = (meters) => mmText(meters * 1000);
-const jaRounded = (mm) => (mm <= 0 ? 0 : Math.ceil(mm / 300));
-const sellPrice = (cost, margin, correction = 0) => (cost * (1 + margin)) * (1 + correction);
-const markupRate = (profit, cost) => (cost > 0 ? profit / cost : 0);
+
+const mmText = (...args) => currentCalculationCore().mmText(...args);
+
+
+const mText = (...args) => currentCalculationCore().mText(...args);
+
+
+
+const markupRate = (...args) => currentCalculationCore().markupRate(...args);
+
 const correctionValue = (id) => numberValue(id) / 100;
-const epUnitPrice = (depth) => (depth === "shallow" ? rates.endPanelShallow : rates.endPanelDeep);
-const epDepthLabel = (depth) => (depth === "shallow" ? "400mm 이하" : "400mm 초과");
-const slabMaterials = new Set(["khanstone", "ceramic"]);
-const isSlabMaterial = (material) => slabMaterials.has(material);
-const slabBaseCost = (material) =>
-  rates.countertop[material].slabCost + rates.countertop[material].factoryCost + rates.countertop[material].installCost;
+
+
+const isSlabMaterial = (...args) => currentCalculationCore().isSlabMaterial(...args);
+
+const slabBaseCost = (...args) => currentCalculationCore().slabBaseCost(...args);
+
 const khanstoneBaseCost = () => slabBaseCost("khanstone");
 
-const COST_ITEM_DEFINITIONS = [
-  ["rateLowerPerJa", "CABINET_LOWER", "가구", "상하부장", "하부장 자당", "자"],
-  ["rateUpperPerJa", "CABINET_UPPER", "가구", "상하부장", "상부장 자당", "자"],
-  ["rateIslandPerJa", "CABINET_ISLAND", "가구", "아일랜드", "아일랜드 자당", "자"],
-  ["rateHomebarBuildPerJa", "CABINET_HOMEBAR_BUILD", "가구", "홈바장", "홈바장 자당", "자"],
-  ["rateTallPerJa", "CABINET_TALL", "가구", "키큰장", "키큰장 자당", "자"],
-  ["rateFridgeLaundryPerJa", "CABINET_FRIDGE_LAUNDRY", "가구", "냉장고장", "냉장고 및 세탁기장 자당", "자"],
-  ["rateShoePerJa", "CABINET_SHOE", "가구", "신발장", "신발장 자당", "자"],
-  ["ratePantryPerJa", "CABINET_PANTRY", "가구", "팬트리장", "팬트리장 자당", "자"],
-  ["ratePantryDrawer", "CABINET_PANTRY_DRAWER", "가구", "팬트리장", "팬트리장 하부서랍장 1개", "개"],
-  ["rateBuiltInPerJa", "CABINET_BUILT_IN_WARDROBE", "가구", "옷장", "옷장(붙박이장) 자당", "자"],
-  ["rateHangerPerJa", "CABINET_HANGER_WARDROBE", "가구", "옷장", "옷장(헹거장) 자당", "자"],
-  ["rateRiceCabinetPerUnit", "CABINET_RICE", "가구", "옵션", "밥솥장 1통", "통"],
-  ["rateEndPanelShallow", "CABINET_EP_SHALLOW", "가구", "EP", "EP 400mm 이하", "개"],
-  ["rateEndPanelDeep", "CABINET_EP_DEEP", "가구", "EP", "EP 400mm 초과", "개"],
-  ["rateDrawer", "CABINET_DRAWER", "가구", "옵션", "서랍 1개", "개"],
-  ["rateBachmannOutlet", "ELEC_BACHMANN_OUTLET", "가구", "주방설비", "바흐만 2구 콘센트", "개"],
-  ["rateLightingPerCabinetUnit", "LIGHT_LINE_CABINET", "가구", "조명", "라인조명 1통", "통"],
-  ["rateT3LightingUnit", "LIGHT_T3_CABINET", "가구", "조명", "간접조명(T3) 1라인", "라인"],
-  ["rateStandardDownlight", "ELEC_DOWNLIGHT", "전기", "조명", "다운라이트 1개", "개"],
-  ["rateStandardSquareLight", "ELEC_SQUARE_LIGHT", "전기", "조명", "사각매입등 1개", "개"],
-  ["rateStandardCylinderLight", "ELEC_CYLINDER_LIGHT", "전기", "조명", "실린더등 1개", "개"],
-  ["rateStandardT3PerM", "ELEC_T3_PER_M", "전기", "조명", "간접조명(T3) 1m", "m"],
-  ["rateStandardBedWallLight", "ELEC_BED_WALL_LIGHT", "전기", "조명", "침대 벽등", "식"],
-  ["rateHimacsPerM", "COUNTER_HIMACS_PER_M", "상판", "하이막스", "하이막스 1,000mm", "m"],
-  ["rateKhanstoneSlab", "COUNTER_KHANSTONE_SLAB", "상판", "칸스톤", "칸스톤 12T 1장", "장"],
-  ["rateKhanstoneFactory", "COUNTER_KHANSTONE_FACTORY", "상판", "칸스톤", "칸스톤 공장가공비", "식"],
-  ["rateKhanstoneInstall", "COUNTER_KHANSTONE_INSTALL", "상판", "칸스톤", "칸스톤 현장시공비", "식"],
-  ["rateCeramicSlab", "COUNTER_CERAMIC_SLAB", "상판", "세라믹", "세라믹 1장", "장"],
-  ["rateCeramicFactory", "COUNTER_CERAMIC_FACTORY", "상판", "세라믹", "세라믹 공장가공비", "식"],
-  ["rateCeramicInstall", "COUNTER_CERAMIC_INSTALL", "상판", "세라믹", "세라믹 현장시공비", "식"],
-  ["rateEpPanelPerM", "COUNTER_EP_PANEL_PER_M", "상판", "EP", "EP 상판/미드웨이 1,000mm", "m"],
-  ["rateDemolitionFloorPerPyeong", "DEMO_FLOOR_WOOD", "철거", "바닥", "마루철거 평당", "평"],
-  ["rateDemolitionDecoTilePerPyeong", "DEMO_FLOOR_DECOTILE", "철거", "바닥", "데코타일 철거 평당", "평"],
-  ["rateDemolitionFurniturePerJa", "DEMO_CABINET_PER_JA", "철거", "가구", "가구철거 자당", "자"],
-  ["rateDemolitionBathroomWaterproof", "DEMO_BATHROOM_WATERPROOF", "철거", "욕실", "화장실 철거 및 방수", "칸"],
-  ["rateDemolitionCeilingPerPyeong", "DEMO_CEILING_PER_PYEONG", "철거", "천장", "천장철거 평당", "평"],
-  ["rateDemolitionElevatorProtect", "DEMO_ELEVATOR_PROTECT", "철거", "보양", "E/V 보양", "식"],
-  ["rateDemolitionElevatorProtectRemoval", "DEMO_ELEVATOR_PROTECT_REMOVAL", "철거", "보양", "E/V 보양 철거", "식"],
-  ["rateDemolitionPermit", "PERMIT_CONSTRUCTION", "인허가", "행위허가", "행위허가", "식"],
-  ["rateDemolitionConsent", "PERMIT_CONSENT", "인허가", "동의서", "동의서", "식"],
-  ["rateElectricalWorkerDay", "ELEC_LABOR_WORKER", "전기", "인건비", "전기 기공 1품", "품"],
-  ["rateElectricalHelperDay", "ELEC_LABOR_HELPER", "전기", "인건비", "전기 조공 1품", "품"],
-  ["rateElectricalUnder10Days", "ELEC_DAYS_UNDER10", "전기", "품수", "준공 10년 이하 품수", "품"],
-  ["rateElectricalOver10Days", "ELEC_DAYS_OVER10", "전기", "품수", "준공 10년 이상 품수", "품"],
-  ["rateElectricalWiring", "ELEC_WIRING", "전기", "자재", "전기 배선비", "식"],
-  ["rateElectricalStandardSwitch", "ELEC_STANDARD_SWITCH", "전기", "기구", "AND 표준 콘센트 스위치", "식"],
-  ["rateTileWorkerDay", "TILE_LABOR_WORKER", "욕실", "타일", "타일 기공 1품", "품"],
-  ["rateTileHelperDay", "TILE_LABOR_HELPER", "욕실", "타일", "타일 조공 1품", "품"],
-  ["rateTileGrout", "TILE_GROUT", "욕실", "타일", "타일 메지", "식"],
-  ["rateBathroomPorcelainTileMaterial", "BATH_PORCELAIN_TILE_MATERIAL", "타일·욕실", "자재", "욕실 포세린 타일 자재+잡자재", "칸"],
-  ["rateBathroomPlumbingRelocation", "BATH_PLUMBING_RELOCATION", "타일·욕실", "설비", "욕실 설비 위치조정", "칸"],
-  ["rateBathroomFixtureSet", "BATH_FIXTURE_SET", "타일·욕실", "도기·수전", "욕실 도기·수전 기본세트", "칸"],
-  ["rateBathroomFixtureInstall", "BATH_FIXTURE_INSTALL", "타일·욕실", "도기·수전", "욕실 도기·수전 설치비", "칸"],
-  ["rateBathroomSmcCeiling", "BATH_SMC_CEILING", "타일·욕실", "천장", "SMC 천장돔 설치비", "칸"],
-  ["rateBathroomFanNormal", "BATH_FAN_NORMAL", "타일·욕실", "환풍기", "일반 환풍기", "칸"],
-  ["rateBathroomHugentMachine", "BATH_HUGENT_MACHINE", "타일·욕실", "휴젠트", "휴젠트 본체", "칸"],
-  ["rateBathroomHugentInstallExtra", "BATH_HUGENT_INSTALL_EXTRA", "타일·욕실", "휴젠트", "휴젠트 추가 설치비", "칸"],
-  ["rateBathroomBathtub", "BATH_BATHTUB", "타일·욕실", "욕조", "욕조", "개"],
-  ["rateBathroomGlassBooth", "BATH_GLASS_BOOTH", "타일·욕실", "유리", "유리파티션+유리문", "개"],
-  ["rateBathroomGlassPartition", "BATH_GLASS_PARTITION", "타일·욕실", "유리", "유리파티션", "개"],
-  ["rateWallpaperWorkerDay", "WALLPAPER_LABOR", "도배", "인건비", "도배 1품", "품"],
-  ["rateWallpaperBesti", "WALLPAPER_ROLL_BESTI", "도배", "자재", "도배지 베스띠 1롤", "롤"],
-  ["rateWallpaperDiamant", "WALLPAPER_ROLL_DIAMANT", "도배", "자재", "도배지 디아망 1롤", "롤"],
-  ["rateWallpaperFortis", "WALLPAPER_ROLL_FORTIS", "도배", "자재", "도배지 디아망 포티스 1롤", "롤"],
-  ["rateWallpaperMaterialPerPyeong", "WALLPAPER_MATERIAL_PER_PYEONG", "도배", "자재", "도배 자재 평당", "평"],
-  ["rateFilmWorkerDay", "FILM_LABOR", "필름", "인건비", "필름 1품", "품"],
-  ["rateFlooringPerPyeong", "FLOORING_WOOD_PER_PYEONG", "바닥", "마루", "마루 LX 에디톤급 평단가", "평"],
-  ["rateFlooringSheetT18", "FLOORING_SHEET_18T", "바닥", "장판", "장판 1.8T 평단가", "평"],
-  ["rateFlooringSheetT20", "FLOORING_SHEET_20T", "바닥", "장판", "장판 2T 평단가", "평"],
-  ["rateFlooringSheetT22", "FLOORING_SHEET_22T", "바닥", "장판", "장판 2.2T 평단가", "평"],
-  ["rateFlooringSheetT32", "FLOORING_SHEET_32T", "바닥", "장판", "장판 3.2T 평단가", "평"],
-  ["rateFlooringSheetT45", "FLOORING_SHEET_45T", "바닥", "장판", "장판 4.5T 평단가", "평"],
-  ["rateFlooringSheetT50", "FLOORING_SHEET_50T", "바닥", "장판", "장판 5T 평단가", "평"],
-  ["rateFlooringWoodStandard", "FLOORING_WOOD_STANDARD", "바닥", "마루", "일반마루 평단가", "평"],
-  ["rateKitchenSinkBowl", "KITCHEN_SINK_BOWL", "가구", "주방설비", "주방 싱크볼", "개"],
-  ["rateKitchenFaucet", "KITCHEN_FAUCET", "가구", "주방설비", "주방 싱크수전", "개"],
-  ["rateKitchenHood", "KITCHEN_HOOD", "가구", "주방설비", "주방 후드", "개"],
-  ["rateKitchenStandardInstall", "KITCHEN_STANDARD_INSTALL", "가구", "주방설비", "주방 AND 표준설비 설치비", "식"],
-  ["rateExistingPipeCleaning", "MISC_EXISTING_PIPE_CLEANING", "마감", "기타", "기존 배관 청소", "식"],
-  ["rateSilicone", "FINISH_SILICONE", "마감", "실리콘", "실리콘 기본", "식"],
-  ["rateElasticBase", "FINISH_ELASTIC_BASE", "마감", "탄성", "탄성 기본", "식"],
-  ["rateElasticExtraRoom", "FINISH_ELASTIC_EXTRA_ROOM", "마감", "탄성", "탄성 추가 1개소", "개소"],
-  ["rateCarpentryWorkerDay", "WOOD_LABOR_WORKER", "목공", "인건비", "목공 1품", "품"],
-  ["rateCarpentryMachineDay", "WOOD_MACHINE_DAY", "목공", "장비", "목공 기계품 1품", "품"],
-  ["rateCarpentryLifting", "WOOD_LIFTING", "목공", "양중", "목공 양중", "식"],
-  ["rateCarpentrySubsidiary", "WOOD_SUBSIDIARY", "목공", "부자재", "목공 부자재", "식"],
-  ["rateCarpentryCeilingFanUnit", "WOOD_CEILING_FAN", "목공", "천장", "실링팬 1개소", "개소"],
-  ["rateCarpentryDrywallSheet", "WOOD_DRYWALL_SHEET", "목공", "자재", "석고보드 1장", "장"],
-  ["rateCarpentryMdfSheet", "WOOD_MDF_SHEET", "목공", "자재", "MDF 1장", "장"],
-  ["rateCarpentryPlywoodSheet", "WOOD_PLYWOOD_SHEET", "목공", "자재", "합판 1장", "장"],
-  ["rateCarpentryStudBundle", "WOOD_STUD_BUNDLE", "목공", "자재", "다루끼 1묶음", "묶음"],
-].map(([inputId, itemCode, category, subcategory, itemName, unit], index) => ({
-  inputId,
-  itemCode,
-  category,
-  subcategory,
-  itemName,
-  unit,
-  sortOrder: index + 1,
-}));
 const COST_ITEM_BY_CODE = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.itemCode, item]));
 const COST_ITEM_BY_INPUT = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item]));
 
@@ -1621,6 +1519,9 @@ function normalizeContractPaymentSchedule(info) {
     const saved = schedule[index] || {};
     return {
       ...item,
+      label: saved.label ?? item.label,
+      ratio: saved.ratio ?? item.ratio,
+      due_basis: saved.due_basis ?? item.due_basis,
       amount: Number(saved.amount ?? item.amount) || 0,
     };
   });
@@ -1677,15 +1578,26 @@ function contractTermClassName(line) {
   return "contract-term-text";
 }
 
-function renderContractFixedTerms() {
-  return CONTRACT_FIXED_TERM_LINES.map((line) => `
+function renderContractFixedTerms(lines = CONTRACT_FIXED_TERM_LINES) {
+  return lines.map((line) => `
     <p class="${contractTermClassName(line)}">${escapeHtml(line)}</p>
   `).join("");
 }
 
-function renderContractPrintDocument(snapshot) {
-  const info = contractPrintInfo(snapshot);
-  const contractor = snapshot.parties?.contractor || snapshot.contractor || {};
+function renderContractPrintDocument(snapshot, documents = snapshot.contract_document_versions || []) {
+  const document = documents.find((item) => item.document_type === "CONTRACT");
+  const saved = document?.content_json?.generated_sections;
+  // New documents carry all printable contract data; old packages remain read-only fallbacks.
+  const source = saved && !Array.isArray(saved) ? {
+    ...snapshot,
+    contract_info: saved.contract_info ?? snapshot.contract_info,
+    parties: saved.parties ?? snapshot.parties ?? snapshot.parties_info,
+    site_manager: saved.site_manager ?? snapshot.site_manager,
+    clause_snapshot: saved.clauses ?? snapshot.clause_snapshot,
+    payment_schedule: saved.payment_schedule ?? snapshot.payment_schedule,
+  } : snapshot;
+  const info = contractPrintInfo(source);
+  const contractor = (source.parties || source.parties_info)?.contractor || source.contractor || {};
   const schedule = normalizeContractPaymentSchedule(info);
   return `
     <article class="contract-print-page">
@@ -1721,7 +1633,7 @@ function renderContractPrintDocument(snapshot) {
         ${renderContractPaymentTable(schedule)}
       </section>
       <section class="contract-print-section contract-fixed-terms">
-        ${renderContractFixedTerms()}
+        ${renderContractFixedTerms(Array.isArray(saved?.fixed_term_lines) ? saved.fixed_term_lines : CONTRACT_FIXED_TERM_LINES)}
       </section>
       <section class="contract-print-section">
         <h2>서명 및 날인</h2>
@@ -1730,7 +1642,7 @@ function renderContractPrintDocument(snapshot) {
       </section>
       <section class="contract-print-signature">
         <div><strong>고객</strong><span>${escapeHtml(info.customerName)}</span><em>서명·날인</em></div>
-        <div><strong>시공자</strong><span>ANTNEST DESIGN</span><em>서명·날인</em></div>
+        <div><strong>시공자</strong><span>${escapeHtml(contractor.company_name || "ANTNEST DESIGN")}</span><em>서명·날인</em></div>
       </section>
       ${contractPrintFooter(info)}
     </article>
@@ -1817,7 +1729,7 @@ function renderContractPrintSheet(type = "ALL") {
     return false;
   }
   const parts = {
-    CONTRACT: renderContractPrintDocument(snapshot),
+    CONTRACT: renderContractPrintDocument(snapshot, contractPreviewState.documents || []),
     QUOTE: renderContractQuotePrint(snapshot),
     SPEC: renderContractSpecPrint(snapshot),
   };
@@ -3022,15 +2934,9 @@ function updateRatesFromAdmin() {
   rates.carpentry.studBundle = rateValue("rateCarpentryStudBundle", rates.carpentry.studBundle);
 }
 
-function countertopCost(material, billingM) {
-  if (isSlabMaterial(material)) return slabBaseCost(material);
-  return billingM * rates.countertop[material].costPerM;
-}
 
-function countertopQuantity(material, billingM) {
-  if (isSlabMaterial(material)) return "1장 + 가공/시공";
-  return mText(billingM);
-}
+
+
 function normalizeIntegerInput(input) {
   if (!integerIds.includes(input.id) || input.value === "") return;
   const max = input.max === "" ? Infinity : Number(input.max);
@@ -3207,127 +3113,19 @@ function readState() {
   };
 }
 
-function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue }) {
-  const hasFixedCustomerRevenue = Number.isFinite(Number(fixedCustomerRevenue));
-  const revenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : sellPrice(cost, margin, correction);
-  const customerRevenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : floorThousand(revenue);
-  return {
-    group,
-    item,
-    input,
-    quantity,
-    unitPrice,
-    cost,
-    correction,
-    revenue,
-    customerRevenue,
-    profit: customerRevenue - cost,
-  };
-}
 
-function addDetail(details, config) {
-  if (config.cost <= 0 && !(Number(config.customerRevenue) > 0)) return;
-  details.push(makeDetail(config));
-}
 
-function addModuleDetails(details, items, margin, correction) {
-  for (const item of items.filter(Boolean)) {
-    addDetail(details, {
-      ...item,
-      margin,
-      correction,
-    });
-  }
-}
 
-function addT3Detail(details, { group, label, units, margin, corrections }) {
-  if (units <= 0) return;
-  addDetail(details, {
-    group,
-    item: `${label} 간접조명(T3)`,
-    input: `${units}라인`,
-    quantity: `${units}라인`,
-    unitPrice: rates.t3LightingUnit,
-    cost: units * rates.t3LightingUnit,
-    margin,
-    correction: corrections.option,
-  });
-}
 
-function addStorageDetails(details, { group, label, enabled, mm, depth, endPanels, bodyUnitPrice, lightingUnits, t3Units, margin, corrections }) {
-  if (!enabled || mm <= 0) return 0;
-  const ja = jaRounded(mm);
-  addDetail(details, {
-    group,
-    item: `${label} 몸통`,
-    input: mmText(mm),
-    quantity: `${ja}자`,
-    unitPrice: bodyUnitPrice,
-    cost: ja * bodyUnitPrice,
-    margin,
-    correction: corrections.base,
-  });
-  addDetail(details, {
-    group,
-    item: `${label} EP`,
-    input: `${endPanels}장 / ${epDepthLabel(depth)}`,
-    quantity: `${endPanels}장`,
-    unitPrice: epUnitPrice(depth),
-    cost: endPanels * epUnitPrice(depth),
-    margin,
-    correction: corrections.option,
-  });
-  if (lightingUnits > 0) {
-    addDetail(details, {
-      group,
-      item: `${label} 라인조명`,
-      input: `${lightingUnits}통`,
-      quantity: `${lightingUnits}통`,
-      unitPrice: rates.lightingPerCabinetUnit,
-      cost: lightingUnits * rates.lightingPerCabinetUnit,
-      margin,
-      correction: corrections.option,
-    });
-  }
-  addT3Detail(details, { group, label, units: t3Units, margin, corrections });
-  return ja;
-}
 
-function addUnitDetail(details, { group, item, enabled, input, quantity, unitPrice, units, margin, correction }) {
-  if (!enabled || units <= 0) return;
-  addDetail(details, {
-    group,
-    item,
-    input,
-    quantity,
-    unitPrice,
-    cost: units * unitPrice,
-    margin,
-    correction,
-  });
-}
 
-function islandSideFinishCalc(material, count, sideLengthM) {
-  if (count <= 0) return { quantity: "0개", cost: 0 };
-  if (material === "himacs") {
-    const billingM = 0.9 * count;
-    return {
-      quantity: `${count}개 / ${mText(billingM)}`,
-      cost: billingM * rates.countertop.himacs.costPerM,
-    };
-  }
-  if (isSlabMaterial(material)) {
-    return {
-      quantity: `${count}개 / 1판 + 가공/시공`,
-      cost: slabBaseCost(material),
-    };
-  }
-  const billingM = sideLengthM * count;
-  return {
-    quantity: `${count}개 / ${mText(billingM)}`,
-    cost: billingM * rates.countertop.epPanel.costPerM,
-  };
-}
+
+
+
+
+
+
+
 
 const lightingText = (lineUnits, t3Units) =>
   `라인조명 ${lineUnits > 0 ? `${lineUnits}통` : "없음"}, 간접조명(T3) ${t3Units > 0 ? `${t3Units}라인` : "없음"}`;
@@ -3382,1033 +3180,33 @@ const printGroupLabels = {
   "도어/창호": "도어·창호공사",
   기타: "기타공사",
 };
-const customerItemNames = {
-  "마루철거": "바닥 철거",
-  "화장실 철거 방수": "욕실 철거 및 방수",
-  "타일 기공": "타일 시공",
-  "타일 조공": "타일 시공",
-  "타일 메지": "줄눈 마감",
-  "욕실 포세린 타일 자재+잡자재": "AND표준 포세린 타일",
-  "도기·수전·장식장·악세사리 기본세트": "AND표준 욕실 도기 및 수전",
-  "도기·수전·장식장·악세사리 기본세트(AND 실속)": "AND실속 욕실 도기 및 수전",
-  "도기·수전·장식장·악세사리 기본세트(AND 고급)": "AND고급 욕실 도기 및 수전",
-  "도기·수전·장식장·악세사리 설치비": "욕실 도기 및 수전 시공",
-  "휴젠트 옵션": "휴젠트 설치비",
-  "AND 표준설비 설치비": "주방 설비 시공",
-  "싱크볼(깜포르떼960 기준)": "싱크볼(깜포르떼960급)",
-  "싱크수전(라우체급 기준)": "싱크수전(라우체급)",
-  "후드(하츠 아일랜드 후드 기준)": "후드(하츠 아일랜드 후드급)",
-  "전기 인건비": "전기 시공",
-  "전기 배선비(전선/후렉시블)": "배선 자재",
-  "AND 표준 콘센트 스위치(르그랑 급)": "AND표준 콘센트·스위치",
-  "목공 인건비": "목공 시공",
-  "목공 기계품": "장비 사용",
-  "목공 양중": "자재 운반",
-  MDF: "MDF 자재",
-  "다루끼": "각재",
-  "도배 인건비": "도배 시공",
-  "도배지(베스띠급)": "벽지(AND표준 베스띠급)",
-  "도배지(디아망급)": "벽지(AND표준 디아망급)",
-  "도배지(디아망 포티스급)": "벽지(AND표준 디아망 포티스급)",
-  "공용부 도배지(베스띠급)": "공용부 벽지(베스띠급)",
-  "공용부 도배지(디아망급)": "공용부 벽지(디아망급)",
-  "공용부 도배지(디아망 포티스급)": "공용부 벽지(디아망 포티스급)",
-  "각방 도배지(베스띠급)": "각방 벽지(베스띠급)",
-  "각방 도배지(디아망급)": "각방 벽지(디아망급)",
-  "각방 도배지(디아망 포티스급)": "각방 벽지(디아망 포티스급)",
-  "필름 인건비": "필름 시공",
-  "필름 자재(우드 무늬)": "필름(AND표준 우드)",
-  "바닥 시공(장판 1.8T)": "장판(1.8T)",
-  "바닥 시공(장판 2T)": "장판(2T)",
-  "바닥 시공(장판 2.2T)": "장판(2.2T)",
-  "바닥 시공(장판 3.2T)": "장판(3.2T)",
-  "바닥 시공(장판 4.5T)": "장판(4.5T)",
-  "바닥 시공(장판 5T)": "장판(5T)",
-  "바닥 시공(LX 에디톤급)": "마루(LX 에디톤급)",
-  "바닥 시공(일반마루)": "마루(일반마루)",
-  "바닥 시공": "바닥(AND표준 마루)",
-  "일반 폐기물": "폐기물 처리",
-  "입주청소": "준공 청소",
-  "기존 배관 청소": "기존 배관 청소",
-};
-function customerItemName(item) {
-  if (customerItemNames[item]) return customerItemNames[item];
-  return item
-    .replace("몸통", "제작")
-    .replace("냉장고 및 세탁기장", "냉장고장")
-    .replace("옷장(붙박이장)", "붙박이장")
-    .replace(/\bEP(?!판)\b/g, "EP판");
-}
+
 const countertopQuoteText = (material, billingM) =>
   isSlabMaterial(material) ? "1장 + 가공/시공" : mText(billingM);
-const groupTotalFromDetails = (details, group) =>
-  details.filter((item) => item.group === group).reduce((sum, item) => sum + item.revenue, 0);
-const floorDemolitionLabel = (material) => ({
-  wood: "마루 철거",
-  vinyl: "장판 철거",
-  decoTile: "데코타일 철거",
-}[material] || "바닥 철거");
-const floorDemolitionUnitPrice = (material) => ({
-  wood: rates.demolition.floorPerPyeong,
-  vinyl: 0,
-  decoTile: rates.demolition.decoTilePerPyeong,
-}[material] || 0);
-const wallpaperDays = (preset, baseCoat) => {
-  const table = {
-    p20: baseCoat ? 6 : 5,
-    p30: baseCoat ? 7 : 6,
-    p40: baseCoat ? 11 : 9,
-    p50: baseCoat ? 15 : 11,
-  };
-  return table[preset] || 0;
-};
-const wallpaperLabel = (preset) => ({
-  p20: "20평대",
-  p30: "30평대",
-  p40: "40평대",
-  p50: "50평 이상",
-}[preset] || "미선택");
-const filmDays = (preset) => ({
-  p20: 6,
-  p30: 9,
-  p40: 12,
-  p50: 15,
-}[preset] || 0);
-const filmLabel = (preset) => ({
-  p20: "20평대",
-  p30: "30평대",
-  p40: "40평대",
-  p50: "50평 이상",
-}[preset] || "미선택");
-const boardArea = () => rates.carpentry.boardWidth * rates.carpentry.boardHeight;
-const boardCountWithWaste = (rawCount) => (rawCount <= 0 ? 0 : Math.ceil(rawCount * rates.carpentry.wasteFactor));
-const carpentryCofferDays = (type) => ({
-  new: rates.carpentry.cofferNewDays,
-  change: rates.carpentry.cofferChangeDays,
-}[type] || 0);
+const groupTotalFromDetails = (...args) => currentCalculationCore().groupTotalFromDetails(...args);
+
+
+
+
+
+
+
+
+
+
 const carpentryCofferLabel = (type) => ({
   new: "우물천장 신설",
   change: "우물천장 변경",
 }[type] || "");
 
-function carpentryLaborDays(state) {
-  const ceilingWorkDays = state.carpentryCurtainBoxEnabled
-    ? (
-      (state.carpentryCurtainBoxUnits / 2) * rates.carpentry.curtainBoxDaysPerTwo +
-      carpentryCofferDays(state.carpentryCofferType) +
-      state.carpentryDropCeilingUnits * rates.carpentry.dropCeilingDays +
-      state.carpentryIndirectLightUnits * rates.carpentry.indirectLightDays +
-      mmToM(state.carpentryLineLightM) * rates.carpentry.lineLightDaysPerM
-    )
-    : 0;
 
-  return (
-    ceilingWorkDays +
-    mmToM(state.carpentryArtwallM) * rates.carpentry.artwallDaysPerM +
-    mmToM(state.carpentryPartitionM) * rates.carpentry.artwallDaysPerM +
-    state.carpentryHiddenDoorUnits * rates.carpentry.hiddenDoorDays +
-    (state.carpentryMoldingEnabled ? rates.carpentry.moldingDays : 0) +
-    (state.carpentryBaseboardEnabled ? rates.carpentry.baseboardDays : 0)
-  );
-}
 
-function carpentryMaterialCounts(state) {
-  const wallLength = state.carpentryArtwallM;
-  const partitionLength = state.carpentryPartitionM;
-  const wallArea = wallLength * state.carpentryCeilingHeight;
-  const partitionArea = partitionLength * state.carpentryCeilingHeight;
-  const artwallBoards = wallArea > 0 ? Math.ceil(wallArea / boardArea()) : 0;
-  const partitionBoards = partitionArea > 0 ? Math.ceil(partitionArea / boardArea()) * 2 : 0;
-  const totalWallBoards = artwallBoards + partitionBoards;
-  const plywoodBase = state.carpentryTvUnits * 2;
-  const mdfBase = Math.max(0, artwallBoards - plywoodBase) + partitionBoards;
-  const verticalStuds = wallLength > 0 ? Math.ceil(wallLength / rates.carpentry.studSpacing) : 0;
-  const partitionVerticalStuds = partitionLength > 0 ? Math.ceil(partitionLength / rates.carpentry.studSpacing) : 0;
-  const wallStudLength = (wallLength * 2) + (state.carpentryCeilingHeight * verticalStuds);
-  const partitionStudLength = ((partitionLength * 2) + (state.carpentryCeilingHeight * partitionVerticalStuds)) * 2;
-  const studLength = wallStudLength + partitionStudLength;
-  const studBundleLength = rates.carpentry.studPieceLength * rates.carpentry.studPiecesPerBundle;
-  return {
-    totalWallBoards,
-    artwallBoards,
-    partitionBoards,
-    mdfBase,
-    plywoodBase,
-    mdf: boardCountWithWaste(mdfBase),
-    plywood: boardCountWithWaste(plywoodBase),
-    drywall: 0,
-    studLength,
-    studLengthWithWaste: studLength * rates.carpentry.wasteFactor,
-    studBundles: studLength > 0 ? Math.ceil((studLength * rates.carpentry.wasteFactor) / studBundleLength) : 0,
-    verticalStuds,
-    partitionVerticalStuds,
-    wallStudLength,
-    partitionStudLength,
-  };
-}
 
-function hasCarpentryWork(state, laborDays, materials) {
-  return laborDays > 0 ||
-    materials.mdf > 0 ||
-    materials.plywood > 0 ||
-    materials.drywall > 0 ||
-    materials.studBundles > 0 ||
-    state.carpentryCeilingFanUnits > 0;
-}
 
-function calculate() {
-  const state = readState();
-  const margin = state.targetMargin;
-  const details = [];
 
-  const lowerJa = state.baseEnabled ? jaRounded(state.lowerCabinetM) : 0;
-  const upperJa = state.baseEnabled ? jaRounded(state.upperCabinetM) : 0;
-  const tallJa = state.baseEnabled ? jaRounded(state.tallCabinetM) : 0;
-  const islandJa = state.islandEnabled ? jaRounded(state.islandM) : 0;
-  const homebarJa = state.homebarEnabled ? jaRounded(state.homebarM) : 0;
-  const shoeJa = state.shoeEnabled ? jaRounded(state.shoeM) : 0;
-  const fridgeLaundryJa = state.fridgeLaundryEnabled ? jaRounded(state.fridgeLaundryM) : 0;
-  const pantryJa = state.pantryEnabled ? jaRounded(state.pantryM) : 0;
-  const builtInJa = state.builtInEnabled ? jaRounded(state.builtInM) : 0;
-  const hangerJa = state.hangerEnabled ? jaRounded(state.hangerM) : 0;
-  const islandCounter = rates.countertop[state.islandCountertop];
-  const islandSideFinish = rates.countertop[state.islandSideFinish];
-  const baseCounter = rates.countertop[state.baseCountertop];
-  const homebarCounter = rates.countertop[state.homebarCountertop];
-  const homebarMidway = rates.countertop[state.homebarMidway];
-  const baseCounterBillingM = state.lowerCabinetM > 0 ? Math.max(1, mmToM(state.lowerCabinetM)) : 0;
-  const homebarStorageJa = rates.homebarStorageBaseJa;
-  const homebarExtraJa = Math.max(0, homebarJa - homebarStorageJa);
-  const homebarCounterActualMm = homebarExtraJa * 300;
-  const homebarCounterBillingM = homebarCounterActualMm > 0 ? Math.max(1, mmToM(homebarCounterActualMm)) : 0;
-  const islandCounterMultiplier = state.islandCountertop === "himacs" && state.islandDepthMm > 720 ? 2 : 1;
-  const islandCounterBillingM = mmToM(state.islandM) * islandCounterMultiplier;
-  const islandSideLengthM = state.islandM > 3000 ? 0.9 : Math.max(0, mmToM(state.islandDepthMm));
-  const islandSideCalc = islandSideFinishCalc(state.islandSideFinish, state.islandSideFinishCount, islandSideLengthM);
 
-  if (state.baseEnabled) {
-    addDetail(details, {
-      group: "base",
-      item: "하부장",
-      input: mmText(state.lowerCabinetM),
-      quantity: `${lowerJa}자`,
-      unitPrice: rates.lowerPerJa,
-      cost: lowerJa * rates.lowerPerJa,
-      margin,
-      correction: state.corrections.base,
-    });
-    addDetail(details, {
-      group: "base",
-      item: "상부장",
-      input: mmText(state.upperCabinetM),
-      quantity: `${upperJa}자`,
-      unitPrice: rates.upperPerJa,
-      cost: upperJa * rates.upperPerJa,
-      margin,
-      correction: state.corrections.base,
-    });
-    addDetail(details, {
-      group: "base",
-      item: "키큰장",
-      input: mmText(state.tallCabinetM),
-      quantity: `${tallJa}자`,
-      unitPrice: rates.tallPerJa,
-      cost: tallJa * rates.tallPerJa,
-      margin,
-      correction: state.corrections.base,
-    });
-    addDetail(details, {
-      group: "base",
-      item: "밥솥장",
-      input: `${state.riceCabinetUnits}통`,
-      quantity: `${state.riceCabinetUnits}통`,
-      unitPrice: rates.riceCabinetPerUnit,
-      cost: state.riceCabinetUnits * rates.riceCabinetPerUnit,
-      margin,
-      correction: state.corrections.base,
-    });
-    addDetail(details, {
-      group: "base",
-      item: "상하부장 EP",
-      input: `${state.baseEndPanels}장 / ${epDepthLabel(state.baseEpDepth)}`,
-      quantity: `${state.baseEndPanels}장`,
-      unitPrice: epUnitPrice(state.baseEpDepth),
-      cost: state.baseEndPanels * epUnitPrice(state.baseEpDepth),
-      margin,
-      correction: state.corrections.option,
-    });
-    if (state.baseCountertopEnabled && state.lowerCabinetM > 0) {
-      addDetail(details, {
-        group: "base",
-        item: `상하부장 상판(${baseCounter.label})`,
-        input: `하부장 ${mmText(state.lowerCabinetM)}`,
-        quantity: countertopQuantity(state.baseCountertop, baseCounterBillingM),
-        unitPrice: isSlabMaterial(state.baseCountertop) ? slabBaseCost(state.baseCountertop) : baseCounter.costPerM,
-        cost: countertopCost(state.baseCountertop, baseCounterBillingM),
-        margin,
-        correction: state.corrections.countertop,
-      });
-    }
-    if (state.baseLightingUnits > 0) {
-      addDetail(details, {
-        group: "base",
-        item: "상하부장 라인조명",
-        input: `${state.baseLightingUnits}통`,
-        quantity: `${state.baseLightingUnits}통`,
-        unitPrice: rates.lightingPerCabinetUnit,
-        cost: state.baseLightingUnits * rates.lightingPerCabinetUnit,
-        margin,
-        correction: state.corrections.option,
-      });
-    }
-    addT3Detail(details, {
-      group: "base",
-      label: "상하부장",
-      units: state.baseT3Units,
-      margin,
-      corrections: state.corrections,
-    });
-  }
+function calculate() { return currentCalculationCore().calculate(readState()); }
 
-  if (state.islandEnabled && state.islandM > 0) {
-    addDetail(details, {
-      group: "island",
-      item: "아일랜드 몸통",
-      input: mmText(state.islandM),
-      quantity: `${islandJa}자`,
-      unitPrice: rates.islandPerJa,
-      cost: islandJa * rates.islandPerJa,
-      margin,
-      correction: state.corrections.island,
-    });
-    addDetail(details, {
-      group: "island",
-      item: `아일랜드 상판(${islandCounter.label})`,
-      input: `${mmText(state.islandM)} x ${mmText(state.islandDepthMm)}`,
-      quantity: isSlabMaterial(state.islandCountertop) ? countertopQuantity(state.islandCountertop, islandCounterBillingM) : `${mText(mmToM(state.islandM))}${islandCounterMultiplier > 1 ? " x 2" : ""}`,
-      unitPrice: isSlabMaterial(state.islandCountertop) ? slabBaseCost(state.islandCountertop) : islandCounter.costPerM,
-      cost: countertopCost(state.islandCountertop, islandCounterBillingM),
-      margin,
-      correction: state.corrections.countertop,
-    });
-    addDetail(details, {
-      group: "island",
-      item: `아일랜드 좌우마감재(${islandSideFinish.label})`,
-      input: state.islandSideFinish === "epPanel" ? `각 ${mmText(islandSideLengthM * 1000)}` : "900mm 기준",
-      quantity: islandSideCalc.quantity,
-      unitPrice: isSlabMaterial(state.islandSideFinish) ? slabBaseCost(state.islandSideFinish) : islandSideFinish.costPerM,
-      cost: islandSideCalc.cost,
-      margin,
-      correction: state.corrections.countertop,
-    });
-    addDetail(details, {
-      group: "island",
-      item: "아일랜드 서랍",
-      input: `${state.islandDrawers}개`,
-      quantity: `${state.islandDrawers}개`,
-      unitPrice: rates.drawer,
-      cost: state.islandDrawers * rates.drawer,
-      margin,
-      correction: state.corrections.option,
-    });
-    if (state.islandRiceCabinetEnabled) {
-      addDetail(details, {
-        group: "island",
-        item: "아일랜드 밥솥장 추가",
-        input: "1개",
-        quantity: "1개",
-        unitPrice: rates.drawer,
-        cost: rates.drawer,
-        margin,
-        correction: state.corrections.option,
-      });
-    }
-    if (state.islandBachmannOutletEnabled) {
-      addDetail(details, {
-        group: "island",
-        item: "아일랜드 바흐만 2구 콘센트",
-        input: "1개",
-        quantity: "1개",
-        unitPrice: rates.bachmannOutlet,
-        cost: rates.bachmannOutlet,
-        margin,
-        correction: state.corrections.option,
-      });
-    }
-    if (state.islandLightingUnits > 0) {
-      addDetail(details, {
-        group: "island",
-        item: "아일랜드 라인조명",
-        input: `${state.islandLightingUnits}통`,
-        quantity: `${state.islandLightingUnits}통`,
-        unitPrice: rates.lightingPerCabinetUnit,
-        cost: state.islandLightingUnits * rates.lightingPerCabinetUnit,
-        margin,
-        correction: state.corrections.option,
-      });
-    }
-    addT3Detail(details, {
-      group: "island",
-      label: "아일랜드",
-      units: state.islandT3Units,
-      margin,
-      corrections: state.corrections,
-    });
-  }
-
-  if (state.homebarEnabled && state.homebarM > 0) {
-    addDetail(details, {
-      group: "homebar",
-      item: "홈바장 키큰수납장",
-      input: mmText(state.homebarM),
-      quantity: `${homebarStorageJa}자`,
-      unitPrice: rates.homebarBuildPerJa,
-      cost: homebarStorageJa * rates.homebarBuildPerJa,
-      margin,
-      correction: state.corrections.homebar,
-    });
-    addDetail(details, {
-      group: "homebar",
-      item: "홈바장 상하부장",
-      input: mmText(state.homebarM),
-      quantity: `${homebarExtraJa}자`,
-      unitPrice: rates.homebarBuildPerJa,
-      cost: homebarExtraJa * rates.homebarBuildPerJa,
-      margin,
-      correction: state.corrections.homebar,
-    });
-    addDetail(details, {
-      group: "homebar",
-      item: `홈바장 상판(${homebarCounter.label})`,
-      input: `상하부장 ${mmText(homebarCounterActualMm)}`,
-      quantity: countertopQuantity(state.homebarCountertop, homebarCounterBillingM),
-      unitPrice: isSlabMaterial(state.homebarCountertop) ? slabBaseCost(state.homebarCountertop) : homebarCounter.costPerM,
-      cost: countertopCost(state.homebarCountertop, homebarCounterBillingM),
-      margin,
-      correction: state.corrections.countertop,
-    });
-    addDetail(details, {
-      group: "homebar",
-      item: `홈바장 미드웨이(${homebarMidway.label})`,
-      input: `상하부장 ${mmText(homebarCounterActualMm)}`,
-      quantity: countertopQuantity(state.homebarMidway, homebarCounterBillingM),
-      unitPrice: isSlabMaterial(state.homebarMidway) ? slabBaseCost(state.homebarMidway) : homebarMidway.costPerM,
-      cost: countertopCost(state.homebarMidway, homebarCounterBillingM),
-      margin,
-      correction: state.corrections.countertop,
-    });
-    addDetail(details, {
-      group: "homebar",
-      item: "홈바장 서랍",
-      input: `${state.homebarDrawers}개`,
-      quantity: `${state.homebarDrawers}개`,
-      unitPrice: rates.drawer,
-      cost: state.homebarDrawers * rates.drawer,
-      margin,
-      correction: state.corrections.option,
-    });
-    addDetail(details, {
-      group: "homebar",
-      item: "홈바장 EP",
-      input: `${state.homebarEndPanels}장 / ${epDepthLabel(state.homebarEpDepth)}`,
-      quantity: `${state.homebarEndPanels}장`,
-      unitPrice: epUnitPrice(state.homebarEpDepth),
-      cost: state.homebarEndPanels * epUnitPrice(state.homebarEpDepth),
-      margin,
-      correction: state.corrections.option,
-    });
-    if (state.homebarLightingUnits > 0) {
-      addDetail(details, {
-        group: "homebar",
-        item: "홈바장 라인조명",
-        input: `${state.homebarLightingUnits}통`,
-        quantity: `${state.homebarLightingUnits}통`,
-        unitPrice: rates.lightingPerCabinetUnit,
-        cost: state.homebarLightingUnits * rates.lightingPerCabinetUnit,
-        margin,
-        correction: state.corrections.option,
-      });
-    }
-    addT3Detail(details, {
-      group: "homebar",
-      label: "홈바장",
-      units: state.homebarT3Units,
-      margin,
-      corrections: state.corrections,
-    });
-  }
-
-  addStorageDetails(details, {
-    group: "shoe",
-    label: "신발장",
-    enabled: state.shoeEnabled,
-    mm: state.shoeM,
-    depth: state.shoeDepth,
-    endPanels: state.shoeEndPanels,
-    bodyUnitPrice: state.shoeDepth === "shallow" ? rates.shoePerJa : rates.tallPerJa,
-    lightingUnits: state.shoeLightingUnits,
-    t3Units: state.shoeT3Units,
-    margin,
-    corrections: state.corrections,
-  });
-  addStorageDetails(details, {
-    group: "fridgeLaundry",
-    label: "냉장고 및 세탁기장",
-    enabled: state.fridgeLaundryEnabled,
-    mm: state.fridgeLaundryM,
-    depth: state.fridgeLaundryDepth,
-    endPanels: state.fridgeLaundryEndPanels,
-    bodyUnitPrice: rates.fridgeLaundryPerJa,
-    lightingUnits: state.fridgeLaundryLightingUnits,
-    t3Units: state.fridgeLaundryT3Units,
-    margin,
-    corrections: state.corrections,
-  });
-  addStorageDetails(details, {
-    group: "pantry",
-    label: "팬트리장",
-    enabled: state.pantryEnabled,
-    mm: state.pantryM,
-    depth: state.pantryDepth,
-    endPanels: state.pantryEndPanels,
-    bodyUnitPrice: rates.pantryPerJa,
-    lightingUnits: 0,
-    t3Units: 0,
-    margin,
-    corrections: state.corrections,
-  });
-  addUnitDetail(details, {
-    group: "pantry",
-    item: "팬트리장 하부서랍장",
-    enabled: state.pantryEnabled,
-    input: `${state.pantryDrawerUnits}개`,
-    quantity: `${state.pantryDrawerUnits}개`,
-    unitPrice: rates.pantryDrawer,
-    units: state.pantryDrawerUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addStorageDetails(details, {
-    group: "builtIn",
-    label: "옷장(붙박이장)",
-    enabled: state.builtInEnabled,
-    mm: state.builtInM,
-    depth: state.builtInDepth,
-    endPanels: state.builtInEndPanels,
-    bodyUnitPrice: rates.builtInPerJa,
-    lightingUnits: state.builtInLightingUnits,
-    t3Units: state.builtInT3Units,
-    margin,
-    corrections: state.corrections,
-  });
-  addStorageDetails(details, {
-    group: "hanger",
-    label: "옷장(헹거장)",
-    enabled: state.hangerEnabled,
-    mm: state.hangerM,
-    depth: state.hangerDepth,
-    endPanels: 0,
-    bodyUnitPrice: rates.hangerPerJa,
-    lightingUnits: state.hangerLightingUnits,
-    t3Units: state.hangerT3Units,
-    margin,
-    corrections: state.corrections,
-  });
-
-  addUnitDetail(details, {
-    group: "demolition",
-    item: floorDemolitionLabel(state.demolitionFloorMaterial),
-    enabled: state.demolitionFloorEnabled,
-    input: `${state.areaPyeong}평`,
-    quantity: `${state.areaPyeong}평`,
-    unitPrice: floorDemolitionUnitPrice(state.demolitionFloorMaterial),
-    units: state.areaPyeong,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "가구 철거(폐기물 포함)",
-    enabled: state.demolitionFurnitureEnabled,
-    input: mmText(state.demolitionFurnitureM),
-    quantity: `${jaRounded(state.demolitionFurnitureM)}자`,
-    unitPrice: rates.demolition.furniturePerJa,
-    units: jaRounded(state.demolitionFurnitureM),
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "화장실 철거 방수",
-    enabled: state.demolitionBathroomEnabled,
-    input: `${state.demolitionBathroomUnits}개소`,
-    quantity: `${state.demolitionBathroomUnits}개소`,
-    unitPrice: rates.demolition.bathroomWaterproof,
-    units: state.demolitionBathroomUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "천장철거(폐기물 포함)",
-    enabled: state.demolitionCeilingEnabled,
-    input: `${state.areaPyeong}평`,
-    quantity: `${state.areaPyeong}평`,
-    unitPrice: rates.demolition.ceilingPerPyeong,
-    units: state.areaPyeong,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "E/V 보양",
-    enabled: state.demolitionElevatorProtectEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.demolition.elevatorProtect,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "E/V 보양 철거",
-    enabled: state.demolitionElevatorProtectRemovalEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.demolition.elevatorProtectRemoval,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "행위허가",
-    enabled: state.demolitionPermitEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.demolition.permit,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "demolition",
-    item: "동의서",
-    enabled: state.demolitionConsentEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.demolition.consent,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  const electricalDays = state.electricalAgeType === "under10" ? rates.electrical.under10YearsDays : rates.electrical.over10YearsDays;
-  addUnitDetail(details, {
-    group: "electrical",
-    item: `전기 인건비(${state.electricalAgeType === "under10" ? "준공 10년 이하" : "준공 10년 이상"})`,
-    enabled: state.electricalEnabled,
-    input: `${electricalDays}품`,
-    quantity: `${electricalDays}품`,
-    unitPrice: rates.electrical.workerDay,
-    units: electricalDays,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "electrical",
-    item: "전기 배선비(전선/후렉시블)",
-    enabled: state.electricalEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.electrical.wiring,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND 표준 콘센트 스위치(르그랑 급)",
-    enabled: state.standardSwitchEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.electrical.standardSwitch,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND표준 조명 다운라이트",
-    enabled: state.standardLightingEnabled,
-    input: `${state.standardDownlightUnits}개`,
-    quantity: `${state.standardDownlightUnits}개`,
-    unitPrice: rates.standardLighting.downlight,
-    units: state.standardDownlightUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND표준 조명 사각매입등",
-    enabled: state.standardLightingEnabled,
-    input: `${state.standardSquareLightUnits}개`,
-    quantity: `${state.standardSquareLightUnits}개`,
-    unitPrice: rates.standardLighting.square,
-    units: state.standardSquareLightUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND표준 조명 실린더등",
-    enabled: state.standardLightingEnabled,
-    input: `${state.standardCylinderLightUnits}개`,
-    quantity: `${state.standardCylinderLightUnits}개`,
-    unitPrice: rates.standardLighting.cylinder,
-    units: state.standardCylinderLightUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND표준 조명 간접조명(T3)",
-    enabled: state.standardLightingEnabled,
-    input: `${state.standardT3M}m`,
-    quantity: `${state.standardT3M}m`,
-    unitPrice: rates.standardLighting.t3PerM,
-    units: state.standardT3M,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "standardLighting",
-    item: "AND표준 조명 침대 벽등",
-    enabled: state.standardLightingEnabled && state.standardBedWallLightEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.standardLighting.bedWallLight,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  addUnitDetail(details, {
-    group: "tile",
-    item: "타일 기공",
-    enabled: state.tileEnabled,
-    input: `${state.tileBathroomUnits}칸 x 3품`,
-    quantity: `${state.tileBathroomUnits * 3}품`,
-    unitPrice: rates.finish.tileWorkerDay,
-    units: state.tileBathroomUnits * 3,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "tile",
-    item: "타일 조공",
-    enabled: state.tileEnabled,
-    input: `${state.tileBathroomUnits}칸 x 1품`,
-    quantity: `${state.tileBathroomUnits}품`,
-    unitPrice: rates.finish.tileHelperDay,
-    units: state.tileBathroomUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "tile",
-    item: "타일 메지",
-    enabled: state.tileEnabled && state.tileGroutEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.finish.tileGrout,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "tile",
-    item: "조적벽 타일 기공 추가",
-    enabled: state.bathroomEnabled,
-    input: `${state.bathroomMasonryWallUnits}개`,
-    quantity: `${state.bathroomMasonryWallUnits}품`,
-    unitPrice: rates.finish.tileWorkerDay,
-    units: state.bathroomMasonryWallUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  addModuleDetails(details, bathroomDetails(state, rates.bathroom), margin, state.corrections.option);
-
-  const wallpaperUnitDays = wallpaperDays(state.wallpaperPreset, state.wallpaperBaseCoatEnabled);
-  addUnitDetail(details, {
-    group: "wallpaper",
-    item: "도배 인건비",
-    enabled: state.wallpaperEnabled,
-    input: `${wallpaperLabel(state.wallpaperPreset)}${state.wallpaperBaseCoatEnabled ? " / 초배 포함" : ""}`,
-    quantity: `${wallpaperUnitDays}품`,
-    unitPrice: rates.finish.wallpaperWorkerDay,
-    units: wallpaperUnitDays,
-    margin,
-    correction: state.corrections.option,
-  });
-  addModuleDetails(details, [
-    ...wallpaperMaterialDetails(state, rates.finishMaterial),
-    wallpaperSupplyDetail(state, rates.finishMaterial),
-  ], margin, state.corrections.option);
-
-  const filmUnitDays = filmDays(state.filmPreset);
-  addUnitDetail(details, {
-    group: "film",
-    item: "필름 인건비",
-    enabled: state.filmEnabled,
-    input: filmLabel(state.filmPreset),
-    quantity: `${filmUnitDays}품`,
-    unitPrice: rates.finish.filmWorkerDay,
-    units: filmUnitDays,
-    margin,
-    correction: state.corrections.option,
-  });
-  addModuleDetails(details, [filmMaterialDetail(state, rates.finishMaterial)], margin, state.corrections.option);
-
-  const flooringType = state.flooringMaterialType === "sheet" ? "sheet" : "wood";
-  const flooringGrade = flooringType === "sheet"
-    ? flooringSheetGradeOptions[state.flooringSheetGrade] || flooringSheetGradeOptions.t20
-    : flooringWoodGradeOptions[state.flooringWoodGrade] || flooringWoodGradeOptions.editone;
-  const flooringLabel = flooringType === "sheet" ? `장판 ${flooringGrade.label}` : flooringGrade.label;
-  addUnitDetail(details, {
-    group: "flooring",
-    item: `바닥 시공(${flooringLabel})`,
-    enabled: state.flooringEnabled,
-    input: `${state.flooringArea}평 · ${flooringLabel}`,
-    quantity: `${state.flooringArea}평`,
-    unitPrice: flooringGrade.unitPrice,
-    units: state.flooringArea,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  addModuleDetails(details, kitchenDetails(state, rates.kitchen), margin, state.corrections.option);
-  addModuleDetails(details, doorDetails(state, rates.door), margin, state.corrections.option);
-  addModuleDetails(details, miscDetails(state, rates.misc), margin, state.corrections.option);
-
-  addUnitDetail(details, {
-    group: "silicone",
-    item: "실리콘",
-    enabled: state.siliconeEnabled,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: rates.finish.silicone,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  addUnitDetail(details, {
-    group: "elastic",
-    item: "탄성 기본 2개소",
-    enabled: state.elasticEnabled,
-    input: "기본 2개소",
-    quantity: "1식",
-    unitPrice: rates.finish.elasticBase,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "elastic",
-    item: "탄성 추가 개소",
-    enabled: state.elasticEnabled,
-    input: `${state.elasticExtraRooms}개소`,
-    quantity: `${state.elasticExtraRooms}개소`,
-    unitPrice: rates.finish.elasticExtraRoom,
-    units: state.elasticExtraRooms,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  const carpentryRawDays = carpentryLaborDays(state);
-  const carpentryDays = Math.ceil(carpentryRawDays);
-  const carpentryMaterials = carpentryMaterialCounts(state);
-  const carpentryActive = hasCarpentryWork(state, carpentryRawDays, carpentryMaterials);
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "목공 인건비",
-    enabled: carpentryRawDays > 0,
-    input: `산출 ${quantityText(carpentryRawDays, "품")} / 올림`,
-    quantity: quantityText(carpentryDays, "품"),
-    unitPrice: rates.carpentry.workerDay,
-    units: carpentryDays,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "목공 기계품",
-    enabled: carpentryRawDays > 0,
-    input: `산출 ${quantityText(carpentryRawDays, "품")} / 올림`,
-    quantity: `${carpentryDays}일`,
-    unitPrice: rates.carpentry.machineDay,
-    units: carpentryDays,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "목공 부자재",
-    enabled: carpentryActive,
-    input: "자동 포함",
-    quantity: "1식",
-    unitPrice: rates.carpentry.subsidiary,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "목공 양중",
-    enabled: carpentryActive,
-    input: "자동 포함",
-    quantity: "1식",
-    unitPrice: rates.carpentry.lifting,
-    units: 1,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "실링팬 보강",
-    enabled: true,
-    input: `${state.carpentryCeilingFanUnits}개`,
-    quantity: `${state.carpentryCeilingFanUnits}개`,
-    unitPrice: rates.carpentry.ceilingFanUnit,
-    units: state.carpentryCeilingFanUnits,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "MDF",
-    enabled: carpentryMaterials.mdf > 0,
-    input: `벽체 ${Math.max(0, carpentryMaterials.artwallBoards - carpentryMaterials.plywoodBase)}장 + 가벽 양면 ${carpentryMaterials.partitionBoards}장 / 15% 할증`,
-    quantity: `${carpentryMaterials.mdf}장`,
-    unitPrice: rates.carpentry.mdfSheet,
-    units: carpentryMaterials.mdf,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "합판",
-    enabled: carpentryMaterials.plywood > 0,
-    input: `TV ${state.carpentryTvUnits}개 x 2장 / 15% 할증`,
-    quantity: `${carpentryMaterials.plywood}장`,
-    unitPrice: rates.carpentry.plywoodSheet,
-    units: carpentryMaterials.plywood,
-    margin,
-    correction: state.corrections.option,
-  });
-  addUnitDetail(details, {
-    group: "carpentry",
-    item: "다루끼",
-    enabled: carpentryMaterials.studBundles > 0,
-    input: `벽체 ${mmText(carpentryMaterials.wallStudLength)} + 가벽 ${mmText(carpentryMaterials.partitionStudLength)} / 15% 할증`,
-    quantity: `${carpentryMaterials.studBundles}묶음`,
-    unitPrice: rates.carpentry.studBundle,
-    units: carpentryMaterials.studBundles,
-    margin,
-    correction: state.corrections.option,
-  });
-
-  const directCost = details.reduce((sum, item) => sum + item.cost, 0);
-  const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
-  const customerRevenue = floorThousand(Math.max(0, rawRevenue));
-  const profit = customerRevenue - directCost;
-  const actualMargin = markupRate(profit, directCost);
-  const targetRevenue = directCost * (1 + margin);
-  const discountRoom = Math.max(0, customerRevenue - targetRevenue);
-  const groupTotal = (group) => groupTotalFromDetails(details, group);
-  const usesStoneSlab =
-    (state.baseEnabled && state.baseCountertopEnabled && state.lowerCabinetM > 0 && isSlabMaterial(state.baseCountertop)) ||
-    (state.islandEnabled && state.islandM > 0 && (
-      isSlabMaterial(state.islandCountertop) ||
-      (isSlabMaterial(state.islandSideFinish) && state.islandSideFinishCount > 0)
-    )) ||
-    (state.homebarEnabled && state.homebarM > 0 && (
-      isSlabMaterial(state.homebarCountertop) ||
-      isSlabMaterial(state.homebarMidway)
-    ));
-
-  const quoteLines = [
-    { process: "상하부장", description: state.baseEnabled ? "상하부장 선택" : "미선택", revenue: groupTotal("base") },
-    { process: "아일랜드", description: state.islandEnabled && state.islandM > 0 ? "아일랜드 선택" : "미선택", revenue: groupTotal("island") },
-    { process: "홈바장", description: state.homebarEnabled && state.homebarM > 0 ? "홈바장 선택" : "미선택", revenue: groupTotal("homebar") },
-    { process: "신발장", description: state.shoeEnabled && state.shoeM > 0 ? "신발장 선택" : "미선택", revenue: groupTotal("shoe") },
-    { process: "냉장고장", description: state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? "냉장고 및 세탁기장 선택" : "미선택", revenue: groupTotal("fridgeLaundry") },
-    { process: "팬트리장", description: state.pantryEnabled && state.pantryM > 0 ? "팬트리장 선택" : "미선택", revenue: groupTotal("pantry") },
-    { process: "붙박이장", description: state.builtInEnabled && state.builtInM > 0 ? "붙박이장 선택" : "미선택", revenue: groupTotal("builtIn") },
-    { process: "헹거장", description: state.hangerEnabled && state.hangerM > 0 ? "헹거장 선택" : "미선택", revenue: groupTotal("hanger") },
-    { process: "철거", description: "철거 및 인허가", revenue: groupTotal("demolition") },
-    { process: "전기", description: "전기 시공", revenue: groupTotal("electrical") },
-    { process: "AND표준 조명", description: "조명 및 콘센트·스위치", revenue: groupTotal("standardLighting") },
-    { process: "욕실", description: "욕실 공사", revenue: groupTotal("bathroom") },
-    { process: "타일", description: "타일(AND표준 포세린)", revenue: groupTotal("tile") },
-    { process: "주방설비", description: "주방 부속/기기", revenue: groupTotal("kitchen") },
-    { process: "도어/창호", description: "도어 및 창호", revenue: groupTotal("door") },
-    { process: "기타", description: "기타 공정", revenue: groupTotal("misc") },
-    { process: "도배", description: state.wallpaperEnabled ? wallpaperLabel(state.wallpaperPreset) : "미선택", revenue: groupTotal("wallpaper") },
-    { process: "필름", description: state.filmEnabled ? filmLabel(state.filmPreset) : "미선택", revenue: groupTotal("film") },
-    { process: "바닥", description: state.flooringEnabled ? `${state.flooringArea}평` : "미선택", revenue: groupTotal("flooring") },
-    { process: "마감", description: "실리콘", revenue: groupTotal("silicone") },
-    { process: "마감", description: "탄성", revenue: groupTotal("elastic") },
-    { process: "목공", description: "목공 공사", revenue: groupTotal("carpentry") },
-    {
-      process: "창호",
-      description: "별도 실측 후 견적",
-      revenue: 0,
-      amountText: state.doorWindowEnabled && state.windowNoticeEnabled ? "별도 실측 후 견적" : "",
-    },
-  ].filter((line) => line.revenue > 0 || line.amountText);
-
-  if (state.adjustment !== 0) {
-    quoteLines.push({
-      process: "상담 보정",
-      description: "현장 사이즈, 작업 조정, 할인 반영",
-      revenue: state.adjustment,
-    });
-  }
-  if (usesStoneSlab) {
-    quoteLines.push({
-      process: "양중비",
-      description: "칸스톤/세라믹 양중비",
-      amountText: "현장별 별도",
-      revenue: 0,
-    });
-  }
-
-  const warnings = [];
-  if (details.length === 0) {
-    warnings.push("선택한 항목이 없습니다.");
-  } else if (actualMargin + 0.0001 < margin) {
-    warnings.push(`목표 원가 가산율 ${(margin * 100).toFixed(1)}% 미달: 현재 ${(actualMargin * 100).toFixed(1)}%`);
-  }
-  if (warnings.length === 0) warnings.push("목표 원가 가산율 기준 정상입니다.");
-
-  return {
-    state,
-    details,
-    quoteLines,
-    directCost,
-    customerRevenue,
-    profit,
-    actualMargin,
-    discountRoom,
-    warnings,
-    counts: { lowerJa, upperJa, tallJa, islandJa, homebarJa, shoeJa, fridgeLaundryJa, pantryJa, builtInJa, hangerJa },
-  };
-}
 
 function renderQuoteRows(lines, details, total) {
   const quoteRows = document.getElementById("quoteRows");
@@ -4572,50 +3370,8 @@ function restoreInputValues(inputs = {}) {
   return { hadFractionalTargetMargin };
 }
 
-function groupedCustomerItems(details, lines) {
-  const groups = new Map();
-  const ensureGroup = (label) => {
-    if (!groups.has(label)) groups.set(label, { label, total: 0, items: [] });
-    return groups.get(label);
-  };
-  const addCustomerItem = (group, name, amount, amountText = customerWon(amount)) => {
-    const displayAmount = floorThousand(Number(amount) || 0);
-    const existing = group.items.find((item) => item.name === name && item.amountText !== "현장별 별도");
-    if (existing && displayAmount > 0) {
-      existing.amount += displayAmount;
-      existing.amountText = customerWon(existing.amount);
-      return;
-    }
-    group.items.push({ name, amount: displayAmount, amountText });
-  };
+const groupedCustomerItems = (...args) => currentCalculationCore().groupedCustomerItems(...args);
 
-  for (const detail of details.filter((item) => item.revenue > 0)) {
-    const group = ensureGroup(quoteGroupLabels[detail.group] || detail.group);
-    addCustomerItem(group, customerItemName(detail.item), detail.customerRevenue ?? detail.revenue);
-  }
-
-  for (const line of lines.filter((item) => item.amountText)) {
-    const group = ensureGroup(line.process === "양중비" ? "기타" : line.process);
-    addCustomerItem(group, line.description || line.process, 0, line.amountText);
-  }
-
-  for (const line of lines.filter((item) => item.process === "상담 보정" && item.revenue !== 0)) {
-    const group = ensureGroup("기타");
-    addCustomerItem(group, line.description, line.revenue);
-  }
-
-  return quoteGroupOrder
-    .map((label) => groups.get(label))
-    .filter(Boolean)
-    .map((group) => {
-      const total = group.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      return {
-        ...group,
-        total,
-        totalText: customerWon(total),
-      };
-    });
-}
 
 function buildEstimateSnapshot(result, options = {}) {
   const savedAt = new Date().toISOString();
@@ -4624,6 +3380,7 @@ function buildEstimateSnapshot(result, options = {}) {
   const inputOverrides = effectiveEstimateInputOverrides(result.state);
   const snapshot = {
     projectName: result.state.projectName,
+    ...(options.address != null ? { address: options.address } : {}),
     areaPyeong: result.state.areaPyeong,
     clientName: result.state.clientName,
     phone: result.state.clientPhone,
@@ -4669,85 +3426,14 @@ function buildEstimateSnapshot(result, options = {}) {
 const PIPE_CLEANING_ITEM_NAME = "기존 배관 청소";
 let PIPE_CLEANING_AMOUNT = 300000;
 
-function cloneJson(value) {
-  if (value == null) return value;
-  return JSON.parse(JSON.stringify(value));
-}
 
-function applyPipeCleaningToCustomerQuote(quote, enabled) {
-  const nextQuote = cloneJson(quote) || {};
-  const groups = Array.isArray(nextQuote.groups) ? nextQuote.groups : [];
-  let miscGroup = groups.find((group) => group.label === "기타");
-  if (!miscGroup && enabled) {
-    miscGroup = { label: "기타", total: 0, totalText: customerWon(0), items: [] };
-    groups.push(miscGroup);
-  }
-  if (miscGroup) {
-    const items = Array.isArray(miscGroup.items) ? miscGroup.items : [];
-    miscGroup.items = enabled
-      ? [
-        ...items.filter((item) => item.name !== PIPE_CLEANING_ITEM_NAME),
-        { name: PIPE_CLEANING_ITEM_NAME, amount: PIPE_CLEANING_AMOUNT, amountText: customerWon(PIPE_CLEANING_AMOUNT) },
-      ]
-      : items.filter((item) => item.name !== PIPE_CLEANING_ITEM_NAME);
-    miscGroup.total = miscGroup.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    miscGroup.totalText = customerWon(miscGroup.total);
-  }
-  nextQuote.groups = quoteGroupOrder
-    .map((label) => groups.find((group) => group.label === label))
-    .filter((group) => group && Array.isArray(group.items) && group.items.length);
-  nextQuote.total = nextQuote.groups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
-  nextQuote.totalText = customerWon(nextQuote.total);
-  return nextQuote;
-}
 
-function pipeCleaningInternalDetail() {
-  return {
-    group: "misc",
-    item: PIPE_CLEANING_ITEM_NAME,
-    input: "1식",
-    quantity: "1식",
-    unitPrice: PIPE_CLEANING_AMOUNT,
-    cost: PIPE_CLEANING_AMOUNT,
-    correction: 0,
-    revenue: PIPE_CLEANING_AMOUNT,
-    customerRevenue: PIPE_CLEANING_AMOUNT,
-    profit: 0,
-  };
-}
 
-function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) {
-  const next = cloneJson(estimate);
-  if (!next?.customerQuote) return null;
-  const inputs = { ...(next.inputs || {}) };
-  inputs.existingPipeCleaningEnabled = Boolean(enabled);
-  next.inputs = inputs;
-  next.customerQuote = applyPipeCleaningToCustomerQuote(next.customerQuote, enabled);
-  next.total = next.customerQuote.total;
-  next.totalText = next.customerQuote.totalText;
-  const originalDetails = Array.isArray(next.internalDetails) ? next.internalDetails : [];
-  const removedPipeCleaningCost = originalDetails
-    .filter((item) => item.item === PIPE_CLEANING_ITEM_NAME)
-    .reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
-  const nextDetails = originalDetails.filter((item) => item.item !== PIPE_CLEANING_ITEM_NAME);
-  if (enabled) nextDetails.push(pipeCleaningInternalDetail());
-  next.internalDetails = nextDetails;
-  const baseCostTotal = Number(next.costTotal ?? next.internalSummary?.directCost) || 0;
-  const costTotal = baseCostTotal - removedPipeCleaningCost + (enabled ? PIPE_CLEANING_AMOUNT : 0);
-  const customerRevenue = Number(next.total) || 0;
-  const profit = customerRevenue - costTotal;
-  const marginRate = Number((markupRate(profit, costTotal) * 100).toFixed(2));
-  next.costTotal = costTotal;
-  next.marginRate = marginRate;
-  next.internalSummary = {
-    ...(next.internalSummary || {}),
-    directCost: costTotal,
-    customerRevenue,
-    profit,
-    marginRate,
-  };
-  return next;
-}
+
+
+
+function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) { return currentCalculationCore().applyExistingPipeCleaningAdjustment(estimate, enabled); }
+
 
 function currentPipeCleaningDerivedEstimate() {
   if (!pipeCleaningAdjustmentDirty || !activeQuoteEstimate?.customerQuote) return null;
@@ -4762,32 +3448,6 @@ function renderEstimateSnapshotOnly(estimate) {
   renderInternalRows(estimate.internalDetails || []);
   renderPurchaseOrder(estimate);
   lastRenderedEstimateSnapshot = estimate;
-}
-
-async function repairCorruptedTargetMarginEstimate(estimate) {
-  if (!estimate?.id) return null;
-  setSaveStatus("오염된 견적 마진 스냅샷을 정상 기준으로 수정 저장 중입니다.");
-  const saved = await updateEstimate(estimate.id, { ...estimate, id: estimate.id });
-  cachedEstimates = cachedEstimates.map((item) => (item.id === saved.id ? saved : item));
-  adminEstimateDetailCache.set(saved.id, saved);
-  activeQuoteEstimate = saved;
-  lastRenderedEstimateSnapshot = saved;
-  loadedEstimateBaseline = {
-    id: saved.id || null,
-    inputs: currentInputKey(),
-    estimate: saved,
-  };
-  renderProjectSearchResults();
-  const tbody = document.getElementById("savedEstimateRows");
-  if (tbody && cachedEstimates.length) {
-    renderSavedEstimateTableRows(tbody, cachedEstimates, {
-      admin: isAdmin(),
-      canViewInternal: canViewSystem(),
-      colspan: 9 + (canViewSystem() ? 1 : 0) + (isAdmin() ? 1 : 0),
-    });
-  }
-  setSaveStatus(`${formatDateTime(saved.savedAt)} 오염된 견적 마진 스냅샷 수정 저장 완료`);
-  return saved;
 }
 
 function renderCustomerQuoteTable(quote, rows, groupTotals) {
@@ -5291,6 +3951,7 @@ function renderPrintQuote(quote) {
 }
 
 function currentEstimateForPrint() {
+  if (currentProfile?.role === "staff") return activeQuoteEstimate || lastRenderedEstimateSnapshot;
   return activeQuoteEstimate || lastRenderedEstimateSnapshot || buildEstimateSnapshot(calculateForCurrentEstimate());
 }
 
@@ -5674,6 +4335,10 @@ function guardCheckboxLabelClicks() {
 }
 
 function render() {
+  if (currentProfile?.role === "staff") {
+    renderStaffEstimate();
+    return;
+  }
   const result = calculateForCurrentEstimate();
   const { state, details, quoteLines, directCost, customerRevenue, profit, actualMargin, discountRoom, warnings, counts } = result;
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
@@ -5736,6 +4401,52 @@ function refresh() {
   syncSectionLocks();
   syncBlockLocks();
   render();
+}
+
+let staffPreviewGeneration = 0;
+let staffPreviewTimer = null;
+
+function displayStaffEstimate(estimate) {
+  activeQuoteEstimate = estimate;
+  lastRenderedEstimateSnapshot = estimate;
+  setText("clientTotal", estimate.totalText || customerWon(estimate.total));
+  renderCustomerQuote(estimate);
+  renderStandardCheck(readState());
+}
+
+function cancelStaffPreview() {
+  staffPreviewGeneration += 1;
+  clearTimeout(staffPreviewTimer);
+}
+
+function renderStaffEstimate() {
+  cancelStaffPreview();
+  const pipeChanged = pipeCleaningAdjustmentDirty && Boolean(el.existingPipeCleaningEnabled?.checked)
+    !== Boolean(loadedEstimateBaseline?.estimate?.inputs?.existingPipeCleaningEnabled);
+  if (!pipeChanged && loadedEstimateMatchesCurrentInputs() && loadedEstimateBaseline?.estimate?.customerQuote) {
+    displayStaffEstimate(loadedEstimateBaseline.estimate);
+    return;
+  }
+  const generation = staffPreviewGeneration;
+  const inputs = staffCurrentEstimateInputs();
+  const estimateId = currentEditingEstimateId;
+  setSaveStatus("고객 견적을 계산 중입니다.");
+  staffPreviewTimer = setTimeout(async () => {
+    try {
+      const estimate = await previewStaffEstimate(inputs, estimateId);
+      if (generation !== staffPreviewGeneration || currentProfile?.role !== "staff" || estimateId !== currentEditingEstimateId) return;
+      displayStaffEstimate(estimate);
+      setSaveStatus("입력값으로 고객 견적을 계산했습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
+    } catch (error) {
+      if (generation === staffPreviewGeneration) setSaveStatus(error.message || "견적 계산에 실패했습니다.");
+    }
+  }, 160);
+}
+
+function staffCurrentEstimateInputs() {
+  return { ...currentEstimateInputValues(),
+    existingPipeCleaningEnabled: Boolean(el.existingPipeCleaningEnabled?.checked),
+  };
 }
 
 function activateTab(tabId) {
@@ -7632,9 +6343,10 @@ function renderProjectSearchResults() {
 }
 
 function loadEstimateIntoUi(estimate) {
+  cancelStaffPreview();
   pipeCleaningAdjustmentDirty = false;
   lastRenderedEstimateSnapshot = null;
-  const restoreInfo = restoreInputValues(estimate.inputs);
+  restoreInputValues(estimate.inputs);
   el.projectName.value = estimate.projectName || "";
   el.areaPyeong.value = estimate.areaPyeong ?? "";
   el.clientName.value = estimate.clientName || "";
@@ -7643,10 +6355,9 @@ function loadEstimateIntoUi(estimate) {
   currentEditingEstimateId = estimate.id || null;
   activeQuoteEstimate = null;
   loadedContractEstimateState = null;
-  refresh();
+  if (currentProfile?.role !== "staff") refresh();
   const hasStoredResult = estimate.customerQuote || estimate.internalSummary || estimate.internalDetails;
-  const shouldRecalculateCorruptedMarginSnapshot = restoreInfo?.hadFractionalTargetMargin;
-  const displayEstimate = hasStoredResult && !shouldRecalculateCorruptedMarginSnapshot
+  const displayEstimate = hasStoredResult || currentProfile?.role === "staff"
     ? estimate
     : {
       ...estimate,
@@ -7668,15 +6379,7 @@ function loadEstimateIntoUi(estimate) {
   renderStoredInternalSummary(displayEstimate);
   renderInternalRows(displayEstimate.internalDetails || []);
   renderPurchaseOrder(displayEstimate);
-  if (shouldRecalculateCorruptedMarginSnapshot) {
-    setSaveStatus("오염된 견적 마진 스냅샷을 정상 기준으로 표시했습니다. 수정 저장을 진행합니다.");
-    repairCorruptedTargetMarginEstimate(displayEstimate).catch((error) => {
-      console.error("오염 견적 수정 저장 실패", error);
-      setSaveStatus("오염된 견적을 표시 기준으로 재계산했지만 자동 수정 저장에는 실패했습니다.");
-    });
-  } else {
-    setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
-  }
+  setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
   refreshContractPackagePanel(displayEstimate).catch((error) => console.error("계약 패키지 갱신 실패", error));
 }
 
@@ -7712,6 +6415,12 @@ document.getElementById("loginForm")?.addEventListener("submit", async (event) =
 
 document.getElementById("logoutButton")?.addEventListener("click", async () => {
   await signOut();
+  cancelStaffPreview();
+  activeQuoteEstimate = null;
+  loadedEstimateBaseline = null;
+  lastRenderedEstimateSnapshot = null;
+  currentEditingEstimateId = null;
+  cachedEstimates = [];
   currentProfile = null;
   contractOptionsState = null;
   contractPackagesState = [];
@@ -7777,6 +6486,11 @@ function handleEstimateInputChanged() {
 }
 
 function handleExistingPipeCleaningChanged() {
+  if (currentProfile?.role === "staff") {
+    pipeCleaningAdjustmentDirty = true;
+    renderStaffEstimate();
+    return;
+  }
   const enabled = Boolean(el.existingPipeCleaningEnabled?.checked);
   const baseEstimate = activeQuoteEstimate || loadedEstimateBaseline?.estimate || lastRenderedEstimateSnapshot;
   if (!baseEstimate?.customerQuote) return;
@@ -7794,6 +6508,28 @@ async function handleSaveEstimate(mode = "update") {
   try {
     setSaveStatus("저장 준비 중입니다.");
     const isUpdate = mode === "update";
+    if (currentProfile?.role === "staff") {
+      const updateId = currentEditingEstimateId;
+      if (isUpdate && !updateId) throw new Error("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
+      cancelStaffPreview();
+      const inputKeyAtSave = currentInputKey();
+      const inputEstimate = { inputs: staffCurrentEstimateInputs(),
+        ...(isUpdate && loadedEstimateBaseline?.estimate?.address != null ? { address: loadedEstimateBaseline.estimate.address } : {}) };
+      const saved = isUpdate ? await updateEstimate(updateId, inputEstimate) : await saveEstimate(inputEstimate);
+      const unchanged = currentInputKey() === inputKeyAtSave
+        && Boolean(el.existingPipeCleaningEnabled?.checked) === inputEstimate.inputs.existingPipeCleaningEnabled;
+      if (unchanged) restoreInputValues(saved.inputs);
+      displayStaffEstimate(saved);
+      currentEditingEstimateId = saved.id || null;
+      loadedEstimateBaseline = { id: saved.id || null, inputs: unchanged ? currentInputKey() : inputKeyAtSave, estimate: saved };
+      pipeCleaningAdjustmentDirty = false;
+      setSaveStatus("고객 견적 저장 완료");
+      await renderSavedEstimateRows();
+      await refreshContractPackagePanel(saved);
+      if (!unchanged) renderStaffEstimate();
+      activateTab("quote");
+      return;
+    }
     const pipeCleaningSnapshot = isUpdate ? currentPipeCleaningDerivedEstimate() : null;
     const result = pipeCleaningSnapshot ? null : calculateForCurrentEstimate();
     if (!pipeCleaningSnapshot && isUpdate && shouldUseLoadedCostSnapshot() && snapshotCalculationMissingItems.length) {
@@ -7803,6 +6539,7 @@ async function handleSaveEstimate(mode = "update") {
       return;
     }
     const snapshot = pipeCleaningSnapshot || buildEstimateSnapshot(result, {
+      address: isUpdate ? loadedEstimateBaseline?.estimate?.address : undefined,
       costSnapshot: isUpdate && shouldUseLoadedCostSnapshot()
         ? loadedEstimateBaseline?.estimate?.costSnapshot
         : undefined,
@@ -7908,6 +6645,10 @@ window.addEventListener("beforeunload", (event) => {
 });
 
 document.getElementById("printQuoteButton")?.addEventListener("click", () => {
+  if (currentProfile?.role === "staff" && !activeQuoteEstimate?.customerQuote) {
+    setSaveStatus("고객 견적 계산이 완료된 후 출력해 주세요.");
+    return;
+  }
   renderPrintQuote(activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote);
   window.print();
 });
@@ -8179,6 +6920,16 @@ if (getAuthSession()) {
 });
 }
 
+export {
+  CONTRACT_FIXED_TERM_LINES,
+  renderContractPrintDocument,
+  applyExistingPipeCleaningAdjustment,
+  buildEstimateSnapshot,
+  calculateForCurrentEstimate,
+  enterAuthenticatedApp,
+  handleSaveEstimate,
+  loadEstimateIntoUi,
+};
 
 
 
@@ -8189,3 +6940,8 @@ if (getAuthSession()) {
 
 
 
+
+
+function currentCalculationCore() {
+  return createEstimateCalculation({ rates, flooringSheetGradeOptions, flooringWoodGradeOptions, pipeCleaningAmount: PIPE_CLEANING_AMOUNT });
+}

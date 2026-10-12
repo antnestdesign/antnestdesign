@@ -7,6 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:db": "node tests/os/db/run.mjs",
+    "test:db:start": "node tests/os/db/run.mjs --start",
+    "test:db:integrity": "node tests/os/db/run.mjs --integrity",
+    "test:staff-boundary": "node tests/os/db/run.mjs --staff",
     "indexnow:dry-run": "node scripts/indexnow.mjs --dry-run"
   },
   "dependencies": {
@@ -21,8 +28,11 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "jsdom": "30.1.2",
     "sharp": "^0.35.2",
+    "supabase": "2.120.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.0"
   }
 }

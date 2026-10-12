@@ -1,3 +1,4 @@
+import { staffEstimateInputs } from "./estimate-inputs.js";
 ﻿const SUPABASE_URL = "https://lzsxboaqliuwjzwsnnwf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2lbgZkij5jLbtE6JVBfB1Q_MCvzOcVr";
 const ESTIMATES_ENDPOINT = `${SUPABASE_URL}/rest/v1/estimates`;
@@ -79,8 +80,31 @@ async function requestOsApi(path, options = {}) {
   return JSON.parse(text);
 }
 
+let verifiedEstimateRole = null;
+let verifiedEstimateUserId = null;
+
 export async function loadCurrentOsUser() {
-  return requestOsApi("/me");
+  const profile = await requestOsApi("/me");
+  verifiedEstimateRole = profile.role;
+  verifiedEstimateUserId = getAuthSession()?.user?.id || null;
+  return profile;
+}
+
+function usesSafeEstimatesApi() {
+  return verifiedEstimateUserId !== getAuthSession()?.user?.id || !["admin", "manager"].includes(verifiedEstimateRole);
+}
+
+function staffEstimateBody(estimate) {
+  return {
+    inputs: staffEstimateInputs(estimate.inputs),
+    ...(estimate.address != null ? { address: estimate.address } : {}),
+  };
+}
+
+export async function previewStaffEstimate(inputs, estimateId = null) {
+  return requestOsApi("/estimates/preview", {
+    method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId }),
+  });
 }
 
 export async function loadOsUsers() {
@@ -200,6 +224,8 @@ export async function signOut() {
     }).catch(() => {});
   }
   persistSession(null);
+  verifiedEstimateRole = null;
+  verifiedEstimateUserId = null;
 }
 
 async function requestGeneric(path, options = {}) {
@@ -316,6 +342,9 @@ async function insertWithFallbacks(payload, fallbacks) {
   throw new Error(errors.filter(Boolean).join("\n") || "견적 저장에 실패했습니다.");
 }
 export async function saveEstimate(estimate) {
+  if (usesSafeEstimatesApi()) {
+    return requestOsApi("/estimates", { method: "POST", body: JSON.stringify(staffEstimateBody(estimate)) });
+  }
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
     throw new Error("프로젝트명을 입력해 주세요.");
@@ -367,6 +396,9 @@ export async function updateEstimate(id, estimate) {
   if (!id) {
     throw new Error("수정할 견적을 찾지 못했습니다.");
   }
+  if (usesSafeEstimatesApi()) {
+    return requestOsApi(`/estimates/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(staffEstimateBody(estimate)) });
+  }
   const projectName = estimate.projectName?.trim();
   if (!projectName) {
     throw new Error("프로젝트명을 입력해 주세요.");
@@ -378,7 +410,7 @@ export async function updateEstimate(id, estimate) {
     project_name: projectName,
     client_name: clientName,
     phone,
-    address: estimate.address || "",
+    ...(estimate.address != null ? { address: estimate.address } : {}),
     area_pyeong: estimate.areaPyeong || 0,
     total_price: estimate.total || 0,
     cost_total: estimate.costTotal || 0,
@@ -403,16 +435,22 @@ export async function updateEstimate(id, estimate) {
 }
 
 export async function loadEstimates() {
+  if (usesSafeEstimatesApi()) return requestOsApi("/estimates");
   const rows = await request("?select=*&order=created_at.desc");
   return rows.map(normalizeEstimate);
 }
 
 export async function getEstimate(id) {
+  if (usesSafeEstimatesApi()) return requestOsApi(`/estimates/${encodeURIComponent(id)}`);
   const rows = await request(`?id=eq.${encodeURIComponent(id)}&select=*&limit=1`);
   return rows[0] ? normalizeEstimate(rows[0]) : null;
 }
 
 export async function deleteEstimate(id) {
+  const profile = await loadCurrentOsUser();
+  if (profile?.role !== "admin" || profile.is_active === false || profile.must_change_password) {
+    throw new Error("관리자만 견적을 삭제할 수 있습니다.");
+  }
   await request(`?id=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
