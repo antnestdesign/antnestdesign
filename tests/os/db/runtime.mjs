@@ -1,12 +1,14 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createLocalFetch, TEST_CONTAINER, TEST_ORIGIN } from "./guard.mjs";
+import { createLocalFetch, REBUILD_MODE, TEST_CONTAINER, TEST_ORIGIN } from "./guard.mjs";
+import { sql as rebuildSql } from "./rebuild/stack.mjs";
 import { seedSql } from "./fixtures.mjs";
 
 export const ROOT = resolve(import.meta.dirname, "../../..");
 
 export function executeSql(source, transaction = true) {
+  if (REBUILD_MODE) return rebuildSql(source, transaction);
   const result = spawnSync("docker", ["exec", "-i", TEST_CONTAINER,
     "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-Atq"], {
     input: transaction ? `begin;\n${source}\ncommit;` : source,
@@ -19,7 +21,10 @@ export function executeSql(source, transaction = true) {
   return result.stdout.trim();
 }
 
-export function dbFile(file) { return readFileSync(resolve(ROOT, "tests/os/db", file), "utf8"); }
+export function dbFile(file) {
+  const target = REBUILD_MODE && file === "integrity/reset.sql" ? "rebuild/reset-integrity.sql" : file;
+  return readFileSync(resolve(ROOT, "tests/os/db", target), "utf8");
+}
 
 export function resetFixtures() {
   executeSql(`${dbFile("reset.sql")}\n${seedSql()}`);

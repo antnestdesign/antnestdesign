@@ -1,0 +1,37 @@
+# LOCAL PG17 REBUILD ONLY. Never link to a hosted project.
+project_id = "and-os-migration-rebuild-test"
+
+[api]
+enabled = true
+port = 56321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 56322
+shadow_port = 56320
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:56321"
+enable_signup = false
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = false

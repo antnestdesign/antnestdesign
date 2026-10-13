@@ -5,6 +5,16 @@ Scope: Production catalog READ ONLY; offline baseline/forward generation and
 static review. No Production schema, ACL, function, business data or app change.
 No blank replay, push, deployment or migration adoption performed.
 
+This opening records the original Phase 4A/B scope. Phase 4C runtime verification
+is now complete; see [Phase 4C verification](AND_OS_PHASE4C_REBUILD_VERIFICATION.md)
+and `db-baseline/AND_OS_PHASE4C_REBUILD_RESULTS_2026-10-13.json`. Two fresh PG17
+rebuilds passed Security 190/190, Integrity 64/64 and Staff Boundary 23/23 each.
+Forward 003 now also replaces confirm and fails closed for missing/inactive/forced-
+password actors in all four contract RPCs. Current static parse covers 33 function
+definitions. The dated Phase 4A/B observations below remain historical evidence;
+the Phase 4C report supersedes their runtime-unverified status. Production adoption,
+push and deployment remain unexecuted.
+
 ## Evidence And Ownership
 
 - User-authenticated Supabase Dashboard, project `lzsxboaqliuwjzwsnnwf` / antnest-estimate / main.

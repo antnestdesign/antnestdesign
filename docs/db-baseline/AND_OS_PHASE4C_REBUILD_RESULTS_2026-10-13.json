@@ -1,0 +1,299 @@
+{
+  "stack": "and-os-migration-rebuild-test",
+  "host": "127.0.0.1",
+  "apiPort": 56321,
+  "dbPort": 56322,
+  "linked": false,
+  "productionCredentialsLoaded": false,
+  "migrationFiles": [
+    "20261013000000_prod_baseline.sql",
+    "20261013000100_auth_account_boundary.sql",
+    "20261013000200_estimate_role_boundary.sql",
+    "20261013000300_contract_integrity.sql",
+    "20261013000400_cost_rpc_canonical.sql"
+  ],
+  "manualSchemaPatch": 0,
+  "archiveExecution": 0,
+  "historicalSchemaExecution": 0,
+  "runs": [
+    {
+      "run": 1,
+      "version": "17.11",
+      "containerId": "8d2cf83e48de745802a8b92b6263885dddff5d744abcd56ac051b30cb16fca2a",
+      "volumes": [
+        "supabase_db_and-os-migration-rebuild-test"
+      ],
+      "blankAppObjects": 0,
+      "migrationResult": "PASS",
+      "suites": [
+        {
+          "name": "Security",
+          "passed": 190,
+          "failed": 0,
+          "pending": 0
+        },
+        {
+          "name": "Integrity",
+          "passed": 64,
+          "failed": 0,
+          "pending": 0
+        },
+        {
+          "name": "Staff Boundary",
+          "passed": 23,
+          "failed": 0,
+          "pending": 0
+        }
+      ],
+      "baseline": {
+        "result": "PASS",
+        "phase": "baseline",
+        "fingerprint": "a83cc48fab2cff052ab1cd559b7291b9890a0787cb8b81375c301d73cf70d0cf",
+        "tables": 15,
+        "functions": 24,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 15,
+        "policies": 14,
+        "views": 0
+      },
+      "history": [
+        "20261013000000",
+        "20261013000100",
+        "20261013000200",
+        "20261013000300",
+        "20261013000400"
+      ],
+      "final": {
+        "result": "PASS",
+        "phase": "final",
+        "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+        "tables": 15,
+        "functions": 25,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 16,
+        "policies": 17,
+        "views": 1
+      },
+      "preFixtureRows": 0,
+      "ui": {
+        "engine": "155.0.4283.45",
+        "syntheticOnly": true,
+        "browserOnlyLocalConfig": true,
+        "apiMock": false,
+        "roles": [
+          {
+            "role": "admin-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "PASS",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          },
+          {
+            "role": "manager-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "PASS",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          },
+          {
+            "role": "staff-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "HIDDEN",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          }
+        ],
+        "result": "PASS"
+      },
+      "afterTests": {
+        "result": "PASS",
+        "phase": "final",
+        "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+        "tables": 15,
+        "functions": 25,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 16,
+        "policies": 17,
+        "views": 1
+      }
+    },
+    {
+      "run": 2,
+      "version": "17.11",
+      "containerId": "66bd120b1f7a75ac875103ad2e9de17b8bc20d02e08d27f28f1d9fce1e7a7934",
+      "volumes": [
+        "supabase_db_and-os-migration-rebuild-test"
+      ],
+      "blankAppObjects": 0,
+      "migrationResult": "PASS",
+      "suites": [
+        {
+          "name": "Security",
+          "passed": 190,
+          "failed": 0,
+          "pending": 0
+        },
+        {
+          "name": "Integrity",
+          "passed": 64,
+          "failed": 0,
+          "pending": 0
+        },
+        {
+          "name": "Staff Boundary",
+          "passed": 23,
+          "failed": 0,
+          "pending": 0
+        }
+      ],
+      "baseline": {
+        "result": "PASS",
+        "phase": "baseline",
+        "fingerprint": "a83cc48fab2cff052ab1cd559b7291b9890a0787cb8b81375c301d73cf70d0cf",
+        "tables": 15,
+        "functions": 24,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 15,
+        "policies": 14,
+        "views": 0
+      },
+      "history": [
+        "20261013000000",
+        "20261013000100",
+        "20261013000200",
+        "20261013000300",
+        "20261013000400"
+      ],
+      "final": {
+        "result": "PASS",
+        "phase": "final",
+        "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+        "tables": 15,
+        "functions": 25,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 16,
+        "policies": 17,
+        "views": 1
+      },
+      "preFixtureRows": 0,
+      "ui": {
+        "engine": "155.0.4283.45",
+        "syntheticOnly": true,
+        "browserOnlyLocalConfig": true,
+        "apiMock": false,
+        "roles": [
+          {
+            "role": "admin-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "PASS",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          },
+          {
+            "role": "manager-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "PASS",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          },
+          {
+            "role": "staff-active",
+            "login": "PASS",
+            "oldEstimateRead": "PASS",
+            "estimateWritesOnRead": 0,
+            "quoteTotal": 3770000,
+            "contractPanel": "PASS",
+            "costAccountAudit": "HIDDEN",
+            "pageErrors": 0,
+            "hostedDbAttempts": 0
+          }
+        ],
+        "result": "PASS"
+      },
+      "afterTests": {
+        "result": "PASS",
+        "phase": "final",
+        "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+        "tables": 15,
+        "functions": 25,
+        "columns": 229,
+        "constraints": 80,
+        "indexes": 48,
+        "triggers": 16,
+        "policies": 17,
+        "views": 1
+      }
+    }
+  ],
+  "result": "PASS",
+  "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+  "archiveHashes": {
+    "cost_items_v2_3.sql": "2d8e57d464a5a1a942d816b8f419ec98cc4f8a78ef83eb8293c732af5c3e3ccf",
+    "rfc_003a_user_profiles.sql": "fb2d2249a6271cb8f8f90aaf89b832770ece52b43ef57531c2864e56e6f11fdf"
+  },
+  "finalGates": {
+    "regression": {
+      "passed": 702,
+      "failed": 0,
+      "skipped": 0
+    },
+    "documents": {
+      "passed": 9,
+      "failed": 0
+    },
+    "syntax": {
+      "files": 14,
+      "result": "PASS"
+    },
+    "sqlStatic": {
+      "migrations": 5,
+      "functionDefinitions": 33,
+      "result": "PASS"
+    },
+    "lint": {
+      "result": "PASS",
+      "existingWarnings": 5,
+      "newWarnings": 0
+    },
+    "build": "PASS",
+    "productionMutation": false,
+    "push": false,
+    "deploy": false
+  },
+  "faultInjection": {
+    "userApproved": true,
+    "isolatedTestOnly": true,
+    "schemaRepair": false,
+    "postTestFingerprintUnchanged": true
+  }
+}

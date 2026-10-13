@@ -78,10 +78,18 @@ contract = [s.replace('proposed_contract_manifest_guard', 'and_os_contract_manif
               .replace('create or replace function', 'create function') for s in contract]
 contract += ['ALTER FUNCTION public.and_os_contract_manifest_guard() OWNER TO postgres',
              'REVOKE ALL ON FUNCTION public.and_os_contract_manifest_guard() FROM service_role']
-# These three tracked, Phase-2-tested RPCs differ from Production only in explicit
-# pgcrypto qualification/type casts. Keep the body/data/hash inputs unchanged.
-contract += [s for s in statements('supabase/rfc_006_contract_documents.sql')
-             if function_name(s) in ('create_contract_package_snapshot', 'create_contract_change_order', 'approve_contract_change_order')]
+# Keep qualified digest calls and business/hash inputs; all four RPCs also need
+# the fail-closed account guard reproduced by the Phase 4C runtime tests.
+for stmt in statements('supabase/rfc_006_contract_documents.sql'):
+    if function_name(stmt) not in ('create_contract_package_snapshot', 'confirm_contract_package_snapshot', 'create_contract_change_order', 'approve_contract_change_order'):
+        continue
+    # Phase 4C reproduced SQL NULL role bypass + forced-password actor gap.
+    before = 'where id = p_actor_user_id and is_active = true;'
+    assert stmt.count(before) == 1
+    stmt = stmt.replace(before, 'where id = p_actor_user_id and is_active = true and must_change_password = false;')
+    stmt = stmt.replace('if v_role not in', "if coalesce(v_role, '') not in")
+    stmt = stmt.replace("if v_role <> 'admin'", "if coalesce(v_role, '') <> 'admin'")
+    contract.append(stmt)
 write('20261013000300_contract_integrity.sql', 'verified immutable manifest guard and qualified pgcrypto RPC bodies', contract)
 
 cost = []

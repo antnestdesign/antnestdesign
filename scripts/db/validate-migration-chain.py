@@ -89,7 +89,8 @@ for name, expected in {'cost_items_v2_3.sql': '2d8e57d464a5a1a942d816b8f419ec98c
     assert hashlib.sha256((ROOT / 'supabase/archive' / name).read_bytes()).hexdigest() == expected
     assert not (ROOT / 'supabase' / name).exists()
 # Audit all historical and test SQL with the same SQL parser, without executing.
-historical = sorted((ROOT / 'supabase').rglob('*.sql')) + sorted((ROOT / 'tests/os/db').rglob('*.sql'))
+historical = sorted((ROOT / 'supabase').rglob('*.sql')) + [p for p in sorted((ROOT / 'tests/os/db').rglob('*.sql'))
+    if 'rebuild/supabase/migrations/' not in p.as_posix() and '/artifacts/' not in p.as_posix()]
 for path in historical:
     parse_sql(path.read_text(encoding='utf-8-sig'))
 for query in (ROOT / 'scripts/db').glob('capture-*.sql'):

@@ -16,8 +16,8 @@
   },
   {
     "file": "20261013000300_contract_integrity.sql",
-    "sha256": "240fc789c8bf18ee21eecc6b42be3d931d3e061abc0cd4ffa2e2d64eeec3447c",
-    "statements": 11
+    "sha256": "950703f3c3d35ff9cbb38c8698672902ec77712cd26a928ff9f4f038ea79f90e",
+    "statements": 12
   },
   {
     "file": "20261013000400_cost_rpc_canonical.sql",

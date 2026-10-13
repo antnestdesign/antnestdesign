@@ -66,9 +66,9 @@ declare
 begin
   select lower(role) into v_role
   from public.profiles
-  where id = p_actor_user_id and is_active = true;
+  where id = p_actor_user_id and is_active = true and must_change_password = false;
 
-  if v_role not in ('admin', 'staff') then
+  if coalesce(v_role, '') not in ('admin', 'staff') then
     raise exception 'contract package creation is not allowed';
   end if;
 
@@ -238,6 +238,87 @@ begin
 end;
 $$;
 
+create or replace function public.confirm_contract_package_snapshot(
+  p_package_id uuid,
+  p_actor_user_id uuid
+)
+returns jsonb
+security definer
+set search_path = public
+language plpgsql
+as $$
+declare
+  v_role text;
+  v_package public.contract_package_snapshots%rowtype;
+  v_doc_count integer;
+  v_now timestamptz := public.and_os_now();
+  v_result jsonb;
+begin
+  select lower(role) into v_role
+  from public.profiles
+  where id = p_actor_user_id and is_active = true and must_change_password = false;
+
+  if coalesce(v_role, '') <> 'admin' then
+    raise exception 'contract confirmation is allowed only for admin';
+  end if;
+
+  select *
+  into v_package
+  from public.contract_package_snapshots
+  where id = p_package_id
+  for update;
+
+  if not found then
+    raise exception 'contract package not found';
+  end if;
+
+  if v_package.status <> 'READY' then
+    raise exception 'only READY contract package can be confirmed';
+  end if;
+
+  select count(distinct document_type)
+  into v_doc_count
+  from public.contract_document_versions
+  where package_id = p_package_id
+    and package_version = v_package.package_version
+    and generation_status = 'GENERATED'
+    and length(content_hash) > 0
+    and content_json is not null
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  if v_doc_count <> 3 then
+    raise exception 'all three generated documents are required';
+  end if;
+
+  update public.contract_document_versions
+  set generation_status = 'FINAL',
+      locked_at = v_now
+  where package_id = p_package_id
+    and package_version = v_package.package_version
+    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');
+
+  update public.contract_package_snapshots
+  set status = 'CONTRACTED',
+      confirmed_by = p_actor_user_id,
+      confirmed_at = v_now
+  where id = p_package_id;
+
+  select to_jsonb(p.*) || jsonb_build_object(
+    'contract_document_versions',
+    coalesce((
+      select jsonb_agg(to_jsonb(d) order by d.document_type)
+      from public.contract_document_versions d
+      where d.package_id = p.id
+    ), '[]'::jsonb)
+  )
+  into v_result
+  from public.contract_package_snapshots p
+  where p.id = p_package_id;
+
+  return v_result;
+end;
+$$;
+
 create or replace function public.create_contract_change_order(
   p_actor_user_id uuid,
   p_payload jsonb
@@ -268,9 +349,9 @@ declare
 begin
   select lower(role) into v_role
   from public.profiles
-  where id = p_actor_user_id and is_active = true;
+  where id = p_actor_user_id and is_active = true and must_change_password = false;
 
-  if v_role <> 'admin' then
+  if coalesce(v_role, '') <> 'admin' then
     raise exception 'change order creation is allowed only for admin';
   end if;
 
@@ -565,9 +646,9 @@ declare
 begin
   select lower(role) into v_role
   from public.profiles
-  where id = p_actor_user_id and is_active = true;
+  where id = p_actor_user_id and is_active = true and must_change_password = false;
 
-  if v_role <> 'admin' then
+  if coalesce(v_role, '') <> 'admin' then
     raise exception 'change order approval is allowed only for admin';
   end if;
 

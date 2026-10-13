@@ -25,9 +25,9 @@
     },
     {
       "file": "20261013000300_contract_integrity.sql",
-      "statements": 11,
-      "parsed_function_bodies": 4,
-      "sha256": "240fc789c8bf18ee21eecc6b42be3d931d3e061abc0cd4ffa2e2d64eeec3447c",
+      "statements": 12,
+      "parsed_function_bodies": 5,
+      "sha256": "950703f3c3d35ff9cbb38c8698672902ec77712cd26a928ff9f4f038ea79f90e",
       "result": "PASS"
     },
     {
@@ -38,7 +38,7 @@
       "result": "PASS"
     }
   ],
-  "historical_and_test_sql_parsed": 23,
+  "historical_and_test_sql_parsed": 24,
   "baseline_tables": 15,
   "baseline_functions": 24,
   "function_definitions": {
@@ -47,7 +47,7 @@
     "approve_contract_change_order": 2,
     "cancel_all_cost_drafts": 1,
     "cancel_cost_item_draft": 1,
-    "confirm_contract_package_snapshot": 1,
+    "confirm_contract_package_snapshot": 2,
     "create_contract_change_order": 2,
     "create_contract_package_snapshot": 2,
     "create_cost_item_pending": 1,
