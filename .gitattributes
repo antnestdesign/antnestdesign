@@ -1,0 +1,5 @@
+# Canonical catalog/migration hashes must survive Windows checkouts.
+supabase/migrations/*.sql text eol=lf
+docs/db-baseline/*2026-10-13.json text eol=lf
+# Preserve historical source bytes, including its pre-existing EOF blank line.
+supabase/archive/*.sql -text whitespace=cr-at-eol,-blank-at-eof

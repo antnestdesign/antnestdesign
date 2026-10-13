@@ -1,0 +1,3516 @@
+{
+  "captured_at": "2026-10-13T07:24:59.489571+00:00",
+  "files": [
+    {
+      "file": "supabase/cost_items.sql",
+      "sha256": "16adc2b925e4806f8ecdafc7d50f22857323f3fc69bbef994db89e9e78cb2b81",
+      "statements": 28
+    },
+    {
+      "file": "supabase/rfc_003f_audit_log.sql",
+      "sha256": "52728d5e9d2b696cb8c9a1c152dc28173d53fb65c4819075d155597c2e35e3d5",
+      "statements": 13
+    },
+    {
+      "file": "supabase/rfc_004b_cost_item_management.sql",
+      "sha256": "22e4e71c26f8f1f6da99bb833510fc50f117fb44fe967b7a7dac728470c81c69",
+      "statements": 23
+    },
+    {
+      "file": "supabase/rfc_004s_wallpaper_material_cost_item.sql",
+      "sha256": "3125470447fb5e022578a772defb8dafcbf6d81c4aee6064c42d11c1f78723c5",
+      "statements": 5
+    },
+    {
+      "file": "supabase/rfc_006_contract_documents.sql",
+      "sha256": "c574f971dfbd1610a328375590b376ac037c0e82f5901053591913c53922fede",
+      "statements": 108
+    },
+    {
+      "file": "supabase/rfc_006_digest_hotfix.sql",
+      "sha256": "68da3ba33116ea62cdc92f198249eb79263739bbd3cbde2ee4490135a6176e44",
+      "statements": 2
+    },
+    {
+      "file": "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql",
+      "sha256": "43f84ad8f215adc39670f54145d74d21966b598e99ea5ea23f4ece0abafdc29e",
+      "statements": 12
+    },
+    {
+      "file": "supabase/rfc_recent_cost_items.sql",
+      "sha256": "f402f9ce23105ac541ff88ee13b306cc272260669a60bc6e591af0aee3d69ee7",
+      "statements": 5
+    },
+    {
+      "file": "supabase/archive/cost_items_v2_3.sql",
+      "sha256": "2d8e57d464a5a1a942d816b8f419ec98cc4f8a78ef83eb8293c732af5c3e3ccf",
+      "statements": 37
+    },
+    {
+      "file": "supabase/archive/rfc_003a_user_profiles.sql",
+      "sha256": "fb2d2249a6271cb8f8f90aaf89b832770ece52b43ef57531c2864e56e6f11fdf",
+      "statements": 19
+    }
+  ],
+  "functions": [
+    {
+      "name": "and_os_now",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "and_os_require_cost_rpc_mutation",
+      "arguments": "",
+      "classification": "REPO_MISSING",
+      "body_matches": [],
+      "repository_definitions": [],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "approve_contract_change_order",
+      "arguments": "p_actor_user_id uuid, p_change_order_id uuid, p_payload jsonb",
+      "classification": "REPO_MISSING",
+      "body_matches": [],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "cancel_all_cost_drafts",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_004b_cost_item_management.sql",
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql",
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql",
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "cancel_cost_item_draft",
+      "arguments": "p_cost_item_id uuid",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_004b_cost_item_management.sql",
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql",
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql",
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "confirm_contract_package_snapshot",
+      "arguments": "p_package_id uuid, p_actor_user_id uuid",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "create_contract_change_order",
+      "arguments": "p_actor_user_id uuid, p_payload jsonb",
+      "classification": "REPO_MISSING",
+      "body_matches": [],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "create_contract_package_snapshot",
+      "arguments": "p_actor_user_id uuid, p_payload jsonb",
+      "classification": "REPO_MISSING",
+      "body_matches": [],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql",
+        "supabase/rfc_006_digest_hotfix.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public, extensions"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "create_cost_item_pending",
+      "arguments": "p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean, p_source_cost_item_id uuid",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "current_and_os_role",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/cost_items.sql"
+      ],
+      "repository_definitions": [
+        "supabase/cost_items.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "enforce_contract_package_state_transition",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "is_and_os_admin",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/cost_items.sql"
+      ],
+      "repository_definitions": [
+        "supabase/cost_items.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "next_cost_publish_version",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "repository_definitions": [
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "prevent_approved_change_order_mutation",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "prevent_change_order_approval_mutation",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "prevent_contract_no_cross_estimate",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "prevent_locked_contract_document_change",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "publish_cost_drafts",
+      "arguments": "p_reason text, p_memo text",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql",
+        "supabase/rfc_cost_draft_rpc_hardening_hotfix.sql",
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "save_cost_item_draft",
+      "arguments": "p_cost_item_id uuid, p_draft_cost_price numeric, p_draft_margin_rate numeric, p_draft_is_active boolean",
+      "classification": "REPO_MISSING",
+      "body_matches": [],
+      "repository_definitions": [
+        "supabase/archive/cost_items_v2_3.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "set_profiles_updated_at",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/archive/rfc_003a_user_profiles.sql"
+      ],
+      "repository_definitions": [
+        "supabase/archive/rfc_003a_user_profiles.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "set_rfc006_updated_at",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_006_contract_documents.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "set_updated_at",
+      "arguments": "",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/cost_items.sql"
+      ],
+      "repository_definitions": [
+        "supabase/cost_items.sql"
+      ],
+      "security_definer": false,
+      "owner": "postgres",
+      "search_path": null,
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "update_cost_item_pending",
+      "arguments": "p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "name": "validate_and_os_cost_item_code",
+      "arguments": "p_item_code text",
+      "classification": "REPO_MATCH",
+      "body_matches": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "repository_definitions": [
+        "supabase/rfc_004b_cost_item_management.sql"
+      ],
+      "security_definer": true,
+      "owner": "postgres",
+      "search_path": [
+        "search_path=public"
+      ],
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "object": "public.change_order_approvals",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.customer_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.approval_method",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.evidence_file_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.evidence_url",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.approved_document_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.approved_package_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.customer_signed_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.original_contract_amount",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.prior_approved_change_total",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.amount_delta",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.revised_contract_amount",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.approval_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.approval_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.created_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_amount_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_customer_name_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_document_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_evidence_required",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_method_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_change_order_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_created_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_order_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_order_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approval_immutable_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals.change_order_approvals_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_order_approvals:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.package_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.estimate_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.status",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.title",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.before_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.after_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.pending_package_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.amount_delta",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.schedule_impact",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.approval_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.package_manifest_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.source_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.created_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.approved_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.approved_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_manifest_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_status_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_title_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_version_unique",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_approved_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_created_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_estimate_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_package_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_pending_package_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_version_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_package_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_pending_one_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_pending_package_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_order_lock_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders.change_orders_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.change_orders:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.package_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.document_type",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.package_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.generation_status",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.content_json",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.content_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.file_path",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.file_url",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.mime_type",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.created_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.locked_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_content_object_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_status_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_type_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_unique",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_versions_created_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_versions_package_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_versions_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_package_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_versions_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_lock_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions.contract_document_versions_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_document_versions:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.estimate_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.estimate_revision",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.package_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_no",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.parent_package_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.originating_change_order_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.status",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_info",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.parties_info",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.site_manager",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.estimate_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.document_options_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.spec_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.clause_snapshot",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.payment_schedule",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.template_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.rule_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.source_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.package_manifest_hash",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.original_contract_amount",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.prior_approved_change_total",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.amount_delta",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.revised_contract_amount",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.created_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.confirmed_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.confirmed_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_amount_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_contract_no_format",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_manifest_hash_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_originating_change_order_fk",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_confirmed_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_created_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_estimate_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_parent_package_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_status_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_version_unique",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_active_source_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_contract_no_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_estimate_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_parent_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_status_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_version_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_contract_no_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_state_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots.contract_package_snapshots_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.contract_package_snapshots:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.old_cost_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.new_cost_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.old_margin_rate",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.new_margin_rate",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.changed_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.changed_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.reason",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.old_is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.new_is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_changed_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_cost_item_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_item_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_version_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.and_os_cost_item_history_mutation_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history.cost_item_history_admin_manager_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_item_history:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.category",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.subcategory",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.item_code",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.item_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.unit",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.default_margin_rate",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.customer_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.order_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.include_in_customer_quote",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.include_in_internal_quote",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.include_in_order_sheet",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.is_material",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.is_labor",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.is_service",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.supplier_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.supplier_phone",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.supplier_memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.sort_order",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.updated_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.draft_cost_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.draft_margin_rate",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.draft_is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.draft_updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.draft_updated_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.calculation_basis",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.calculation_multiplier",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.min_quantity",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.rounding_method",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.is_pending_new",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.source_cost_item_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_calculation_basis_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_calculation_multiplier_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_draft_updated_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_item_code_key",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_min_quantity_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_rounding_method_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_source_cost_item_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_updated_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_active_sort_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_category_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_draft_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_item_code_key",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_pending_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.and_os_cost_items_mutation_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.set_cost_items_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items.cost_items_admin_manager_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_items:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.reason",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.published_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.published_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.changed_item_count",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.price_change_count",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.margin_change_count",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.active_change_count",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.duration_ms",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_counts_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_published_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_version_key",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_published_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_version_key",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.and_os_cost_publish_log_mutation_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log.cost_publish_log_admin_manager_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cost_publish_log:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.phone",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.customers_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.customers_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers.authenticated customers access",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.customers:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.contract_no",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.contract_info",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.customer_info",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.contractor_info",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.site_manager",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.admin_tasks",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.protection_options",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.item_options",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.notes",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.created_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.updated_by",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_contract_no_format",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_created_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_estimate_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_estimate_unique",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_updated_by_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_contract_no_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_estimate_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_estimate_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_contract_no_guard",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options.estimate_document_options_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_document_options:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.estimate_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.group_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.item_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.quantity",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.unit_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.cost",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.customer_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.sort_order",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.estimate_items_estimate_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.estimate_items_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.estimate_items_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items.authenticated estimate_items access",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimate_items:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.project_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.client_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.phone",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.address",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.area_pyeong",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.total_price",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.estimate_data",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.status",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.project_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.cost_total",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.margin_rate",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.estimates_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.estimates_project_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.estimates_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates.authenticated estimates access",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.estimates:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.actor_user_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.actor_email",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.actor_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.actor_role",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.action",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.target_type",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.target_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.target_label",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.before_data",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.after_data",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.result",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.reason",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_action_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_result_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_action_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_actor_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_created_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs.os_audit_logs_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.os_audit_logs:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.role",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.email",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.must_change_password",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_role_check",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_email_lower_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_set_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles.profiles_select_own",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.profiles:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.customer_id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.project_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.address",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.area_pyeong",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.status",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.memo",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.projects_customer_id_fkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.projects_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.projects_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects.authenticated projects access",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.projects:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog",
+      "kind": "table",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.id",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.spec_code",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.version",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.effective_from",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.effective_to",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.work_category",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.item_name",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.default_grade",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.spec_text",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.applies_to",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.is_active",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.sort_order",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.created_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.updated_at",
+      "kind": "columns",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_code_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_code_version_unique",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_effective_order",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_item_not_empty",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_pkey",
+      "kind": "constraints",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_active_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_code_version_unique",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_one_active_idx",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_pkey",
+      "kind": "indexes",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_updated_at",
+      "kind": "triggers",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog.standard_spec_catalog_select",
+      "kind": "policies",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.standard_spec_catalog:ACL/RLS",
+      "kind": "table_security",
+      "classification": "PROD_BASELINE",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.and_os_now()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.and_os_require_cost_rpc_mutation()",
+      "kind": "function",
+      "classification": "REPO_MISSING",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.approve_contract_change_order(p_actor_user_id uuid, p_change_order_id uuid, p_payload jsonb)",
+      "kind": "function",
+      "classification": "REPO_MISSING",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cancel_all_cost_drafts()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.cancel_cost_item_draft(p_cost_item_id uuid)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.confirm_contract_package_snapshot(p_package_id uuid, p_actor_user_id uuid)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.create_contract_change_order(p_actor_user_id uuid, p_payload jsonb)",
+      "kind": "function",
+      "classification": "REPO_MISSING",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.create_contract_package_snapshot(p_actor_user_id uuid, p_payload jsonb)",
+      "kind": "function",
+      "classification": "REPO_MISSING",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.create_cost_item_pending(p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean, p_source_cost_item_id uuid)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.current_and_os_role()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.enforce_contract_package_state_transition()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.is_and_os_admin()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.next_cost_publish_version()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.prevent_approved_change_order_mutation()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.prevent_change_order_approval_mutation()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.prevent_contract_no_cross_estimate()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.prevent_locked_contract_document_change()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.publish_cost_drafts(p_reason text, p_memo text)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.save_cost_item_draft(p_cost_item_id uuid, p_draft_cost_price numeric, p_draft_margin_rate numeric, p_draft_is_active boolean)",
+      "kind": "function",
+      "classification": "REPO_MISSING",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.set_profiles_updated_at()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.set_rfc006_updated_at()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.set_updated_at()",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.update_cost_item_pending(p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.validate_and_os_cost_item_code(p_item_code text)",
+      "kind": "function",
+      "classification": "REPO_MATCH",
+      "comparison_scope": "normalized body only; exact headers/ACLs retained in capture",
+      "canonical": "20261013000000_prod_baseline.sql"
+    },
+    {
+      "object": "public.current_and_os_role",
+      "kind": "function replacement",
+      "classification": "LOCAL_CANDIDATE",
+      "canonical": "auth_account_boundary"
+    },
+    {
+      "object": "public.staff_estimates_view",
+      "kind": "view",
+      "classification": "LOCAL_CANDIDATE",
+      "canonical": "estimate_role_boundary"
+    },
+    {
+      "object": "public.and_os_contract_manifest_guard",
+      "kind": "function/trigger",
+      "classification": "LOCAL_CANDIDATE",
+      "canonical": "contract_integrity"
+    },
+    {
+      "object": "public.save_cost_item_draft",
+      "kind": "function replacement",
+      "classification": "LOCAL_CANDIDATE",
+      "canonical": "cost_rpc_canonical"
+    },
+    {
+      "object": "public.next_cost_publish_version",
+      "kind": "function replacement",
+      "classification": "LOCAL_CANDIDATE",
+      "canonical": "cost_rpc_canonical"
+    }
+  ],
+  "tables": [
+    {
+      "name": "change_order_approvals",
+      "classification": "PROD_BASELINE",
+      "columns": 17,
+      "constraints": 9,
+      "indexes": 3,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "change_orders",
+      "classification": "PROD_BASELINE",
+      "columns": 19,
+      "constraints": 11,
+      "indexes": 5,
+      "triggers": 2,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "contract_document_versions",
+      "classification": "PROD_BASELINE",
+      "columns": 13,
+      "constraints": 8,
+      "indexes": 3,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "contract_package_snapshots",
+      "classification": "PROD_BASELINE",
+      "columns": 29,
+      "constraints": 12,
+      "indexes": 7,
+      "triggers": 3,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "cost_item_history",
+      "classification": "PROD_BASELINE",
+      "columns": 12,
+      "constraints": 3,
+      "indexes": 3,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "cost_items",
+      "classification": "PROD_BASELINE",
+      "columns": 36,
+      "constraints": 9,
+      "indexes": 6,
+      "triggers": 2,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "cost_publish_log",
+      "classification": "PROD_BASELINE",
+      "columns": 12,
+      "constraints": 4,
+      "indexes": 3,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "customers",
+      "classification": "PROD_BASELINE",
+      "columns": 6,
+      "constraints": 1,
+      "indexes": 1,
+      "triggers": 0,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "estimate_document_options",
+      "classification": "PROD_BASELINE",
+      "columns": 15,
+      "constraints": 6,
+      "indexes": 4,
+      "triggers": 2,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "estimate_items",
+      "classification": "PROD_BASELINE",
+      "columns": 11,
+      "constraints": 2,
+      "indexes": 1,
+      "triggers": 0,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "estimates",
+      "classification": "PROD_BASELINE",
+      "columns": 14,
+      "constraints": 2,
+      "indexes": 1,
+      "triggers": 0,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "os_audit_logs",
+      "classification": "PROD_BASELINE",
+      "columns": 14,
+      "constraints": 3,
+      "indexes": 4,
+      "triggers": 0,
+      "policies": 0,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "profiles",
+      "classification": "PROD_BASELINE",
+      "columns": 8,
+      "constraints": 3,
+      "indexes": 2,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=rDxtm/postgres",
+        "authenticated=rDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "projects",
+      "classification": "PROD_BASELINE",
+      "columns": 9,
+      "constraints": 2,
+      "indexes": 1,
+      "triggers": 0,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ]
+    },
+    {
+      "name": "standard_spec_catalog",
+      "classification": "PROD_BASELINE",
+      "columns": 14,
+      "constraints": 5,
+      "indexes": 4,
+      "triggers": 1,
+      "policies": 1,
+      "rls_enabled": true,
+      "rls_forced": false,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres",
+        "authenticated=r/postgres"
+      ]
+    }
+  ],
+  "capture_sha256": "684e2be4bbac0f85276398ce9f3fdb7cc605a33f601d46f99bb69c2ed8eec7d4"
+}

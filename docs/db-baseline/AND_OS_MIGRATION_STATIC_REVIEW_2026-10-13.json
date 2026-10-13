@@ -1,0 +1,80 @@
+{
+  "result": "PASS",
+  "mode": "OFFLINE STATIC ONLY; no SQL/database execution",
+  "checks": [
+    {
+      "file": "20261013000000_prod_baseline.sql",
+      "statements": 514,
+      "parsed_function_bodies": 24,
+      "sha256": "45c341d0348851a5a95df4a71c2da6e747470f886bb26d643acd4190d06937d1",
+      "result": "PASS"
+    },
+    {
+      "file": "20261013000100_auth_account_boundary.sql",
+      "statements": 8,
+      "parsed_function_bodies": 1,
+      "sha256": "f14c9a4f6b4c240d41309f00e9ffbc4434598fae7762b6fe7840c7fa3ed3aa15",
+      "result": "PASS"
+    },
+    {
+      "file": "20261013000200_estimate_role_boundary.sql",
+      "statements": 42,
+      "parsed_function_bodies": 0,
+      "sha256": "c8b965cf7dfa4e537f68b14712cf16e9664157c2bb75e2fb8e4f19295c785fc0",
+      "result": "PASS"
+    },
+    {
+      "file": "20261013000300_contract_integrity.sql",
+      "statements": 11,
+      "parsed_function_bodies": 4,
+      "sha256": "240fc789c8bf18ee21eecc6b42be3d931d3e061abc0cd4ffa2e2d64eeec3447c",
+      "result": "PASS"
+    },
+    {
+      "file": "20261013000400_cost_rpc_canonical.sql",
+      "statements": 11,
+      "parsed_function_bodies": 3,
+      "sha256": "e3c2d64c8304f576324c287e763a9e5745f27518a565c9d7cdc66f5a251f4de4",
+      "result": "PASS"
+    }
+  ],
+  "historical_and_test_sql_parsed": 23,
+  "baseline_tables": 15,
+  "baseline_functions": 24,
+  "function_definitions": {
+    "and_os_now": 1,
+    "and_os_require_cost_rpc_mutation": 2,
+    "approve_contract_change_order": 2,
+    "cancel_all_cost_drafts": 1,
+    "cancel_cost_item_draft": 1,
+    "confirm_contract_package_snapshot": 1,
+    "create_contract_change_order": 2,
+    "create_contract_package_snapshot": 2,
+    "create_cost_item_pending": 1,
+    "current_and_os_role": 2,
+    "enforce_contract_package_state_transition": 1,
+    "is_and_os_admin": 1,
+    "next_cost_publish_version": 2,
+    "prevent_approved_change_order_mutation": 1,
+    "prevent_change_order_approval_mutation": 1,
+    "prevent_contract_no_cross_estimate": 1,
+    "prevent_locked_contract_document_change": 1,
+    "publish_cost_drafts": 1,
+    "save_cost_item_draft": 2,
+    "set_profiles_updated_at": 1,
+    "set_rfc006_updated_at": 1,
+    "set_updated_at": 1,
+    "update_cost_item_pending": 1,
+    "validate_and_os_cost_item_code": 1,
+    "and_os_contract_manifest_guard": 1
+  },
+  "unresolved_named_public_references": [],
+  "archive_hashes_unchanged": true,
+  "unsupported_production_object_classes": "all zero in supplemental catalog capture",
+  "limitations": [
+    "No relation/type/ACL execution resolution until Phase 4C.",
+    "PL/pgSQL syntax parsed, not run; no claim of blank replay or runtime security PASS.",
+    "New captured legacy-table closures and exact Production policy removals require 4C tests.",
+    "Managed Supabase auth/roles/extensions/default privileges are prerequisites, not app-owned objects."
+  ]
+}

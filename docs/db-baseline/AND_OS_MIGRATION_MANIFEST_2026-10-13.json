@@ -1,0 +1,27 @@
+[
+  {
+    "file": "20261013000000_prod_baseline.sql",
+    "sha256": "45c341d0348851a5a95df4a71c2da6e747470f886bb26d643acd4190d06937d1",
+    "statements": 514
+  },
+  {
+    "file": "20261013000100_auth_account_boundary.sql",
+    "sha256": "f14c9a4f6b4c240d41309f00e9ffbc4434598fae7762b6fe7840c7fa3ed3aa15",
+    "statements": 8
+  },
+  {
+    "file": "20261013000200_estimate_role_boundary.sql",
+    "sha256": "c8b965cf7dfa4e537f68b14712cf16e9664157c2bb75e2fb8e4f19295c785fc0",
+    "statements": 42
+  },
+  {
+    "file": "20261013000300_contract_integrity.sql",
+    "sha256": "240fc789c8bf18ee21eecc6b42be3d931d3e061abc0cd4ffa2e2d64eeec3447c",
+    "statements": 11
+  },
+  {
+    "file": "20261013000400_cost_rpc_canonical.sql",
+    "sha256": "e3c2d64c8304f576324c287e763a9e5745f27518a565c9d7cdc66f5a251f4de4",
+    "statements": 11
+  }
+]

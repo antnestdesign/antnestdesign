@@ -1,0 +1,10 @@
+{
+  "procedures": 0,
+  "captured_at": "2026-10-13T07:47:40.12335+00:00",
+  "capture_kind": "POSTGRES_APP_CATALOG_EXTRAS_ONLY",
+  "custom_rules": 0,
+  "foreign_tables": 0,
+  "composite_types": 0,
+  "custom_operators": 0,
+  "custom_collations": 0
+}

@@ -1,0 +1,4427 @@
+{
+  "types": [],
+  "views": [],
+  "tables": [
+    {
+      "oid": "18207",
+      "kind": "r",
+      "name": "change_order_approvals",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "change_order_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approval_method",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "evidence_file_id",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "evidence_url",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approved_document_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approved_package_version",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_signed_at",
+          "type": "date",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "original_contract_amount",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "prior_approved_change_total",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "amount_delta",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "revised_contract_amount",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approval_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approval_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "change_order_approvals_order_idx",
+          "valid": true,
+          "definition": "CREATE INDEX change_order_approvals_order_idx ON public.change_order_approvals USING btree (change_order_id, created_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "change_order_approvals_order_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_order_approvals_order_unique ON public.change_order_approvals USING btree (change_order_id)",
+          "constraint_backed": false
+        },
+        {
+          "name": "change_order_approvals_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_order_approvals_pkey ON public.change_order_approvals USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "change_order_approvals",
+          "permissive": "PERMISSIVE",
+          "policyname": "change_order_approvals_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "change_order_approval_immutable_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER change_order_approval_immutable_guard BEFORE DELETE OR UPDATE ON change_order_approvals FOR EACH ROW EXECUTE FUNCTION prevent_change_order_approval_mutation()",
+          "called_function": "prevent_change_order_approval_mutation()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "change_order_approval_amount_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (revised_contract_amount = (original_contract_amount + prior_approved_change_total + amount_delta))"
+        },
+        {
+          "name": "change_order_approval_customer_name_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM customer_name)) > 0)"
+        },
+        {
+          "name": "change_order_approval_document_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM approved_document_hash)) > 0)"
+        },
+        {
+          "name": "change_order_approval_evidence_required",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (evidence_file_id IS NOT NULL OR evidence_url IS NOT NULL)"
+        },
+        {
+          "name": "change_order_approval_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM approval_hash)) > 0)"
+        },
+        {
+          "name": "change_order_approval_method_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM approval_method)) > 0)"
+        },
+        {
+          "name": "change_order_approvals_change_order_id_fkey",
+          "type": "f",
+          "index_oid": "18173",
+          "validated": true,
+          "definition": "FOREIGN KEY (change_order_id) REFERENCES change_orders(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "change_order_approvals_created_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "change_order_approvals_pkey",
+          "type": "p",
+          "index_oid": "18221",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "18158",
+      "kind": "r",
+      "name": "change_orders",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "change_version",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "status",
+          "type": "text",
+          "default": "'CHANGE_PENDING'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "title",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "before_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "after_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "pending_package_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "amount_delta",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "schedule_impact",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approval_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_manifest_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "source_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "change_order_version_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_order_version_unique ON public.change_orders USING btree (package_id, change_version)",
+          "constraint_backed": true
+        },
+        {
+          "name": "change_orders_package_idx",
+          "valid": true,
+          "definition": "CREATE INDEX change_orders_package_idx ON public.change_orders USING btree (package_id, change_version DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "change_orders_pending_one_idx",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_orders_pending_one_idx ON public.change_orders USING btree (package_id) WHERE (status = 'CHANGE_PENDING'::text)",
+          "constraint_backed": false
+        },
+        {
+          "name": "change_orders_pending_package_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_orders_pending_package_unique ON public.change_orders USING btree (pending_package_id) WHERE (pending_package_id IS NOT NULL)",
+          "constraint_backed": false
+        },
+        {
+          "name": "change_orders_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX change_orders_pkey ON public.change_orders USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "change_orders",
+          "permissive": "PERMISSIVE",
+          "policyname": "change_orders_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "change_order_lock_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER change_order_lock_guard BEFORE DELETE OR UPDATE ON change_orders FOR EACH ROW EXECUTE FUNCTION prevent_approved_change_order_mutation()",
+          "called_function": "prevent_approved_change_order_mutation()"
+        },
+        {
+          "name": "change_orders_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER change_orders_updated_at BEFORE UPDATE ON change_orders FOR EACH ROW EXECUTE FUNCTION set_rfc006_updated_at()",
+          "called_function": "set_rfc006_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "change_order_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM source_hash)) > 0)"
+        },
+        {
+          "name": "change_order_manifest_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (package_manifest_hash IS NULL OR length(TRIM(BOTH FROM package_manifest_hash)) > 0)"
+        },
+        {
+          "name": "change_order_status_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (status = ANY (ARRAY['CHANGE_PENDING'::text, 'APPROVED'::text, 'REJECTED'::text, 'CANCELLED'::text]))"
+        },
+        {
+          "name": "change_order_title_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM title)) > 0)"
+        },
+        {
+          "name": "change_order_version_unique",
+          "type": "u",
+          "index_oid": "18175",
+          "validated": true,
+          "definition": "UNIQUE (package_id, change_version)"
+        },
+        {
+          "name": "change_orders_approved_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (approved_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "change_orders_created_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "change_orders_estimate_id_fkey",
+          "type": "f",
+          "index_oid": "17605",
+          "validated": true,
+          "definition": "FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "change_orders_package_id_fkey",
+          "type": "f",
+          "index_oid": "18108",
+          "validated": true,
+          "definition": "FOREIGN KEY (package_id) REFERENCES contract_package_snapshots(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "change_orders_pending_package_id_fkey",
+          "type": "f",
+          "index_oid": "18108",
+          "validated": true,
+          "definition": "FOREIGN KEY (pending_package_id) REFERENCES contract_package_snapshots(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "change_orders_pkey",
+          "type": "p",
+          "index_oid": "18173",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "18132",
+      "kind": "r",
+      "name": "contract_document_versions",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "document_type",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_version",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "generation_status",
+          "type": "text",
+          "default": "'GENERATED'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "content_json",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "content_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "file_path",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "file_url",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "mime_type",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "locked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "contract_document_package_idx",
+          "valid": true,
+          "definition": "CREATE INDEX contract_document_package_idx ON public.contract_document_versions USING btree (package_id, package_version, document_type)",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_document_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX contract_document_unique ON public.contract_document_versions USING btree (package_id, package_version, document_type)",
+          "constraint_backed": true
+        },
+        {
+          "name": "contract_document_versions_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX contract_document_versions_pkey ON public.contract_document_versions USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text, 'staff'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "contract_document_versions",
+          "permissive": "PERMISSIVE",
+          "policyname": "contract_document_versions_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "contract_document_lock_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER contract_document_lock_guard BEFORE DELETE OR UPDATE ON contract_document_versions FOR EACH ROW EXECUTE FUNCTION prevent_locked_contract_document_change()",
+          "called_function": "prevent_locked_contract_document_change()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "contract_document_content_object_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (jsonb_typeof(content_json) = 'object'::text AND content_json <> '{}'::jsonb)"
+        },
+        {
+          "name": "contract_document_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM content_hash)) > 0)"
+        },
+        {
+          "name": "contract_document_status_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (generation_status = ANY (ARRAY['GENERATED'::text, 'FINAL'::text, 'FAILED'::text]))"
+        },
+        {
+          "name": "contract_document_type_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (document_type = ANY (ARRAY['CONTRACT'::text, 'QUOTE'::text, 'SPEC'::text]))"
+        },
+        {
+          "name": "contract_document_unique",
+          "type": "u",
+          "index_oid": "18146",
+          "validated": true,
+          "definition": "UNIQUE (package_id, package_version, document_type)"
+        },
+        {
+          "name": "contract_document_versions_created_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "contract_document_versions_package_id_fkey",
+          "type": "f",
+          "index_oid": "18108",
+          "validated": true,
+          "definition": "FOREIGN KEY (package_id) REFERENCES contract_package_snapshots(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "contract_document_versions_pkey",
+          "type": "p",
+          "index_oid": "18144",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "18088",
+      "kind": "r",
+      "name": "contract_package_snapshots",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_revision",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_version",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "contract_no",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "parent_package_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "originating_change_order_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "status",
+          "type": "text",
+          "default": "'DRAFT'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "contract_info",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "parties_info",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "site_manager",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "document_options_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "spec_snapshot",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "clause_snapshot",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "payment_schedule",
+          "type": "jsonb",
+          "default": "'[]'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "template_version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "rule_version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "source_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "package_manifest_hash",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "original_contract_amount",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "prior_approved_change_total",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "amount_delta",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "revised_contract_amount",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "confirmed_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "contract_package_active_source_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX contract_package_active_source_unique ON public.contract_package_snapshots USING btree (estimate_id, source_hash, template_version, rule_version) WHERE (status = ANY (ARRAY['DRAFT'::text, 'PREVIEWED'::text, 'READY'::text, 'CONTRACTED'::text, 'CHANGE_PENDING'::text]))",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_package_contract_no_idx",
+          "valid": true,
+          "definition": "CREATE INDEX contract_package_contract_no_idx ON public.contract_package_snapshots USING btree (contract_no, estimate_id)",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_package_estimate_idx",
+          "valid": true,
+          "definition": "CREATE INDEX contract_package_estimate_idx ON public.contract_package_snapshots USING btree (estimate_id, package_version DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_package_parent_idx",
+          "valid": true,
+          "definition": "CREATE INDEX contract_package_parent_idx ON public.contract_package_snapshots USING btree (parent_package_id, package_version DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_package_snapshots_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX contract_package_snapshots_pkey ON public.contract_package_snapshots USING btree (id)",
+          "constraint_backed": true
+        },
+        {
+          "name": "contract_package_status_idx",
+          "valid": true,
+          "definition": "CREATE INDEX contract_package_status_idx ON public.contract_package_snapshots USING btree (status, created_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "contract_package_version_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX contract_package_version_unique ON public.contract_package_snapshots USING btree (estimate_id, package_version)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text, 'staff'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "contract_package_snapshots",
+          "permissive": "PERMISSIVE",
+          "policyname": "contract_package_snapshots_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "contract_package_contract_no_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER contract_package_contract_no_guard BEFORE INSERT OR UPDATE ON contract_package_snapshots FOR EACH ROW EXECUTE FUNCTION prevent_contract_no_cross_estimate()",
+          "called_function": "prevent_contract_no_cross_estimate()"
+        },
+        {
+          "name": "contract_package_snapshots_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER contract_package_snapshots_updated_at BEFORE UPDATE ON contract_package_snapshots FOR EACH ROW EXECUTE FUNCTION set_rfc006_updated_at()",
+          "called_function": "set_rfc006_updated_at()"
+        },
+        {
+          "name": "contract_package_state_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER contract_package_state_guard BEFORE DELETE OR UPDATE ON contract_package_snapshots FOR EACH ROW EXECUTE FUNCTION enforce_contract_package_state_transition()",
+          "called_function": "enforce_contract_package_state_transition()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "contract_package_amount_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (revised_contract_amount IS NULL OR revised_contract_amount = (COALESCE(original_contract_amount, 0::numeric) + prior_approved_change_total + amount_delta))"
+        },
+        {
+          "name": "contract_package_contract_no_format",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (contract_no ~ '^[A-Za-z0-9가-힣._-]{1,50}$'::text)"
+        },
+        {
+          "name": "contract_package_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM source_hash)) > 0)"
+        },
+        {
+          "name": "contract_package_manifest_hash_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (package_manifest_hash IS NULL OR length(TRIM(BOTH FROM package_manifest_hash)) > 0)"
+        },
+        {
+          "name": "contract_package_originating_change_order_fk",
+          "type": "f",
+          "index_oid": "18173",
+          "validated": true,
+          "definition": "FOREIGN KEY (originating_change_order_id) REFERENCES change_orders(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "contract_package_snapshots_confirmed_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (confirmed_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "contract_package_snapshots_created_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "contract_package_snapshots_estimate_id_fkey",
+          "type": "f",
+          "index_oid": "17605",
+          "validated": true,
+          "definition": "FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "contract_package_snapshots_parent_package_id_fkey",
+          "type": "f",
+          "index_oid": "18108",
+          "validated": true,
+          "definition": "FOREIGN KEY (parent_package_id) REFERENCES contract_package_snapshots(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "contract_package_snapshots_pkey",
+          "type": "p",
+          "index_oid": "18108",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "contract_package_status_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (status = ANY (ARRAY['DRAFT'::text, 'PREVIEWED'::text, 'READY'::text, 'CONTRACTED'::text, 'CHANGE_PENDING'::text, 'SUPERSEDED'::text, 'CANCELLED'::text]))"
+        },
+        {
+          "name": "contract_package_version_unique",
+          "type": "u",
+          "index_oid": "18110",
+          "validated": true,
+          "definition": "UNIQUE (estimate_id, package_version)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17827",
+      "kind": "r",
+      "name": "cost_item_history",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_item_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "old_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "new_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_item_history_item_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_item_history_item_idx ON public.cost_item_history USING btree (cost_item_id, changed_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_item_history_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_item_history_pkey ON public.cost_item_history USING btree (id)",
+          "constraint_backed": true
+        },
+        {
+          "name": "cost_item_history_version_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_item_history_version_idx ON public.cost_item_history USING btree (cost_version, changed_at DESC)",
+          "constraint_backed": false
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_item_history",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_item_history_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_item_history_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_item_history_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON cost_item_history FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_item_history_changed_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (changed_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_item_history_cost_item_id_fkey",
+          "type": "f",
+          "index_oid": "17818",
+          "validated": true,
+          "definition": "FOREIGN KEY (cost_item_id) REFERENCES cost_items(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "cost_item_history_pkey",
+          "type": "p",
+          "index_oid": "17834",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17800",
+      "kind": "r",
+      "name": "cost_items",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "category",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "subcategory",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_code",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "unit",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_price",
+          "type": "numeric",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "default_margin_rate",
+          "type": "numeric",
+          "default": "0.35",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "order_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_customer_quote",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_internal_quote",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "include_in_order_sheet",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_material",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_labor",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_service",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_phone",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "supplier_memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_active",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "sort_order",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_cost_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_is_active",
+          "type": "boolean",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_updated_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "draft_updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "calculation_basis",
+          "type": "text",
+          "default": "'manual_input'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "calculation_multiplier",
+          "type": "numeric",
+          "default": "1",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "min_quantity",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "rounding_method",
+          "type": "text",
+          "default": "'none'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_pending_new",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "source_cost_item_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_items_active_sort_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_active_sort_idx ON public.cost_items USING btree (is_active, sort_order, category)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_items_category_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_category_idx ON public.cost_items USING btree (category, subcategory)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_items_draft_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_draft_idx ON public.cost_items USING btree (draft_updated_at DESC) WHERE (draft_updated_at IS NOT NULL)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_items_item_code_key",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_items_item_code_key ON public.cost_items USING btree (item_code)",
+          "constraint_backed": true
+        },
+        {
+          "name": "cost_items_pending_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_items_pending_idx ON public.cost_items USING btree (is_pending_new, draft_updated_at DESC) WHERE (is_pending_new = true)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_items_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_items_pkey ON public.cost_items USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_items",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_items_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_items_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_items_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON cost_items FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        },
+        {
+          "name": "set_cost_items_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER set_cost_items_updated_at BEFORE UPDATE ON cost_items FOR EACH ROW EXECUTE FUNCTION set_updated_at()",
+          "called_function": "set_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_items_calculation_basis_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (calculation_basis = ANY (ARRAY['fixed'::text, 'apartment_pyeong'::text, 'flooring_pyeong'::text, 'length_mm'::text, 'length_m'::text, 'area_sqm'::text, 'count'::text, 'bathroom_count'::text, 'lower_cabinet_length'::text, 'upper_cabinet_length'::text, 'homebar_length'::text, 'island_length'::text, 'partition_length'::text, 'manual_input'::text]))"
+        },
+        {
+          "name": "cost_items_calculation_multiplier_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (calculation_multiplier >= 0::numeric)"
+        },
+        {
+          "name": "cost_items_draft_updated_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (draft_updated_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_items_item_code_key",
+          "type": "u",
+          "index_oid": "17820",
+          "validated": true,
+          "definition": "UNIQUE (item_code)"
+        },
+        {
+          "name": "cost_items_min_quantity_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (min_quantity IS NULL OR min_quantity >= 0::numeric)"
+        },
+        {
+          "name": "cost_items_pkey",
+          "type": "p",
+          "index_oid": "17818",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "cost_items_rounding_method_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (rounding_method = ANY (ARRAY['none'::text, 'ceil'::text, 'floor'::text, 'round'::text]))"
+        },
+        {
+          "name": "cost_items_source_cost_item_id_fkey",
+          "type": "f",
+          "index_oid": "17818",
+          "validated": true,
+          "definition": "FOREIGN KEY (source_cost_item_id) REFERENCES cost_items(id)"
+        },
+        {
+          "name": "cost_items_updated_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17877",
+      "kind": "r",
+      "name": "cost_publish_log",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "version",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "published_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "changed_item_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "price_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "margin_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "active_change_count",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "duration_ms",
+          "type": "integer",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "cost_publish_log_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_publish_log_pkey ON public.cost_publish_log USING btree (id)",
+          "constraint_backed": true
+        },
+        {
+          "name": "cost_publish_log_published_idx",
+          "valid": true,
+          "definition": "CREATE INDEX cost_publish_log_published_idx ON public.cost_publish_log USING btree (published_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "cost_publish_log_version_key",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX cost_publish_log_version_key ON public.cost_publish_log USING btree (version)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "cost_publish_log",
+          "permissive": "PERMISSIVE",
+          "policyname": "cost_publish_log_admin_manager_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "and_os_cost_publish_log_mutation_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER and_os_cost_publish_log_mutation_guard BEFORE INSERT OR DELETE OR UPDATE ON cost_publish_log FOR EACH ROW EXECUTE FUNCTION and_os_require_cost_rpc_mutation()",
+          "called_function": "and_os_require_cost_rpc_mutation()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "cost_publish_log_counts_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (changed_item_count >= 0 AND price_change_count >= 0 AND margin_change_count >= 0 AND active_change_count >= 0 AND (duration_ms IS NULL OR duration_ms >= 0))"
+        },
+        {
+          "name": "cost_publish_log_pkey",
+          "type": "p",
+          "index_oid": "17890",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "cost_publish_log_published_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (published_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "cost_publish_log_version_key",
+          "type": "u",
+          "index_oid": "17892",
+          "validated": true,
+          "definition": "UNIQUE (version)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17607",
+      "kind": "r",
+      "name": "customers",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "phone",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "customers_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX customers_pkey ON public.customers USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "ALL",
+          "qual": "true",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "customers",
+          "permissive": "PERMISSIVE",
+          "policyname": "authenticated customers access",
+          "schemaname": "public",
+          "with_check": "true"
+        }
+      ],
+      "triggers": [],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "customers_pkey",
+          "type": "p",
+          "index_oid": "17615",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "18033",
+      "kind": "r",
+      "name": "estimate_document_options",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "contract_no",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "contract_info",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_info",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "contractor_info",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "site_manager",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "admin_tasks",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "protection_options",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_options",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "notes",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "estimate_document_options_contract_no_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX estimate_document_options_contract_no_unique ON public.estimate_document_options USING btree (contract_no) WHERE (contract_no IS NOT NULL)",
+          "constraint_backed": false
+        },
+        {
+          "name": "estimate_document_options_estimate_idx",
+          "valid": true,
+          "definition": "CREATE INDEX estimate_document_options_estimate_idx ON public.estimate_document_options USING btree (estimate_id)",
+          "constraint_backed": false
+        },
+        {
+          "name": "estimate_document_options_estimate_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX estimate_document_options_estimate_unique ON public.estimate_document_options USING btree (estimate_id)",
+          "constraint_backed": true
+        },
+        {
+          "name": "estimate_document_options_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX estimate_document_options_pkey ON public.estimate_document_options USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text, 'staff'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "estimate_document_options",
+          "permissive": "PERMISSIVE",
+          "policyname": "estimate_document_options_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "estimate_document_options_contract_no_guard",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER estimate_document_options_contract_no_guard BEFORE INSERT OR UPDATE ON estimate_document_options FOR EACH ROW EXECUTE FUNCTION prevent_contract_no_cross_estimate()",
+          "called_function": "prevent_contract_no_cross_estimate()"
+        },
+        {
+          "name": "estimate_document_options_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER estimate_document_options_updated_at BEFORE UPDATE ON estimate_document_options FOR EACH ROW EXECUTE FUNCTION set_rfc006_updated_at()",
+          "called_function": "set_rfc006_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "estimate_document_options_contract_no_format",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (contract_no IS NULL OR contract_no ~ '^[A-Za-z0-9가-힣._-]{1,50}$'::text)"
+        },
+        {
+          "name": "estimate_document_options_created_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "estimate_document_options_estimate_id_fkey",
+          "type": "f",
+          "index_oid": "17605",
+          "validated": true,
+          "definition": "FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "estimate_document_options_estimate_unique",
+          "type": "u",
+          "index_oid": "18051",
+          "validated": true,
+          "definition": "UNIQUE (estimate_id)"
+        },
+        {
+          "name": "estimate_document_options_pkey",
+          "type": "p",
+          "index_oid": "18049",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "estimate_document_options_updated_by_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17633",
+      "kind": "r",
+      "name": "estimate_items",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "group_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "quantity",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "unit_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "sort_order",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "estimate_items_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX estimate_items_pkey ON public.estimate_items USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "ALL",
+          "qual": "true",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "estimate_items",
+          "permissive": "PERMISSIVE",
+          "policyname": "authenticated estimate_items access",
+          "schemaname": "public",
+          "with_check": "true"
+        }
+      ],
+      "triggers": [],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "estimate_items_estimate_id_fkey",
+          "type": "f",
+          "index_oid": "17605",
+          "validated": true,
+          "definition": "FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "estimate_items_pkey",
+          "type": "p",
+          "index_oid": "17641",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17596",
+      "kind": "r",
+      "name": "estimates",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "project_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "client_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "phone",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "address",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "area_pyeong",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "total_price",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_data",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "status",
+          "type": "text",
+          "default": "'상담중'::text",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "project_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "cost_total",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "margin_rate",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "estimates_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX estimates_pkey ON public.estimates USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "ALL",
+          "qual": "true",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "estimates",
+          "permissive": "PERMISSIVE",
+          "policyname": "authenticated estimates access",
+          "schemaname": "public",
+          "with_check": "true"
+        }
+      ],
+      "triggers": [],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "estimates_pkey",
+          "type": "p",
+          "index_oid": "17605",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "estimates_project_id_fkey",
+          "type": "f",
+          "index_oid": "17626",
+          "validated": true,
+          "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17950",
+      "kind": "r",
+      "name": "os_audit_logs",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "timezone('Asia/Seoul'::text, now())",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "actor_user_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "actor_email",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "actor_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "actor_role",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "action",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "target_type",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "target_id",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "target_label",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "before_data",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "after_data",
+          "type": "jsonb",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "result",
+          "type": "text",
+          "default": "'SUCCESS'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "os_audit_logs_action_idx",
+          "valid": true,
+          "definition": "CREATE INDEX os_audit_logs_action_idx ON public.os_audit_logs USING btree (action, created_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "os_audit_logs_actor_idx",
+          "valid": true,
+          "definition": "CREATE INDEX os_audit_logs_actor_idx ON public.os_audit_logs USING btree (actor_user_id, created_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "os_audit_logs_created_idx",
+          "valid": true,
+          "definition": "CREATE INDEX os_audit_logs_created_idx ON public.os_audit_logs USING btree (created_at DESC)",
+          "constraint_backed": false
+        },
+        {
+          "name": "os_audit_logs_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX os_audit_logs_pkey ON public.os_audit_logs USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [],
+      "triggers": [],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "os_audit_logs_action_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM action)) > 0)"
+        },
+        {
+          "name": "os_audit_logs_pkey",
+          "type": "p",
+          "index_oid": "17960",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "os_audit_logs_result_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM result)) > 0)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17662",
+      "kind": "r",
+      "name": "profiles",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "role",
+          "type": "text",
+          "default": "'staff'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "email",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_active",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "must_change_password",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "profiles_email_lower_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX profiles_email_lower_unique ON public.profiles USING btree (lower(email)) WHERE (email IS NOT NULL)",
+          "constraint_backed": false
+        },
+        {
+          "name": "profiles_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(id = auth.uid())",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "profiles",
+          "permissive": "PERMISSIVE",
+          "policyname": "profiles_select_own",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "profiles_set_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER profiles_set_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION set_profiles_updated_at()",
+          "called_function": "set_profiles_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "profiles_id_fkey",
+          "type": "f",
+          "index_oid": "16504",
+          "validated": true,
+          "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "profiles_pkey",
+          "type": "p",
+          "index_oid": "17670",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "profiles_role_check",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (role = ANY (ARRAY['admin'::text, 'manager'::text, 'staff'::text]))"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=rDxtm/postgres",
+        "authenticated=rDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "17617",
+      "kind": "r",
+      "name": "projects",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "customer_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "project_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "address",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "area_pyeong",
+          "type": "numeric",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "status",
+          "type": "text",
+          "default": "'상담중'::text",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "memo",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "projects_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "ALL",
+          "qual": "true",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "projects",
+          "permissive": "PERMISSIVE",
+          "policyname": "authenticated projects access",
+          "schemaname": "public",
+          "with_check": "true"
+        }
+      ],
+      "triggers": [],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "projects_customer_id_fkey",
+          "type": "f",
+          "index_oid": "17615",
+          "validated": true,
+          "definition": "FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "projects_pkey",
+          "type": "p",
+          "index_oid": "17626",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    },
+    {
+      "oid": "18068",
+      "kind": "r",
+      "name": "standard_spec_catalog",
+      "owner": "postgres",
+      "schema": "public",
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "spec_code",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "version",
+          "type": "text",
+          "default": "'2026.07.20-001'::text",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "effective_from",
+          "type": "date",
+          "default": "CURRENT_DATE",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "effective_to",
+          "type": "date",
+          "default": null,
+          "identity": "",
+          "nullable": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "work_category",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "item_name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "default_grade",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "spec_text",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "applies_to",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "is_active",
+          "type": "boolean",
+          "default": "true",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "sort_order",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "and_os_now()",
+          "identity": "",
+          "nullable": false,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "standard_spec_catalog_active_idx",
+          "valid": true,
+          "definition": "CREATE INDEX standard_spec_catalog_active_idx ON public.standard_spec_catalog USING btree (is_active, sort_order, item_name)",
+          "constraint_backed": false
+        },
+        {
+          "name": "standard_spec_catalog_code_version_unique",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX standard_spec_catalog_code_version_unique ON public.standard_spec_catalog USING btree (spec_code, version)",
+          "constraint_backed": true
+        },
+        {
+          "name": "standard_spec_catalog_one_active_idx",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX standard_spec_catalog_one_active_idx ON public.standard_spec_catalog USING btree (spec_code) WHERE is_active",
+          "constraint_backed": false
+        },
+        {
+          "name": "standard_spec_catalog_pkey",
+          "valid": true,
+          "definition": "CREATE UNIQUE INDEX standard_spec_catalog_pkey ON public.standard_spec_catalog USING btree (id)",
+          "constraint_backed": true
+        }
+      ],
+      "options": null,
+      "parents": null,
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(current_and_os_role() = ANY (ARRAY['admin'::text, 'manager'::text, 'staff'::text]))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "standard_spec_catalog",
+          "permissive": "PERMISSIVE",
+          "policyname": "standard_spec_catalog_select",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "standard_spec_catalog_updated_at",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER standard_spec_catalog_updated_at BEFORE UPDATE ON standard_spec_catalog FOR EACH ROW EXECUTE FUNCTION set_rfc006_updated_at()",
+          "called_function": "set_rfc006_updated_at()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "standard_spec_catalog_code_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM spec_code)) > 0)"
+        },
+        {
+          "name": "standard_spec_catalog_code_version_unique",
+          "type": "u",
+          "index_oid": "18086",
+          "validated": true,
+          "definition": "UNIQUE (spec_code, version)"
+        },
+        {
+          "name": "standard_spec_catalog_effective_order",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (effective_to IS NULL OR effective_to >= effective_from)"
+        },
+        {
+          "name": "standard_spec_catalog_item_not_empty",
+          "type": "c",
+          "index_oid": "0",
+          "validated": true,
+          "definition": "CHECK (length(TRIM(BOTH FROM item_name)) > 0)"
+        },
+        {
+          "name": "standard_spec_catalog_pkey",
+          "type": "p",
+          "index_oid": "18084",
+          "validated": true,
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true,
+      "effective_acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres",
+        "authenticated=r/postgres"
+      ],
+      "partition_key": null,
+      "partition_bound": null
+    }
+  ],
+  "functions": [
+    {
+      "name": "and_os_now",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "sql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.and_os_now()\n RETURNS timestamp with time zone\n LANGUAGE sql\n STABLE\n SET search_path TO 'public'\nAS $function$\r\n  select (timezone('Asia/Seoul', now())::timestamp at time zone 'Asia/Seoul');\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "timestamp with time zone",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "and_os_require_cost_rpc_mutation",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.and_os_require_cost_rpc_mutation()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if coalesce(current_setting('request.and_os_cost_rpc', true), '') <> 'on' then\r\n    raise exception 'AND OS cost data mutation must use approved RPC';\r\n  end if;\r\n\r\n  if tg_op = 'DELETE' then\r\n    return old;\r\n  end if;\r\n\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": ""
+    },
+    {
+      "name": "approve_contract_change_order",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_actor_user_id uuid, p_change_order_id uuid, p_payload jsonb",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.approve_contract_change_order(p_actor_user_id uuid, p_change_order_id uuid, p_payload jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_role text;\r\n  v_order public.change_orders%rowtype;\r\n  v_package public.contract_package_snapshots%rowtype;\r\n  v_pending_package public.contract_package_snapshots%rowtype;\r\n  v_customer_name text;\r\n  v_approval_method text;\r\n  v_evidence_file_id text;\r\n  v_evidence_url text;\r\n  v_approved_document_hash text;\r\n  v_approved_package_version integer;\r\n  v_customer_signed_at date;\r\n  v_doc_count integer;\r\n  v_original_contract_amount numeric;\r\n  v_prior_approved_change_total numeric;\r\n  v_revised_contract_amount numeric;\r\n  v_approval_snapshot jsonb;\r\n  v_approval_hash text;\r\n  v_approval_id uuid;\r\n  v_result jsonb;\r\nbegin\r\n  select lower(role) into v_role\r\n  from public.profiles\r\n  where id = p_actor_user_id and is_active = true;\r\n\r\n  if v_role <> 'admin' then\r\n    raise exception 'change order approval is allowed only for admin';\r\n  end if;\r\n\r\n  select *\r\n  into v_order\r\n  from public.change_orders\r\n  where id = p_change_order_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception 'change order not found';\r\n  end if;\r\n\r\n  if v_order.status <> 'CHANGE_PENDING' then\r\n    raise exception 'only pending change order can be approved';\r\n  end if;\r\n\r\n  select *\r\n  into v_package\r\n  from public.contract_package_snapshots\r\n  where id = v_order.package_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception 'contract package not found';\r\n  end if;\r\n\r\n  if v_package.status <> 'CHANGE_PENDING' then\r\n    raise exception 'contract package is not waiting for change approval';\r\n  end if;\r\n\r\n  if v_order.pending_package_id is null or v_order.package_manifest_hash is null then\r\n    raise exception 'pending contract package is required';\r\n  end if;\r\n\r\n  select *\r\n  into v_pending_package\r\n  from public.contract_package_snapshots\r\n  where id = v_order.pending_package_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception 'pending contract package not found';\r\n  end if;\r\n\r\n  if v_pending_package.status <> 'READY' then\r\n    raise exception 'pending contract package is not ready';\r\n  end if;\r\n\r\n  if v_pending_package.parent_package_id is distinct from v_package.id\r\n    or v_pending_package.originating_change_order_id is distinct from v_order.id\r\n  then\r\n    raise exception 'pending contract package relation is invalid';\r\n  end if;\r\n\r\n  if v_pending_package.package_manifest_hash is null\r\n    or v_pending_package.package_manifest_hash <> v_order.package_manifest_hash\r\n  then\r\n    raise exception 'pending contract package manifest does not match change order';\r\n  end if;\r\n\r\n  v_customer_name := nullif(trim(coalesce(p_payload->>'customer_name', '')), '');\r\n  v_approval_method := nullif(trim(coalesce(p_payload->>'approval_method', '')), '');\r\n  v_evidence_file_id := nullif(trim(coalesce(p_payload->>'evidence_file_id', '')), '');\r\n  v_evidence_url := nullif(trim(coalesce(p_payload->>'evidence_url', '')), '');\r\n  v_approved_document_hash := nullif(trim(coalesce(p_payload->>'approved_document_hash', '')), '');\r\n  v_approved_package_version := (p_payload->>'approved_package_version')::integer;\r\n  v_customer_signed_at := (p_payload->>'customer_signed_at')::date;\r\n\r\n  if v_customer_name is null\r\n    or v_approval_method is null\r\n    or v_approved_document_hash is null\r\n    or v_approved_package_version is null\r\n    or v_customer_signed_at is null\r\n    or (v_evidence_file_id is null and v_evidence_url is null)\r\n  then\r\n    raise exception 'customer approval evidence is required';\r\n  end if;\r\n\r\n  if v_approved_package_version <> v_pending_package.package_version then\r\n    raise exception 'approved package version does not match pending package version';\r\n  end if;\r\n\r\n  if v_approved_document_hash <> v_order.package_manifest_hash\r\n    or v_approved_document_hash <> v_pending_package.package_manifest_hash\r\n  then\r\n    raise exception 'approved document hash does not match pending package manifest';\r\n  end if;\r\n\r\n  select count(distinct document_type)\r\n  into v_doc_count\r\n  from public.contract_document_versions\r\n  where package_id = v_pending_package.id\r\n    and package_version = v_pending_package.package_version\r\n    and generation_status = 'GENERATED'\r\n    and length(coalesce(content_hash, '')) > 0\r\n    and jsonb_typeof(content_json) = 'object'\r\n    and content_json <> '{}'::jsonb\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  if v_doc_count <> 3 then\r\n    raise exception 'all three pending contract documents must be generated before approval';\r\n  end if;\r\n\r\n  v_original_contract_amount := coalesce(\r\n    v_pending_package.original_contract_amount,\r\n    v_package.original_contract_amount,\r\n    (v_package.contract_info->>'total_amount')::numeric,\r\n    0\r\n  );\r\n  v_prior_approved_change_total := coalesce(v_pending_package.prior_approved_change_total, 0);\r\n\r\n  v_revised_contract_amount := v_original_contract_amount + v_prior_approved_change_total + v_order.amount_delta;\r\n  if v_revised_contract_amount < 0 then\r\n    raise exception 'revised contract amount is invalid';\r\n  end if;\r\n\r\n  if v_pending_package.revised_contract_amount is distinct from v_revised_contract_amount then\r\n    raise exception 'pending contract package revised amount does not match change order';\r\n  end if;\r\n\r\n  v_approval_snapshot := jsonb_build_object(\r\n    'customer_name', v_customer_name,\r\n    'approval_method', v_approval_method,\r\n    'evidence_file_id', v_evidence_file_id,\r\n    'evidence_url', v_evidence_url,\r\n    'approved_document_hash', v_approved_document_hash,\r\n    'approved_package_version', v_approved_package_version,\r\n    'customer_signed_at', v_customer_signed_at,\r\n    'recorded_by', p_actor_user_id,\r\n    'recorded_at', public.and_os_now(),\r\n    'original_contract_amount', v_original_contract_amount,\r\n    'prior_approved_change_total', v_prior_approved_change_total,\r\n    'amount_delta', v_order.amount_delta,\r\n    'revised_contract_amount', v_revised_contract_amount,\r\n    'notes', nullif(trim(coalesce(p_payload->>'notes', '')), ''),\r\n    'change_order_id', p_change_order_id,\r\n    'change_version', v_order.change_version,\r\n    'parent_package_id', v_package.id,\r\n    'pending_package_id', v_pending_package.id,\r\n    'package_manifest_hash', v_pending_package.package_manifest_hash\r\n  );\r\n\r\n  v_approval_hash := encode(digest(v_approval_snapshot::text, 'sha256'), 'hex');\r\n\r\n  insert into public.change_order_approvals (\r\n    change_order_id,\r\n    customer_name,\r\n    approval_method,\r\n    evidence_file_id,\r\n    evidence_url,\r\n    approved_document_hash,\r\n    approved_package_version,\r\n    customer_signed_at,\r\n    original_contract_amount,\r\n    prior_approved_change_total,\r\n    amount_delta,\r\n    revised_contract_amount,\r\n    approval_snapshot,\r\n    approval_hash,\r\n    created_by\r\n  ) values (\r\n    p_change_order_id,\r\n    v_customer_name,\r\n    v_approval_method,\r\n    v_evidence_file_id,\r\n    v_evidence_url,\r\n    v_approved_document_hash,\r\n    v_approved_package_version,\r\n    v_customer_signed_at,\r\n    v_original_contract_amount,\r\n    v_prior_approved_change_total,\r\n    v_order.amount_delta,\r\n    v_revised_contract_amount,\r\n    v_approval_snapshot,\r\n    v_approval_hash,\r\n    p_actor_user_id\r\n  )\r\n  returning id into v_approval_id;\r\n\r\n  update public.change_orders\r\n  set status = 'APPROVED',\r\n      approval_snapshot = v_approval_snapshot,\r\n      approved_by = p_actor_user_id,\r\n      approved_at = public.and_os_now()\r\n  where id = p_change_order_id;\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'SUPERSEDED'\r\n  where id = v_package.id;\r\n\r\n  update public.contract_document_versions\r\n  set generation_status = 'FINAL',\r\n      locked_at = public.and_os_now()\r\n  where package_id = v_pending_package.id\r\n    and package_version = v_pending_package.package_version\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'CONTRACTED',\r\n      confirmed_by = p_actor_user_id,\r\n      confirmed_at = public.and_os_now()\r\n  where id = v_pending_package.id;\r\n\r\n  select to_jsonb(c) || jsonb_build_object(\r\n    'change_order_approvals',\r\n    coalesce((\r\n      select jsonb_agg(to_jsonb(a) order by a.created_at)\r\n      from public.change_order_approvals a\r\n      where a.change_order_id = c.id\r\n    ), '[]'::jsonb),\r\n    'pending_package', (\r\n      select to_jsonb(p) || jsonb_build_object(\r\n        'contract_document_versions',\r\n        coalesce((\r\n          select jsonb_agg(to_jsonb(d) order by d.document_type)\r\n          from public.contract_document_versions d\r\n          where d.package_id = p.id\r\n        ), '[]'::jsonb)\r\n      )\r\n      from public.contract_package_snapshots p\r\n      where p.id = c.pending_package_id\r\n    ),\r\n    'approval_hash', v_approval_hash,\r\n    'revised_contract_amount', v_revised_contract_amount\r\n  )\r\n  into v_result\r\n  from public.change_orders c\r\n  where c.id = p_change_order_id;\r\n\r\n  return v_result;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "jsonb",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_actor_user_id uuid, p_change_order_id uuid, p_payload jsonb"
+    },
+    {
+      "name": "cancel_all_cost_drafts",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.cancel_all_cost_drafts()\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_count integer;\r\n  v_changed_count integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  delete from public.cost_items\r\n  where is_pending_new = true;\r\n\r\n  get diagnostics v_count = row_count;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null\r\n  where draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  get diagnostics v_changed_count = row_count;\r\n  v_count := v_count + v_changed_count;\r\n  return v_count;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "integer",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": ""
+    },
+    {
+      "name": "cancel_cost_item_draft",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.cancel_cost_item_draft(p_cost_item_id uuid)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  select * into v_row from public.cost_items where id = p_cost_item_id;\r\n  if v_row.id is null then\r\n    raise exception 'cost item not found';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  if v_row.is_pending_new then\r\n    delete from public.cost_items where id = p_cost_item_id;\r\n    return v_row;\r\n  end if;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid"
+    },
+    {
+      "name": "confirm_contract_package_snapshot",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_package_id uuid, p_actor_user_id uuid",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.confirm_contract_package_snapshot(p_package_id uuid, p_actor_user_id uuid)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_role text;\r\n  v_package public.contract_package_snapshots%rowtype;\r\n  v_doc_count integer;\r\n  v_now timestamptz := public.and_os_now();\r\n  v_result jsonb;\r\nbegin\r\n  select lower(role) into v_role\r\n  from public.profiles\r\n  where id = p_actor_user_id and is_active = true;\r\n\r\n  if v_role <> 'admin' then\r\n    raise exception 'contract confirmation is allowed only for admin';\r\n  end if;\r\n\r\n  select *\r\n  into v_package\r\n  from public.contract_package_snapshots\r\n  where id = p_package_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception 'contract package not found';\r\n  end if;\r\n\r\n  if v_package.status <> 'READY' then\r\n    raise exception 'only READY contract package can be confirmed';\r\n  end if;\r\n\r\n  select count(distinct document_type)\r\n  into v_doc_count\r\n  from public.contract_document_versions\r\n  where package_id = p_package_id\r\n    and package_version = v_package.package_version\r\n    and generation_status = 'GENERATED'\r\n    and length(content_hash) > 0\r\n    and content_json is not null\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  if v_doc_count <> 3 then\r\n    raise exception 'all three generated documents are required';\r\n  end if;\r\n\r\n  update public.contract_document_versions\r\n  set generation_status = 'FINAL',\r\n      locked_at = v_now\r\n  where package_id = p_package_id\r\n    and package_version = v_package.package_version\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'CONTRACTED',\r\n      confirmed_by = p_actor_user_id,\r\n      confirmed_at = v_now\r\n  where id = p_package_id;\r\n\r\n  select to_jsonb(p.*) || jsonb_build_object(\r\n    'contract_document_versions',\r\n    coalesce((\r\n      select jsonb_agg(to_jsonb(d) order by d.document_type)\r\n      from public.contract_document_versions d\r\n      where d.package_id = p.id\r\n    ), '[]'::jsonb)\r\n  )\r\n  into v_result\r\n  from public.contract_package_snapshots p\r\n  where p.id = p_package_id;\r\n\r\n  return v_result;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "jsonb",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_package_id uuid, p_actor_user_id uuid"
+    },
+    {
+      "name": "create_contract_change_order",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_actor_user_id uuid, p_payload jsonb",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.create_contract_change_order(p_actor_user_id uuid, p_payload jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_role text;\r\n  v_package public.contract_package_snapshots%rowtype;\r\n  v_package_id uuid;\r\n  v_pending_package_id uuid;\r\n  v_pending_package_version integer;\r\n  v_change_version integer;\r\n  v_change_order_id uuid;\r\n  v_title text;\r\n  v_amount_delta numeric;\r\n  v_original_contract_amount numeric;\r\n  v_prior_approved_change_total numeric;\r\n  v_revised_contract_amount numeric;\r\n  v_source_hash text;\r\n  v_pending_source_hash text;\r\n  v_manifest_hash text;\r\n  v_doc_count integer;\r\n  v_result jsonb;\r\nbegin\r\n  select lower(role) into v_role\r\n  from public.profiles\r\n  where id = p_actor_user_id and is_active = true;\r\n\r\n  if v_role <> 'admin' then\r\n    raise exception 'change order creation is allowed only for admin';\r\n  end if;\r\n\r\n  v_package_id := (p_payload->>'package_id')::uuid;\r\n  v_title := nullif(trim(coalesce(p_payload->>'title', '')), '');\r\n  if v_title is null then\r\n    v_title := '변경견적';\r\n  end if;\r\n  v_amount_delta := coalesce((p_payload->>'amount_delta')::numeric, 0);\r\n\r\n  select *\r\n  into v_package\r\n  from public.contract_package_snapshots\r\n  where id = v_package_id\r\n  for update;\r\n\r\n  if not found then\r\n    raise exception 'contract package not found';\r\n  end if;\r\n\r\n  if v_package.status <> 'CONTRACTED' then\r\n    raise exception 'only CONTRACTED package can create change order';\r\n  end if;\r\n\r\n  perform pg_advisory_xact_lock(hashtext('change-order:' || v_package_id::text));\r\n\r\n  if exists (\r\n    select 1\r\n    from public.change_orders\r\n    where package_id = v_package_id\r\n      and status = 'CHANGE_PENDING'\r\n  ) then\r\n    raise exception 'pending change order already exists';\r\n  end if;\r\n\r\n  v_original_contract_amount := coalesce(\r\n    v_package.original_contract_amount,\r\n    (v_package.contract_info->>'total_amount')::numeric,\r\n    0\r\n  );\r\n\r\n  select coalesce(sum(c.amount_delta), 0)\r\n  into v_prior_approved_change_total\r\n  from public.change_orders c\r\n  join public.contract_package_snapshots p on p.id = c.package_id\r\n  where p.estimate_id = v_package.estimate_id\r\n    and p.contract_no = v_package.contract_no\r\n    and c.status = 'APPROVED';\r\n\r\n  v_revised_contract_amount := v_original_contract_amount + v_prior_approved_change_total + v_amount_delta;\r\n  if v_revised_contract_amount < 0 then\r\n    raise exception 'revised contract amount is invalid';\r\n  end if;\r\n\r\n  if jsonb_typeof(p_payload->'pending_snapshot') is distinct from 'object'\r\n    or p_payload->'pending_snapshot' = '{}'::jsonb then\r\n    raise exception 'pending package snapshot is required';\r\n  end if;\r\n\r\n  if coalesce((p_payload->'pending_snapshot'->'contract_info'->>'total_amount')::numeric, -1) <> v_revised_contract_amount then\r\n    raise exception 'pending package total does not match revised contract amount';\r\n  end if;\r\n\r\n  select coalesce(max(change_version), 0) + 1\r\n  into v_change_version\r\n  from public.change_orders\r\n  where package_id = v_package_id;\r\n\r\n  if v_title = '변경견적' then\r\n    v_title := '변경견적 ' || v_change_version::text;\r\n  end if;\r\n\r\n  v_source_hash := encode(\r\n    digest(\r\n      (v_package_id::text || ':' || v_change_version::text || ':' || coalesce((p_payload->'pending_snapshot')::text, '{}')),\r\n      'sha256'\r\n    ),\r\n    'hex'\r\n  );\r\n  v_pending_source_hash := nullif(trim(coalesce(p_payload->>'pending_source_hash', '')), '');\r\n  if v_pending_source_hash is null then\r\n    raise exception 'pending source hash is required';\r\n  end if;\r\n\r\n  insert into public.change_orders (\r\n    package_id,\r\n    estimate_id,\r\n    change_version,\r\n    status,\r\n    title,\r\n    before_snapshot,\r\n    after_snapshot,\r\n    amount_delta,\r\n    schedule_impact,\r\n    approval_snapshot,\r\n    source_hash,\r\n    created_by\r\n  ) values (\r\n    v_package_id,\r\n    v_package.estimate_id,\r\n    v_change_version,\r\n    'CHANGE_PENDING',\r\n    v_title,\r\n    to_jsonb(v_package),\r\n    coalesce(p_payload->'after_snapshot', '{}'::jsonb),\r\n    v_amount_delta,\r\n    coalesce(p_payload->'schedule_impact', '{}'::jsonb),\r\n    null,\r\n    v_source_hash,\r\n    p_actor_user_id\r\n  )\r\n  returning id into v_change_order_id;\r\n\r\n  select coalesce(max(package_version), 0) + 1\r\n  into v_pending_package_version\r\n  from public.contract_package_snapshots\r\n  where estimate_id = v_package.estimate_id;\r\n\r\n  insert into public.contract_package_snapshots (\r\n    estimate_id,\r\n    estimate_revision,\r\n    package_version,\r\n    contract_no,\r\n    parent_package_id,\r\n    originating_change_order_id,\r\n    status,\r\n    contract_info,\r\n    parties_info,\r\n    site_manager,\r\n    estimate_snapshot,\r\n    document_options_snapshot,\r\n    spec_snapshot,\r\n    clause_snapshot,\r\n    payment_schedule,\r\n    template_version,\r\n    rule_version,\r\n    source_hash,\r\n    original_contract_amount,\r\n    prior_approved_change_total,\r\n    amount_delta,\r\n    revised_contract_amount,\r\n    created_by\r\n  ) values (\r\n    v_package.estimate_id,\r\n    coalesce(p_payload->'pending_snapshot'->>'estimate_revision', v_package.estimate_revision),\r\n    v_pending_package_version,\r\n    v_package.contract_no,\r\n    v_package_id,\r\n    v_change_order_id,\r\n    'DRAFT',\r\n    p_payload->'pending_snapshot'->'contract_info',\r\n    p_payload->'pending_snapshot'->'parties_info',\r\n    coalesce(p_payload->'pending_snapshot'->'site_manager', '{}'::jsonb),\r\n    p_payload->'pending_snapshot'->'estimate_snapshot',\r\n    p_payload->'pending_snapshot'->'document_options_snapshot',\r\n    coalesce(p_payload->'pending_snapshot'->'spec_snapshot', '[]'::jsonb),\r\n    coalesce(p_payload->'pending_snapshot'->'clause_snapshot', '{}'::jsonb),\r\n    coalesce(p_payload->'pending_snapshot'->'payment_schedule', '[]'::jsonb),\r\n    coalesce(p_payload->'pending_snapshot'->>'template_version', v_package.template_version),\r\n    coalesce(p_payload->'pending_snapshot'->>'rule_version', v_package.rule_version),\r\n    v_pending_source_hash,\r\n    v_original_contract_amount,\r\n    v_prior_approved_change_total,\r\n    v_amount_delta,\r\n    v_revised_contract_amount,\r\n    p_actor_user_id\r\n  )\r\n  returning id into v_pending_package_id;\r\n\r\n  insert into public.contract_document_versions (\r\n    package_id,\r\n    document_type,\r\n    package_version,\r\n    generation_status,\r\n    content_json,\r\n    content_hash,\r\n    file_path,\r\n    file_url,\r\n    mime_type,\r\n    created_by\r\n  )\r\n  select\r\n    v_pending_package_id,\r\n    doc->>'document_type',\r\n    v_pending_package_version,\r\n    'GENERATED',\r\n    doc->'content_json',\r\n    doc->>'content_hash',\r\n    nullif(doc->>'file_path', ''),\r\n    nullif(doc->>'file_url', ''),\r\n    nullif(doc->>'mime_type', ''),\r\n    p_actor_user_id\r\n  from jsonb_array_elements(coalesce(p_payload->'documents', '[]'::jsonb)) doc\r\n  where doc->>'document_type' in ('CONTRACT', 'QUOTE', 'SPEC')\r\n    and length(coalesce(doc->>'content_hash', '')) > 0\r\n    and jsonb_typeof(doc->'content_json') = 'object'\r\n    and doc->'content_json' <> '{}'::jsonb;\r\n\r\n  select count(distinct document_type)\r\n  into v_doc_count\r\n  from public.contract_document_versions\r\n  where package_id = v_pending_package_id\r\n    and package_version = v_pending_package_version\r\n    and generation_status = 'GENERATED'\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  if v_doc_count <> 3 then\r\n    raise exception 'all three pending contract documents must be generated';\r\n  end if;\r\n\r\n  select encode(\r\n    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),\r\n    'hex'\r\n  )\r\n  into v_manifest_hash\r\n  from public.contract_document_versions\r\n  where package_id = v_pending_package_id\r\n    and package_version = v_pending_package_version\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'PREVIEWED'\r\n  where id = v_pending_package_id;\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'READY',\r\n      package_manifest_hash = v_manifest_hash\r\n  where id = v_pending_package_id;\r\n\r\n  update public.change_orders\r\n  set pending_package_id = v_pending_package_id,\r\n      package_manifest_hash = v_manifest_hash,\r\n      after_snapshot = p_payload->'pending_snapshot'\r\n  where id = v_change_order_id;\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'CHANGE_PENDING'\r\n  where id = v_package_id;\r\n\r\n  select to_jsonb(c) || jsonb_build_object(\r\n    'pending_package', (\r\n      select to_jsonb(p) || jsonb_build_object(\r\n        'contract_document_versions',\r\n        coalesce((\r\n          select jsonb_agg(to_jsonb(d) order by d.document_type)\r\n          from public.contract_document_versions d\r\n          where d.package_id = p.id\r\n        ), '[]'::jsonb)\r\n      )\r\n      from public.contract_package_snapshots p\r\n      where p.id = c.pending_package_id\r\n    )\r\n  )\r\n  into v_result\r\n  from public.change_orders c\r\n  where c.id = v_change_order_id;\r\n\r\n  return v_result;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "jsonb",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_actor_user_id uuid, p_payload jsonb"
+    },
+    {
+      "name": "create_contract_package_snapshot",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_actor_user_id uuid, p_payload jsonb",
+      "proconfig": [
+        "search_path=public, extensions"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.create_contract_package_snapshot(p_actor_user_id uuid, p_payload jsonb)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'extensions'\nAS $function$\r\ndeclare\r\n  v_role text;\r\n  v_estimate_id uuid;\r\n  v_contract_no text;\r\n  v_package_id uuid;\r\n  v_package_version integer;\r\n  v_doc_count integer;\r\n  v_manifest_hash text;\r\n  v_result jsonb;\r\nbegin\r\n  select lower(role) into v_role\r\n  from public.profiles\r\n  where id = p_actor_user_id and is_active = true;\r\n\r\n  if v_role not in ('admin', 'staff') then\r\n    raise exception 'contract package creation is not allowed';\r\n  end if;\r\n\r\n  v_estimate_id := (p_payload->>'estimate_id')::uuid;\r\n  v_contract_no := nullif(trim(p_payload->>'contract_no'), '');\r\n  if v_contract_no is null or v_contract_no !~ '^[A-Za-z0-9가-힣._-]{1,50}$' then\r\n    raise exception 'valid contract number is required';\r\n  end if;\r\n\r\n  if not exists (select 1 from public.estimates where id = v_estimate_id) then\r\n    raise exception 'estimate not found';\r\n  end if;\r\n\r\n  if exists (\r\n    select 1 from public.contract_package_snapshots\r\n    where contract_no = v_contract_no and estimate_id <> v_estimate_id\r\n  ) or exists (\r\n    select 1 from public.estimate_document_options\r\n    where contract_no = v_contract_no and estimate_id <> v_estimate_id\r\n  ) then\r\n    raise exception 'contract number is already used by another estimate';\r\n  end if;\r\n\r\n  perform pg_advisory_xact_lock(hashtext('contract-package:' || v_estimate_id::text));\r\n\r\n  if exists (\r\n    select 1\r\n    from public.contract_package_snapshots\r\n    where estimate_id = v_estimate_id\r\n      and source_hash = p_payload->>'source_hash'\r\n      and template_version = p_payload->>'template_version'\r\n      and rule_version = p_payload->>'rule_version'\r\n      and status in ('DRAFT', 'PREVIEWED', 'READY', 'CONTRACTED', 'CHANGE_PENDING')\r\n  ) then\r\n    raise exception 'same contract package already exists';\r\n  end if;\r\n\r\n  select coalesce(max(package_version), 0) + 1\r\n  into v_package_version\r\n  from public.contract_package_snapshots\r\n  where estimate_id = v_estimate_id;\r\n\r\n  insert into public.contract_package_snapshots (\r\n    estimate_id,\r\n    estimate_revision,\r\n    package_version,\r\n    contract_no,\r\n    parent_package_id,\r\n    originating_change_order_id,\r\n    status,\r\n    contract_info,\r\n    parties_info,\r\n    site_manager,\r\n    estimate_snapshot,\r\n    document_options_snapshot,\r\n    spec_snapshot,\r\n    clause_snapshot,\r\n    payment_schedule,\r\n    template_version,\r\n    rule_version,\r\n    source_hash,\r\n    original_contract_amount,\r\n    prior_approved_change_total,\r\n    amount_delta,\r\n    revised_contract_amount,\r\n    created_by\r\n  ) values (\r\n    v_estimate_id,\r\n    p_payload->>'estimate_revision',\r\n    v_package_version,\r\n    v_contract_no,\r\n    nullif(p_payload->>'parent_package_id', '')::uuid,\r\n    nullif(p_payload->>'originating_change_order_id', '')::uuid,\r\n    'DRAFT',\r\n    p_payload->'contract_info',\r\n    p_payload->'parties_info',\r\n    coalesce(p_payload->'site_manager', '{}'::jsonb),\r\n    p_payload->'estimate_snapshot',\r\n    p_payload->'document_options_snapshot',\r\n    coalesce(p_payload->'spec_snapshot', '[]'::jsonb),\r\n    coalesce(p_payload->'clause_snapshot', '{}'::jsonb),\r\n    coalesce(p_payload->'payment_schedule', '[]'::jsonb),\r\n    p_payload->>'template_version',\r\n    p_payload->>'rule_version',\r\n    p_payload->>'source_hash',\r\n    nullif(p_payload->>'original_contract_amount', '')::numeric,\r\n    coalesce(nullif(p_payload->>'prior_approved_change_total', '')::numeric, 0),\r\n    coalesce(nullif(p_payload->>'amount_delta', '')::numeric, 0),\r\n    nullif(p_payload->>'revised_contract_amount', '')::numeric,\r\n    p_actor_user_id\r\n  )\r\n  returning id into v_package_id;\r\n\r\n  insert into public.contract_document_versions (\r\n    package_id,\r\n    document_type,\r\n    package_version,\r\n    generation_status,\r\n    content_json,\r\n    content_hash,\r\n    file_path,\r\n    file_url,\r\n    mime_type,\r\n    created_by\r\n  )\r\n  select\r\n    v_package_id,\r\n    doc->>'document_type',\r\n    v_package_version,\r\n    'GENERATED',\r\n    doc->'content_json',\r\n    doc->>'content_hash',\r\n    nullif(doc->>'file_path', ''),\r\n    nullif(doc->>'file_url', ''),\r\n    nullif(doc->>'mime_type', ''),\r\n    p_actor_user_id\r\n  from jsonb_array_elements(coalesce(p_payload->'documents', '[]'::jsonb)) doc\r\n  where doc->>'document_type' in ('CONTRACT', 'QUOTE', 'SPEC')\r\n    and length(coalesce(doc->>'content_hash', '')) > 0\r\n    and jsonb_typeof(doc->'content_json') = 'object'\r\n    and doc->'content_json' <> '{}'::jsonb;\r\n\r\n  select count(distinct document_type)\r\n  into v_doc_count\r\n  from public.contract_document_versions\r\n  where package_id = v_package_id\r\n    and package_version = v_package_version\r\n    and generation_status = 'GENERATED'\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  if v_doc_count <> 3 then\r\n    raise exception 'all three contract documents must be generated';\r\n  end if;\r\n\r\n  select encode(\r\n    digest(string_agg(document_type || ':' || content_hash, '|' order by document_type), 'sha256'),\r\n    'hex'\r\n  )\r\n  into v_manifest_hash\r\n  from public.contract_document_versions\r\n  where package_id = v_package_id\r\n    and package_version = v_package_version\r\n    and document_type in ('CONTRACT', 'QUOTE', 'SPEC');\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'PREVIEWED'\r\n  where id = v_package_id;\r\n\r\n  update public.contract_package_snapshots\r\n  set status = 'READY',\r\n      package_manifest_hash = v_manifest_hash\r\n  where id = v_package_id;\r\n\r\n  select to_jsonb(p.*) || jsonb_build_object(\r\n    'contract_document_versions',\r\n    coalesce((\r\n      select jsonb_agg(to_jsonb(d) order by d.document_type)\r\n      from public.contract_document_versions d\r\n      where d.package_id = p.id\r\n    ), '[]'::jsonb)\r\n  )\r\n  into v_result\r\n  from public.contract_package_snapshots p\r\n  where p.id = v_package_id;\r\n\r\n  return v_result;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "jsonb",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_actor_user_id uuid, p_payload jsonb"
+    },
+    {
+      "name": "create_cost_item_pending",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false, p_source_cost_item_id uuid DEFAULT NULL::uuid",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.create_cost_item_pending(p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false, p_source_cost_item_id uuid DEFAULT NULL::uuid)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_item_code text;\r\n  v_item_name text;\r\n  v_category text;\r\n  v_unit text;\r\n  v_basis text;\r\n  v_multiplier numeric;\r\n  v_rounding text;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_item_code := public.validate_and_os_cost_item_code(p_item_code);\r\n  v_item_name := nullif(trim(coalesce(p_item_name, '')), '');\r\n  v_category := nullif(trim(coalesce(p_category, '')), '');\r\n  v_unit := nullif(trim(coalesce(p_unit, '')), '');\r\n  v_basis := nullif(trim(coalesce(p_calculation_basis, '')), '');\r\n  v_multiplier := coalesce(p_calculation_multiplier, 1);\r\n  v_rounding := coalesce(nullif(trim(p_rounding_method), ''), 'none');\r\n\r\n  if v_item_name is null then raise exception 'item name is required'; end if;\r\n  if v_category is null then raise exception 'category is required'; end if;\r\n  if v_unit is null then raise exception 'unit is required'; end if;\r\n  if v_basis is null then raise exception 'calculation basis is required'; end if;\r\n  if p_cost_price is null or p_cost_price < 0 then raise exception 'cost price must be greater than or equal to zero'; end if;\r\n  if p_margin_rate is null or p_margin_rate < 0 or p_margin_rate >= 1 then raise exception 'margin rate must be greater than or equal to zero and less than one'; end if;\r\n  if v_multiplier < 0 then raise exception 'calculation multiplier must be greater than or equal to zero'; end if;\r\n  if p_min_quantity is not null and p_min_quantity < 0 then raise exception 'minimum quantity must be greater than or equal to zero'; end if;\r\n  if v_rounding not in ('none', 'ceil', 'floor', 'round') then raise exception 'rounding method is invalid'; end if;\r\n\r\n  if exists (select 1 from public.cost_items where item_code = v_item_code) then\r\n    raise exception 'cost item code already exists';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  insert into public.cost_items (\r\n    category,\r\n    subcategory,\r\n    item_code,\r\n    item_name,\r\n    unit,\r\n    cost_price,\r\n    default_margin_rate,\r\n    customer_name,\r\n    order_name,\r\n    include_in_customer_quote,\r\n    include_in_internal_quote,\r\n    include_in_order_sheet,\r\n    is_material,\r\n    is_labor,\r\n    is_service,\r\n    is_active,\r\n    sort_order,\r\n    memo,\r\n    updated_by,\r\n    draft_is_active,\r\n    draft_updated_at,\r\n    draft_updated_by,\r\n    calculation_basis,\r\n    calculation_multiplier,\r\n    min_quantity,\r\n    rounding_method,\r\n    is_pending_new,\r\n    source_cost_item_id\r\n  )\r\n  values (\r\n    v_category,\r\n    nullif(trim(coalesce(p_subcategory, '')), ''),\r\n    v_item_code,\r\n    v_item_name,\r\n    v_unit,\r\n    p_cost_price,\r\n    p_margin_rate,\r\n    nullif(trim(coalesce(p_customer_name, '')), ''),\r\n    nullif(trim(coalesce(p_order_name, '')), ''),\r\n    coalesce(p_include_in_customer_quote, true),\r\n    coalesce(p_include_in_internal_quote, true),\r\n    coalesce(p_include_in_order_sheet, false),\r\n    coalesce(p_is_material, false),\r\n    coalesce(p_is_labor, false),\r\n    coalesce(p_is_service, false),\r\n    false,\r\n    coalesce(p_sort_order, 0),\r\n    nullif(trim(coalesce(p_memo, '')), ''),\r\n    auth.uid(),\r\n    coalesce(p_is_active, true),\r\n    timezone('Asia/Seoul', now()),\r\n    auth.uid(),\r\n    v_basis,\r\n    v_multiplier,\r\n    p_min_quantity,\r\n    v_rounding,\r\n    true,\r\n    p_source_cost_item_id\r\n  )\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean, p_source_cost_item_id uuid"
+    },
+    {
+      "name": "current_and_os_role",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "sql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.current_and_os_role()\n RETURNS text\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select coalesce((select lower(role) from public.profiles where id = auth.uid() limit 1), 'staff');\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "text",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": ""
+    },
+    {
+      "name": "enforce_contract_package_state_transition",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.enforce_contract_package_state_transition()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  protected_changed boolean;\r\nbegin\r\n  if tg_op = 'DELETE' then\r\n    if old.status in ('CONTRACTED', 'SUPERSEDED', 'CANCELLED') then\r\n      raise exception 'locked contract package cannot be deleted';\r\n    end if;\r\n    return old;\r\n  end if;\r\n\r\n  protected_changed :=\r\n    old.estimate_id is distinct from new.estimate_id or\r\n    old.estimate_revision is distinct from new.estimate_revision or\r\n    old.package_version is distinct from new.package_version or\r\n    old.contract_no is distinct from new.contract_no or\r\n    old.contract_info is distinct from new.contract_info or\r\n    old.parties_info is distinct from new.parties_info or\r\n    old.site_manager is distinct from new.site_manager or\r\n    old.estimate_snapshot is distinct from new.estimate_snapshot or\r\n    old.document_options_snapshot is distinct from new.document_options_snapshot or\r\n    old.spec_snapshot is distinct from new.spec_snapshot or\r\n    old.clause_snapshot is distinct from new.clause_snapshot or\r\n    old.payment_schedule is distinct from new.payment_schedule or\r\n    old.template_version is distinct from new.template_version or\r\n    old.rule_version is distinct from new.rule_version or\r\n    old.source_hash is distinct from new.source_hash;\r\n\r\n  if old.status in ('SUPERSEDED', 'CANCELLED') then\r\n    raise exception 'closed contract package cannot be updated';\r\n  end if;\r\n\r\n  if old.status = 'CONTRACTED' and protected_changed then\r\n    raise exception 'contracted package snapshot cannot be changed';\r\n  end if;\r\n\r\n  if old.status = new.status then\r\n    if old.status = 'CONTRACTED' and protected_changed then\r\n      raise exception 'contracted package snapshot cannot be changed';\r\n    end if;\r\n    return new;\r\n  end if;\r\n\r\n  if not (\r\n    (old.status = 'DRAFT' and new.status = 'PREVIEWED') or\r\n    (old.status = 'PREVIEWED' and new.status in ('DRAFT', 'READY')) or\r\n    (old.status = 'READY' and new.status in ('DRAFT', 'CONTRACTED')) or\r\n    (old.status = 'CONTRACTED' and new.status in ('CHANGE_PENDING', 'CANCELLED')) or\r\n    (old.status = 'CHANGE_PENDING' and new.status in ('CONTRACTED', 'SUPERSEDED', 'CANCELLED'))\r\n  ) then\r\n    raise exception 'invalid contract package status transition: % -> %', old.status, new.status;\r\n  end if;\r\n\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "is_and_os_admin",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "sql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.is_and_os_admin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n  select public.current_and_os_role() = 'admin';\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "boolean",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": ""
+    },
+    {
+      "name": "next_cost_publish_version",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.next_cost_publish_version()\n RETURNS text\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_prefix text;\r\n  v_last_suffix integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_prefix := to_char(timezone('Asia/Seoul', now()), 'YYYY.MM.DD');\r\n\r\n  select coalesce(max(substring(version from 12 for 3)::integer), 0)\r\n  into v_last_suffix\r\n  from public.cost_publish_log\r\n  where version like v_prefix || '-___';\r\n\r\n  return v_prefix || '-' || lpad((v_last_suffix + 1)::text, 3, '0');\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "text",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": ""
+    },
+    {
+      "name": "prevent_approved_change_order_mutation",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.prevent_approved_change_order_mutation()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if tg_op = 'DELETE' and old.status = 'APPROVED' then\r\n    raise exception 'approved change order cannot be deleted';\r\n  end if;\r\n  if tg_op = 'UPDATE' and old.status = 'APPROVED' then\r\n    raise exception 'approved change order cannot be updated';\r\n  end if;\r\n  if tg_op = 'DELETE' then\r\n    return old;\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "prevent_change_order_approval_mutation",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.prevent_change_order_approval_mutation()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  raise exception 'change order approval records are immutable';\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "prevent_contract_no_cross_estimate",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.prevent_contract_no_cross_estimate()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if new.contract_no is null then\r\n    return new;\r\n  end if;\r\n  if exists (\r\n    select 1\r\n    from public.contract_package_snapshots p\r\n    where p.contract_no = new.contract_no\r\n      and p.estimate_id <> new.estimate_id\r\n      and (tg_table_name <> 'contract_package_snapshots' or p.id <> coalesce(new.id, '00000000-0000-0000-0000-000000000000'::uuid))\r\n  ) then\r\n    raise exception 'contract number is already used by another estimate';\r\n  end if;\r\n  if exists (\r\n    select 1\r\n    from public.estimate_document_options o\r\n    where o.contract_no = new.contract_no\r\n      and o.estimate_id <> new.estimate_id\r\n      and (tg_table_name <> 'estimate_document_options' or o.id <> coalesce(new.id, '00000000-0000-0000-0000-000000000000'::uuid))\r\n  ) then\r\n    raise exception 'contract number is already used by another estimate';\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "prevent_locked_contract_document_change",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.prevent_locked_contract_document_change()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  if tg_op = 'DELETE' and (old.locked_at is not null or old.generation_status = 'FINAL') then\r\n    raise exception 'locked contract document cannot be deleted';\r\n  end if;\r\n  if tg_op = 'UPDATE' and (old.locked_at is not null or old.generation_status = 'FINAL') then\r\n    raise exception 'locked contract document cannot be updated';\r\n  end if;\r\n  if tg_op = 'DELETE' then\r\n    return old;\r\n  end if;\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "publish_cost_drafts",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_reason text, p_memo text DEFAULT NULL::text",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.publish_cost_drafts(p_reason text, p_memo text DEFAULT NULL::text)\n RETURNS TABLE(version text, changed_item_count integer, price_change_count integer, margin_change_count integer, active_change_count integer)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_reason text;\r\n  v_version text;\r\n  v_changed_count integer;\r\n  v_price_count integer;\r\n  v_margin_count integer;\r\n  v_active_count integer;\r\n  v_memo text;\r\n  v_started_at timestamptz;\r\n  v_duration_ms integer;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  v_started_at := clock_timestamp();\r\n\r\n  v_reason := nullif(trim(p_reason), '');\r\n  if v_reason is null then raise exception 'publish reason is required'; end if;\r\n  if char_length(v_reason) > 500 then raise exception 'publish reason must be 500 characters or fewer'; end if;\r\n\r\n  v_memo := nullif(trim(p_memo), '');\r\n  if v_memo is not null and char_length(v_memo) > 2000 then\r\n    raise exception 'publish memo must be 2000 characters or fewer';\r\n  end if;\r\n\r\n  perform pg_advisory_xact_lock(hashtext('and_os_cost_publish'));\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  select count(*)\r\n  into v_changed_count\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  if v_changed_count = 0 then raise exception 'no draft cost changes to publish'; end if;\r\n\r\n  v_version := public.next_cost_publish_version();\r\n\r\n  select\r\n    count(*) filter (where draft_cost_price is not null or is_pending_new = true),\r\n    count(*) filter (where draft_margin_rate is not null or is_pending_new = true),\r\n    count(*) filter (where draft_is_active is not null or is_pending_new = true)\r\n  into v_price_count, v_margin_count, v_active_count\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  insert into public.cost_item_history (\r\n    cost_item_id,\r\n    old_cost_price,\r\n    new_cost_price,\r\n    old_margin_rate,\r\n    new_margin_rate,\r\n    old_is_active,\r\n    new_is_active,\r\n    changed_by,\r\n    changed_at,\r\n    reason,\r\n    cost_version\r\n  )\r\n  select\r\n    id,\r\n    case when is_pending_new then null else cost_price end,\r\n    coalesce(draft_cost_price, cost_price),\r\n    case when is_pending_new then null else default_margin_rate end,\r\n    coalesce(draft_margin_rate, default_margin_rate),\r\n    case when is_pending_new then false else is_active end,\r\n    coalesce(draft_is_active, is_active),\r\n    auth.uid(),\r\n    timezone('Asia/Seoul', now()),\r\n    v_reason,\r\n    v_version\r\n  from public.cost_items\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  update public.cost_items\r\n  set\r\n    cost_price = coalesce(draft_cost_price, cost_price),\r\n    default_margin_rate = coalesce(draft_margin_rate, default_margin_rate),\r\n    is_active = coalesce(draft_is_active, is_active),\r\n    updated_by = auth.uid(),\r\n    draft_cost_price = null,\r\n    draft_margin_rate = null,\r\n    draft_is_active = null,\r\n    draft_updated_at = null,\r\n    draft_updated_by = null,\r\n    is_pending_new = false\r\n  where is_pending_new = true\r\n     or draft_cost_price is not null\r\n     or draft_margin_rate is not null\r\n     or draft_is_active is not null;\r\n\r\n  v_duration_ms := greatest(0, floor(extract(epoch from (clock_timestamp() - v_started_at)) * 1000)::integer);\r\n\r\n  insert into public.cost_publish_log (\r\n    version,\r\n    reason,\r\n    published_by,\r\n    published_at,\r\n    changed_item_count,\r\n    price_change_count,\r\n    margin_change_count,\r\n    active_change_count,\r\n    duration_ms,\r\n    memo,\r\n    created_at\r\n  ) values (\r\n    v_version,\r\n    v_reason,\r\n    auth.uid(),\r\n    timezone('Asia/Seoul', now()),\r\n    v_changed_count,\r\n    v_price_count,\r\n    v_margin_count,\r\n    v_active_count,\r\n    v_duration_ms,\r\n    v_memo,\r\n    timezone('Asia/Seoul', now())\r\n  );\r\n\r\n  return query select v_version, v_changed_count, v_price_count, v_margin_count, v_active_count;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "TABLE(version text, changed_item_count integer, price_change_count integer, margin_change_count integer, active_change_count integer)",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_reason text, p_memo text"
+    },
+    {
+      "name": "save_cost_item_draft",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid, p_draft_cost_price numeric DEFAULT NULL::numeric, p_draft_margin_rate numeric DEFAULT NULL::numeric, p_draft_is_active boolean DEFAULT NULL::boolean",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.save_cost_item_draft(p_cost_item_id uuid, p_draft_cost_price numeric DEFAULT NULL::numeric, p_draft_margin_rate numeric DEFAULT NULL::numeric, p_draft_is_active boolean DEFAULT NULL::boolean)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_has_draft boolean;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  if p_draft_cost_price is not null and p_draft_cost_price < 0 then\r\n    raise exception 'draft cost price must be greater than or equal to zero';\r\n  end if;\r\n\r\n  if p_draft_margin_rate is not null\r\n     and (p_draft_margin_rate < 0 or p_draft_margin_rate >= 1) then\r\n    raise exception 'draft margin rate must be greater than or equal to zero and less than one';\r\n  end if;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_cost_price = case\r\n      when p_draft_cost_price is not null and p_draft_cost_price <> cost_price then p_draft_cost_price\r\n      else null\r\n    end,\r\n    draft_margin_rate = case\r\n      when p_draft_margin_rate is not null and p_draft_margin_rate <> default_margin_rate then p_draft_margin_rate\r\n      else null\r\n    end,\r\n    draft_is_active = case\r\n      when p_draft_is_active is not null and p_draft_is_active <> is_active then p_draft_is_active\r\n      else null\r\n    end\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  if v_row.id is null then\r\n    raise exception 'cost item not found';\r\n  end if;\r\n\r\n  v_has_draft := v_row.draft_cost_price is not null\r\n    or v_row.draft_margin_rate is not null\r\n    or v_row.draft_is_active is not null;\r\n\r\n  update public.cost_items\r\n  set\r\n    draft_updated_at = case when v_has_draft then now() else null end,\r\n    draft_updated_by = case when v_has_draft then auth.uid() else null end\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid, p_draft_cost_price numeric, p_draft_margin_rate numeric, p_draft_is_active boolean"
+    },
+    {
+      "name": "set_profiles_updated_at",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.set_profiles_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "set_rfc006_updated_at",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.set_rfc006_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n  new.updated_at = public.and_os_now();\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "set_updated_at",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "",
+      "proconfig": null,
+      "definition": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n  new.updated_at = now();\r\n  return new;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "trigger",
+      "effective_acl": [
+        "=X/postgres",
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": false,
+      "identity_arguments": ""
+    },
+    {
+      "name": "update_cost_item_pending",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.update_cost_item_pending(p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text DEFAULT NULL::text, p_customer_name text DEFAULT NULL::text, p_order_name text DEFAULT NULL::text, p_calculation_multiplier numeric DEFAULT 1, p_min_quantity numeric DEFAULT NULL::numeric, p_rounding_method text DEFAULT 'none'::text, p_include_in_customer_quote boolean DEFAULT true, p_include_in_internal_quote boolean DEFAULT true, p_include_in_order_sheet boolean DEFAULT false, p_is_material boolean DEFAULT false, p_is_labor boolean DEFAULT false, p_is_service boolean DEFAULT false)\n RETURNS cost_items\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_row public.cost_items;\r\n  v_category text;\r\n  v_unit text;\r\n  v_basis text;\r\n  v_multiplier numeric;\r\n  v_rounding text;\r\nbegin\r\n  if not public.is_and_os_admin() then\r\n    raise exception 'AND OS admin permission required';\r\n  end if;\r\n\r\n  select * into v_row from public.cost_items where id = p_cost_item_id;\r\n  if v_row.id is null then raise exception 'cost item not found'; end if;\r\n  if not v_row.is_pending_new then raise exception 'only pending new cost items can be edited here'; end if;\r\n\r\n  if public.validate_and_os_cost_item_code(p_item_code) <> v_row.item_code then\r\n    raise exception 'pending item code cannot be changed';\r\n  end if;\r\n\r\n  v_category := nullif(trim(coalesce(p_category, '')), '');\r\n  v_unit := nullif(trim(coalesce(p_unit, '')), '');\r\n  v_basis := nullif(trim(coalesce(p_calculation_basis, '')), '');\r\n  v_multiplier := coalesce(p_calculation_multiplier, 1);\r\n  v_rounding := coalesce(nullif(trim(p_rounding_method), ''), 'none');\r\n\r\n  if nullif(trim(coalesce(p_item_name, '')), '') is null then raise exception 'item name is required'; end if;\r\n  if v_category is null then raise exception 'category is required'; end if;\r\n  if v_unit is null then raise exception 'unit is required'; end if;\r\n  if v_basis is null then raise exception 'calculation basis is required'; end if;\r\n  if p_cost_price is null or p_cost_price < 0 then raise exception 'cost price must be greater than or equal to zero'; end if;\r\n  if p_margin_rate is null or p_margin_rate < 0 or p_margin_rate >= 1 then raise exception 'margin rate must be greater than or equal to zero and less than one'; end if;\r\n  if v_multiplier < 0 then raise exception 'calculation multiplier must be greater than or equal to zero'; end if;\r\n  if p_min_quantity is not null and p_min_quantity < 0 then raise exception 'minimum quantity must be greater than or equal to zero'; end if;\r\n  if v_rounding not in ('none', 'ceil', 'floor', 'round') then raise exception 'rounding method is invalid'; end if;\r\n\r\n  perform set_config('request.and_os_cost_rpc', 'on', true);\r\n\r\n  update public.cost_items\r\n  set\r\n    category = v_category,\r\n    subcategory = nullif(trim(coalesce(p_subcategory, '')), ''),\r\n    item_name = nullif(trim(coalesce(p_item_name, '')), ''),\r\n    unit = v_unit,\r\n    cost_price = p_cost_price,\r\n    default_margin_rate = p_margin_rate,\r\n    customer_name = nullif(trim(coalesce(p_customer_name, '')), ''),\r\n    order_name = nullif(trim(coalesce(p_order_name, '')), ''),\r\n    include_in_customer_quote = coalesce(p_include_in_customer_quote, true),\r\n    include_in_internal_quote = coalesce(p_include_in_internal_quote, true),\r\n    include_in_order_sheet = coalesce(p_include_in_order_sheet, false),\r\n    is_material = coalesce(p_is_material, false),\r\n    is_labor = coalesce(p_is_labor, false),\r\n    is_service = coalesce(p_is_service, false),\r\n    sort_order = coalesce(p_sort_order, 0),\r\n    memo = nullif(trim(coalesce(p_memo, '')), ''),\r\n    updated_by = auth.uid(),\r\n    draft_is_active = coalesce(p_is_active, true),\r\n    draft_updated_at = timezone('Asia/Seoul', now()),\r\n    draft_updated_by = auth.uid(),\r\n    calculation_basis = v_basis,\r\n    calculation_multiplier = v_multiplier,\r\n    min_quantity = p_min_quantity,\r\n    rounding_method = v_rounding\r\n  where id = p_cost_item_id\r\n  returning * into v_row;\r\n\r\n  return v_row;\r\nend;\r\n$function$\n",
+      "volatility": "v",
+      "return_type": "cost_items",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_cost_item_id uuid, p_item_code text, p_category text, p_subcategory text, p_item_name text, p_unit text, p_calculation_basis text, p_cost_price numeric, p_margin_rate numeric, p_is_active boolean, p_sort_order integer, p_memo text, p_customer_name text, p_order_name text, p_calculation_multiplier numeric, p_min_quantity numeric, p_rounding_method text, p_include_in_customer_quote boolean, p_include_in_internal_quote boolean, p_include_in_order_sheet boolean, p_is_material boolean, p_is_labor boolean, p_is_service boolean"
+    },
+    {
+      "name": "validate_and_os_cost_item_code",
+      "owner": "postgres",
+      "schema": "public",
+      "language": "plpgsql",
+      "arguments": "p_item_code text",
+      "proconfig": [
+        "search_path=public"
+      ],
+      "definition": "CREATE OR REPLACE FUNCTION public.validate_and_os_cost_item_code(p_item_code text)\n RETURNS text\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n  v_code text;\r\nbegin\r\n  v_code := upper(trim(coalesce(p_item_code, '')));\r\n  if v_code = '' then\r\n    raise exception 'item code is required';\r\n  end if;\r\n  if v_code !~ '^[A-Z0-9_]+$' then\r\n    raise exception 'item code must contain only uppercase letters, numbers, and underscores';\r\n  end if;\r\n  return v_code;\r\nend;\r\n$function$\n",
+      "volatility": "s",
+      "return_type": "text",
+      "effective_acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "security_definer": true,
+      "identity_arguments": "p_item_code text"
+    }
+  ],
+  "sequences": [],
+  "extensions": [
+    {
+      "name": "pg_stat_statements",
+      "schema": "extensions",
+      "version": "1.11"
+    },
+    {
+      "name": "pgcrypto",
+      "schema": "extensions",
+      "version": "1.3"
+    },
+    {
+      "name": "plpgsql",
+      "schema": "pg_catalog",
+      "version": "1.0"
+    },
+    {
+      "name": "supabase_vault",
+      "schema": "vault",
+      "version": "0.3.1"
+    },
+    {
+      "name": "uuid-ossp",
+      "schema": "extensions",
+      "version": "1.1"
+    }
+  ],
+  "captured_at": "2026-10-13T07:24:59.489571+00:00",
+  "capture_kind": "POSTGRES_APP_CATALOG_ONLY",
+  "public_schema": {
+    "acl": [
+      "pg_database_owner=UC/pg_database_owner",
+      "=U/pg_database_owner",
+      "postgres=U/pg_database_owner",
+      "anon=U/pg_database_owner",
+      "authenticated=U/pg_database_owner",
+      "service_role=U/pg_database_owner"
+    ],
+    "owner": "pg_database_owner"
+  },
+  "server_version": "17.6",
+  "default_privileges": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "type": "r",
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "type": "f",
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "type": "S",
+      "owner": "postgres",
+      "schema": "public"
+    },
+    {
+      "acl": [
+        "postgres=rwU/supabase_admin",
+        "anon=rwU/supabase_admin",
+        "authenticated=rwU/supabase_admin",
+        "service_role=rwU/supabase_admin"
+      ],
+      "type": "S",
+      "owner": "supabase_admin",
+      "schema": "public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/supabase_admin",
+        "anon=arwdDxtm/supabase_admin",
+        "authenticated=arwdDxtm/supabase_admin",
+        "service_role=arwdDxtm/supabase_admin"
+      ],
+      "type": "r",
+      "owner": "supabase_admin",
+      "schema": "public"
+    },
+    {
+      "acl": [
+        "postgres=X/supabase_admin",
+        "anon=X/supabase_admin",
+        "authenticated=X/supabase_admin",
+        "service_role=X/supabase_admin"
+      ],
+      "type": "f",
+      "owner": "supabase_admin",
+      "schema": "public"
+    }
+  ]
+}
