@@ -7,6 +7,11 @@ import { createEstimatePrint } from "./estimate-print.js";
 import { buildInternalRowsModel, buildStoredInternalSummaryModel, buildEstimateInternalViewModel, buildCalculatedEstimatePresentation } from "./estimate-view-model.js";
 import { purchaseOrderItems } from "./purchase-order.js";
 import { costSnapshotMap } from "./cost-snapshot.js";
+import { createContractViewModel } from "./contract-view-model.js";
+import { createContractView } from "./contract-view.js";
+import { createContractPrint, CONTRACT_FIXED_TERM_LINES } from "./contract-print.js";
+import { createCostViewModel, percentText, hasDraft, marginDistribution, existingDraftCount } from "./cost-view-model.js";
+import { createCostView } from "./cost-view.js";
 import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "./estimate-form.js";
 import { buildEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides as projectEffectiveEstimateInputs } from "./estimate-state.js";
 import { bathroomRates } from "./rates/bathroom.js";
@@ -573,138 +578,7 @@ function ensureRateDbSaveButton() {
 
 function ensureCostSnapshotPanel() { return estimateRestore.ensureCostSnapshotPanel(); }
 
-function ensureContractPackagePanel() {
-  if (!canViewContractPackage()) return;
-  const adminPanel = document.getElementById("admin");
-  const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
-  if (!adminPanel || !savedList || document.getElementById("contractPackagePanel")) return;
-  const section = document.createElement("section");
-  section.id = "contractPackagePanel";
-  section.className = "internal-card contract-package-card";
-  section.innerHTML = `
-    <div class="section-heading compact-heading no-side-padding">
-      <h2>계약 패키지</h2>
-      <p>저장 견적을 기준으로 계약서, 견적서, 공사사양서 미리보기를 생성합니다.</p>
-    </div>
-    <div id="contractPackageEmpty" class="contract-empty">
-      저장된 견적을 열면 계약 기본정보와 계약 옵션을 입력할 수 있습니다.
-    </div>
-    <section id="contractPackageListPanel" class="contract-panel" hidden>
-      <div class="contract-panel-heading">
-        <h3>저장된 계약 목록</h3>
-        <p>계약번호, 프로젝트명, 고객명, 연락처, 주소로 검색하고 저장된 문서를 다시 출력합니다.</p>
-      </div>
-      <div class="contract-list-search">
-        <input id="contractPackageSearchInput" type="search" placeholder="계약번호, 프로젝트명, 고객명, 연락처, 주소 검색">
-        <button id="contractPackageSearchButton" type="button">검색</button>
-      </div>
-      <div class="table-wrap">
-        <table class="contract-package-table contract-package-search-table">
-          <thead>
-            <tr>
-              <th>계약번호</th><th>프로젝트</th><th>고객</th><th>연락처</th><th>현장 주소</th>
-              <th>계약일</th><th>계약금액</th><th>공사 유형</th><th>상태</th><th>수정일</th><th>작업</th>
-            </tr>
-          </thead>
-          <tbody id="allContractPackageRows"></tbody>
-        </table>
-      </div>
-    </section>
-    <div id="contractPackageWorkspace" hidden>
-      <div class="contract-package-toolbar">
-        <div>
-          <strong id="contractEstimateTitle">-</strong>
-          <span id="contractEstimateMeta">-</span>
-        </div>
-        <span id="contractPackageStatus" class="status-text"></span>
-      </div>
-      <form id="contractOptionsForm" class="contract-options-form">
-        <section class="contract-panel">
-          <div class="contract-panel-heading">
-            <h3>기본정보</h3>
-            <p>현장 주소와 평형은 기존 저장 견적에서 읽어옵니다.</p>
-          </div>
-          <div class="contract-form-grid">
-            <label>계약번호<input id="contractNo" type="text" readonly placeholder="자동 생성"></label>
-            <label>계약일<input id="contractDate" data-contract-field="contract_date" type="date"></label>
-            <label>공사 유형<input id="constructionType" data-contract-field="construction_type" type="text" maxlength="80" placeholder="예: 주거 인테리어"></label>
-            <label>공사현장 주소<input id="contractSiteAddress" type="text" readonly></label>
-            <label>평형<input id="contractAreaPyeong" type="text" readonly></label>
-            <label>면적(㎡)<input id="contractAreaM2" type="text" readonly></label>
-            <label>착공일<input id="contractStartDate" data-contract-field="start_date" type="date"></label>
-            <label>준공예정일<input id="contractCompletionDate" data-contract-field="planned_completion_date" type="date"></label>
-          </div>
-        </section>
-        <section class="contract-panel">
-          <div class="contract-panel-heading">
-            <h3>고객정보</h3>
-            <p>고객명과 연락처는 저장 견적에서 읽고, 계약용 주소와 이메일만 별도로 저장합니다.</p>
-          </div>
-          <div class="contract-form-grid">
-            <label>고객명<input id="contractCustomerName" type="text" readonly></label>
-            <label>연락처<input id="contractCustomerPhone" type="text" readonly></label>
-            <label>고객 주소<input id="customerAddress" data-contract-field="customer_address" type="text" maxlength="200"></label>
-            <label>이메일<input id="customerEmail" data-contract-field="customer_email" type="email" maxlength="120"></label>
-          </div>
-        </section>
-        <section class="contract-panel">
-          <div class="contract-panel-heading">
-            <h3>공사담당자</h3>
-            <p>이번 단계에서는 직접 입력한 담당자 정보가 문서 미리보기에 연동됩니다.</p>
-          </div>
-          <div class="contract-form-grid">
-            <label>성명<input id="siteManagerName" data-contract-field="site_manager_name" type="text" maxlength="80"></label>
-            <label>직책<input id="siteManagerTitle" data-contract-field="site_manager_title" type="text" maxlength="80"></label>
-            <label>연락처<input id="siteManagerPhone" data-contract-field="site_manager_phone" type="tel" maxlength="30"></label>
-          </div>
-        </section>
-        <section class="contract-panel">
-          <div class="contract-panel-heading">
-            <h3>계약 옵션</h3>
-            <p>체크 여부는 계약 조건과 제외사항 판단에 사용됩니다.</p>
-          </div>
-          <div class="contract-check-grid">
-            <label><input id="residentConsentIncluded" data-contract-check="resident_consent_included" type="checkbox">관리사무소 신고·입주민 동의 포함</label>
-            <label><input id="permitFilingIncluded" data-contract-check="permit_filing_included" type="checkbox">인허가 신고 포함</label>
-            <label><input id="existingFinishProtectionIncluded" data-contract-check="existing_finish_protection_included" type="checkbox">마감재 보양 포함</label>
-          </div>
-        </section>
-        <div id="contractWriteActions" class="admin-action-row contract-actions">
-          <button id="saveContractOptionsButton" type="button">계약 옵션 저장</button>
-          <button id="createContractPackageButton" type="button">계약 확정 및 저장</button>
-          <button id="previewContractPackageButton" type="button">3종 문서 미리보기</button>
-        </div>
-        <p id="contractReadonlyNote" class="system-readonly-note" hidden><span>매니저는 계약 정보를 조회만 할 수 있습니다.</span></p>
-      </form>
-      <section class="contract-panel">
-        <div class="contract-panel-heading">
-          <h3>품목별 공사사양</h3>
-          <p>견적 포함 품목에 연결된 표준사양만 미리보기에 표시됩니다.</p>
-        </div>
-        <div id="contractSpecSnapshot" class="contract-spec-list">미리보기를 생성하면 품목별 공사사양이 표시됩니다.</div>
-      </section>
-      <section class="contract-panel">
-        <div class="contract-panel-heading">
-          <h3>3종 문서 미리보기</h3>
-          <p>이번 단계에서는 DOCX/PDF 대신 JSON 스냅샷을 읽기 쉬운 형태로 표시합니다.</p>
-        </div>
-        <div class="contract-document-tabs">
-          <button type="button" data-contract-doc="CONTRACT" class="active">계약서</button>
-          <button type="button" data-contract-doc="QUOTE">견적서</button>
-          <button type="button" data-contract-doc="SPEC">공사사양서</button>
-        </div>
-        <div class="admin-action-row contract-print-actions">
-          <button type="button" data-contract-print="CONTRACT">계약서 인쇄/PDF</button>
-          <button type="button" data-contract-print="QUOTE">견적서 인쇄/PDF</button>
-          <button type="button" data-contract-print="SPEC">공사사양서 인쇄/PDF</button>
-          <button type="button" data-contract-print="ALL">3종 일괄 인쇄/PDF</button>
-        </div>
-        <div id="contractDocumentPreview" class="contract-document-preview">미리보기를 생성해 주세요.</div>
-      </section>
-    </div>
-  `;
-  savedList.insertAdjacentElement("afterend", section);
-}
+function ensureContractPackagePanel() { return currentContractView().ensureContractPackagePanel(); }
 
 function selectedContractEstimate() {
   if (currentEditingEstimateId) {
@@ -713,30 +587,11 @@ function selectedContractEstimate() {
   return loadedContractEstimateState || null;
 }
 
-function contractStatus(message, type = "") {
-  const node = document.getElementById("contractPackageStatus");
-  if (!node) return;
-  node.textContent = message || "";
-  node.dataset.status = type;
-}
+function contractStatus(message, type = "") { return currentContractView().contractStatus(message, type); }
 
-function contractOptionSource() {
-  return contractOptionsState && typeof contractOptionsState === "object" ? contractOptionsState : {};
-}
 
-function contractNested(path, fallback = "") {
-  const source = contractOptionSource();
-  return path.reduce((value, key) => value && typeof value === "object" ? value[key] : undefined, source) ?? fallback;
-}
 
-function contractOptionValue(path, fallback = "") {
-  const value = contractNested(path, fallback);
-  return value == null ? "" : String(value);
-}
 
-function contractOptionChecked(path) {
-  return contractNested(path, false) === true;
-}
 
 function estimateOptionState(estimate) {
   return estimate?.inputs && typeof estimate.inputs === "object" ? estimate.inputs : estimate || {};
@@ -765,20 +620,8 @@ function resolveContractOptionsForEstimate(options, estimate) {
   return defaultContractOptionsFromEstimate(estimate, options || {});
 }
 
-function areaM2Text(areaPyeong) {
-  const area = Number(areaPyeong) || 0;
-  return area ? `${(area * 3.3058).toFixed(2)}㎡` : "-";
-}
 
-function setContractField(id, value) {
-  const node = document.getElementById(id);
-  if (node) node.value = value ?? "";
-}
 
-function setContractChecked(id, checked) {
-  const node = document.getElementById(id);
-  if (node) node.checked = checked === true;
-}
 
 function collectContractOptionsPayload() {
   const text = (id) => document.getElementById(id)?.value?.trim() || "";
@@ -826,45 +669,7 @@ function validateContractOptionsForPreview(payload) {
   }
 }
 
-function renderContractOptionsForm(estimate) {
-  const editable = canEditContractPackageOptions();
-  const issuedContractNo = contractPreviewState?.snapshot?.contract_no || contractOptionValue(["contract_no"]);
-  setContractField("contractNo", issuedContractNo && issuedContractNo !== "미발급" ? issuedContractNo : "자동 생성");
-  setContractField("contractDate", contractOptionValue(["contract_info", "contract_date"]));
-  setContractField("constructionType", contractOptionValue(["contract_info", "construction_type"]));
-  setContractField("contractSiteAddress", estimate?.address || "");
-  setContractField("contractAreaPyeong", estimate?.areaPyeong ? `${estimate.areaPyeong}평` : "-");
-  setContractField("contractAreaM2", areaM2Text(estimate?.areaPyeong));
-  setContractField("contractStartDate", contractOptionValue(["contract_info", "start_date"]));
-  setContractField("contractCompletionDate", contractOptionValue(["contract_info", "planned_completion_date"]));
-  setContractField("contractCustomerName", estimate?.clientName || "");
-  setContractField("contractCustomerPhone", estimate?.phone || estimate?.clientPhone || "");
-  setContractField("customerAddress", contractOptionValue(["customer_info", "customer_address"]));
-  setContractField("customerEmail", contractOptionValue(["customer_info", "customer_email"]));
-  setContractField("siteManagerName", contractOptionValue(["site_manager", "name"]));
-  setContractField("siteManagerTitle", contractOptionValue(["site_manager", "title"]));
-  setContractField("siteManagerPhone", contractOptionValue(["site_manager", "phone"]));
-  setContractChecked("residentConsentIncluded", (
-    contractOptionChecked(["admin_tasks", "admin_office_filing_included"]) ||
-    contractOptionChecked(["admin_tasks", "resident_consent_included"])
-  ));
-  setContractChecked("permitFilingIncluded", contractOptionChecked(["admin_tasks", "permit_filing_included"]));
-  setContractChecked("existingFinishProtectionIncluded", contractOptionChecked(["protection_options", "existing_finish_protection_included"]));
-  document.querySelectorAll("#contractOptionsForm input, #contractOptionsForm select, #contractOptionsForm textarea").forEach((node) => {
-    if (node.readOnly) return;
-    node.disabled = !editable;
-  });
-  const actions = document.getElementById("contractWriteActions");
-  if (actions) actions.hidden = !editable;
-  const createButton = document.getElementById("createContractPackageButton");
-  if (createButton) createButton.hidden = !canCreateContractPackage();
-  const readonly = document.getElementById("contractReadonlyNote");
-  if (readonly) readonly.hidden = editable;
-}
 
-function contractDocumentLabel(type) {
-  return { CONTRACT: "계약서", QUOTE: "견적서", SPEC: "공사사양서" }[type] || type || "-";
-}
 
 function projectContractStatusLabel(status, hasPackage = false) {
   if (!hasPackage) return "계약 전";
@@ -879,24 +684,7 @@ function projectContractStatusLabel(status, hasPackage = false) {
   }[status] || "계약 준비";
 }
 
-function contractPackageSummary(item = {}) {
-  const info = item.contract_info || {};
-  const estimate = item.estimate_snapshot || {};
-  const parties = item.parties_info || {};
-  const customer = parties.customer || {};
-  return {
-    contractNo: item.contract_no || info.contract_no || "-",
-    projectName: info.project_name || estimate.project_name || "저장 계약",
-    customerName: customer.name || estimate.customer_name || "-",
-    customerPhone: customer.phone || estimate.customer_phone || "-",
-    siteAddress: info.site_address || estimate.site_address || "-",
-    contractDate: info.contract_date || "-",
-    totalAmount: info.total_amount ?? estimate.total_price ?? 0,
-    constructionType: info.construction_type || "-",
-    status: item.status || "-",
-    updatedAt: item.updated_at || item.created_at || null,
-  };
-}
+function contractPackageSummary(item = {}) { return currentContractViewModel().contractPackageSummary(item); }
 
 function contractPackageSortValue(item = {}) {
   const version = Number(item.package_version) || 0;
@@ -942,758 +730,42 @@ function projectContractMeta(estimate) {
   };
 }
 
-function renderContractPackages() {
-  const tbody = document.getElementById("contractPackageRows");
-  if (!tbody) return;
-  tbody.innerHTML = contractPackagesState.length
-    ? contractPackagesState.map((item) => `
-      <tr>
-        <td>${escapeHtml(item.contract_no || "-")}</td>
-        <td>${escapeHtml(item.package_version || "-")}</td>
-        <td>${escapeHtml(item.status || "-")}</td>
-        <td>${formatDateTime(item.created_at)}</td>
-        <td>${Array.isArray(item.contract_document_versions) ? item.contract_document_versions.length : 0}종</td>
-        <td><button type="button" class="small-action" data-contract-package-load="${escapeHtml(item.id)}">불러오기</button></td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="6">생성된 계약 패키지가 없습니다.</td></tr>`;
-}
 
-function renderAllContractPackages() {
-  const panel = document.getElementById("contractPackageListPanel");
-  const tbody = document.getElementById("allContractPackageRows");
-  if (panel) panel.hidden = !canViewContractPackage() || isStaff();
-  if (!tbody) return;
-  tbody.innerHTML = allContractPackagesState.length
-    ? allContractPackagesState.map((item) => {
-      const summary = contractPackageSummary(item);
-      return `
-        <tr>
-          <td>${escapeHtml(summary.contractNo)}</td>
-          <td>${escapeHtml(summary.projectName)}</td>
-          <td>${escapeHtml(summary.customerName)}</td>
-          <td>${escapeHtml(summary.customerPhone)}</td>
-          <td>${escapeHtml(summary.siteAddress)}</td>
-          <td>${escapeHtml(summary.contractDate)}</td>
-          <td>${won(Number(summary.totalAmount) || 0)}</td>
-          <td>${escapeHtml(summary.constructionType)}</td>
-          <td>${escapeHtml(summary.status)}</td>
-          <td>${formatDateTime(summary.updatedAt)}</td>
-          <td><button type="button" class="small-action" data-contract-package-load="${escapeHtml(item.id)}">불러오기</button></td>
-        </tr>
-      `;
-    }).join("")
-    : `<tr><td colspan="11">저장된 계약 패키지가 없습니다.</td></tr>`;
-}
+function renderAllContractPackages() { return currentContractView().renderAllContractPackages(); }
 
-function sanitizeContractPreviewValue(key, value) {
-  if (isStaff() && /(^id$|_id$|hash|created_by|confirmed_by|source_hash|content_hash|internal|cost|margin)/i.test(key)) {
-    return undefined;
-  }
-  return value;
-}
 
-function renderJsonHtml(value, depth = 0, keyName = "") {
-  const safe = sanitizeContractPreviewValue(keyName, value);
-  if (safe === undefined) return "";
-  if (Array.isArray(safe)) {
-    if (!safe.length) return `<span class="contract-empty-value">없음</span>`;
-    return `<ol class="contract-json-list">${safe.map((item) => `<li>${renderJsonHtml(item, depth + 1, keyName)}</li>`).join("")}</ol>`;
-  }
-  if (safe && typeof safe === "object") {
-    const rows = Object.entries(safe)
-      .map(([key, item]) => {
-        const rendered = renderJsonHtml(item, depth + 1, key);
-        return rendered ? `<div class="contract-json-row"><dt>${escapeHtml(key)}</dt><dd>${rendered}</dd></div>` : "";
-      })
-      .filter(Boolean)
-      .join("");
-    return rows ? `<dl class="contract-json-object">${rows}</dl>` : `<span class="contract-empty-value">없음</span>`;
-  }
-  if (safe == null || safe === "") return `<span class="contract-empty-value">-</span>`;
-  if (typeof safe === "number") return escapeHtml(safe.toLocaleString("ko-KR"));
-  return escapeHtml(safe);
-}
 
-function renderContractSpecSnapshot() {
-  const node = document.getElementById("contractSpecSnapshot");
-  if (!node) return;
-  const specs = Array.isArray(contractPreviewState?.snapshot?.spec_snapshot)
-    ? contractPreviewState.snapshot.spec_snapshot
-    : [];
-  node.innerHTML = specs.length
-    ? `<div class="table-wrap"><table class="contract-spec-table"><thead><tr><th>공정</th><th>견적 품목</th><th>표준사양</th><th>제품급</th><th>버전</th></tr></thead><tbody>${specs.map((spec) => `
-      <tr>
-        <td>${escapeHtml(spec.work_category || "-")}</td>
-        <td>${escapeHtml(spec.item_name || "-")}</td>
-        <td>${escapeHtml(spec.standard_item_name || "-")}</td>
-        <td>${escapeHtml(spec.selected_grade || "-")}</td>
-        <td>${escapeHtml(spec.spec_version || "-")}</td>
-      </tr>
-    `).join("")}</tbody></table></div>`
-    : "미리보기를 생성하면 품목별 공사사양이 표시됩니다.";
-}
 
-function renderContractDocumentPreview() {
-  const node = document.getElementById("contractDocumentPreview");
-  if (!node) return;
-  const documents = Array.isArray(contractPreviewState?.documents) ? contractPreviewState.documents : [];
-  const previewDocument = documents.find((item) => item.document_type === contractSelectedDocumentType);
-  if (!previewDocument) {
-    node.innerHTML = "미리보기를 생성해 주세요.";
-    return;
-  }
-  node.innerHTML = `
-    <div class="contract-document-heading">
-      <strong>${contractDocumentLabel(previewDocument.document_type)}</strong>
-      <span>${escapeHtml(previewDocument.generation_status || "GENERATED")}</span>
-    </div>
-    ${renderJsonHtml(previewDocument.content_json || {})}
-  `;
-}
 
-function contractPrintValue(value, fallback = "-") {
-  if (value == null || value === "") return fallback;
-  if (typeof value === "number") return value.toLocaleString("ko-KR");
-  return String(value);
-}
 
-function contractPrintMoney(value) {
-  const amount = Number(value) || 0;
-  return `${amount.toLocaleString("ko-KR")}원`;
-}
 
-function contractPrintDate(value) {
-  if (!value) return "-";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return String(value).replaceAll("-", ". ");
-  return contractPrintValue(value);
-}
 
-function contractPrintInfo(snapshot = {}) {
-  const info = snapshot.contract_info || {};
-  const parties = snapshot.parties || snapshot.parties_info || {};
-  const customer = parties.customer || {};
-  const estimate = snapshot.estimate_snapshot || {};
-  return {
-    contractNo: contractPrintValue(info.contract_no || snapshot.contract_no),
-    projectName: contractPrintValue(info.project_name || estimate.project_name || "계약 프로젝트"),
-    siteAddress: contractPrintValue(info.site_address || estimate.site_address),
-    areaPyeong: contractPrintValue(info.area_pyeong || estimate.area_pyeong),
-    totalAmount: Number(info.total_amount || estimate.total_price || 0),
-    contractDate: contractPrintDate(info.contract_date),
-    constructionType: contractPrintValue(info.construction_type || "인테리어 공사"),
-    startDate: contractPrintDate(info.start_date),
-    completionDate: contractPrintDate(info.planned_completion_date),
-    customerName: contractPrintValue(customer.name || estimate.customer_name),
-    customerPhone: contractPrintValue(customer.phone || estimate.customer_phone),
-    customerAddress: contractPrintValue(customer.address),
-    customerEmail: contractPrintValue(customer.email),
-    siteManager: snapshot.site_manager || {},
-    clauses: snapshot.clause_snapshot || {},
-    paymentSchedule: Array.isArray(snapshot.payment_schedule) ? snapshot.payment_schedule : [],
-    specSnapshot: Array.isArray(snapshot.spec_snapshot) ? snapshot.spec_snapshot : [],
-    customerQuote: estimate.customer_quote || {},
-  };
-}
 
-function contractPrintHeader(title, info) {
-  return `
-    <header class="contract-print-header">
-      <div>
-        <p>ANTNEST DESIGN</p>
-        <h1>${escapeHtml(title)}</h1>
-      </div>
-      <dl>
-        <div><dt>계약번호</dt><dd>${escapeHtml(info.contractNo)}</dd></div>
-        <div><dt>프로젝트</dt><dd>${escapeHtml(info.projectName)}</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(new Date().toISOString())}</dd></div>
-      </dl>
-    </header>
-  `;
-}
 
-function contractPrintFooter(info) {
-  return `
-    <footer class="contract-print-footer">
-      <span>ANTNEST DESIGN</span>
-      <span>계약번호 ${escapeHtml(info.contractNo)}</span>
-    </footer>
-  `;
-}
 
-const CONTRACT_FIXED_TERM_LINES = [
-  "계약 일반조건",
-  "제1장  계약의 기본",
-  "제1조(목적)",
-  "① 이 계약은 고객이 시공자에게 인테리어 공사를 의뢰하고 시공자가 이를 수행함에 있어 필요한 권리·의무와 책임을 정함을 목적으로 한다.",
-  "제2조(계약문서)",
-  "① 이 공사계약은 계약서, 견적서 및 공사사양서로 구성된다.",
-  "② 계약서에는 공사대금 지급, 공사기간, 추가·변경공사, 준공·인도, 하자보수 및 계약 해제·해지 등 당사자의 권리와 의무를 정한다.",
-  "③ 견적서에는 계약에 포함되거나 제외되는 공정·품목·수량·금액, 공사담당자 및 현장별 선택사항을 정한다.",
-  "④ 공사사양서에는 견적서에서 선택된 공정과 품목에 적용되는 자재·제품·품질 및 시공기준을 정한다.",
-  "⑤ 견적서에서 선택되지 않은 공정이나 품목은 공사사양서에 표준사양이 기재되어 있더라도 계약 범위에 포함되지 않는다.",
-  "⑥ 계약 체결 전의 상담내용, 제안자료, 견본, 이미지 및 구두 설명은 계약서·견적서·공사사양서에 반영된 범위에서만 계약 내용이 된다.",
-  "⑦ 계약 체결 후 내용을 변경하려면 이 계약의 추가·변경공사 절차에 따라야 한다.",
-  "제3조(공사의 범위)",
-  "① 시공자가 수행할 공사의 범위는 계약서, 견적서 및 공사사양서에 명시된 내용으로 한정한다.",
-  "② 견적서에서 선택되지 않았거나 제외로 표시된 공사·품목·자재·제품·설비 및 용역은 계약금액에 포함되지 않는다.",
-  "③ AND 표준사양은 견적서에서 선택된 공사항목에 적용되는 품질기준이며, 표준사양의 기재만으로 해당 공사가 계약 범위에 포함되는 것은 아니다.",
-  "④ 투시도, 참고 이미지 및 견본은 디자인과 분위기를 설명하기 위한 자료이다. 별도의 치수·제품명·모델명 또는 시공방법이 정해지지 않은 경우 현장 여건과 생산 규격에 따라 실제 결과에 합리적인 차이가 발생할 수 있다.",
-  "⑤ 현장 실측 결과와 고객이 제공한 정보가 다른 경우 현장 실측값을 적용하며, 이에 따른 범위·물량·금액 변경은 추가·변경공사로 처리한다.",
-  "제4조(계약금액에 포함되지 않는 사항)",
-  "① 다음 사항은 견적서에서 포함으로 선택되거나 명시된 경우를 제외하고 계약금액에 포함되지 않는다.",
-  "1. 관리사무소 공사보증금·엘리베이터 사용료·주차료·추가 보양비 및 각종 관리비",
-  "2. 입주민 동의, 행위허가·신고 및 관계기관 검사 등에 필요한 대관 실비",
-  "3. 이사, 짐 보관, 가구·가전 이동 및 별도 창고 비용",
-  "4. 석면 등 유해물질의 조사·철거·운반 및 처리 비용",
-  "5. 구조안전 검토, 구조보강 및 건축물 공용부분 공사",
-  "6. 기존 누수·결로·곰팡이·해충·악취 및 오염의 원인 제거",
-  "7. 전기·수도·가스·통신 등 관계 사업자에게 직접 납부하는 비용",
-  "8. 고객 직접 구매품의 구입·배송·반품·교환 및 보관 비용",
-  "9. 기존 급수·급탕·오수·배수배관의 세척·관통·막힘 제거·고압세척·녹·스케일·슬러지 제거 및 악취 원인 제거",
-  "10. 견적서에서 제외 또는 별도라고 표시한 사항",
-  "② 제1항의 업무를 시공자가 대행하는 경우 고객은 실제 발생 비용과 사전에 합의한 대행비를 부담한다.",
-  "제2장  자재·사양·현장 조건",
-  "제5조(자재와 제품)",
-  "① 공사에 사용하는 자재와 제품은 견적서 및 공사사양서에 따른다.",
-  "② 제조사와 모델명이 특정된 경우 해당 제품을 사용한다. 단종·품절·납기 지연 또는 제조사 사양 변경 시에는 제13조에 따른다.",
-  "③ 제품이 ‘○○급’으로 기재된 경우 해당 제품과 동일하거나 유사한 용도·품질·성능·디자인 수준의 제품을 사용할 수 있다는 의미이며 특정 제조사나 모델의 공급을 보장하는 것은 아니다.",
-  "④ 견적서에서 표준사양과 다른 제조사·모델·등급을 지정한 경우 그 개별 지정 내용을 적용한다.",
-  "⑤ 공사사양서는 계약 체결 당시의 버전을 적용하며, 이후 AND 표준사양이 변경되어도 체결된 계약에는 자동 반영되지 않는다.",
-  "제6조(자재와 제품의 대체)",
-  "① 자재나 제품이 단종·품절·생산 지연·수입 지연 또는 제조사 사양 변경 등으로 예정 공정에 맞춰 공급되기 어려운 경우 시공자는 그 사실과 대체제품을 안내한다.",
-  "② 제조사와 모델명이 특정된 제품은 고객의 서면 승인 없이 다른 제품으로 변경하지 않는다.",
-  "③ ‘○○급’ 제품은 계약상 품질과 성능을 충족하는 범위에서 대체할 수 있으며, 외관이나 사용성이 실질적으로 달라지는 경우 고객의 승인을 받는다.",
-  "④ 시공자의 공급 사정으로 동급 제품을 대체하는 경우 고객에게 추가금액을 청구하지 않는다. 고객이 동급 대체제품 대신 상위 제품을 선택하면 판매가 차액과 추가 시공비를 부담한다.",
-  "⑤ 고객이 합리적인 동급 대체제품을 승인하지 않고 기존 제품 입고를 기다리기로 한 경우 대기기간과 공정 재배치 기간만큼 공사기간이 연장된다.",
-  "제7조(계약 후 자재 변경금액)",
-  "① 계약 후 고객 요청으로 자재·제품·색상·규격·제조사 또는 모델을 변경하는 경우 변경금액은 원가가 아닌 고객 판매가를 기준으로 산정한다.",
-  "② 변경금액은 기존 계약에 반영된 해당 품목의 판매금액과 변경 승인일 현재 변경 품목의 판매금액 간 차액으로 계산한다.",
-  "③ 변경 품목의 판매금액은 시공자가 변경 승인 당시 적용하는 판매가격표 또는 고객에게 제시한 추가·변경공사 견적에 따른다.",
-  "④ 추가 철거비·설치비·가공비·운반비·보관비·반품비·취소수수료 및 재시공비는 판매가격 차액과 별도로 반영할 수 있다.",
-  "⑤ 변경 품목의 판매금액이 낮은 경우 같은 기준으로 감액한다. 다만, 이미 발주·제작·배송 또는 시공되어 회수할 수 없는 비용은 감액하지 않는다.",
-  "⑥ 시공자는 변경 작업 전에 변경 내용, 증감금액 및 공사기간 영향을 알리고 고객의 승인을 받는다.",
-  "제8조(견본과 실제 시공물의 차이)",
-  "① 견본, 카탈로그, 모니터 이미지 및 인쇄물은 자재 선택을 위한 참고자료이며 실제 제품과 색상·명도·채도·광택·질감·무늬가 다르게 보일 수 있다.",
-  "② 목재·천연석·세라믹·타일 등 재료 특성상 발생하는 무늬·색상·결·기공·미세한 치수 차이와 생산 차수에 따른 편차는 하자로 보지 않는다.",
-  "③ 타일·마루·필름·벽지 등은 생산 차수에 따라 색상 차이가 발생할 수 있어 부분 보수 시 기존 시공면과 완전히 동일하지 않을 수 있다.",
-  "④ 기존 건축물의 수직·수평 오차, 바탕면 상태 및 제품 규격으로 발생하는 합리적인 줄눈·마감선·단차·간격 차이는 기능과 안전에 지장이 없는 한 하자로 보지 않는다.",
-  "⑤ 시공자의 오시공, 계약사양 위반 또는 통상 허용범위를 벗어난 현저한 마감 불량에는 이 조를 적용하지 않는다.",
-  "제9조(고객 직접 구매품)",
-  "① 고객 직접 구매품의 규격·수량·현장 적합성·배송일 및 하자 여부는 고객이 확인한다.",
-  "② 고객은 시공자가 안내한 반입일까지 제품을 정상 사용 가능한 상태로 제공해야 한다.",
-  "③ 배송 지연·수량 부족·오배송·파손·불량·규격 불일치 또는 부속품 누락으로 발생하는 지연과 재방문 비용은 고객이 부담한다.",
-  "④ 시공자는 안전상 문제나 현장 부적합이 확인되면 설치를 거절하거나 보완을 요구할 수 있다.",
-  "⑤ 제품 자체의 품질·성능·제조상 불량은 시공자가 책임지지 않으며 시공자의 설치상 과실은 시공자가 책임진다.",
-  "⑥ 직접 구매품의 철거·설치·가공·보강·배선·배관 및 재방문은 견적서에 포함된 경우에만 계약금액에 포함된다.",
-  "제10조(실내보양과 마감재 보호)",
-  "① 기존 바닥재·가구·창호·벽체 등 보존 대상의 보호를 위한 실내보양은 견적서에 따른다.",
-  "② 기존 마감재 보양이 제외된 경우 정상 공사 중 불가피하게 발생하고 통상적인 조명과 관찰 상태에서 쉽게 식별되지 않는 미세한 표면 흔적은 시공상 하자로 보지 않는다.",
-  "③ 시공자가 새로 설치한 바닥재·가구·도어 등 마감재에 후속 공정이 예정된 경우 통상적인 보양은 해당 공사의 기본 시공 범위에 포함한다.",
-  "④ 새로 설치한 마감재의 찍힘·파손·오염·현저한 긁힘은 실내보양 선택 여부만을 이유로 하자보수에서 제외하지 않는다.",
-  "⑤ 고객, 고객 지정 업체 또는 제3자가 발생시킨 손상과 오염은 시공자가 책임지지 않는다.",
-  "⑥ 손상 원인이 불분명한 경우 착공 전·공정별·준공 전 사진, 출입기록 및 작업내역을 토대로 판단한다.",
-  "제11조(기존 배관)",
-  "① 배관의 신설·교체 또는 위생기구의 철거·설치가 계약 범위에 포함되어 있더라도 기존 배관 내부 청소나 막힘 제거까지 당연히 포함되는 것은 아니다.",
-  "② 공사 중 기존 배관의 막힘·부식·파손·역구배·누수 또는 통수 불량이 발견되면 시공자는 이를 고객에게 알리고 추가·변경공사로 처리한다.",
-  "③ 기존 배관의 노후도와 내부 상태로 인해 청소만으로 문제가 해결되지 않거나 청소 과정에서 손상이 우려되는 경우 시공자는 배관 교체 등 별도 조치를 제안할 수 있다.",
-  "제12조(숨은 현장 상태)",
-  "① 고객은 누수·결로·곰팡이·배관·전기 이상, 구조변경 및 과거 공사 등 공사에 영향을 줄 사항을 알고 있는 범위에서 알려야 한다.",
-  "② 벽·바닥·천장 내부의 누수·곰팡이·부식·단열 불량, 노후 배관·전선, 구조체 오차, 기존 방수·미장·접착 불량, 무단 구조변경, 석면 등 철거 전 통상적인 조사로 확인하기 어려운 상태는 숨은 현장 상태로 본다.",
-  "③ 숨은 현장 상태가 발견되면 시공자는 사진 등으로 알리고 필요한 조치, 비용 및 공사기간 영향을 안내하여 추가·변경공사로 처리한다.",
-  "④ 긴급조치를 제외하고 고객 승인 전 관련 공정을 보류할 수 있으며, 대기기간과 재배치 기간은 공사기간에 포함하지 않는다.",
-  "⑤ 숨은 현장 상태 자체와 그로 인한 추가 비용은 시공자 책임으로 발생한 경우를 제외하고 고객이 부담한다.",
-  "제13조(기존 시설물과 철거품)",
-  "① 고객이 보존하거나 재사용하려는 시설물·가구·가전·자재는 착공 전에 서면으로 지정해야 한다.",
-  "② 별도로 지정하지 않은 철거 대상물은 폐기물로 보아 반출·처리할 수 있으며 고객은 이후 반환이나 배상을 청구할 수 없다.",
-  "③ 재사용 요청품은 노후도·접착 상태 또는 기존 시공방법에 따라 파손될 수 있다. 시공자가 통상적인 주의를 다했음에도 발생한 파손이나 기능 저하는 책임지지 않는다.",
-  "④ 공사구역의 귀중품·현금·서류 및 파손 우려 물품은 고객이 착공 전에 반출한다.",
-  "제3장  공사대금과 변경공사",
-  "제14조(공사대금의 지급)",
-  "① 고객은 계약서의 공사대금 지급일정에 따라 계약금 10%, 착공일 3일 전까지 1차 중도금 40%, 목공공사 착수일까지 2차 중도금 40%, 준공확인 후 목적물 인도 전까지 잔금 10%를 지급한다.",
-  "② 목공공사가 계약 범위에 포함되지 않은 경우 2차 중도금 지급일은 전체 예정 공사기간의 50%가 되는 날 또는 계약서에 별도로 정한 공정의 착수일로 한다.",
-  "③ 각 지급일이 금융기관 휴무일인 경우 그 직전 영업일까지 지급한다.",
-  "④ 고객은 하자 또는 이견이 있다는 이유만으로 공사대금 전액의 지급을 거절할 수 없다. 다만, 객관적으로 확인된 미시공 또는 중대한 하자 부분에 상당하는 합리적인 금액은 지급을 유보할 수 있다.",
-  "⑤ 추가·변경공사 대금은 승인 시 전액 지급한다. 다만, 시공자가 별도의 지급일을 인정한 경우 그 지급일까지 지급하며, 지급일을 정하지 않은 경우 잔금과 함께 지급한다.",
-  "제15조(추가·변경공사)",
-  "① 고객이 공사의 추가·변경·삭제를 요청하면 시공자는 변경 내용, 증감금액 및 공사기간 영향을 안내한다.",
-  "② 추가·변경공사는 고객이 내용과 금액을 서면 승인한 후 시행한다.",
-  "③ 서면은 서명된 문서, 전자문서, 문자메시지, 카카오톡, 전자우편 및 시공자가 제공하는 전자시스템을 통한 의사표시를 포함한다.",
-  "④ 승인 전에는 시공자가 해당 공정을 보류할 수 있고 승인 지연기간과 공정 재배치 기간만큼 공사기간이 연장된다.",
-  "⑤ 추가·변경공사 금액에는 자재비, 노무비, 운반비, 폐기물 처리비, 장비비, 현장관리비 및 일반관리비가 포함될 수 있다.",
-  "⑥ 이미 발주·제작·시공된 공사를 고객 요청으로 변경하거나 삭제하는 경우 고객은 이미 발생한 자재비·제작비·노무비·철거비·반품비 및 취소수수료를 부담한다.",
-  "⑦ 공사항목을 삭제하는 경우 견적서상 해당 항목 금액을 기준으로 감액하되, 이미 발생한 비용과 다른 공정에 공통으로 반영된 비용은 감액하지 않는다.",
-  "⑧ 안전 확보·누수 방지 또는 추가 손해 방지를 위해 긴급한 경우 시공자는 사전 승인 없이 최소한의 응급조치를 하고 그 내용과 비용을 지체 없이 알릴 수 있다.",
-  "⑨ 시공자가 고객의 승인 없이 임의로 시행한 추가공사는 청구할 수 없다. 다만, 제8항의 긴급조치는 제외한다.",
-  "제16조(공사대금의 연체)",
-  "① 고객이 지급기일까지 공사대금을 지급하지 않으면 다음 날부터 실제 지급일까지 미지급금에 대해 연 12%의 연체이자를 부담한다.",
-  "② 연체이자는 1년을 365일로 하여 실제 연체일수에 따라 단리로 계산한다.",
-  "③ 일부 지급 시 남은 미지급금에 대해서만 계산하고, 지급금은 별도 합의가 없으면 비용·연체이자·원금 순서로 충당한다.",
-  "④ 객관적으로 확인된 미시공 또는 중대한 하자에 대해 계약에 따라 유보한 금액에는 유보기간 동안 연체이자를 부과하지 않는다.",
-  "제17조(공사대금 미지급에 따른 공사 중지)",
-  "① 지급기일까지 계약금·중도금·잔금 또는 추가·변경공사 대금이 지급되지 않으면 시공자는 미지급 사실과 중지 예정일을 서면으로 알리고 공사를 중지할 수 있다.",
-  "② 착공 전 지급금이 미지급된 경우 지급될 때까지 착공하지 않을 수 있다.",
-  "③ 중지기간과 작업자·자재·장비 재배치 기간은 공사기간에 포함하지 않는다.",
-  "④ 중지로 발생한 실제 인건비·장비비·운반비·보관비·재방문비 및 재배치 비용은 고객이 부담한다.",
-  "⑤ 미지급금·연체이자 및 중지 비용이 지급되면 시공자는 수급상황을 고려한 합리적인 기간 내 공사를 재개하고 변경된 준공예정일을 안내한다.",
-  "⑥ 입금 당일 또는 고객이 지정한 날의 즉시 재개를 보장하지 않는다.",
-  "제18조(장기 미지급과 고객 귀책 해지)",
-  "① 고객이 지급기일부터 7일이 지나도록 공사대금을 지급하지 않으면 시공자는 별도의 추가 유예기간 없이 서면 통지로 계약을 해지할 수 있다.",
-  "② 고객의 결정·승인 지연, 현장 미제공, 관리절차 미완료, 안전수칙 위반 또는 공사 방해가 7일 이상 계속되어 계약 목적 달성이 어려운 경우에도 서면 통지로 해지할 수 있다.",
-  "③ 이 경우 고객의 책임 있는 사유로 인한 중도취소 기준에 따라 정산한다.",
-  "④ 시공자가 계약을 해지하지 않고 공사를 계속하거나 일부 대금을 받아도 나머지 미지급금 권리를 포기한 것으로 보지 않는다.",
-  "제4장  착공·공사기간·현장관리",
-  "제19조(착공 전 준비사항)",
-  "① 고객은 착공일까지 공사대금 지급, 현장 출입권한 제공, 거주자·반려동물·귀중품 및 이동 가능한 물품 반출, 전기·수도·가스 사용 확보, 직접 구매품 반입 및 필요한 자재·색상·제품 확정을 완료한다.",
-  "② 견적서에서 시공자 수행으로 선택되지 않은 관리사무소 신고, 입주민 동의 및 관계기관 허가·신고는 고객이 착공 전 완료한다.",
-  "③ 준비 미완료로 착공이 어려운 경우 시공자는 착공을 연기할 수 있고 대기기간과 재배치 기간만큼 공사기간이 연장된다.",
-  "④ 착공 연기나 재방문으로 발생한 인건비·운반비·보관비·장비비 등 실제 비용은 고객이 부담한다.",
-  "제20조(관리절차와 대관업무)",
-  "① 관리사무소 신고, 행위허가·신고, 입주민 동의 및 관계기관 협의의 수행 주체는 견적서에 따른다.",
-  "② 견적서에서 시공자 수행으로 선택된 경우 시공자는 해당 업무를 수행한다. 소유자·입주자의 서명·위임·본인확인이나 고객 보유서류가 필요한 경우 고객은 협조한다.",
-  "③ 견적서에서 시공자 수행으로 선택되지 않은 경우 고객은 착공 전 해당 절차를 완료한다.",
-  "④ 관리사무소 등에 납부하는 공사보증금은 고객이 부담하고 반환금도 고객에게 귀속된다. 시공자의 규약 위반이나 훼손으로 공제된 금액은 시공자가 부담한다.",
-  "⑤ 관리사무소나 관계기관의 작업 제한에 따라 공정을 조정할 수 있으며 시공자 책임 없는 제한기간은 공사기간에서 제외한다.",
-  "제21조(공사기간)",
-  "① 공사기간은 계약서에 기재된 착공일부터 준공예정일까지로 한다.",
-  "② 착공일은 시공자가 실제 현장 작업을 시작하는 날을 말하며, 자재 발주·제작·현장조사 및 사전 준비는 착공으로 보지 않는다.",
-  "③ 준공은 계약상 공사가 완료되어 고객이 목적물을 정상적으로 사용할 수 있는 상태를 말한다. 사용에 지장이 없는 경미한 보완사항이 남은 경우에도 준공된 것으로 본다.",
-  "④ 관리규약 등에 따라 작업할 수 없는 토요일·일요일·공휴일 또는 지정 휴무일은 예정 공사기간 산정에서 제외할 수 있다.",
-  "제22조(공사기간의 연장)",
-  "① 다음 사유가 발생한 경우 시공자는 그 사유가 지속된 기간과 공정 재배치에 필요한 합리적인 기간만큼 공사기간을 연장할 수 있다.",
-  "1. 고객의 자재·색상·제품·규격·도면 결정 지연",
-  "2. 고객의 추가·변경공사 요청 또는 승인 지연",
-  "3. 고객의 공사대금 미지급",
-  "4. 고객 또는 고객 지정 업체의 작업 지연이나 공정 간섭",
-  "5. 고객 직접 구매품의 배송 지연·불량·누락·교환",
-  "6. 관리사무소 승인 지연, 작업시간·엘리베이터 사용 제한 또는 입주민 민원",
-  "7. 철거 후 사전에 확인하기 어려운 현장 상태의 발견",
-  "8. 천재지변, 감염병, 파업, 운송 차질, 생산 중단 또는 자재 수급 장애",
-  "9. 그 밖에 시공자의 책임 없는 사유",
-  "② 시공자는 연장 사유가 발생하면 고객에게 사유와 예상 기간을 알린다. 정확한 기간 산정이 어려운 경우 발생 사실을 먼저 알리고 추후 예상 기간을 안내할 수 있다.",
-  "③ 공사기간 연장에 따라 추가 비용이 발생하면 귀책 당사자가 실제 발생 비용을 부담한다.",
-  "제23조(준공 지연과 지체상금)",
-  "① 시공자의 책임 있는 사유로 준공이 지연된 경우 시공자는 지연일수 1일마다 계약금액의 0.05%에 해당하는 지체상금을 고객에게 지급한다.",
-  "② 지체상금 총액은 계약금액의 10%를 한도로 한다.",
-  "③ 지체상금 산정 기준금액에서 추가·변경공사 금액과 고객 직접 구매품 금액은 제외한다.",
-  "④ 고객은 지급할 잔금에서 당사자가 확인한 지체상금을 공제할 수 있다.",
-  "⑤ 공사기간 연장 기간, 고객의 준공확인 지연기간, 목적물 사용에 지장이 없는 경미한 보완기간 및 시공자의 책임 없는 중단기간은 지체일수에서 제외한다.",
-  "⑥ 동일한 지연에 관하여 지체상금과 다른 손해배상을 중복 청구하지 않는다. 다만, 시공자의 고의 또는 중대한 과실로 발생한 별도의 손해는 제외한다.",
-  "제24조(현장 출입과 안전)",
-  "① 공사기간 중 현장은 안전사고 예방과 공정 관리를 위해 시공자가 관리한다.",
-  "② 고객은 현장 확인 전 방문 일정을 협의하고 공사담당자의 안내에 따라야 한다.",
-  "③ 고객은 작업 장비·가설물·전기설비·자재를 임의로 이동하거나 조작해서는 안 된다.",
-  "④ 미성년자·반려동물 및 안전수칙 준수가 어려운 사람은 동의 없이 현장에 출입할 수 없다.",
-  "⑤ 무단출입 또는 안전수칙 위반으로 발생한 사고와 지연은 고객이 책임진다. 다만, 시공자의 법정 안전조치 의무는 면제되지 않는다.",
-  "제25조(공사담당자와 의사전달)",
-  "① 시공자는 견적서와 계약서에 직접 입력된 공사담당자를 공식 연락창구로 지정한다.",
-  "② 고객의 공사 관련 요청·확인·변경·승인 및 이의 제기는 공사담당자를 통해 전달한다.",
-  "③ 현장 근로자·협력업체·자재업체에 직접 전달한 지시는 시공자에 대한 공식 지시로 보지 않는다.",
-  "④ 직접 지시로 재시공·자재 폐기·공정 변경 또는 지연이 발생한 경우 고객이 비용과 기간 증가를 부담한다.",
-  "⑤ 시공자는 공사담당자를 변경할 수 있으며 변경된 성명·직책·연락처를 고객에게 서면으로 알린다. 담당자 변경만으로 별도 변경계약을 작성하지 않는다.",
-  "제26조(고객 지정 업체)",
-  "① 고객이 이사·가전·가구·통신·에어컨 또는 별도 시공업체를 투입하려면 사전에 일정과 작업 범위를 협의한다.",
-  "② 고객 지정 업체는 시공자의 현장관리와 안전수칙을 준수해야 한다.",
-  "③ 고객 지정 업체의 지연·오시공·훼손·폐기물 또는 공정 간섭으로 발생한 비용과 지연은 고객이 부담한다.",
-  "④ 안전수칙을 위반하거나 정상적인 공사를 방해하면 시공자는 해당 업체의 작업 또는 출입을 제한할 수 있다.",
-  "제5장  준공·잔금·인도",
-  "제27조(준공과 준공확인)",
-  "① 시공자는 계약상 공사를 완료하면 고객에게 준공 사실과 현장 확인 가능 일정을 알린다.",
-  "② 고객은 통지를 받은 날부터 3일 이내에 시공자와 일정을 협의하여 준공 상태를 확인한다.",
-  "③ 준공 여부는 계약서, 견적서 및 공사사양서를 기준으로 확인한다.",
-  "④ 정상 사용에 지장이 없는 경미한 오염·실리콘 보완·도장 보수·문짝 조정 등이 남아 있어도 공사는 준공된 것으로 본다.",
-  "⑤ 고객이 정당한 사유 없이 3일 이내 준공 상태를 확인하지 않거나 일정을 정하지 않으면 시공자는 사진·영상 및 공사기록으로 준공 상태를 기록하고 준공 사실을 통지할 수 있다.",
-  "⑥ 준공확인 당시 확인하기 어려웠던 하자는 하자담보책임 기간에 별도로 접수할 수 있다.",
-  "제28조(보완사항)",
-  "① 준공확인에서 확인된 미시공·오시공·하자 및 보완사항은 당사자가 확인할 수 있는 방식으로 기록한다.",
-  "② 시공자는 자재 수급과 작업 일정 등을 고려한 합리적인 기간 내에 시공자 책임의 보완사항을 처리한다.",
-  "③ 보완기간은 원칙적으로 준공 지연일수에 포함하지 않는다. 다만, 목적물을 정상적으로 사용할 수 없는 경우 실제 사용 가능일까지 준공되지 않은 것으로 본다.",
-  "④ 계약 범위를 초과하는 요청, 고객의 취향 변경 또는 승인한 디자인·색상·제품 변경은 추가·변경공사로 처리한다.",
-  "제29조(잔금과 목적물 인도)",
-  "① 고객은 준공 상태를 확인한 후 목적물을 인도받기 전까지 잔금 10%와 지급기일이 도래한 추가·변경공사 대금을 지급한다.",
-  "② 경미한 보완사항만 남았다는 이유로 잔금 전액의 지급을 거절할 수 없다.",
-  "③ 객관적으로 확인된 미시공 또는 중대한 하자가 있으면 해당 부분을 보완하는 데 필요한 합리적인 금액만 유보할 수 있다.",
-  "④ 시공자는 잔금 지급을 확인한 후 준공확인 시 시공자가 관리하던 세대 내 열쇠·출입카드·출입수단 또는 비밀번호를 고객에게 인계한다.",
-  "⑤ 제4항의 인계가 완료된 때 목적물이 고객에게 인도된 것으로 본다.",
-  "⑥ 정식 인도 전 고객이 입주하거나 가구·가전·이삿짐을 반입하여 사실상 사용하면 사용 시작일을 인도일로 본다. 기존 하자보수 책임은 면제되지 않는다.",
-  "⑦ 인도 후 고객이나 제3자가 발생시킨 손상과 오염은 하자보수 대상에서 제외한다.",
-  "제6장  하자와 손해배상",
-  "제30조(하자담보책임)",
-  "① 공사가 계약서, 견적서 또는 공사사양서에 적합하지 않거나 시공상 잘못으로 기능·안전·품질에 문제가 발생하면 시공자는 하자담보책임을 부담한다.",
-  "② 하자담보책임 기간은 목적물 인도일부터 실내건축 1년, 미장·타일 1년, 방수 3년, 도장 1년, 창호설치 1년, 급수·급탕·오수·배수·냉난방·환기 등 설비 2년으로 한다.",
-  "③ 둘 이상의 공종이 포함된 경우 하자 원인에 해당하는 공종별 기간을 적용하며 원인을 구분하기 어려우면 관련 공종 중 더 긴 기간을 적용한다.",
-  "④ 제조사가 별도 제품 보증기간을 제공하면 제품 자체의 품질과 성능은 제조사 보증기준을 적용할 수 있고, 설치상 잘못은 시공자가 책임진다.",
-  "⑤ 관계 법령이 더 긴 기간을 정한 경우 법정기간을 적용한다.",
-  "제31조(하자담보책임의 제외)",
-  "① 다음 사유로 발생한 문제는 시공자의 하자로 보지 않는다.",
-  "1. 고객·거주자·이사업체·가전·가구업체 등 제3자의 사용·작업·충격·오염",
-  "2. 사용설명 위반, 관리 소홀, 과도한 하중, 임의 개조 또는 부적절한 청소용품 사용",
-  "3. 정상 사용에 따른 마모·변색·퇴색·오염 및 소모품 수명 종료",
-  "4. 환기·난방·습도관리 부족이나 생활환경으로 발생한 결로·곰팡이·실리콘 변색 및 악취",
-  "5. 기존 건축물의 구조적 변형·침하·진동·균열·수직 및 수평 오차",
-  "6. 외벽·옥상·샤시·공용배관·공용설비 또는 상하층 세대 등 계약 범위 밖의 원인",
-  "7. 고객 직접 구매품 자체의 불량·성능 저하·규격 문제 또는 제조상 결함",
-  "8. 천재지변, 화재, 침수, 동파, 정전 또는 시공자 책임 없는 사고",
-  "9. 공사사양서에 안내된 자재의 자연적 편차와 통상 허용되는 마감 차이",
-  "10. 기존 마감재 보양이 견적서에서 제외된 경우 정상 공사 중 불가피한 미세한 표면 흔적",
-  "② 시공자의 오시공, 계약사양 위반 또는 고의·중대한 과실로 발생한 손상에는 제1항을 적용하지 않는다.",
-  "③ 하자 원인이 계약 범위 안의 시공과 기존 시설에 함께 있는 경우 시공자는 자신의 책임 범위에 대해서만 보수책임을 부담한다.",
-  "제32조(하자 접수와 보수)",
-  "① 고객은 하자를 발견하면 추가 손상 방지를 위한 합리적인 조치를 하고 위치·증상·발견일 및 사진이나 영상을 시공자에게 알린다.",
-  "② 시공자는 접수일부터 3일 이내에 접수 사실과 확인 일정을 안내한다.",
-  "③ 시공자 책임의 하자로 판단되면 자재 수급과 작업 여건을 고려한 합리적인 기간 내 무상 보수한다.",
-  "④ 누수·합선 등 긴급상황에서는 고객이 사용을 중지하고 즉시 시공자에게 알려야 한다.",
-  "⑤ 고객은 시공자에게 직접 보수할 합리적인 기회를 제공한다. 통지 없이 제3자에게 보수를 맡긴 비용은 청구할 수 없다. 다만, 긴급조치가 필요했거나 시공자가 정당한 사유 없이 거절·지연한 경우는 제외한다.",
-  "⑥ 고객이 정당한 사유 없이 확인이나 보수를 거부·지연하여 확대된 손해는 시공자가 책임지지 않는다.",
-  "제33조(유상 보수)",
-  "① 하자담보책임 기간이 지난 후의 보수 또는 시공자 책임이 아닌 사항에 대한 점검·보수는 유상으로 진행할 수 있다.",
-  "② 현장 확인 결과 시공자 책임의 하자가 아닌 것으로 확인된 경우 시공자는 사전에 안내한 출장비·점검비 및 작업비를 청구할 수 있다.",
-  "③ 유상 보수는 작업 내용과 금액에 대한 고객의 승인을 받은 후 시행한다.",
-  "제34조(손해배상)",
-  "① 계약상 의무 위반이나 책임 있는 사유로 상대방에게 손해를 발생시킨 당사자는 그 손해를 배상한다.",
-  "② 배상범위는 계약위반과 상당한 인과관계가 있고 객관적인 자료로 확인되는 통상손해로 한다. 특별손해는 상대방이 그 사정을 알았거나 알 수 있었던 경우에 한한다.",
-  "③ 손해를 주장하는 당사자는 발생 사실, 금액 및 인과관계를 입증한다.",
-  "④ 손해 발생이나 확대에 상대방 또는 제3자의 책임이 함께 있으면 각 원인과 책임 정도에 따라 정한다.",
-  "⑤ 손해를 입은 당사자는 확대 방지를 위한 합리적인 조치를 해야 하며 정당한 사유 없이 확대된 손해는 배상범위에서 제외할 수 있다.",
-  "⑥ 고의 또는 중대한 과실로 발생한 손해에는 책임 제한이나 면책 조항을 적용하지 않는다.",
-  "제35조(인접 세대·공용부분 및 민원)",
-  "① 인접 세대나 공용부분에 피해가 발생하면 당사자는 관리사무소·피해자 및 필요한 전문가와 협조하여 원인을 확인한다.",
-  "② 시공자의 작업상 과실과 작업시간·안전수칙 위반으로 발생한 피해·민원·과태료는 시공자가 부담한다.",
-  "③ 기존 건축물 노후·균열·공용배관·외벽·방수·구조 문제 또는 시공자 책임 없는 사유는 시공자가 책임지지 않는다.",
-  "④ 고객 또는 고객 지정 업체의 작업·지시·물품 반입으로 발생한 피해는 고객이 책임진다.",
-  "⑤ 관계 법령과 관리규약이 허용하는 정상 공사 중 불가피한 소음·분진·진동·냄새 및 단순 민원만으로 시공자의 계약위반이 되는 것은 아니다.",
-  "제7장  계약 종료와 정산",
-  "제36조(계약의 해제·해지)",
-  "① 상대방이 주요 의무를 이행하지 않으면 상당한 기간을 정해 이행을 요청하고 그 기간에도 이행하지 않을 때 서면으로 계약을 해제하거나 해지할 수 있다.",
-  "② 이행의 명백한 거절, 폐업·파산·지급불능, 위법공사 요구·시행, 중대한 안전위험 등 계약 유지가 어려운 사유가 있으면 별도 이행요청 없이 해제·해지할 수 있다.",
-  "③ 해제·해지 의사표시는 사유와 효력 발생일을 기재하여 서면 통지한다.",
-  "④ 계약 종료 시 종료일까지의 시공, 발주·제작 자재, 지급 공사대금 및 추가 비용을 정산한다.",
-  "제37조(고객의 중도취소)",
-  "① 고객은 공사 완료 전까지 계약을 중도취소할 수 있다.",
-  "② 자재 제작이나 공사 착수 전 취소 시 지급한 계약금을 위약금으로 하되 총공사비의 10%를 초과하지 않는다.",
-  "③ 자재 제작 또는 공사 착수 후 취소 시 고객은 시공자에게 발생한 실제 손해액을 부담한다.",
-  "④ 실제 손해액에는 완료 공사대금, 취소·반품·전용이 어려운 자재·제품비, 확정 인건비·장비비·협력업체비, 현장 정리·철수·폐기물 처리비, 반품·보관·재운송비, 고객 요청 원상회복비 및 객관적으로 입증된 손해가 포함될 수 있다.",
-  "⑤ 실제 손해액은 견적서, 발주서, 거래명세서, 세금계산서, 작업내역, 송금내역 등 객관적인 자료로 산정한다.",
-  "제38조(제작 또는 공사 착수의 기준)",
-  "① 제작 또는 공사 착수는 고객이 승인한 주문제작 가구·도어·유리·석재·상판 등의 제작, 반품이나 전용이 어려운 자재의 확정 발주, 현장 보양·철거·설비·전기·목공 등 실제 작업 또는 고객 현장을 위한 외부 가공이 시작된 경우를 말한다.",
-  "② 견적 작성, 일반 상담, 현장 실측 또는 일반 자재 가격 확인만으로는 제작이나 공사에 착수한 것으로 보지 않는다.",
-  "제39조(시공자 책임에 따른 계약 종료)",
-  "① 정당한 사유 없는 착공 지연·공사 중단, 계약문서와 현저히 다른 시공의 미시정, 면허 취소·폐업·지급불능 등으로 완료가 어려운 경우 고객은 7일의 시정기간을 주고도 시정되지 않으면 계약을 종료할 수 있다.",
-  "② 제작이나 착수 전 시공자 책임으로 종료되면 시공자는 받은 금액 전액을 반환하고 총공사비의 10%를 배상한다.",
-  "③ 착수 후 시공자 책임으로 종료되면 완료된 공사대금을 정산하고 시공자는 총공사비의 10%를 배상한다.",
-  "④ 동일한 사유로 이미 지급한 지체상금은 제2항 또는 제3항 배상액에서 공제하여 중복 배상하지 않는다.",
-  "제40조(불가항력과 계약 종료)",
-  "① 천재지변, 화재, 홍수, 지진, 감염병, 전쟁, 파업, 정부명령, 운송 중단, 생산 중단 등 합리적으로 통제하기 어려운 사유로 이행하지 못한 경우 해당 범위에서 손해배상책임을 부담하지 않는다.",
-  "② 불가항력 발생 당사자는 그 사실과 예상 영향을 지체 없이 알리고 손해와 지연을 줄이기 위해 노력한다.",
-  "③ 불가항력 상태가 30일 이상 계속되어 계약 목적 달성이 어려우면 어느 당사자든 계약을 종료할 수 있다.",
-  "④ 종료일까지 완료된 공사대금, 취소할 수 없는 자재비 및 합리적인 철수비용을 정산하며 별도 위약금은 부담하지 않는다.",
-  "제41조(계약 종료 시 정산)",
-  "① 계약이 중도 종료되면 시공자는 공사현황, 현장 반입 자재 및 정산내역을 고객에게 제시한다.",
-  "② 고객이 정산금액을 지급하면 고객을 위해 제작·구매되어 현장에 반입된 자재와 완료된 시공부분은 고객에게 귀속된다.",
-  "③ 고객 책임으로 종료되면 현 상태 인계 또는 원상회복 여부를 고객이 선택하고 원상회복 비용은 고객이 부담한다.",
-  "④ 시공자 책임으로 종료되면 고객은 현 상태 인계 또는 합리적인 범위의 원상회복을 요구할 수 있다.",
-  "⑤ 지급금액과 정산금액의 차액은 정산 확정일부터 7일 이내 지급하거나 반환한다.",
-  "⑥ 시공자가 반환금을 정해진 날까지 지급하지 않으면 다음 날부터 실제 반환일까지 연 12%의 지연이자를 부담한다.",
-  "제8장  촬영·개인정보·일반조항",
-  "제42조(현장 촬영과 시공사례 사용)",
-  "① 시공자는 공정관리, 시공 상태 확인, 하자 원인 판단 및 공사기록을 위해 공사 전·중·후 현장을 사진 또는 영상으로 촬영할 수 있다.",
-  "② 고객은 촬영한 준공사진과 공사과정 사진을 시공자의 홈페이지, 블로그, 사회관계망서비스, 온라인 광고, 회사소개서, 제안서, 인쇄물 및 포트폴리오에 시공사례로 사용하는 것에 동의한다.",
-  "③ 시공자는 고객의 성명·연락처·동호수·출입 비밀번호·차량번호·가족사진 등 고객이나 거주자를 직접 식별할 수 있는 정보를 공개하지 않는다.",
-  "④ 현장은 정확한 주소 대신 시·군·구, 지역명, 건축물 유형 또는 면적 등 직접 식별하기 어려운 범위에서 표시할 수 있다.",
-  "⑤ 얼굴·가족사진·문서·귀중품 또는 사생활 물품이 포함되면 공개하지 않거나 식별하기 어렵도록 편집한다.",
-  "⑥ 촬영물 사용에 관하여 시공자는 고객에게 별도의 사용료나 대가를 지급하지 않는다.",
-  "⑦ 촬영물의 저작권은 직접 촬영한 시공자 또는 촬영을 의뢰받은 촬영자에게 귀속된다. 고객은 제공받은 촬영물을 개인적·비상업적 목적으로 사용할 수 있다.",
-  "⑧ 구체적인 사생활 또는 보안 침해 우려가 발생하면 고객은 비공개·삭제 또는 추가 비식별 처리를 요청할 수 있다. 합리적인 사유가 확인되면 온라인 게시물에 필요한 조치를 하되 이미 배포된 인쇄물 등에는 소급 적용하지 않는다.",
-  "제43조(개인정보)",
-  "① 시공자는 계약 체결·이행, 공사관리, 대금청구, 하자보수 및 분쟁처리를 위해 고객의 성명·연락처·현장주소·계약 및 결제정보·공사기록을 처리할 수 있다.",
-  "② 계약 이행에 필요한 최소한의 정보만 처리하며 목적과 관계없는 용도로 사용하지 않는다.",
-  "③ 자재 배송, 현장작업, 관리사무소 업무 및 하자보수에 필요한 범위에서 협력업체에 최소한의 정보를 전달할 수 있다.",
-  "④ 개인정보는 계약 종료일부터 5년간 보관한 후 파기한다. 법령상 보존의무가 있거나 분쟁 중이면 해당 기간 종료까지 보관할 수 있다.",
-  "⑤ 시공자가 관리한 세대 출입 비밀번호는 목적물 인도 후 지체 없이 삭제한다.",
-  "제44조(통지)",
-  "① 계약상 요청·승인·변경·통지는 계약서에 기재된 연락처를 통해 한다.",
-  "② 연락처 변경을 알리지 않아 기존 연락처로 발송된 통지를 확인하지 못한 경우 발송 당사자에게 고의 또는 중대한 과실이 없는 한 정상 통지한 것으로 본다.",
-  "③ 계약 해제·해지, 추가·변경공사 승인 및 공사대금 증감 등 중요한 의사표시는 내용을 확인할 수 있는 방식으로 남긴다.",
-  "제45조(협력업체와 계약상 지위)",
-  "① 시공자는 공사의 효율적인 수행을 위해 공종별 전문업체와 작업자를 투입할 수 있으며 이로 인해 계약상 책임이 면제되지 않는다.",
-  "② 고객은 정당한 사유 없이 특정 작업자나 협력업체의 투입 제한 또는 교체를 요구할 수 없다.",
-  "③ 당사자는 상대방의 서면 동의 없이 계약상 지위 전부를 제3자에게 이전할 수 없다. 공종별 협력업체 사용은 계약상 지위 이전으로 보지 않는다.",
-  "④ 고객이 목적물을 매도하거나 임대해도 별도 합의가 없는 한 미지급 공사대금과 계약상 의무는 기존 고객이 부담한다.",
-  "제46조(일부 조항의 효력)",
-  "① 계약의 일부 조항이 관계 법령에 따라 무효가 되더라도 나머지 조항의 효력에는 영향을 미치지 않는다.",
-  "② 무효인 조항은 당사자의 본래 목적과 관계 법령에 가장 가까운 내용으로 해석하거나 대체한다.",
-  "제47조(분쟁의 해결)",
-  "① 분쟁이 발생하면 계약서·견적서·공사사양서, 공사기록, 사진·영상, 지급내역 및 통지내용을 토대로 우선 협의한다.",
-  "② 협의로 해결되지 않으면 한국소비자원, 소비자분쟁조정위원회 또는 관계기관의 상담·조정을 이용할 수 있다.",
-  "③ 소송이 필요한 경우 민사소송법에 따른 관할법원을 제1심 관할법원으로 한다.",
-  "④ 이 계약에는 대한민국 법령을 적용한다.",
-  "제48조(계약내용의 확인과 교부)",
-  "① 당사자는 계약 체결 전에 계약서, 견적서 및 공사사양서의 주요 내용을 확인한다.",
-  "② 시공자는 공사대금, 지급일정, 공사기간, 추가·변경공사, 중도취소, 지체상금, 하자담보책임 및 시공사례 사용 등 중요한 내용을 설명한다.",
-  "③ 당사자가 계약서에 서명 또는 날인하면 계약이 성립한다.",
-  "④ 시공자는 계약 체결 후 고객에게 계약서, 견적서 및 공사사양서 각 1부를 종이 또는 전자문서로 교부한다.",
-  "⑤ 고객은 계약문서의 내용을 확인하고 이해한 후 계약을 체결했음을 확인한다."
-];
 
-function normalizeContractPaymentSchedule(info) {
-  const schedule = Array.isArray(info.paymentSchedule) ? info.paymentSchedule : [];
-  const total = Number(info.totalAmount) || 0;
-  const defaults = [
-    { label: "계약금", ratio: 10, due_basis: "계약 체결 시", amount: Math.floor(total * 0.1) },
-    { label: "1차 중도금", ratio: 40, due_basis: "착공일 3일 전까지", amount: Math.floor(total * 0.4) },
-    { label: "2차 중도금", ratio: 40, due_basis: "목공공사 착수일까지", amount: Math.floor(total * 0.4) },
-    { label: "잔금", ratio: 10, due_basis: "준공확인 후 목적물 인도 전", amount: total - Math.floor(total * 0.9) },
-  ];
-  return defaults.map((item, index) => {
-    const saved = schedule[index] || {};
-    return {
-      ...item,
-      label: saved.label ?? item.label,
-      ratio: saved.ratio ?? item.ratio,
-      due_basis: saved.due_basis ?? item.due_basis,
-      amount: Number(saved.amount ?? item.amount) || 0,
-    };
-  });
-}
 
-function renderContractDefinitionTable(rows) {
-  return `
-    <table class="contract-print-table contract-definition-table">
-      <tbody>
-        ${rows.map((row) => `
-          <tr>
-            ${row.map(([label, value]) => `
-              <th>${escapeHtml(label)}</th>
-              <td>${escapeHtml(contractPrintValue(value))}</td>
-            `).join("")}
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-}
 
-function renderContractAmountTable(info) {
-  return renderContractDefinitionTable([
-    [["공급가액", contractPrintMoney(info.totalAmount)], ["부가가치세", "별도"]],
-    [["총 계약금액", `${contractPrintMoney(info.totalAmount)} (VAT 별도)`], ["비고", "-"]],
-  ]);
-}
 
-function renderContractPaymentTable(schedule) {
-  return `
-    <table class="contract-print-table">
-      <thead><tr><th>구분</th><th>지급시점</th><th>비율</th><th>금액</th></tr></thead>
-      <tbody>
-        ${schedule.map((item) => `
-          <tr>
-            <td>${escapeHtml(item.label)}</td>
-            <td>${escapeHtml(item.due_basis)}</td>
-            <td>${escapeHtml(contractPrintValue(item.ratio))}%</td>
-            <td>${contractPrintMoney(item.amount)}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-}
 
-function contractTermClassName(line) {
-  if (/^계약 일반조건$/.test(line)) return "contract-term-title";
-  if (/^제\d+장/.test(line)) return "contract-term-chapter";
-  if (/^제\d+조/.test(line)) return "contract-term-article";
-  if (/^\d+\./.test(line)) return "contract-term-subitem";
-  if (/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(line)) return "contract-term-paragraph";
-  return "contract-term-text";
-}
 
-function renderContractFixedTerms(lines = CONTRACT_FIXED_TERM_LINES) {
-  return lines.map((line) => `
-    <p class="${contractTermClassName(line)}">${escapeHtml(line)}</p>
-  `).join("");
-}
 
-function renderContractPrintDocument(snapshot, documents = snapshot.contract_document_versions || []) {
-  const document = documents.find((item) => item.document_type === "CONTRACT");
-  const saved = document?.content_json?.generated_sections;
-  // New documents carry all printable contract data; old packages remain read-only fallbacks.
-  const source = saved && !Array.isArray(saved) ? {
-    ...snapshot,
-    contract_info: saved.contract_info ?? snapshot.contract_info,
-    parties: saved.parties ?? snapshot.parties ?? snapshot.parties_info,
-    site_manager: saved.site_manager ?? snapshot.site_manager,
-    clause_snapshot: saved.clauses ?? snapshot.clause_snapshot,
-    payment_schedule: saved.payment_schedule ?? snapshot.payment_schedule,
-  } : snapshot;
-  const info = contractPrintInfo(source);
-  const contractor = (source.parties || source.parties_info)?.contractor || source.contractor || {};
-  const schedule = normalizeContractPaymentSchedule(info);
-  return `
-    <article class="contract-print-page">
-      ${contractPrintHeader("인테리어 공사계약서", info)}
-      <section class="contract-print-section">
-        <p>${escapeHtml("고객과 시공자는 계약서, 견적서 및 공사사양서의 내용을 확인하고 아래와 같이 공사계약을 체결한다.")}</p>
-      </section>
-      <section class="contract-print-section">
-        <h2>계약 당사자</h2>
-        ${renderContractDefinitionTable([
-          [["고객 성명", info.customerName], ["연락처", info.customerPhone]],
-          [["고객 주소", info.customerAddress], ["전자우편", info.customerEmail]],
-          [["시공자 상호", contractor.company_name || "ANTNEST DESIGN"], ["대표자", contractor.representative || "-"]],
-          [["사업자번호", contractor.business_no || "-"], ["연락처", contractor.phone || "-"]],
-          [["시공자 주소", contractor.address || "-"], ["공사담당자", `성명 ${contractPrintValue(info.siteManager.name)} / 직책 ${contractPrintValue(info.siteManager.title)} / 연락처 ${contractPrintValue(info.siteManager.phone)}`]],
-        ])}
-      </section>
-      <section class="contract-print-section">
-        <h2>계약 기본정보</h2>
-        ${renderContractDefinitionTable([
-          [["계약번호", info.contractNo], ["계약일", info.contractDate]],
-          [["프로젝트명", info.projectName], ["공사유형", info.constructionType]],
-          [["공사현장", info.siteAddress], ["면적", `${contractPrintValue(info.areaPyeong)}평`]],
-          [["착공일", info.startDate], ["준공예정일", info.completionDate]],
-        ])}
-      </section>
-      <section class="contract-print-section">
-        <h2>계약금액</h2>
-        ${renderContractAmountTable(info)}
-      </section>
-      <section class="contract-print-section">
-        <h2>공사대금 지급일정</h2>
-        ${renderContractPaymentTable(schedule)}
-      </section>
-      <section class="contract-print-section contract-fixed-terms">
-        ${renderContractFixedTerms(Array.isArray(saved?.fixed_term_lines) ? saved.fixed_term_lines : CONTRACT_FIXED_TERM_LINES)}
-      </section>
-      <section class="contract-print-section">
-        <h2>서명 및 날인</h2>
-        <p>${escapeHtml("고객과 시공자는 계약서, 견적서 및 공사사양서의 내용을 모두 확인하고 이에 동의하여 계약을 체결한다.")}</p>
-        <p>${escapeHtml(info.contractDate)}</p>
-      </section>
-      <section class="contract-print-signature">
-        <div><strong>고객</strong><span>${escapeHtml(info.customerName)}</span><em>서명·날인</em></div>
-        <div><strong>시공자</strong><span>${escapeHtml(contractor.company_name || "ANTNEST DESIGN")}</span><em>서명·날인</em></div>
-      </section>
-      ${contractPrintFooter(info)}
-    </article>
-  `;
-}
+function renderContractPrintDocument(snapshot, documents = snapshot.contract_document_versions || []) { return contractPrint.renderContractPrintDocument(snapshot, documents); }
 
-function renderContractQuotePrint(snapshot) {
-  const info = contractPrintInfo(snapshot);
-  const groups = Array.isArray(info.customerQuote.groups) ? info.customerQuote.groups : [];
-  return `
-    <article class="contract-print-page">
-      ${contractPrintHeader("공사 견적서", info)}
-      <section class="contract-print-section">
-        <h2>견적 개요</h2>
-        <dl class="contract-print-grid">
-          <div><dt>공사명</dt><dd>${escapeHtml(info.projectName)}</dd></div>
-          <div><dt>공사현장</dt><dd>${escapeHtml(info.siteAddress)}</dd></div>
-          <div><dt>평형</dt><dd>${escapeHtml(info.areaPyeong)}평</dd></div>
-          <div><dt>총 공사금액</dt><dd>${contractPrintMoney(info.totalAmount)} VAT 별도</dd></div>
-        </dl>
-      </section>
-      <section class="contract-print-section">
-        <h2>공정별 견적</h2>
-        <table class="contract-print-table">
-          <thead><tr><th>공정</th><th>항목</th><th>금액</th></tr></thead>
-          <tbody>
-            ${groups.length ? groups.map((group) => {
-              const items = Array.isArray(group.items) ? group.items : [];
-              return `
-                <tr class="contract-subtotal-row"><td>${escapeHtml(group.label || "-")}</td><td>소계</td><td>${escapeHtml(group.totalText || contractPrintMoney(group.total))}</td></tr>
-                ${items.map((item) => `
-                  <tr><td>${escapeHtml(group.label || "-")}</td><td>${escapeHtml(item.name || "-")}</td><td>${escapeHtml(item.amountText || contractPrintMoney(item.amount))}</td></tr>
-                `).join("")}
-              `;
-            }).join("") : `<tr><td colspan="3">표시할 견적 항목이 없습니다.</td></tr>`}
-          </tbody>
-        </table>
-      </section>
-      <footer>
-        <div><span>총 공사금액</span><strong>${contractPrintMoney(info.totalAmount)}</strong></div>
-        <p>※ 부가세 별도 금액입니다.</p>
-        <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
-      </footer>
-      ${contractPrintFooter(info)}
-    </article>
-  `;
-}
 
-function renderContractSpecPrint(snapshot) {
-  const info = contractPrintInfo(snapshot);
-  const specs = info.specSnapshot;
-  return `
-    <article class="contract-print-page">
-      ${contractPrintHeader("공사사양서", info)}
-      <section class="contract-print-section">
-        <h2>품목별 공사사양</h2>
-        <table class="contract-print-table contract-spec-print-table">
-          <thead><tr><th>공정</th><th>품목</th><th>수량</th><th>단위</th><th>제품급</th><th>표준사양</th><th>변경사양</th></tr></thead>
-          <tbody>
-            ${specs.length ? specs.map((spec) => `
-              <tr>
-                <td>${escapeHtml(spec.work_category || "-")}</td>
-                <td>${escapeHtml(spec.item_name || spec.standard_item_name || "-")}</td>
-                <td>${escapeHtml(contractPrintValue(spec.quantity))}</td>
-                <td>${escapeHtml(contractPrintValue(spec.unit))}</td>
-                <td>${escapeHtml(spec.selected_grade || "-")}</td>
-                <td>${escapeHtml(spec.specification || "-")}</td>
-                <td>${escapeHtml(spec.changed_specification || "-")}</td>
-              </tr>
-            `).join("") : `<tr><td colspan="7">견적에 연결된 표준사양이 없습니다.</td></tr>`}
-          </tbody>
-        </table>
-      </section>
-      ${contractPrintFooter(info)}
-    </article>
-  `;
-}
 
 function renderContractPrintSheet(type = "ALL") {
-  const sheet = document.getElementById("printQuoteSheet");
   const snapshot = contractPreviewState?.snapshot;
-  if (!sheet || !snapshot) {
+  if (!contractPrint.hasPrintTarget() || !snapshot) {
     alert("먼저 3종 문서 미리보기를 생성해 주세요.");
     return false;
   }
-  const parts = {
-    CONTRACT: renderContractPrintDocument(snapshot, contractPreviewState.documents || []),
-    QUOTE: renderContractQuotePrint(snapshot),
-    SPEC: renderContractSpecPrint(snapshot),
-  };
-  const order = type === "ALL" ? ["CONTRACT", "QUOTE", "SPEC"] : [type];
-  sheet.innerHTML = order.map((item) => parts[item]).join("");
-  return true;
+  return contractPrint.renderContractPrintSheet(type, snapshot, contractPreviewState.documents || []);
 }
 
-function renderContractPreview() {
-  document.querySelectorAll("[data-contract-doc]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.contractDoc === contractSelectedDocumentType);
-  });
-  renderContractSpecSnapshot();
-  renderContractDocumentPreview();
-}
+function renderContractPreview() { return currentContractView().renderContractPreview(); }
 
-function renderContractPackagePanel(estimate = selectedContractEstimate()) {
-  ensureContractPackagePanel();
-  const empty = document.getElementById("contractPackageEmpty");
-  const workspace = document.getElementById("contractPackageWorkspace");
-  renderAllContractPackages();
-  if (!empty || !workspace) return;
-  if (!estimate?.id) {
-    empty.hidden = false;
-    workspace.hidden = true;
-    return;
-  }
-  empty.hidden = true;
-  workspace.hidden = false;
-  setText("contractEstimateTitle", estimate.projectName || "저장 견적");
-  setText("contractEstimateMeta", `${estimate.clientName || "고객명 없음"} · ${estimate.areaPyeong || "-"}평 · ${estimate.totalText || "-"}`);
-  renderContractOptionsForm(estimate);
-  renderContractPackages();
-  renderContractPreview();
-}
+function renderContractPackagePanel(estimate = selectedContractEstimate()) { return currentContractView().renderContractPackagePanel(estimate); }
 
 async function refreshContractPackagePanel(estimate = selectedContractEstimate()) {
   ensureContractPackagePanel();
@@ -2846,6 +1918,31 @@ const printGroupLabels = {
 const estimateRestore = createEstimateRestore({ document, elements: el, excludedInputById: COST_ITEM_BY_INPUT });
 const estimateView = createEstimateView({ document, customerWon, formatDateTime, quoteGroupLabels, quoteGroupOrder });
 const estimatePrint = createEstimatePrint({ document, customerWon, formatDateTime, printGroupLabels });
+const contractPrint = createContractPrint({ document, formatDateTime });
+
+function currentContractViewModel() {
+  return createContractViewModel({ contractOptionsState, contractPreviewState, contractPackagesState, allContractPackagesState, contractSelectedDocumentType });
+}
+function currentContractView() {
+  return createContractView({ document, model: currentContractViewModel(), selectedEstimate: selectedContractEstimate(), formatDateTime,
+    permissions: { view: canViewContractPackage(), edit: canEditContractPackageOptions(), create: canCreateContractPackage(), staff: isStaff() },
+  });
+}
+function currentCostViewModel() {
+  return createCostViewModel({ originalCostItems, costItemFilters, systemCostHistory, systemPublishLogs, systemEstimateCount,
+    expandedSystemCostCategory, costItemEditorMode, costItemEditorSourceCode, formatDateTime,
+  });
+}
+function currentCostView() {
+  return createCostView({ document, model: currentCostViewModel(), costItemFilters, expandedSystemCostCategory, systemCostHistory, systemPublishLogs,
+    costItemEditorMode, costItemActionBusy, formatDateTime, permissions: { view: canViewSystem(), edit: canEditCost(), publish: canPublishCost() },
+    onOpenSystem: () => {
+      activateTab("system");
+      refreshSystemManagement().catch((error) => console.error("시스템 관리 갱신 실패", error));
+    },
+    onRenderSystem: renderSystemManagement,
+  });
+}
 
 function estimateInternalViewModel(estimate) {
   return buildEstimateInternalViewModel(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder,
@@ -3294,163 +2391,25 @@ function renderStaffAdminShell() {
   staffAdminShellApplied = true;
 }
 
-function percentText(value) {
-  return `${(rateNumber(value) * 100).toFixed(1)}%`;
-}
 
-function draftValue(row, key) {
-  if (key === "cost") return row.draft_cost_price ?? row.cost_price;
-  if (key === "margin") return row.draft_margin_rate ?? row.default_margin_rate;
-  if (key === "active") return row.draft_is_active ?? row.is_active;
-  return null;
-}
 
-function hasDraft(row) {
-  return row?.draft_cost_price !== null && row?.draft_cost_price !== undefined ||
-    row?.draft_margin_rate !== null && row?.draft_margin_rate !== undefined ||
-    row?.draft_is_active !== null && row?.draft_is_active !== undefined;
-}
 
-function changedCostItems() {
-  return [...originalCostItems.values()].filter(hasDraft);
-}
+function changedCostItems() { return currentCostViewModel().changedCostItems(); }
 
-function latestPublishLog() {
-  return systemPublishLogs[0] || null;
-}
 
-function systemCategories() {
-  return [...new Set([...originalCostItems.values()].map((row) => row.category || "기타"))]
-    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
-}
 
-function systemCategoryLabel(category = "") {
-  const value = category || "기타";
-  if (["가구", "철거", "목공", "바닥"].includes(value)) return value;
-  if (["전기", "조명"].includes(value)) return "전기·조명";
-  if (["욕실", "타일"].includes(value)) return "타일·욕실";
-  if (["도배", "필름"].includes(value)) return "도배·필름";
-  if (["도어", "중문", "창호"].includes(value)) return "도어·창호";
-  if (["마감", "기타", "상판", "설비", "인허가"].includes(value)) return "마감·기타";
-  return value;
-}
 
-const SYSTEM_TRADE_ORDER = ["철거", "전기·조명", "목공", "가구", "타일·욕실", "도배·필름", "바닥", "마감·기타"];
 
-function systemTradeOrderIndex(label = "") {
-  const index = SYSTEM_TRADE_ORDER.indexOf(label);
-  return index === -1 ? SYSTEM_TRADE_ORDER.length : index;
-}
 
-function rowsBySystemFilter({ scope = "all", category = "", activeMode = "active" } = {}) {
-  return [...originalCostItems.values()].filter((row) => {
-    if (scope === "category" && row.category !== category) return false;
-    if (activeMode === "active" && !row.is_active) return false;
-    return true;
-  });
-}
+function rowsBySystemFilter(options) { return currentCostViewModel().rowsBySystemFilter(options); }
 
-const COST_CALCULATION_BASIS_OPTIONS = [
-  ["fixed", "고정금액"],
-  ["apartment_pyeong", "아파트 평형"],
-  ["flooring_pyeong", "실제 시공평수"],
-  ["length_mm", "길이(mm)"],
-  ["length_m", "길이(m)"],
-  ["area_sqm", "면적(㎡)"],
-  ["count", "개수"],
-  ["bathroom_count", "욕실 개소"],
-  ["lower_cabinet_length", "하부장 길이"],
-  ["upper_cabinet_length", "상부장 길이"],
-  ["homebar_length", "홈바장 길이"],
-  ["island_length", "아일랜드 길이"],
-  ["partition_length", "가벽 길이"],
-  ["manual_input", "사용자 직접입력"],
-];
 
-const COST_ROUNDING_OPTIONS = [
-  ["none", "소수 유지"],
-  ["ceil", "정수 올림"],
-  ["floor", "정수 내림"],
-  ["round", "반올림"],
-];
 
-function systemSubcategories(category = "") {
-  return [...new Set([...originalCostItems.values()]
-    .filter((row) => !category || row.category === category)
-    .map((row) => row.subcategory || "")
-    .filter(Boolean))]
-    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
-}
+function systemSubcategories(category = "") { return currentCostViewModel().systemSubcategories(category); }
 
-function systemTradeSubcategories(tradeLabel = "") {
-  return [...new Set([...originalCostItems.values()]
-    .filter((row) => !tradeLabel || systemCategoryLabel(row.category) === tradeLabel)
-    .map((row) => row.subcategory || "")
-    .filter(Boolean))]
-    .sort((a, b) => String(a).localeCompare(String(b), "ko-KR"));
-}
 
-function systemCostRowsForAccordion() {
-  const keyword = costItemFilters.keyword.trim().toLowerCase();
-  const rows = [...originalCostItems.values()].filter((row) => {
-    if (keyword) {
-      const haystack = `${row.item_code || ""} ${row.item_name || ""}`.toLowerCase();
-      if (!haystack.includes(keyword)) return false;
-    }
-    if (costItemFilters.subcategory && row.subcategory !== costItemFilters.subcategory) return false;
-    if (costItemFilters.active === "active" && !row.is_active) return false;
-    if (costItemFilters.active === "inactive" && row.is_active) return false;
-    if (costItemFilters.state === "draft" && !hasDraft(row)) return false;
-    if (costItemFilters.state === "pending" && !row.is_pending_new) return false;
-    if (costItemFilters.state === "published" && row.is_pending_new) return false;
-    return true;
-  });
-  return rows.sort((a, b) => {
-    if (costItemFilters.sort === "updated") {
-      return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
-    }
-    return (a.sort_order || 0) - (b.sort_order || 0);
-  });
-}
 
-function groupedSystemCostRows() {
-  const groups = new Map();
-  for (const row of systemCostRowsForAccordion()) {
-    const tradeLabel = systemCategoryLabel(row.category);
-    if (!groups.has(tradeLabel)) groups.set(tradeLabel, []);
-    groups.get(tradeLabel).push(row);
-  }
-  return [...groups.entries()].sort(([a], [b]) =>
-    systemTradeOrderIndex(a) - systemTradeOrderIndex(b) || String(a).localeCompare(String(b), "ko-KR")
-  );
-}
 
-function costItemFormDefaults(source = {}) {
-  return {
-    item_code: source.item_code || "",
-    category: source.category || systemCategories()[0] || "",
-    subcategory: source.subcategory || "",
-    item_name: source.item_name || "",
-    unit: source.unit || "",
-    calculation_basis: source.calculation_basis || "manual_input",
-    cost_price: source.cost_price ?? "",
-    default_margin_rate: source.default_margin_rate ?? 0.3,
-    is_active: source.draft_is_active ?? source.is_active ?? true,
-    sort_order: source.sort_order ?? 0,
-    memo: source.memo || "",
-    customer_name: source.customer_name || "",
-    order_name: source.order_name || "",
-    calculation_multiplier: source.calculation_multiplier ?? 1,
-    min_quantity: source.min_quantity ?? "",
-    rounding_method: source.rounding_method || "none",
-    include_in_customer_quote: source.include_in_customer_quote ?? true,
-    include_in_internal_quote: source.include_in_internal_quote ?? true,
-    include_in_order_sheet: source.include_in_order_sheet ?? false,
-    is_material: source.is_material ?? false,
-    is_labor: source.is_labor ?? false,
-    is_service: source.is_service ?? false,
-  };
-}
 
 function effectiveEstimateInputOverrides(state = readState()) {
   return projectEffectiveEstimateInputs(state);
@@ -3530,18 +2489,7 @@ function calculateForCurrentEstimate() {
   }
 }
 
-function marginDistribution(rows) {
-  const counts = new Map();
-  rows.forEach((row) => {
-    const key = percentText(row.default_margin_rate);
-    counts.set(key, (counts.get(key) || 0) + 1);
-  });
-  return [...counts.entries()].map(([rate, count]) => `${rate} ${count}개`).join(" / ") || "-";
-}
 
-function existingDraftCount(rows) {
-  return rows.filter(hasDraft).length;
-}
 
 async function writeSystemAudit(action, payload = {}) {
   if (!canManageUsers()) return;
@@ -3561,532 +2509,38 @@ async function writeSystemAudit(action, payload = {}) {
   }
 }
 
-function ensureSystemManagementShell() {
-  if (!canViewSystem()) return;
-  const tabs = document.querySelector(".tabs");
-  if (tabs && !document.querySelector('[data-tab="system"]')) {
-    const button = document.createElement("button");
-    button.className = "tab-button system-tab-button";
-    button.dataset.tab = "system";
-    button.type = "button";
-    button.textContent = "시스템 관리";
-    tabs.appendChild(button);
-    button.addEventListener("click", () => {
-      activateTab("system");
-      refreshSystemManagement().catch((error) => console.error("시스템 관리 갱신 실패", error));
-    });
-  }
-  if (!document.getElementById("system")) {
-    const section = document.createElement("section");
-    section.className = "tab-panel system-panel";
-    section.id = "system";
-    section.innerHTML = `
-      <section class="internal-card system-status-card">
-        <div class="section-heading compact-heading no-side-padding">
-          <h2>시스템 현황</h2>
-          <p>원가 관리, 변경 예정값, 배포, 견적 저장 상태를 확인합니다.</p>
-        </div>
-        <dl class="metric-list system-metric-list" id="systemStatusMetrics"></dl>
-      </section>
-      <section class="internal-card system-cost-card">
-        <div class="section-heading compact-heading no-side-padding">
-          <h2>원가 관리</h2>
-          <p>운영값과 변경 예정값을 분리해 확인합니다.</p>
-        </div>
-        <div id="systemBulkMarginPanel" class="system-operation-panel"></div>
-        <div id="systemCostItemTools" class="system-operation-panel"></div>
-        <div id="systemCostItemEditor" class="system-operation-panel" hidden></div>
-        <div id="systemCostAccordion" class="system-cost-accordion"></div>
-      </section>
-      <section class="internal-card system-publish-card">
-        <div class="section-heading compact-heading no-side-padding">
-          <h2>배포 준비</h2>
-          <p>변경 예정 품목을 확인한 뒤 관리자만 배포할 수 있습니다.</p>
-        </div>
-        <div id="systemPublishSummary" class="system-publish-summary"></div>
-        <div id="systemCategoryCancelPanel" class="system-operation-panel"></div>
-        <div class="table-wrap"><table><thead><tr><th>품목</th><th>운영값</th><th>변경 예정값</th><th>차이</th><th class="admin-system-only">취소</th></tr></thead><tbody id="systemDraftRows"></tbody></table></div>
-        <div id="systemPublishActions" class="admin-action-row system-publish-actions"></div>
-        <p id="systemStatusText" class="status-text"></p>
-      </section>
-      <section class="internal-card system-history-card">
-        <div class="section-heading compact-heading no-side-padding"><h2>변경 이력</h2><p>배포 단위 품목 변경 내역입니다.</p></div>
-        <div class="table-wrap"><table><thead><tr><th>버전</th><th>품목</th><th>이전 값</th><th>변경 값</th><th>활성 변경</th><th>사유</th><th>변경자</th><th>변경일</th></tr></thead><tbody id="systemHistoryRows"></tbody></table></div>
-      </section>
-      <section class="internal-card system-log-card">
-        <div class="section-heading compact-heading no-side-padding"><h2>배포 기록</h2><p>배포 단위 이력입니다.</p></div>
-        <div id="systemRollbackPanel" class="system-operation-panel"></div>
-        <div class="table-wrap"><table><thead><tr><th>버전</th><th>변경 품목 수</th><th>사유</th><th>배포자</th><th>배포일시</th><th class="admin-system-only">원복</th></tr></thead><tbody id="systemPublishLogRows"></tbody></table></div>
-      </section>
-    `;
-    document.querySelector(".tab-panel#admin")?.insertAdjacentElement("afterend", section);
-  }
-  renderSystemManagement();
-}
+function ensureSystemManagementShell() { return currentCostView().ensureSystemManagementShell(); }
 
-function removeSystemManagementShell() {
-  document.querySelector('[data-tab="system"]')?.remove();
-  document.getElementById("system")?.remove();
-}
+function removeSystemManagementShell() { return currentCostView().removeSystemManagementShell(); }
 
-function setSystemStatus(message) {
-  const node = document.getElementById("systemStatusText");
-  if (node) node.textContent = message;
-}
+function setSystemStatus(message) { return currentCostView().setSystemStatus(message); }
 
-function renderSystemStatus() {
-  const box = document.getElementById("systemStatusMetrics");
-  if (!box) return;
-  const items = [...originalCostItems.values()];
-  const drafts = changedCostItems();
-  const latest = latestPublishLog();
-  const metrics = [
-    ["전체 원가 품목 수", `${items.length.toLocaleString("ko-KR")}개`],
-    ["활성 품목 수", `${items.filter((item) => item.is_active).length.toLocaleString("ko-KR")}개`],
-    ["변경 예정 품목 수", `${drafts.length.toLocaleString("ko-KR")}개`],
-    ["최근 배포 버전", latest?.version || "-"],
-    ["최근 배포 일시", latest?.published_at ? formatDateTime(latest.published_at) : "-"],
-    ["저장된 견적 수", `${systemEstimateCount.toLocaleString("ko-KR")}건`],
-  ];
-  box.innerHTML = metrics.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("");
-}
+function renderSystemStatus() { return currentCostView().renderSystemStatus(); }
 
-function renderBulkMarginPanel() {
-  const panel = document.getElementById("systemBulkMarginPanel");
-  if (!panel) return;
-  const categories = systemCategories();
-  const activeRows = rowsBySystemFilter({ activeMode: "active" });
-  if (!canEditCost()) {
-    panel.innerHTML = `
-      <div class="system-readonly-note">
-        <strong>마진 일괄 변경</strong>
-        <span>매니저는 원가와 변경 예정값을 조회만 할 수 있습니다.</span>
-      </div>`;
-    return;
-  }
-  panel.innerHTML = `
-    <div class="system-operation-header">
-      <h3>마진 일괄 변경</h3>
-      <p>운영값은 즉시 바뀌지 않고 변경 예정 마진율만 생성됩니다.</p>
-    </div>
-    <div class="system-bulk-grid">
-      <label>적용 범위
-        <select id="bulkMarginScope">
-          <option value="all">전체 품목</option>
-          <option value="category">공정별</option>
-        </select>
-      </label>
-      <label>공정
-        <select id="bulkMarginCategory">
-          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
-        </select>
-      </label>
-      <label>대상 상태
-        <select id="bulkMarginActiveMode">
-          <option value="active" selected>활성 품목만</option>
-          <option value="all">전체 품목</option>
-        </select>
-      </label>
-      <label>변경 마진율(%)
-        <input id="bulkMarginRate" type="number" min="0" max="99" step="0.1" value="30">
-      </label>
-      <label>기존 변경 예정값
-        <select id="bulkMarginDraftPolicy">
-          <option value="keep" selected>유지</option>
-          <option value="overwrite">덮어쓰기</option>
-        </select>
-      </label>
-      <button type="button" data-system-action="bulk-margin-preview">대상 확인</button>
-      <button type="button" data-system-action="bulk-margin-apply">변경 예정값으로 일괄 적용</button>
-    </div>
-    <p id="bulkMarginPreview" class="status-text">
-      기본 대상: 활성 품목 ${activeRows.length}개 / 현재 마진율 분포 ${marginDistribution(activeRows)}
-    </p>`;
-}
+function renderBulkMarginPanel() { return currentCostView().renderBulkMarginPanel(); }
 
-function renderCategoryCancelPanel() {
-  const panel = document.getElementById("systemCategoryCancelPanel");
-  if (!panel) return;
-  if (!canEditCost()) {
-    panel.innerHTML = "";
-    return;
-  }
-  const categories = systemCategories();
-  panel.innerHTML = `
-    <div class="system-category-cancel">
-      <label>공정별 임시저장 취소
-        <select id="cancelDraftCategory">
-          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
-        </select>
-      </label>
-      <button type="button" data-system-action="cancel-category-drafts">선택 공정 임시저장 취소</button>
-    </div>`;
-}
+function renderCategoryCancelPanel() { return currentCostView().renderCategoryCancelPanel(); }
 
-function renderCostItemTools() {
-  const panel = document.getElementById("systemCostItemTools");
-  if (!panel) return;
-  const subcategories = systemTradeSubcategories(expandedSystemCostCategory);
-  panel.innerHTML = `
-    <div class="system-operation-header">
-      <h3>품목 검색·필터</h3>
-      <p>품목 수가 늘어나도 코드, 이름, 분류, 상태로 빠르게 찾습니다.</p>
-    </div>
-    <div class="system-bulk-grid cost-item-filter-grid">
-      <label>검색
-        <input id="costItemSearch" type="search" value="${escapeHtml(costItemFilters.keyword)}" placeholder="품목명 또는 코드">
-      </label>
-      <label>중분류
-        <select id="costItemSubcategoryFilter">
-          <option value="">전체</option>
-          ${subcategories.map((item) => `<option value="${escapeHtml(item)}" ${costItemFilters.subcategory === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
-        </select>
-      </label>
-      <label>활성 상태
-        <select id="costItemActiveFilter">
-          <option value="all" ${costItemFilters.active === "all" ? "selected" : ""}>전체</option>
-          <option value="active" ${costItemFilters.active === "active" ? "selected" : ""}>활성</option>
-          <option value="inactive" ${costItemFilters.active === "inactive" ? "selected" : ""}>비활성</option>
-        </select>
-      </label>
-      <label>운영 상태
-        <select id="costItemStateFilter">
-          <option value="all" ${costItemFilters.state === "all" ? "selected" : ""}>전체</option>
-          <option value="draft" ${costItemFilters.state === "draft" ? "selected" : ""}>변경 예정</option>
-          <option value="pending" ${costItemFilters.state === "pending" ? "selected" : ""}>신규 배포 대기</option>
-          <option value="published" ${costItemFilters.state === "published" ? "selected" : ""}>운영 품목</option>
-        </select>
-      </label>
-      <label>정렬
-        <select id="costItemSortFilter">
-          <option value="sort" ${costItemFilters.sort === "sort" ? "selected" : ""}>정렬 순서</option>
-          <option value="updated" ${costItemFilters.sort === "updated" ? "selected" : ""}>최근 수정순</option>
-        </select>
-      </label>
-      ${canEditCost() ? `<button type="button" data-system-action="cost-item-create-open">+ 품목 추가</button>` : ""}
-    </div>`;
-}
+function renderCostItemTools() { return currentCostView().renderCostItemTools(); }
 
-function renderCostItemEditor() {
-  const panel = document.getElementById("systemCostItemEditor");
-  if (!panel) return;
-  if (!canEditCost() || !costItemEditorMode) {
-    panel.hidden = true;
-    panel.innerHTML = "";
-    return;
-  }
-  const source = costItemEditorSourceCode ? originalCostItems.get(costItemEditorSourceCode) : null;
-  const isEdit = costItemEditorMode === "edit";
-  const isClone = costItemEditorMode === "clone";
-  const defaults = costItemFormDefaults(source || {});
-  if (!isEdit) {
-    defaults.item_code = "";
-    defaults.item_name = "";
-  }
-  const categories = systemCategories();
-  const subcategories = systemSubcategories(defaults.category);
-  panel.hidden = false;
-  panel.innerHTML = `
-    <div class="system-operation-header">
-      <h3>${isEdit ? "신규 품목 수정" : isClone ? "품목 복제" : "품목 추가"}</h3>
-      <p>신규 품목은 배포 전까지 운영 견적 계산에 사용되지 않습니다.</p>
-    </div>
-    <form id="costItemForm" class="cost-item-form">
-      <div class="cost-item-form-grid">
-        <label>품목 코드
-          <input id="costItemCode" type="text" value="${escapeHtml(defaults.item_code)}" ${isEdit ? "readonly" : ""} placeholder="SYSTEM_TEST_MATERIAL_ITEM">
-        </label>
-        <label>품목명
-          <input id="costItemName" type="text" value="${escapeHtml(defaults.item_name)}">
-        </label>
-        <label>대분류
-          <select id="costItemCategory">
-            ${categories.map((item) => `<option value="${escapeHtml(item)}" ${defaults.category === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
-          </select>
-        </label>
-        <label>중분류
-          <select id="costItemSubcategory">
-            ${subcategories.map((item) => `<option value="${escapeHtml(item)}" ${defaults.subcategory === item ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}
-          </select>
-        </label>
-        <label>단위
-          <input id="costItemUnit" type="text" value="${escapeHtml(defaults.unit)}">
-        </label>
-        <label>계산 기준
-          <select id="costItemCalculationBasis">
-            ${COST_CALCULATION_BASIS_OPTIONS.map(([value, label]) => `<option value="${escapeHtml(value)}" ${defaults.calculation_basis === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
-          </select>
-        </label>
-        <label>기본 원가
-          <input id="costItemCostPrice" type="number" min="0" step="1000" value="${defaults.cost_price}">
-        </label>
-        <label>기본 마진율(%)
-          <input id="costItemMarginRate" type="number" min="0" max="99" step="0.1" value="${(rateNumber(defaults.default_margin_rate) * 100).toFixed(1)}">
-        </label>
-        <label>활성 상태
-          <select id="costItemActive">
-            <option value="true" ${defaults.is_active ? "selected" : ""}>활성</option>
-            <option value="false" ${!defaults.is_active ? "selected" : ""}>비활성</option>
-          </select>
-        </label>
-        <label>정렬 순서
-          <input id="costItemSortOrder" type="number" min="0" step="1" value="${defaults.sort_order}">
-        </label>
-        <label>계산 배수
-          <input id="costItemMultiplier" type="number" min="0" step="0.01" value="${defaults.calculation_multiplier}">
-        </label>
-        <label>최소 수량
-          <input id="costItemMinQuantity" type="number" min="0" step="0.01" value="${defaults.min_quantity}">
-        </label>
-        <label>수량 올림 방식
-          <select id="costItemRounding">
-            ${COST_ROUNDING_OPTIONS.map(([value, label]) => `<option value="${value}" ${defaults.rounding_method === value ? "selected" : ""}>${label}</option>`).join("")}
-          </select>
-        </label>
-        <label>고객 표시명
-          <input id="costItemCustomerName" type="text" value="${escapeHtml(defaults.customer_name)}">
-        </label>
-        <label>내부 설명
-          <input id="costItemMemo" type="text" value="${escapeHtml(defaults.memo)}">
-        </label>
-        <label>발주 표시명
-          <input id="costItemOrderName" type="text" value="${escapeHtml(defaults.order_name)}">
-        </label>
-      </div>
-      <div class="cost-item-checks">
-        <label class="inline-check"><input id="costItemCustomerQuote" type="checkbox" ${defaults.include_in_customer_quote ? "checked" : ""}><span>고객 견적 표시</span></label>
-        <label class="inline-check"><input id="costItemInternalQuote" type="checkbox" ${defaults.include_in_internal_quote ? "checked" : ""}><span>내부 견적 표시</span></label>
-        <label class="inline-check"><input id="costItemOrderSheet" type="checkbox" ${defaults.include_in_order_sheet ? "checked" : ""}><span>발주내역 표시</span></label>
-        <label class="inline-check"><input id="costItemMaterial" type="checkbox" ${defaults.is_material ? "checked" : ""}><span>자재</span></label>
-        <label class="inline-check"><input id="costItemLabor" type="checkbox" ${defaults.is_labor ? "checked" : ""}><span>인건비</span></label>
-        <label class="inline-check"><input id="costItemService" type="checkbox" ${defaults.is_service ? "checked" : ""}><span>기타/서비스</span></label>
-      </div>
-      <p class="status-text">새 입력 필드가 필요한 품목은 배포 전 “견적 입력 화면 연결 필요” 상태를 확인하세요.</p>
-      <div class="admin-action-row">
-        <button type="submit" ${costItemActionBusy ? "disabled" : ""}>${isEdit ? "수정 임시저장" : isClone ? "복제 임시저장" : "신규 임시저장"}</button>
-        <button type="button" data-system-action="cost-item-editor-close">취소</button>
-      </div>
-    </form>`;
-}
+function renderCostItemEditor() { return currentCostView().renderCostItemEditor(); }
 
-function systemCostRowHtml(row) {
-    const dirty = hasDraft(row);
-    const draftCost = row.draft_cost_price ?? "";
-    const draftMargin = row.draft_margin_rate ?? 0.3;
-    const draftActive = draftValue(row, "active");
-    const draftCostCell = canEditCost()
-      ? `<input class="system-draft-input" data-system-field="cost" data-item-code="${row.item_code}" type="number" step="1000" min="0" value="${draftCost}">`
-      : (row.draft_cost_price !== null && row.draft_cost_price !== undefined ? won(row.draft_cost_price) : "-");
-    const draftMarginCell = canEditCost()
-      ? `<input class="system-draft-input system-margin-input" data-system-field="margin" data-item-code="${row.item_code}" type="number" step="0.1" min="0" max="99" value="${(rateNumber(draftMargin) * 100).toFixed(1)}">`
-      : (row.draft_margin_rate !== null && row.draft_margin_rate !== undefined ? percentText(row.draft_margin_rate) : "-");
-    const draftActiveCell = canEditCost()
-      ? `<select class="system-draft-input" data-system-field="active" data-item-code="${row.item_code}"><option value="true" ${draftActive ? "selected" : ""}>활성</option><option value="false" ${!draftActive ? "selected" : ""}>비활성</option></select>`
-      : (draftActive ? "활성" : "비활성");
-    const actionCell = canEditCost()
-      ? `<button type="button" data-system-action="save-draft" data-item-code="${row.item_code}">임시저장</button>`
-      : "";
-    const stateLabel = row.is_pending_new ? "신규 배포 대기" : dirty ? "변경 예정" : "운영";
-    const managementActions = canEditCost()
-      ? `<div class="cost-item-row-actions">
-          <button type="button" data-system-action="cost-item-clone-open" data-item-code="${row.item_code}">복제</button>
-          ${row.is_pending_new ? `<button type="button" data-system-action="cost-item-edit-open" data-item-code="${row.item_code}">수정</button>` : ""}
-          <button type="button" data-system-action="deactivate-draft" data-item-code="${row.item_code}">${row.is_active ? "비활성화 예정" : "재활성화 예정"}</button>
-        </div>`
-      : "";
-    return `
-      <tr class="${dirty ? "system-dirty-row" : ""} ${row.is_pending_new ? "system-pending-row" : ""}">
-        <td>${escapeHtml(row.item_name || row.itemCode)}</td>
-        <td>${escapeHtml(row.subcategory || "-")}</td>
-        <td>${escapeHtml(row.unit || "-")}</td>
-        <td>${won(row.cost_price)}</td>
-        <td>${draftCostCell}</td>
-        <td>${percentText(row.default_margin_rate)}</td>
-        <td>${draftMarginCell}</td>
-        <td class="admin-system-only">${actionCell}</td>
-        <td>${row.is_active ? "활성" : "비활성"}</td>
-        <td>${draftActiveCell}</td>
-        <td>${stateLabel}</td>
-        <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
-        <td class="admin-system-only">${managementActions}</td>
-      </tr>`;
-}
 
 function renderSystemCostRows() {
-  const panel = document.getElementById("systemCostAccordion");
-  if (!panel) return;
-  const groups = groupedSystemCostRows();
-  if (!groups.length) {
-    expandedSystemCostCategory = "";
-    panel.innerHTML = `<div class="system-empty-state">조건에 맞는 원가 품목이 없습니다.</div>`;
-    return;
-  }
-  if (costItemFilters.keyword && !groups.some(([tradeLabel]) => tradeLabel === expandedSystemCostCategory)) {
-    expandedSystemCostCategory = groups[0][0];
-  }
-  panel.innerHTML = groups.map(([tradeLabel, rows]) => {
-    const isOpen = expandedSystemCostCategory === tradeLabel;
-    const draftCount = rows.filter(hasDraft).length;
-    const inactiveDraftCount = rows.filter((row) => row.draft_is_active === false).length;
-    const meta = [
-      `${rows.length.toLocaleString("ko-KR")}개 항목`,
-      draftCount ? `변경 예정 ${draftCount.toLocaleString("ko-KR")}개` : "",
-      inactiveDraftCount ? `비활성 예정 ${inactiveDraftCount.toLocaleString("ko-KR")}개` : "",
-    ].filter(Boolean).join(" · ");
-    return `
-      <section class="system-cost-group ${isOpen ? "is-open" : ""}">
-        <button class="system-cost-group-header" type="button" data-system-cost-category="${escapeHtml(tradeLabel)}" aria-expanded="${isOpen ? "true" : "false"}">
-          <span>
-            <strong>${escapeHtml(tradeLabel)}</strong>
-            <small>${escapeHtml(meta)}</small>
-          </span>
-          <span class="system-cost-toggle">${isOpen ? "접기" : "펼치기"}</span>
-        </button>
-        ${isOpen ? `
-          <div class="table-wrap system-cost-wrap">
-            <table class="system-cost-table">
-              <thead><tr>
-                <th>품목명</th><th>세부분류</th><th>단위</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>상태</th><th>최근 수정일</th><th class="admin-system-only">작업</th>
-              </tr></thead>
-              <tbody>${rows.map(systemCostRowHtml).join("")}</tbody>
-            </table>
-          </div>` : ""}
-      </section>`;
-  }).join("");
-}
-function draftChangeText(row) {
-  const parts = [];
-  if (row.draft_cost_price !== null && row.draft_cost_price !== undefined) parts.push(`단가 ${won(row.cost_price)} → ${won(row.draft_cost_price)}`);
-  if (row.draft_margin_rate !== null && row.draft_margin_rate !== undefined) parts.push(`마진 ${percentText(row.default_margin_rate)} → ${percentText(row.draft_margin_rate)}`);
-  if (row.draft_is_active !== null && row.draft_is_active !== undefined) parts.push(`활성 ${row.is_active ? "활성" : "비활성"} → ${row.draft_is_active ? "활성" : "비활성"}`);
-  return parts.join(" / ") || "-";
+  const view = currentCostView();
+  if (!view.hasAccordionTarget()) return;
+  const prepared = currentCostViewModel().accordion();
+  expandedSystemCostCategory = prepared.expanded;
+  view.renderSystemCostRows(prepared);
 }
 
-function renderSystemDraftRows() {
-  const tbody = document.getElementById("systemDraftRows");
-  const summary = document.getElementById("systemPublishSummary");
-  const actions = document.getElementById("systemPublishActions");
-  if (!tbody || !summary || !actions) return;
-  const rows = changedCostItems();
-  summary.innerHTML = `<strong>변경 예정 품목 수: ${rows.length.toLocaleString("ko-KR")}개</strong>`;
-  tbody.innerHTML = rows.length ? rows.map((row) => `
-    <tr>
-      <td>${escapeHtml(row.item_name || row.item_code)}</td>
-      <td>${won(row.cost_price)} / ${percentText(row.default_margin_rate)} / ${row.is_active ? "활성" : "비활성"}</td>
-      <td>${won(draftValue(row, "cost"))} / ${percentText(draftValue(row, "margin"))} / ${draftValue(row, "active") ? "활성" : "비활성"}</td>
-      <td>${escapeHtml(draftChangeText(row))}</td>
-      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="cancel-draft" data-item-code="${row.item_code}">임시저장 취소</button>` : ""}</td>
-    </tr>
-  `).join("") : `<tr><td colspan="5">배포 대기 중인 변경 예정값이 없습니다.</td></tr>`;
-  actions.innerHTML = canPublishCost() ? `
-    <label class="system-publish-reason">배포 사유<input id="systemPublishReason" type="text" maxlength="500" placeholder="사유를 입력하세요"></label>
-    <button type="button" data-system-action="publish" ${rows.length ? "" : "disabled"}>배포</button>
-    <button type="button" data-system-action="cancel-all-drafts" ${rows.length ? "" : "disabled"}>전체 임시저장 취소</button>
-  ` : "";
-}
+function renderSystemDraftRows() { return currentCostView().renderSystemDraftRows(); }
 
-function renderSystemHistoryRows() {
-  const tbody = document.getElementById("systemHistoryRows");
-  if (!tbody) return;
-  tbody.innerHTML = systemCostHistory.length ? systemCostHistory.map((row) => {
-    const item = row.cost_items || {};
-    return `<tr>
-      <td>${escapeHtml(row.cost_version || "-")}</td>
-      <td>${escapeHtml(item.item_name || item.item_code || row.cost_item_id || "-")}</td>
-      <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)}</td>
-      <td>${won(row.new_cost_price)} / ${percentText(row.new_margin_rate)}</td>
-      <td>${row.old_is_active === row.new_is_active ? "-" : `${row.old_is_active ? "활성" : "비활성"} → ${row.new_is_active ? "활성" : "비활성"}`}</td>
-      <td>${escapeHtml(row.reason || "-")}</td>
-      <td>${escapeHtml(row.changed_by || "-")}</td>
-      <td>${row.changed_at ? formatDateTime(row.changed_at) : "-"}</td>
-    </tr>`;
-  }).join("") : `<tr><td colspan="8">변경 이력이 없습니다.</td></tr>`;
-}
+function renderSystemHistoryRows() { return currentCostView().renderSystemHistoryRows(); }
 
-function renderSystemPublishLogRows() {
-  const tbody = document.getElementById("systemPublishLogRows");
-  if (!tbody) return;
-  tbody.innerHTML = systemPublishLogs.length ? systemPublishLogs.map((row) => `
-    <tr>
-      <td>${escapeHtml(row.version || "-")}</td>
-      <td>${Number(row.changed_item_count || 0).toLocaleString("ko-KR")}</td>
-      <td>${escapeHtml(row.reason || "-")}</td>
-      <td>${escapeHtml(row.published_by || "-")}</td>
-      <td>${row.published_at ? formatDateTime(row.published_at) : "-"}</td>
-      <td class="admin-system-only">${canEditCost() ? `<button type="button" data-system-action="rollback-view" data-version="${escapeHtml(row.version || "")}">변경 내역 보기</button>` : ""}</td>
-    </tr>
-  `).join("") : `<tr><td colspan="6">배포 기록이 없습니다.</td></tr>`;
-}
+function renderSystemPublishLogRows() { return currentCostView().renderSystemPublishLogRows(); }
 
-function renderRollbackPanel(version = "") {
-  const panel = document.getElementById("systemRollbackPanel");
-  if (!panel) return;
-  if (!canEditCost()) {
-    panel.innerHTML = "";
-    return;
-  }
-  if (!version) {
-    panel.innerHTML = `<p class="status-text">배포 기록에서 변경 내역을 선택하면 원복 예정값을 검토할 수 있습니다.</p>`;
-    return;
-  }
-  const log = systemPublishLogs.find((item) => item.version === version);
-  const rows = systemCostHistory.filter((row) => row.cost_version === version);
-  const categories = [...new Set(rows.map((row) => row.cost_items?.category || "기타"))];
-  const reviewed = rows.map((row) => {
-    const item = row.cost_items || {};
-    const current = originalCostItems.get(item.item_code);
-    const conflict = !current ||
-      rateNumber(current.cost_price) !== rateNumber(row.new_cost_price) ||
-      rateNumber(current.default_margin_rate) !== rateNumber(row.new_margin_rate) ||
-      Boolean(current.is_active) !== Boolean(row.new_is_active);
-    return { row, item, current, conflict };
-  });
-  const conflictCount = reviewed.filter((item) => item.conflict).length;
-  panel.innerHTML = `
-    <div class="system-operation-header">
-      <h3>원복 검토: ${escapeHtml(version)}</h3>
-      <p>이전 값을 새 변경 예정값으로 생성합니다. 운영값은 배포 전까지 바뀌지 않습니다.</p>
-    </div>
-    <dl class="system-rollback-meta">
-      <div><dt>원본 사유</dt><dd>${escapeHtml(log?.reason || "-")}</dd></div>
-      <div><dt>원본 배포자</dt><dd>${escapeHtml(log?.published_by || "-")}</dd></div>
-      <div><dt>원본 배포일</dt><dd>${log?.published_at ? formatDateTime(log.published_at) : "-"}</dd></div>
-      <div><dt>대상 품목</dt><dd>${rows.length}개 / 충돌 ${conflictCount}개</dd></div>
-    </dl>
-    <div class="system-bulk-grid">
-      <label>원복 단위
-        <select id="rollbackScope">
-          <option value="version">버전 전체</option>
-          <option value="category">공정별</option>
-          <option value="item">특정 품목</option>
-        </select>
-      </label>
-      <label>공정
-        <select id="rollbackCategory">
-          ${categories.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join("")}
-        </select>
-      </label>
-      <label>품목
-        <select id="rollbackItemCode">
-          ${reviewed.map(({ item }) => `<option value="${escapeHtml(item.item_code || "")}">${escapeHtml(item.item_name || item.item_code || "-")}</option>`).join("")}
-        </select>
-      </label>
-      <label class="inline-check"><input id="rollbackForceConflicts" type="checkbox"><span>충돌 품목도 변경 예정값 생성</span></label>
-      <button type="button" data-system-action="rollback-create" data-version="${escapeHtml(version)}">원복 예정값 생성</button>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>품목</th><th>원본 변경 전</th><th>원본 변경 후</th><th>현재 운영값</th><th>원복 예정값</th><th>충돌</th></tr></thead><tbody>
-      ${reviewed.map(({ row, item, current, conflict }) => `
-        <tr class="${conflict ? "system-conflict-row" : ""}">
-          <td>${escapeHtml(item.item_name || item.item_code || "-")}</td>
-          <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)} / ${row.old_is_active ? "활성" : "비활성"}</td>
-          <td>${won(row.new_cost_price)} / ${percentText(row.new_margin_rate)} / ${row.new_is_active ? "활성" : "비활성"}</td>
-          <td>${current ? `${won(current.cost_price)} / ${percentText(current.default_margin_rate)} / ${current.is_active ? "활성" : "비활성"}` : "품목 없음"}</td>
-          <td>${won(row.old_cost_price)} / ${percentText(row.old_margin_rate)} / ${row.old_is_active ? "활성" : "비활성"}</td>
-          <td>${conflict ? "충돌" : "-"}</td>
-        </tr>
-      `).join("")}
-    </tbody></table></div>`;
-}
+function renderRollbackPanel(version = "") { return currentCostView().renderRollbackPanel(version); }
 
 function roleLabel(role) {
   return { admin: "관리자", manager: "매니저", staff: "직원" }[role] || "직원";
@@ -4498,7 +2952,7 @@ function handleUserAction(button) {
 
 function renderSystemManagement() {
   if (!canViewSystem() || !document.getElementById("system")) return;
-  document.getElementById("system")?.classList.toggle("system-readonly", !canEditCost());
+  currentCostView().applyRolePresentation();
   renderSystemStatus();
   renderBulkMarginPanel();
   renderCostItemTools();

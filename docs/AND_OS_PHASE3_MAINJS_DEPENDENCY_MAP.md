@@ -1335,3 +1335,197 @@ contract create/confirm/change approval orchestration, RPC/DB lock 및 authoriza
 
 이번 단계는 단일 로컬 commit만 수행한다. push/deploy/Production migration 없음.
 기존 제외 SQL 두 파일은 미수정/unstaged/commit 제외 상태를 유지한다.
+
+## 23. Phase 3E: Contract And Cost View Layers
+
+### Before / After
+
+- 기준 commit: `5bdc7c9` (Phase 3D).
+- main.js: 5,694 -> 4,148행, 순감소 1,546행.
+- 신규 module 5개 / 합계 1,752행:
+  - `contract-view-model.js`: 142행, 계약 옵션 restore command / payment / label / area / package summary.
+  - `contract-view.js`: 321행, 계약 panel / options / packages / spec / 3종 preview / 권한 DOM.
+  - `contract-print.js`: 551행, 고정 48조 / CONTRACT·QUOTE·SPEC / header·footer / print sheet.
+  - `cost-view-model.js`: 244행, 원가 filter / trade grouping / editor defaults / draft metrics / rollback review.
+  - `cost-view.js`: 494행, system shell / 목록·editor·배포 준비·이력·원복 presentation.
+- 계약 원본 함수 36개와 원가 원본 함수 31개, 총 67개 책임을 이동/분해했다.
+  일부 main facade/controller는 유지하므로 67개 controller를 완전히 삭제했다는 뜻은 아니다.
+- model factory는 기존 상태를 읽는 context이며 새 app store가 아니다.
+  expanded accordion의 다음 상태는 model 결과를 main에서 기존 변수에 반영한다.
+
+### Contract View Architecture
+
+```mermaid
+flowchart TD
+  A[main: selected estimate / role / options / preview / package state] --> B[contract-view-model]
+  B --> C[contract-view: options / preview / spec / package DOM]
+  A --> D[contract-print: saved document / snapshot -> print HTML]
+  C --> E[existing delegated event handlers in main]
+  E --> F[main validation / payload / storage API / RPC orchestration]
+  F --> A
+  D --> G[main preview guard / window.print]
+```
+
+- view/model/print에 storage/API/RPC/main 역방향 import 또는 직접 mutation이 없다.
+- main의 currentContractViewModel/currentContractView facade는 현재 state와 명시적 권한을 전달한다.
+- 옵션의 기존 false/0/빈 문자열/legacy fallback 및 CONTRACTED 편집 제한을 그대로 유지한다.
+- CONTRACT_FIXED_TERM_LINES와 renderContractPrintDocument의 기존 main export는 유지한다.
+- saved generated_sections가 현재 template/package 정보보다 우선하는 증빙 semantics를 유지한다.
+  contractor parties_info legacy fallback, 지급일정 label/ratio/amount/due_basis 우선순위도 동일하다.
+- 고정 48조, 지급조건, 계약번호, template/rule/hash/version 정책 변경 없음.
+- 기존 change-order 전용 UI는 없었다. 기존 generic JSON preview와 CHANGE_PENDING/SUPERSEDED
+  상태 presentation만 보존했고 승인/변경 workflow를 새로 만들지 않았다.
+
+### Cost View Architecture And Callback Flow
+
+```mermaid
+flowchart TD
+  A[main: originalCostItems / filters / history / publish logs / busy / role] --> B[cost-view-model]
+  B --> C[cost-view: trade accordion / editor / drafts / publish / history / rollback]
+  C --> D[injected onOpenSystem / onRenderSystem callbacks]
+  D --> E[main: activateTab / refreshSystemManagement / user and audit panels]
+  C --> F[existing main event handlers]
+  F --> G[main payload validation / draft / publish / rollback storage calls]
+  G --> A
+```
+
+- 원가 category 표시 매핑/통합, 정렬, 검색/활성/draft/subcategory 필터, 열린 공정 유지가 동일하다.
+- editor 신규/복제/수정 source defaults, zero/empty/busy 처리와 권한 DOM을 그대로 옮겼다.
+- draft/publish/history/rollback HTML은 기존 source와 exact golden 비교했다.
+- rollback model은 기존 이력/현재값/충돌 review를 표시하며 mutation target 계산은 main에 남긴다.
+- view가 version을 할당하거나 draft를 새 규칙으로 정규화하거나 publish/rollback target을 바꾸지 않는다.
+- system tab 생성 시 main callback을 주입한다. user/audit render와 API loading은 main이 수행한다.
+
+### Function Inventory
+
+기준 commit의 line 범위, named caller, 직접 DOM selector와 lexical dependency를 캡처했다.
+동적 selector는 원본 표현으로 기록하며 아래 inventory는 공개 source 분석 결과다.
+
+| 함수 | 기준 line | named callers | DOM ID | 직접 dependency |
+| --- | --- | --- | --- | --- |
+| ensureContractPackagePanel | 576-707 | renderContractPackagePanel, refreshContractPackagePanel, applyAccessControl | admin, savedEstimateRows, contractPackagePanel | canViewContractPackage, document |
+| contractStatus | 716-721 | refreshContractPackagePanel, refreshAllContractPackages, saveContractOptionsFromForm, previewContractPackageFromForm, createContractPackageFromForm, loadContractPackageToPreview | contractPackageStatus | document |
+| contractOptionSource | 723-725 | contractNested | - | contractOptionsState |
+| contractNested | 727-730 | contractOptionValue, contractOptionChecked | - | contractOptionSource, undefined |
+| contractOptionValue | 732-735 | renderContractOptionsForm | - | String, contractNested |
+| contractOptionChecked | 737-739 | renderContractOptionsForm | - | contractNested |
+| areaM2Text | 768-771 | renderContractOptionsForm | - | Number |
+| setContractField | 773-776 | renderContractOptionsForm | - | document |
+| setContractChecked | 778-781 | renderContractOptionsForm | - | document |
+| renderContractOptionsForm | 829-863 | renderContractPackagePanel | contractWriteActions, createContractPackageButton, contractReadonlyNote | areaM2Text, canCreateContractPackage, canEditContractPackageOptions, contractOptionChecked, contractOptionValue, contractPreviewState, document, setContractChecked, setContractField |
+| contractDocumentLabel | 865-867 | renderContractDocumentPreview | - | - |
+| contractPackageSummary | 882-899 | renderAllContractPackages, estimateFromContractPackage | - | - |
+| renderContractPackages | 945-960 | renderContractPackagePanel | contractPackageRows | Array, contractPackagesState, document, escapeHtml, formatDateTime |
+| renderAllContractPackages | 962-987 | renderContractPackagePanel, refreshAllContractPackages | contractPackageListPanel, allContractPackageRows | Number, allContractPackagesState, canViewContractPackage, contractPackageSummary, document, escapeHtml, formatDateTime, isStaff, won |
+| sanitizeContractPreviewValue | 989-994 | renderJsonHtml | - | isStaff, undefined |
+| renderJsonHtml | 996-1016 | renderContractDocumentPreview | - | Array, Boolean, Object, escapeHtml, renderJsonHtml, sanitizeContractPreviewValue, undefined |
+| renderContractSpecSnapshot | 1018-1035 | renderContractPreview | contractSpecSnapshot | Array, contractPreviewState, document, escapeHtml |
+| renderContractDocumentPreview | 1037-1053 | renderContractPreview | contractDocumentPreview | Array, contractDocumentLabel, contractPreviewState, contractSelectedDocumentType, document, escapeHtml, renderJsonHtml |
+| contractPrintValue | 1055-1059 | contractPrintDate, contractPrintInfo, renderContractDefinitionTable, renderContractPaymentTable, renderContractPrintDocument, renderContractSpecPrint | - | String |
+| contractPrintMoney | 1061-1064 | renderContractAmountTable, renderContractPaymentTable, renderContractQuotePrint | - | Number |
+| contractPrintDate | 1066-1070 | contractPrintInfo | - | String, contractPrintValue |
+| contractPrintInfo | 1072-1097 | renderContractPrintDocument, renderContractQuotePrint, renderContractSpecPrint | - | Array, Number, contractPrintDate, contractPrintValue |
+| contractPrintHeader | 1099-1113 | renderContractPrintDocument, renderContractQuotePrint, renderContractSpecPrint | - | Date, escapeHtml, formatDateTime |
+| contractPrintFooter | 1115-1122 | renderContractPrintDocument, renderContractQuotePrint, renderContractSpecPrint | - | escapeHtml |
+| normalizeContractPaymentSchedule | 1438-1457 | renderContractPrintDocument | - | Array, Math, Number |
+| renderContractDefinitionTable | 1459-1474 | renderContractAmountTable, renderContractPrintDocument | - | contractPrintValue, escapeHtml |
+| renderContractAmountTable | 1476-1481 | renderContractPrintDocument | - | contractPrintMoney, renderContractDefinitionTable |
+| renderContractPaymentTable | 1483-1499 | renderContractPrintDocument | - | contractPrintMoney, contractPrintValue, escapeHtml |
+| contractTermClassName | 1501-1508 | renderContractFixedTerms | - | - |
+| renderContractFixedTerms | 1510-1514 | renderContractPrintDocument | - | CONTRACT_FIXED_TERM_LINES, contractTermClassName, escapeHtml |
+| renderContractPrintDocument | 1516-1579 | renderContractPrintSheet | - | Array, CONTRACT_FIXED_TERM_LINES, contractPrintFooter, contractPrintHeader, contractPrintInfo, contractPrintValue, escapeHtml, normalizeContractPaymentSchedule, renderContractAmountTable, renderContractDefinitionTable, renderContractFixedTerms, renderContractPaymentTable |
+| renderContractQuotePrint | 1581-1621 | renderContractPrintSheet | - | Array, contractPrintFooter, contractPrintHeader, contractPrintInfo, contractPrintMoney, escapeHtml |
+| renderContractSpecPrint | 1623-1651 | renderContractPrintSheet | - | contractPrintFooter, contractPrintHeader, contractPrintInfo, contractPrintValue, escapeHtml |
+| renderContractPrintSheet | 1653-1668 | - | printQuoteSheet | alert, contractPreviewState, document, renderContractPrintDocument, renderContractQuotePrint, renderContractSpecPrint |
+| renderContractPreview | 1670-1676 | renderContractPackagePanel | - | contractSelectedDocumentType, document, renderContractDocumentPreview, renderContractSpecSnapshot |
+| renderContractPackagePanel | 1678-1696 | refreshContractPackagePanel, saveContractOptionsFromForm, previewContractPackageFromForm, createContractPackageFromForm, loadContractPackageToPreview, enterAuthenticatedApp | contractPackageEmpty, contractPackageWorkspace | document, ensureContractPackagePanel, renderAllContractPackages, renderContractOptionsForm, renderContractPackages, renderContractPreview, selectedContractEstimate, setText |
+| percentText | 3297-3299 | marginDistribution, systemCostRowHtml, draftChangeText, renderSystemDraftRows, renderSystemHistoryRows, renderRollbackPanel, previewBulkMargin, applyBulkMarginDrafts | - | rateNumber |
+| draftValue | 3301-3306 | systemCostRowHtml, renderSystemDraftRows | - | - |
+| hasDraft | 3308-3312 | systemCostRowsForAccordion, systemCostRowHtml, applyBulkMarginDrafts | - | undefined |
+| changedCostItems | 3314-3316 | renderSystemStatus, renderSystemDraftRows, cancelCategorySystemDrafts, cancelAllSystemDrafts, publishSystemDrafts | - | hasDraft, originalCostItems |
+| latestPublishLog | 3318-3320 | renderSystemStatus | - | systemPublishLogs |
+| systemCategories | 3322-3325 | costItemFormDefaults, renderBulkMarginPanel, renderCategoryCancelPanel, renderCostItemEditor | - | Set, String, originalCostItems |
+| systemCategoryLabel | 3327-3336 | systemTradeSubcategories, groupedSystemCostRows | - | - |
+| systemTradeOrderIndex | 3340-3343 | groupedSystemCostRows | - | SYSTEM_TRADE_ORDER |
+| rowsBySystemFilter | 3345-3351 | renderBulkMarginPanel, previewBulkMargin, applyBulkMarginDrafts | - | originalCostItems |
+| systemSubcategories | 3377-3383 | renderCostItemEditor | - | Boolean, Set, String, originalCostItems |
+| systemTradeSubcategories | 3385-3391 | renderCostItemTools | - | Boolean, Set, String, originalCostItems, systemCategoryLabel |
+| systemCostRowsForAccordion | 3393-3414 | groupedSystemCostRows | - | Date, costItemFilters, hasDraft, originalCostItems |
+| groupedSystemCostRows | 3416-3426 | renderSystemCostRows | - | Map, String, systemCategoryLabel, systemCostRowsForAccordion, systemTradeOrderIndex |
+| costItemFormDefaults | 3428-3453 | renderCostItemEditor | - | systemCategories |
+| marginDistribution | 3533-3540 | renderBulkMarginPanel, previewBulkMargin | - | Map, percentText |
+| existingDraftCount | 3542-3544 | previewBulkMargin, applyBulkMarginDrafts | - | hasDraft |
+| ensureSystemManagementShell | 3564-3625 | refreshSystemManagement, applyAccessControl | system | activateTab, canViewSystem, console, document, refreshSystemManagement, renderSystemManagement |
+| removeSystemManagementShell | 3627-3630 | applyAccessControl | system | document |
+| setSystemStatus | 3632-3635 | refreshSystemManagement, saveSystemDraft, submitCostItemForm, createDeactivateDraft, applyBulkMarginDrafts, cancelSystemDraft, cancelCategorySystemDrafts, cancelAllSystemDrafts, createRollbackDrafts, publishSystemDrafts | systemStatusText | document |
+| renderSystemStatus | 3637-3652 | renderSystemManagement | systemStatusMetrics | changedCostItems, document, formatDateTime, latestPublishLog, originalCostItems, systemEstimateCount |
+| renderBulkMarginPanel | 3654-3705 | renderSystemManagement | systemBulkMarginPanel | canEditCost, document, escapeHtml, marginDistribution, rowsBySystemFilter, systemCategories |
+| renderCategoryCancelPanel | 3707-3724 | renderSystemManagement | systemCategoryCancelPanel | canEditCost, document, escapeHtml, systemCategories |
+| renderCostItemTools | 3726-3768 | renderSystemManagement, updateCostItemFilters | systemCostItemTools | canEditCost, costItemFilters, document, escapeHtml, expandedSystemCostCategory, systemTradeSubcategories |
+| renderCostItemEditor | 3770-3870 | renderSystemManagement, openCostItemEditor, closeCostItemEditor, submitCostItemForm | systemCostItemEditor | COST_CALCULATION_BASIS_OPTIONS, COST_ROUNDING_OPTIONS, canEditCost, costItemActionBusy, costItemEditorMode, costItemEditorSourceCode, costItemFormDefaults, document, escapeHtml, originalCostItems, rateNumber, systemCategories, systemSubcategories |
+| systemCostRowHtml | 3872-3913 | - | - | canEditCost, draftValue, escapeHtml, formatDateTime, hasDraft, percentText, rateNumber, undefined, won |
+| renderSystemCostRows | 3915-3956 | renderSystemManagement, updateCostItemFilters | systemCostAccordion | Boolean, costItemFilters, document, escapeHtml, expandedSystemCostCategory, groupedSystemCostRows, hasDraft, systemCostRowHtml |
+| draftChangeText | 3957-3963 | renderSystemDraftRows | - | percentText, undefined, won |
+| renderSystemDraftRows | 3965-3986 | renderSystemManagement | systemDraftRows, systemPublishSummary, systemPublishActions | canEditCost, canPublishCost, changedCostItems, document, draftChangeText, draftValue, escapeHtml, percentText, won |
+| renderSystemHistoryRows | 3988-4004 | renderSystemManagement | systemHistoryRows | document, escapeHtml, formatDateTime, percentText, systemCostHistory, won |
+| renderSystemPublishLogRows | 4006-4019 | renderSystemManagement | systemPublishLogRows | Number, canEditCost, document, escapeHtml, formatDateTime, systemPublishLogs |
+| renderRollbackPanel | 4021-4089 | renderSystemManagement | systemRollbackPanel | Boolean, Set, canEditCost, document, escapeHtml, formatDateTime, originalCostItems, percentText, rateNumber, systemCostHistory, systemPublishLogs, won |
+
+### Protected Mutation Boundary
+
+다음 18개 함수는 줄바꿈 정규화 후 원본 source와 완전히 동일함을 테스트했다.
+
+- collectContractOptionsPayload / validateContractOptionsForPreview
+- saveContractOptionsFromForm / previewContractPackageFromForm / createContractPackageFromForm
+- refreshContractPackagePanel / refreshAllContractPackages / loadContractPackageToPreview
+- costItemFormPayload / saveSystemDraft / submitCostItemForm / publishSystemDrafts
+- rollbackTargets / createRollbackDrafts / applyBulkMarginDrafts
+- cancelSystemDraft / cancelCategorySystemDrafts / cancelAllSystemDrafts
+
+API/RPC caller 의미, mutation payload, contract confirm/change approval controller,
+server authorization, storage, shared calculation core, SQL/RLS/DB lock은 변경하지 않았다.
+UI hidden/disabled는 기존 presentation일 뿐 서버 authorization을 대신하지 않는다.
+
+### Characterization / Role Regression / Verification
+
+- 원본 제거 전에 합성 사례 51개에서 OLD 함수의 full HTML/DOM/property/filter/expanded 결과를 캡처했다.
+  계약 22개 / 원가 29개: 옵션 false/legacy/zero/empty, 모든 기존 상태, 3종 preview/print,
+  저장 문서 우선순위, 지급 override, 역할, empty/missing target, 통합 공정/검색/필터/정렬,
+  editor create/edit/clone/busy, draft/history/rollback conflict·missing 사례 포함.
+- OLD frozen reference와 NEW module을 같은 fixture로 실행해 exact 결과와 원본 객체 불변을 확인했다.
+  고정된 합성 생성일을 사용하며 운영 견적/인증정보는 fixture에 포함하지 않는다.
+- 신규 unit 56개 + actual app integration 3개 = 신규 test 59개.
+  실제 index/main을 로드하는 admin/manager/staff mock integration에서 options 권한,
+  read-only preview, 3종 인쇄/48조, staff confirm 차단, 원가 control 권한 및 tab callback을 확인했다.
+  DB mutation을 수행하지 않는다.
+- staff preview는 내부 원가/hash/actor 필드를 숨기고 원본 package 증빙 객체는 수정하지 않는다.
+- 5개 module은 fresh Node import와 network/storage/main 역방향 의존 금지 검사를 통과했다.
+- 최종 Regression: 631/631 PASS (기준 572개 + 신규 59개).
+  Known Failure / Unexpected Fail / Skip / Unhandled Errors: 0.
+- Staff Boundary: 격리 local candidate Test DB 23/23 PASS x2.
+  Docker Desktop 엔진이 응답하지 않아 restart 후 정상화했으며 OS/Production 설정 변경은 없다.
+  기존 ACCOUNT-STATE GAP OBSERVED baseline helper 안내와 candidate fail-closed PASS를 구분했다.
+- role integration 초기 실패는 이전 case의 document/window delegated listener가 남은
+  mock harness 격리 문제였다. 해당 test 파일에서 등록 listener를 case 종료 시 정리했으며
+  production authorization/event 동작을 수정하지 않았다.
+- lint / build / main 및 5개 module syntax / git diff --check PASS.
+  기존 lint warning 5개 유지, 신규 warning 0.
+- DB Integrity 별도 미실행: 위 18개 mutation/payload 함수 원문 동일,
+  API/RPC caller semantics·server route·storage·SQL 수정 없음.
+  DB Security 별도 미실행: DB/RLS/SQL 변경 없음. Staff Boundary suite의 local DB 검증은 수행했다.
+
+### Remaining Main Responsibilities / Phase 3F
+
+- Contract coupling: selected estimate/state 선택, payload 수집·검증, async options/preview/package loading,
+  create/confirm orchestration, baseline dirty guard, event wiring, project-contract mapping,
+  preview guard/window.print와 얇은 render facade가 main에 남는다.
+- Cost coupling: fetch/refresh orchestration, filter/expanded/busy 상태, editor payload·검증,
+  draft/save/cancel/publish/rollback action, role/account/audit 연결 및 event wiring이 main에 남는다.
+- 프로젝트 shell/navigation, session/authorization, 정적 한국어 label repair와 다른 견적 controller는 미이동.
+- Phase 3E verdict: PASS. Phase 3F 진행 준비 완료, 별도 승인 필요.
+- 권장 다음 범위: account/user/audit panel의 presentation을 같은 OLD/NEW golden 방식으로 분리.
+  인증 session, 서버 권한, 사용자 mutation API/controller와 보안 정책은 main/server 경계에 유지한다.
+  신규 계정 정책/권한 확장/라우팅 개편으로 확대하지 않는다.
+
+이번 단계는 단일 로컬 commit만 수행한다. push/deploy/Production migration 없음.
+기존 제외 SQL 두 파일은 미수정/unstaged/commit 제외 상태를 유지한다.
