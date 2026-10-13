@@ -1,4 +1,5 @@
 import { escapeHtml } from "./utils.js";
+import { renderCustomerQuoteRows } from "./document-print.js";
 import { contractPrintValue, contractPrintMoney, contractPrintInfo, normalizeContractPaymentSchedule } from "./contract-view-model.js";
 
 export const CONTRACT_FIXED_TERM_LINES = [
@@ -332,11 +333,12 @@ function contractPrintHeader(title, info) {
   `;
 }
 
-function contractPrintFooter(info) {
+function contractPrintFooter(info, contractor = {}) {
   return `
     <footer class="contract-print-footer">
       <span>ANTNEST DESIGN</span>
       <span>계약번호 ${escapeHtml(info.contractNo)}</span>
+      ${[contractor?.company_name, contractor?.business_no, contractor?.phone, contractor?.address].filter(Boolean).map(value => `<span class="document-company-info">${escapeHtml(value)}</span>`).join("")}
     </footer>
   `;
 }
@@ -367,7 +369,7 @@ function renderContractAmountTable(info) {
 
 function renderContractPaymentTable(schedule) {
   return `
-    <table class="contract-print-table">
+    <table class="contract-print-table document-payment-table">
       <thead><tr><th>구분</th><th>지급시점</th><th>비율</th><th>금액</th></tr></thead>
       <tbody>
         ${schedule.map((item) => `
@@ -449,7 +451,7 @@ function renderContractPrintDocument(snapshot, documents = snapshot.contract_doc
       <section class="contract-print-section contract-fixed-terms">
         ${renderContractFixedTerms(Array.isArray(saved?.fixed_term_lines) ? saved.fixed_term_lines : CONTRACT_FIXED_TERM_LINES)}
       </section>
-      <section class="contract-print-section">
+      <section class="contract-print-section document-signature-intro">
         <h2>서명 및 날인</h2>
         <p>${escapeHtml("고객과 시공자는 계약서, 견적서 및 공사사양서의 내용을 모두 확인하고 이에 동의하여 계약을 체결한다.")}</p>
         <p>${escapeHtml(info.contractDate)}</p>
@@ -458,7 +460,7 @@ function renderContractPrintDocument(snapshot, documents = snapshot.contract_doc
         <div><strong>고객</strong><span>${escapeHtml(info.customerName)}</span><em>서명·날인</em></div>
         <div><strong>시공자</strong><span>${escapeHtml(contractor.company_name || "ANTNEST DESIGN")}</span><em>서명·날인</em></div>
       </section>
-      ${contractPrintFooter(info)}
+      ${contractPrintFooter(info, contractor)}
     </article>
   `;
 }
@@ -473,6 +475,8 @@ function renderContractQuotePrint(snapshot) {
         <h2>견적 개요</h2>
         <dl class="contract-print-grid">
           <div><dt>공사명</dt><dd>${escapeHtml(info.projectName)}</dd></div>
+          <div><dt>고객</dt><dd>${escapeHtml(info.customerName)}</dd></div>
+          <div><dt>연락처</dt><dd>${escapeHtml(info.customerPhone)}</dd></div>
           <div><dt>공사현장</dt><dd>${escapeHtml(info.siteAddress)}</dd></div>
           <div><dt>평형</dt><dd>${escapeHtml(info.areaPyeong)}평</dd></div>
           <div><dt>총 공사금액</dt><dd>${contractPrintMoney(info.totalAmount)} VAT 별도</dd></div>
@@ -480,19 +484,9 @@ function renderContractQuotePrint(snapshot) {
       </section>
       <section class="contract-print-section">
         <h2>공정별 견적</h2>
-        <table class="contract-print-table">
+        <table class="contract-print-table document-quote-table">
           <thead><tr><th>공정</th><th>항목</th><th>금액</th></tr></thead>
-          <tbody>
-            ${groups.length ? groups.map((group) => {
-              const items = Array.isArray(group.items) ? group.items : [];
-              return `
-                <tr class="contract-subtotal-row"><td>${escapeHtml(group.label || "-")}</td><td>소계</td><td>${escapeHtml(group.totalText || contractPrintMoney(group.total))}</td></tr>
-                ${items.map((item) => `
-                  <tr><td>${escapeHtml(group.label || "-")}</td><td>${escapeHtml(item.name || "-")}</td><td>${escapeHtml(item.amountText || contractPrintMoney(item.amount))}</td></tr>
-                `).join("")}
-              `;
-            }).join("") : `<tr><td colspan="3">표시할 견적 항목이 없습니다.</td></tr>`}
-          </tbody>
+          ${renderCustomerQuoteRows(groups, contractPrintMoney)}
         </table>
       </section>
       <footer>
@@ -500,7 +494,7 @@ function renderContractQuotePrint(snapshot) {
         <p>※ 부가세 별도 금액입니다.</p>
         <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
       </footer>
-      ${contractPrintFooter(info)}
+      ${contractPrintFooter(info, (snapshot.parties || snapshot.parties_info)?.contractor)}
     </article>
   `;
 }
@@ -530,7 +524,7 @@ function renderContractSpecPrint(snapshot) {
           </tbody>
         </table>
       </section>
-      ${contractPrintFooter(info)}
+      ${contractPrintFooter(info, (snapshot.parties || snapshot.parties_info)?.contractor)}
     </article>
   `;
 }

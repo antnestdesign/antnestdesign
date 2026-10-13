@@ -7,6 +7,7 @@ import { createEstimateCalculation } from "../../../public/os-app/src/calculator
 import { buildEstimateInternalViewModel, buildStoredInternalSummaryModel, buildInternalRowsModel } from "../../../public/os-app/src/estimate-view-model.js";
 import { estimateViewCases, exerciseViewCase, snapshotView, viewCaseEstimate } from "../fixtures/estimate-view-cases.js";
 import { createViewRuntime, viewGolden } from "../helpers/estimate-view-runtime.js";
+import { normalizeEstimatePrintResult } from "../helpers/document-semantics.js";
 
 function freeze(value) {
   if (value && typeof value === "object") { Object.values(value).forEach(freeze); Object.freeze(value); }
@@ -24,12 +25,13 @@ describe("Phase 3D exact OLD/NEW DOM and HTML characterization at 17a5c29", () =
       for (const evidence of [old, current]) {
         const returns = exerciseViewCase(evidence.runtime, entry, evidence.estimate, evidence.result);
         const snapshot = snapshotView(evidence.document, evidence.elements, structuredClone(returns));
-        expect(snapshot).toStrictEqual(expected);
+        expect(normalizeEstimatePrintResult(snapshot)).toStrictEqual(normalizeEstimatePrintResult(expected));
       }
       expect(current.estimate).toStrictEqual(before);
       // Re-rendering is deterministic and never appends stale quote/internal rows.
       const repeated = exerciseViewCase(current.runtime, entry, current.estimate, current.result);
-      expect(snapshotView(current.document, current.elements, structuredClone(repeated))).toStrictEqual(expected);
+      expect(normalizeEstimatePrintResult(snapshotView(current.document, current.elements, structuredClone(repeated))))
+        .toStrictEqual(normalizeEstimatePrintResult(expected));
       old.dom.window.close(); current.dom.window.close();
     });
   }

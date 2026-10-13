@@ -6,6 +6,7 @@ import { contractViewCases, costViewCases } from "../fixtures/contract-cost-view
 import { createContractCostRuntime, exerciseContractCost, contractCostGolden, currentFunctionSource } from "../helpers/contract-cost-view-runtime.js";
 import { CONTRACT_FIXED_TERM_LINES } from "../../../public/os-app/src/contract-print.js";
 import { normalizeContractPaymentSchedule } from "../../../public/os-app/src/contract-view-model.js";
+import { normalizeContractPrintResult } from "../helpers/document-semantics.js";
 beforeAll(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-01-01T12:00:00.000Z")); });
 afterAll(() => vi.useRealTimers());
 
@@ -21,7 +22,10 @@ describe("Phase 3E contract and cost exact characterization at 5bdc7c9", () => {
         const evidence = createContractCostRuntime(kind, entry, original);
         const before = structuredClone(evidence.fixture);
         freeze(evidence.fixture);
-        expect(structuredClone(exerciseContractCost(evidence, kind, entry))).toStrictEqual(expected);
+        const actual = structuredClone(exerciseContractCost(evidence, kind, entry));
+        // Phase 3G changes print markup, not stored document fields or non-print DOM.
+        expect(kind === "contract" ? normalizeContractPrintResult(actual) : actual)
+          .toStrictEqual(kind === "contract" ? normalizeContractPrintResult(expected) : expected);
         expect(evidence.fixture).toStrictEqual(before);
         evidence.dom.window.close();
       }

@@ -1,30 +1,26 @@
-import { won } from "./utils.js";
+import { won, escapeHtml } from "./utils.js";
+import { renderCustomerQuoteRows } from "./document-print.js";
 
 export function createEstimatePrint({ document, customerWon, formatDateTime, printGroupLabels }) {
 function renderPrintQuote(quote) {
   const sheet = document.getElementById("printQuoteSheet");
   if (!sheet || !quote) return;
   sheet.innerHTML = `
-    <header>
+    <article class="contract-print-page customer-quote-document">
+    <header class="contract-print-header">
+      <p class="document-brand">AND / ANTNEST DESIGN</p>
       <p>공사 견적서</p>
-      <h1>${quote.projectName}</h1>
+      <h1>${escapeHtml(quote.projectName)}</h1>
       <dl>
         <div><dt>평형</dt><dd>${quote.areaPyeong}평</dd></div>
         <div><dt>작성일</dt><dd>${formatDateTime(quote.savedAt)}</dd></div>
       </dl>
     </header>
-    <table>
+    <table class="contract-print-table document-quote-table">
       <thead>
-        <tr><th>공정</th><th>금액</th></tr>
+        <tr><th>공정</th><th>항목</th><th>금액</th></tr>
       </thead>
-      <tbody>
-        ${quote.groups.map((group) => `
-          <tr>
-            <td>${printGroupLabels[group.label] || `${group.label}공사`}</td>
-            <td>${group.totalText}</td>
-          </tr>
-        `).join("")}
-      </tbody>
+      ${renderCustomerQuoteRows(quote.groups, customerWon, label => printGroupLabels[label] || `${label}공사`)}
     </table>
     <footer>
       <div><span>총 공사금액</span><strong>${quote.totalText}</strong></div>
@@ -64,6 +60,7 @@ function renderPrintQuote(quote) {
         <p>Interior · Architecture · Construction Management</p>
       </div>
     </section>
+    </article>
   `;
 }
 
