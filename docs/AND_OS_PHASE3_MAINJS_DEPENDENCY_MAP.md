@@ -1529,3 +1529,218 @@ UI hidden/disabled는 기존 presentation일 뿐 서버 authorization을 대신�
 
 이번 단계는 단일 로컬 commit만 수행한다. push/deploy/Production migration 없음.
 기존 제외 SQL 두 파일은 미수정/unstaged/commit 제외 상태를 유지한다.
+
+## 24. Phase 3F: UI Shell / Account / Audit / Main Orchestration Finalization
+
+### Baseline And Extraction Size
+
+- 기준 commit: `cdc2b05` (Phase 3E), main.js 4,148행, Regression 631개.
+- main.js: 4,148 -> 3,075행, 순감소 1,073행.
+- Phase 3A 실측 6,947행 -> Phase 3F 3,075행, 총감소 3,872행.
+- 신규 module 4개, 합계 1,117행:
+  - `account-view.js` 167행: 역할/비밀번호 상태 label, 사용자 목록·편집·초기 비밀번호 panel·상태·shell.
+  - `audit-view.js` 90행: 작업 label, actor/target/time/result, 목록·필터 shell·상태.
+  - `ui-shell.js` 794행: 기존 정적 한국어 label 복구, 공유 panel 생성/제거,
+    tab active/visibility, staff/manager shell, header/role 표시, 인증 잠금 및 비밀번호 변경 화면 DOM.
+  - `application-events.js` 66행: 기존 27개 직접/위임 event 등록과 일반 form input 연결.
+- 분석한 presentation 함수는 account 8개, audit 4개, shell 16개다.
+  추가로 tab 등록 1구역 / business event 등록 27구역 / form input 등록 1구역을 분리했다.
+  shell/navigation/event 분석 범위는 16 + 29 = 45개 책임이다.
+- 실제 이동/분해는 표시 28개 + 추가 event 등록 구역 29개 + bootstrap 순서 정리 1개 = 58개 책임.
+  business callback 27개는 main의 named controller가 되었으며 API 작업을 view로 옮긴 것이 아니다.
+- account/audit가 복잡한 별도 계산 model을 요구하지 않아 각각 하나의 readonly-context view factory로 구성했다.
+  새 state manager나 권한 source of truth를 만들지 않았다.
+
+### Original Responsibility Inventory
+
+| 함수 | Phase 3E 원본 line | 이동 module |
+|---|---|---|
+| roleLabel | 2545-2547 | account-view |
+| passwordStatusLabel | 2549-2551 | account-view |
+| setUserManagementStatus | 2562-2567 | account-view |
+| renderUserManagementRows | 2569-2595 | account-view |
+| renderUserEditPanel | 2597-2634 | account-view |
+| renderUserResetPanel | 2636-2665 | account-view |
+| renderUserManagement | 2667-2672 | account-view |
+| ensureUserManagementShell | 2789-2830 | account-view |
+| auditActionLabel | 2674-2684 | audit-view |
+| renderAuditLogRows | 2686-2708 | audit-view |
+| ensureAuditLogShell | 2710-2750 | audit-view |
+| setAuditLogStatus | 2763-2768 | audit-view |
+| labelTextFor | 533-548 | ui-shell |
+| optionTextFor | 550-554 | ui-shell |
+| textFor | 556-559 | ui-shell |
+| sectionTextFor | 1230-1233 | ui-shell |
+| repairStaticKoreanLabels | 1235-1817 | ui-shell |
+| ensureRateDbSaveButton | 567-577 | ui-shell |
+| removeDuplicateManagementCriteriaBlock | 1819-1822 | ui-shell |
+| removeLegacyAdminEstimatePanels | 1824-1833 | ui-shell |
+| activateTab | 2345-2348 | ui-shell |
+| renderStaffAdminShell | 2352-2392 | ui-shell |
+| ensurePasswordChangeShell | 3369-3394 | ui-shell |
+| setPasswordChangeRequired | 3396-3402 | ui-shell |
+| clearPasswordChangeInputs | 3404-3409 | ui-shell |
+| bindPasswordChangeShell | 3456-3462 | ui-shell |
+| applyAccessControl | 3464-3488 | ui-shell |
+| setAuthenticated | 3490-3495 | ui-shell |
+
+### Final Architecture And Callback Flow
+
+```mermaid
+flowchart TD
+  CORE[shared estimate calculation core] --> MODEL[pure utility / summary / input / purchase / cost snapshot]
+  MODEL --> STATE[estimate form / state / restore]
+  MODEL --> VM[estimate / contract / cost view model]
+  VM --> VIEW[estimate / contract / cost view and print]
+  ACCOUNT[account view] --> DOM[DOM]
+  AUDIT[audit view] --> DOM
+  VIEW --> DOM
+  SHELL[ui-shell: labels / tabs / roles / password screen] --> DOM
+  EVENTS[application-events: selectors / registration] --> CALLBACK[main named business callbacks]
+  CALLBACK --> CONTROLLER[main: guards / validation / API / mutation / cross-feature refresh]
+  CONTROLLER --> STORAGE[storage / server authorization / RPC / DB enforcement]
+  CONTROLLER --> VIEW
+  CONTROLLER --> ACCOUNT
+  CONTROLLER --> AUDIT
+  CONTROLLER --> SHELL
+  BOOT[main bootstrap] --> SHELL
+  BOOT --> EVENTS
+  BOOT --> CONTROLLER
+```
+
+- dependency arrow는 runtime data/callback 방향도 포함한다. main은 모든 module을 조합한다.
+  view/shell/event module은 main/storage/API/server를 import하거나 직접 호출하지 않는다.
+- account state는 기존 osUsers/osUsersLoaded/osUserActionBusy/editingUserId/resettingUserId 그대로다.
+  audit state는 기존 osAuditLogs/osAuditLogsLoaded 그대로다. factory는 상태 값을 읽어 DOM을 만든다.
+- main의 role enforcement/authorization 판단은 유지한다.
+  shell은 main이 전달한 role와 callback으로 기존 DOM remove/hidden/active 처리를 수행한다.
+- staffAdminShellApplied 상태는 main에 유지한다. shell은 DOM 적용 여부만 반환하고
+  기존 staff->admin login reload guard와 logout reload behavior는 바뀌지 않는다.
+- password-required display는 main이 확인한 session 존재 여부를 전달받아 표시한다.
+  session/token, loadCurrentOsUser, completeLogin, changeOwnPassword 및 password 검증은 main/storage에 남는다.
+- 사용자 edit/reset open/cancel state transition과 mutation handler는 main에서 기존대로 수행한다.
+- audit filter DOM은 view가 만들고 action/actor 조회값 수집·API 호출·성공/오류 상태 갱신은 main이 수행한다.
+- 큰 정적 label/shared panel HTML은 ui-shell로 이동했다. 기존 target guard/id/삽입 위치/한국어 문구는 동일하다.
+  작은 feature status setter는 해당 view의 기존 API를 유지하며, 새로운 범용 DOM utility 체계는 도입하지 않았다.
+
+### Bootstrap / Event Order
+
+main의 `bootstrap()` 순서는 원본 top-level side effect 순서와 같다.
+
+1. 현재 존재하는 tab button에 navigation callback 등록.
+2. 기존 static label 및 estimate/shared control 준비.
+3. checkbox label click guard 등록.
+4. 중복 관리기준 / legacy 관리 상세 DOM 제거.
+5. password-change screen 준비 및 submit/logout callback 등록.
+6. 기존 직접/위임 event 27개를 원래 순서로 등록.
+7. 일반 input/change event 등록. pipe input은 전용 change handler만 연결.
+8. 앱을 locked 상태로 표시.
+9. 저장 session 복원.
+10. session이 있으면 기존 completeLogin을 실행. 실패 시 signOut/locked/password screen 해제 경로 유지.
+
+- 기존 callback body 27개는 원본과 exact 비교했다.
+  direct save + delegated save의 기존 등록 방식도 보존했고 추가 중복 등록/정책 수정은 하지 않았다.
+- 일반 input은 normalizeIntegerInput -> syncRateDirtyState -> handleEstimateInputChanged 순서다.
+  existingPipeCleaningEnabled는 handleExistingPipeCleaningChanged만 호출한다.
+- 동적으로 생성되는 system tab의 기존 cost-view callback 등록은 유지했다.
+  새로운 route/history/view name이나 navigation 구조는 도입하지 않았다.
+
+### Golden Characterization And Verification
+
+- 원본을 제거하기 전에 42개 합성 사례의 HTML/DOM/control/tab/trace를 캡처했다.
+  admin/manager/staff account loading/empty/error/normal,
+  edit/reset/busy/missing/cancel panels, audit legacy/unknown/error/empty,
+  tab 전환, role shell 반복 적용, session 유무별 password-required 화면,
+  static label 및 optional missing target을 포함한다.
+- OLD/NEW를 같은 fixture에서 실행해 exact HTML/DOM/property/trace를 비교했다.
+  frozen state와 원본 snapshot 불변도 확인한다.
+- JSON artifact에서 undefined property가 생략되므로 결과를 동일한 JSON 직렬화 형태로 비교한다.
+  golden 값을 수정해 차이를 숨긴 것이 아니며 OLD와 NEW 양쪽 모두 기존 artifact와 비교했다.
+- 기존 authorization/login/password/견적/계약/원가 mutation 함수 49개 원문 동일.
+  서버 권한·inactive 차단·must_change_password guard·RPC caller·payload 의미 변경 없음.
+- bootstrap registration/lock/session restore의 실제 호출 trace는 session 없음/있음 두 경우 모두 OLD/NEW 동일.
+- actual app integration 8개:
+  admin/manager/staff의 project/quote/admin/system navigation,
+  account edit/reset open/cancel, audit filter reload, purchase print,
+  실제 login submit의 active/password-required/inactive/profile-error/login-error 경로.
+  mock network만 사용하며 운영 데이터/인증정보를 사용하지 않는다.
+- regression의 기존 contract/cost/estimate/pipe/save/reload/purchase tests도 모두 유지했다.
+  change-order는 기존 status/generic document presentation + server boundary tests로 확인한다.
+  별도 change-order 화면이 없던 구조에 새 UI를 추가하지 않았다.
+- 신규 unit 48개 + integration 8개 = 신규 56개.
+- 최종 Regression: 687/687 PASS (기존 631개 + 신규 56개), 21개 test file.
+  Known Failure / Unexpected Fail / Skip / Unhandled Errors: 0.
+- Staff Boundary: 격리 local candidate Test DB 23/23 PASS x2.
+  ACCOUNT-STATE GAP OBSERVED는 기존 baseline helper probe 안내이며 candidate fail-closed 검증은 PASS.
+- DB Security/Integrity 별도 미실행: auth server helper / role API / mutation route / storage / SQL 변경 없음.
+  격리 Staff Boundary DB suite는 실행했고 Production RPC/SQL/data mutation은 수행하지 않았다.
+- lint / build / main 및 신규 4개 module syntax / diff PASS.
+  기존 lint warning 5개 유지, 신규 warning 0.
+- 신규 role integration에서는 case별 document/window listener를 정리하여 mock module 재로딩 간 누적을 방지했다.
+  실제 앱의 event lifecycle 또는 auth semantics를 바꾸지 않았다.
+
+### Phase 3 Module Responsibility Map
+
+Phase 3A에는 main.js가 계산 adapter, state/restore, 세부 HTML/print, auth/mutation,
+navigation/bootstrap/event 대부분을 직접 포함했다.
+Phase 3F에는 다음 20개 Phase 3 module과 기존 shared core/storage가 책임을 나눈다.
+
+| module | 책임 |
+|---|---|
+| utils | 숫자/금액/문자 escaping pure utility |
+| estimate-summary | 내부 요약·공정 집계·정합성 진단 |
+| estimate-input | 입력 canonicalization |
+| purchase-order | 발주 품목 변환 |
+| cost-snapshot | 원가 snapshot lookup/변환 |
+| estimate-form | DOM input 수집·rates adapter |
+| estimate-state | 계산 입력 state 조합 |
+| estimate-restore | 저장 form 복원·checkbox/section locks |
+| estimate-view-model | 견적 표시용 model |
+| estimate-view | 고객/내부 상세·표·아코디언 rendering |
+| estimate-print | 고객/관리/발주 견적 인쇄 |
+| contract-view-model | 계약 옵션·문서 표시 model |
+| contract-view | 계약 옵션/패키지/3종 preview DOM |
+| contract-print | 고정 조문·저장 증빙 기준 3종 print |
+| cost-view-model | 원가 filter/group/editor/rollback 표시 model |
+| cost-view | 원가 목록·편집·draft/publish/history/rollback DOM |
+| account-view | 사용자 목록·editor/reset 상태 표시 |
+| audit-view | 감사 기록·필터·상태 표시 |
+| ui-shell | 기존 shell/nav/role/password/static presentation |
+| application-events | selector/event registration 및 callback 연결 |
+
+### Remaining Main Responsibilities And Known Coupling
+
+- imports/config/application state, bootstrap와 high-level feature controller.
+- 인증/session/profile/password 검증 및 inactive/must-change-password flow.
+- estimate load/save/baseline/active snapshot 선택, staff async preview, 계산 adapter와 rates orchestration.
+- contract 옵션/preview/package/confirm workflow, project-contract 연결, dirty guard 및 print 실행.
+- cost fetch/filter/editor payload/save/cancel/publish/rollback workflow.
+- user mutation/audit fetch와 cross-feature refresh.
+- named business event callback wiring 및 feature view facade.
+- 남은 세부 결합: project 목록 row/header/search option rendering, 일부 rate dirty badge DOM,
+  editor 입력값/감사 필터 읽기 및 cost subcategory option 갱신, 기존 DOM id config.
+  이는 bounded controller-adapter 영역이며 전체 UI 구현을 main에 다시 집중시킨 상태는 아니다.
+- class/role/menu/password/global shell DOM 변경은 ui-shell로 분리했다.
+- 기존 직접/delegated event 혼용과 single-page state는 유지했다. 새로운 lifecycle/store/router는 만들지 않았다.
+- main의 기존 unused warning 5개는 이번 범위 밖이다. 숫자를 맞추려 삭제하거나 정책을 변경하지 않았다.
+
+### Phase 3 Closure Assessment
+
+| 질문 | 판정 |
+|---|---|
+| main이 bootstrap/orchestration 중심인가 | YES |
+| estimate 세부 UI가 분리됐는가 | YES, project 목록 adapter 일부는 위에 명시 |
+| contract 세부 UI가 분리됐는가 | YES |
+| cost 세부 UI가 분리됐는가 | YES, input/payload adapter는 main |
+| account/audit presentation이 분리됐는가 | YES |
+| navigation/shell presentation이 분리됐는가 | YES |
+| calculation/state/view/storage 경계가 구분되는가 | YES |
+| 추가 리팩터링 없이는 다음 기능 개발이 위험한가 | NO, bounded known coupling와 회귀 suite를 유지하는 조건 |
+
+Phase 3F verdict: PASS. Phase 3 전체 완료: YES (local refactor/test baseline).
+Phase 4 DB migration 체계 통합 설계 진행 가능: YES, 별도 승인 필요.
+Phase 4 전 필수 추가 리팩터링: NO.
+이는 Production migration/push/deploy 승인이나 운영 DB 반영 완료를 의미하지 않는다.
+
+이번 단계는 단일 로컬 commit만 수행한다. push/deploy/Production migration 없음.
+기존 제외 SQL 두 파일은 미수정/unstaged/commit 제외 상태를 유지한다.
