@@ -210,7 +210,10 @@ describe("pure module dependency boundary", () => {
     expect(definitions.sort()).toEqual([...names].sort());
     const main = parse(readFileSync(new URL("../../../public/os-app/src/main.js", import.meta.url), "utf8"), { ecmaVersion: "latest", sourceType: "module" });
     expect(main.body.filter((node) => node.type === "FunctionDeclaration" && names.includes(node.id.name))).toEqual([]);
-    const imported = main.body.find((node) => node.type === "ImportDeclaration" && node.source.value === "./estimate-summary.js");
+    expect(main.body.filter((node) => node.type === "ImportDeclaration" && node.source.value === "./estimate-summary.js")).toEqual([]);
+    const model = parse(readFileSync(new URL("../../../public/os-app/src/estimate-view-model.js", import.meta.url), "utf8"), { ecmaVersion: "latest", sourceType: "module" });
+    expect(model.body.filter((node) => node.type === "FunctionDeclaration" && names.includes(node.id.name))).toEqual([]);
+    const imported = model.body.find((node) => node.type === "ImportDeclaration" && node.source.value === "./estimate-summary.js");
     expect(imported.specifiers.map((node) => node.imported.name)).toEqual(["buildAdminMarginGroups", "internalDetailCustomerAmount", "storedEstimateSummary", "buildEstimateDiagnostics"]);
   });
 });

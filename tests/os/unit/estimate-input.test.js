@@ -189,8 +189,12 @@ describe("input module pure dependency boundary", () => {
     const mainAst = parse(main, { ecmaVersion: "latest", sourceType: "module" });
     expect(mainAst.body.filter((node) => node.type === "FunctionDeclaration" && names.includes(node.id.name))).toEqual([]);
     const imported = mainAst.body.find((node) => node.type === "ImportDeclaration" && node.source.value === "./estimate-input.js");
-    expect(imported.specifiers.map((node) => [node.imported.name, node.local.name])).toEqual(names.map((name) => [name, name]));
-    expect(main.match(/isEstimateInputExcluded\(id, COST_ITEM_BY_INPUT\)/g)).toHaveLength(1);
+    expect(imported.specifiers.map((node) => [node.imported.name, node.local.name])).toEqual([["canonicalInputValues", "canonicalInputValues"]]);
+    expect(main).not.toContain("isEstimateInputExcluded(id, COST_ITEM_BY_INPUT)");
+    expect(main).toContain("createEstimateRestore({ document, elements: el, excludedInputById: COST_ITEM_BY_INPUT })");
+    const restore = readFileSync(new URL("../../../public/os-app/src/estimate-restore.js", import.meta.url), "utf8");
+    expect(restore).toContain('import { isEstimateInputExcluded } from "./estimate-input.js"');
+    expect(restore.match(/isEstimateInputExcluded\(id, excludedInputById\)/g)).toHaveLength(1);
     expect(main).toContain("collectEstimateFormValues(el, COST_ITEM_BY_INPUT)");
     const form = readFileSync(new URL("../../../public/os-app/src/estimate-form.js", import.meta.url), "utf8");
     const formAst = parse(form, { ecmaVersion: "latest", sourceType: "module" });

@@ -1,7 +1,10 @@
 import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "./calculator/estimate-core.js";
-import { won, moneyAmount, rateNumber, escapeHtml } from "./utils.js";
-import { buildAdminMarginGroups, internalDetailCustomerAmount, storedEstimateSummary, buildEstimateDiagnostics } from "./estimate-summary.js";
-import { isEstimateInputExcluded, canonicalInputValues } from "./estimate-input.js";
+import { won, rateNumber, escapeHtml } from "./utils.js";
+import { canonicalInputValues } from "./estimate-input.js";
+import { createEstimateRestore } from "./estimate-restore.js";
+import { createEstimateView } from "./estimate-view.js";
+import { createEstimatePrint } from "./estimate-print.js";
+import { buildInternalRowsModel, buildStoredInternalSummaryModel, buildEstimateInternalViewModel, buildCalculatedEstimatePresentation } from "./estimate-view-model.js";
 import { purchaseOrderItems } from "./purchase-order.js";
 import { costSnapshotMap } from "./cost-snapshot.js";
 import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "./estimate-form.js";
@@ -550,58 +553,11 @@ function textFor(selector, text) {
   if (node) node.textContent = text;
 }
 
-function ensureEstimateStatusControl() {
-  if (!document.getElementById("estimateStatus")) {
-    const grid = document.querySelector(".project-info-grid");
-    if (grid) {
-      const label = document.createElement("label");
-      label.innerHTML = `
-        상태
-        <select id="estimateStatus">
-          <option value="견적">견적</option>
-          <option value="계약">계약</option>
-          <option value="착공">착공</option>
-          <option value="준공">준공</option>
-        </select>
-      `;
-      grid.appendChild(label);
-      el.estimateStatus = label.querySelector("#estimateStatus");
-    }
-  }
-}
+function ensureEstimateStatusControl() { return estimateRestore.ensureEstimateStatusControl(); }
 
-function ensureSaveButtons() {
-  const updateButton = document.getElementById("saveEstimateButton");
-  if (!updateButton) return;
-  updateButton.textContent = "견적 수정";
-  if (document.getElementById("saveAsNewEstimateButton")) return;
-  const newButton = document.createElement("button");
-  newButton.id = "saveAsNewEstimateButton";
-  newButton.className = "secondary-action";
-  newButton.type = "button";
-  newButton.textContent = "새 견적으로 저장";
-  updateButton.insertAdjacentElement("afterend", newButton);
-}
+function ensureSaveButtons() { return estimateRestore.ensureSaveButtons(); }
 
-function ensureAdminStandardCheckLists() {
-  const separate = document.getElementById("adminStandardSeparateItems");
-  const grid = separate?.closest(".standard-check-grid");
-  if (!grid) return;
-  grid.innerHTML = `
-    <div>
-      <h3>선택 항목</h3>
-      <ul id="adminStandardSelectedItems"></ul>
-    </div>
-    <div>
-      <h3>미선택 항목</h3>
-      <ul id="adminStandardUnselectedItems"></ul>
-    </div>
-    <div>
-      <h3>별도 확인</h3>
-      <ul id="adminStandardSeparateItems"></ul>
-    </div>
-  `;
-}
+function ensureAdminStandardCheckLists() { return estimateRestore.ensureAdminStandardCheckLists(); }
 
 function ensureRateDbSaveButton() {
   const adminDb = document.querySelector("#admin .admin-db-card");
@@ -615,33 +571,7 @@ function ensureRateDbSaveButton() {
   adminDb.appendChild(actions);
 }
 
-function ensureCostSnapshotPanel() {
-  const adminPanel = document.getElementById("admin");
-  const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
-  if (!adminPanel || !savedList || document.getElementById("costSnapshotPanel")) return;
-  const section = document.createElement("section");
-  section.id = "costSnapshotPanel";
-  section.className = "internal-card admin-only";
-  section.innerHTML = `
-    <div class="section-heading compact-heading no-side-padding">
-      <h2>원가 기준</h2>
-      <p>저장 당시 원가 기준과 현재 원가 상태를 비교합니다.</p>
-    </div>
-    <dl class="metric-list admin-metric-list">
-      <div><dt>원가 적용 기준</dt><dd id="costBasisLabel">저장된 견적 없음</dd></div>
-      <div><dt>견적 저장일</dt><dd id="costBasisSavedAt">-</dd></div>
-      <div><dt>저장 원가 기준 시각</dt><dd id="costSnapshotCapturedAt">-</dd></div>
-      <div><dt>원가 관리 최신 수정일</dt><dd id="costDbLatestUpdatedAt">-</dd></div>
-      <div><dt>현재 원가 상태</dt><dd id="costSnapshotStatus">-</dd></div>
-    </dl>
-    <div class="admin-action-row">
-      <button id="compareCostSnapshotButton" type="button" disabled>현재 원가와 비교</button>
-      <span id="costCompareStatus" class="status-text"></span>
-    </div>
-    <div id="costComparisonPanel" class="table-wrap" hidden></div>
-  `;
-  savedList.insertAdjacentElement("afterend", section);
-}
+function ensureCostSnapshotPanel() { return estimateRestore.ensureCostSnapshotPanel(); }
 
 function ensureContractPackagePanel() {
   if (!canViewContractPackage()) return;
@@ -2913,6 +2843,16 @@ const printGroupLabels = {
   기타: "기타공사",
 };
 
+const estimateRestore = createEstimateRestore({ document, elements: el, excludedInputById: COST_ITEM_BY_INPUT });
+const estimateView = createEstimateView({ document, customerWon, formatDateTime, quoteGroupLabels, quoteGroupOrder });
+const estimatePrint = createEstimatePrint({ document, customerWon, formatDateTime, printGroupLabels });
+
+function estimateInternalViewModel(estimate) {
+  return buildEstimateInternalViewModel(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder,
+    markupRate, canViewInternal: canViewSystem(), pipeCleaningItemName: PIPE_CLEANING_ITEM_NAME, pipeCleaningAmount: PIPE_CLEANING_AMOUNT,
+  });
+}
+
 const countertopQuoteText = (material, billingM) =>
   isSlabMaterial(material) ? "1장 + 가공/시공" : mText(billingM);
 const groupTotalFromDetails = (...args) => currentCalculationCore().groupTotalFromDetails(...args);
@@ -2940,107 +2880,14 @@ const carpentryCofferLabel = (type) => ({
 function calculate() { return currentCalculationCore().calculate(readState()); }
 
 
-function renderQuoteRows(lines, details, total) {
-  const quoteRows = document.getElementById("quoteRows");
-  quoteRows.innerHTML = "";
-
-  const grouped = new Map();
-  for (const item of details.filter((detail) => detail.revenue > 0)) {
-    const label = quoteGroupLabels[item.group] || item.group;
-    if (!grouped.has(label)) grouped.set(label, { total: 0, items: [] });
-    grouped.get(label).total += item.revenue;
-    grouped.get(label).items.push(item);
-  }
-
-  for (const label of quoteGroupOrder) {
-    const group = grouped.get(label);
-    if (!group) continue;
-    const headerRow = document.createElement("tr");
-    headerRow.className = "quote-group-row";
-    headerRow.innerHTML = `
-      <td>${label}</td>
-      <td>공정 합계</td>
-      <td>${customerWon(group.total)}</td>
-    `;
-    quoteRows.appendChild(headerRow);
-
-    for (const item of group.items) {
-      const row = document.createElement("tr");
-      row.className = "quote-item-row";
-      row.innerHTML = `
-        <td></td>
-        <td>${item.item} · ${item.quantity}</td>
-        <td>${customerWon(item.revenue)}</td>
-      `;
-      quoteRows.appendChild(row);
-    }
-  }
-
-  for (const item of lines.filter((line) => line.amountText)) {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${item.process}</td>
-      <td>${item.description}</td>
-      <td>${item.amountText}</td>
-    `;
-    quoteRows.appendChild(row);
-  }
-
-  for (const item of lines.filter((line) => line.process === "상담 보정" && line.revenue !== 0)) {
-    const row = document.createElement("tr");
-    row.className = "quote-group-row";
-    row.innerHTML = `
-      <td>${item.process}</td>
-      <td>${item.description}</td>
-      <td>${customerWon(item.revenue)}</td>
-    `;
-    quoteRows.appendChild(row);
-  }
-
-  const totalRow = document.createElement("tr");
-  totalRow.className = "quote-total-row";
-  totalRow.innerHTML = `
-    <td>총 금액</td>
-    <td>총 공사금액</td>
-    <td>${customerWon(total)}</td>
-  `;
-  quoteRows.appendChild(totalRow);
-}
+function renderQuoteRows(lines, details, total) { return estimateView.renderQuoteRows(lines, details, total); }
 
 function renderInternalRows(details) {
-  const tbody = document.getElementById("internalDetailRows");
-  const adminTbody = document.getElementById("adminInternalDetailRows");
-  if (!tbody && !adminTbody) return;
-  if (tbody) tbody.innerHTML = "";
-  if (adminTbody) adminTbody.innerHTML = "";
-  for (const item of details) {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${item.item}</td>
-      <td>${item.input}</td>
-      <td>${item.quantity}</td>
-      <td>${won(item.unitPrice)}</td>
-      <td>${won(item.cost)}</td>
-      <td>${(item.correction * 100).toFixed(1)}%</td>
-      <td>${customerWon(item.revenue)}</td>
-      <td>${won(item.customerRevenue - item.cost)}</td>
-    `;
-    if (tbody) tbody.appendChild(row);
-    if (adminTbody) adminTbody.appendChild(row.cloneNode(true));
-  }
+  if (!estimateView.hasInternalRowTargets()) return;
+  return estimateView.renderInternalRows(buildInternalRowsModel(details));
 }
 
-function renderWarnings(warnings) {
-  const box = document.getElementById("internalWarnings");
-  if (!box) return;
-  box.innerHTML = "";
-  for (const warning of warnings) {
-    const item = document.createElement("div");
-    item.className = `warning-item${warning.includes("정상") ? " ok" : ""}`;
-    item.textContent = warning;
-    box.appendChild(item);
-  }
-}
+function renderWarnings(warnings) { return estimateView.renderWarnings(warnings); }
 
 function formatDateTime(value) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -3053,45 +2900,7 @@ function collectInputValues() {
   return collectEstimateFormValues(el, COST_ITEM_BY_INPUT);
 }
 
-function restoreInputValues(inputs = {}) {
-  const hadFractionalTargetMargin = Number(inputs.targetMargin) > 0 && Number(inputs.targetMargin) <= 1;
-  const nextInputs = { ...inputs };
-  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
-    nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
-  }
-  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicWallLengthM") && nextInputs.wallpaperWallLengthM != null) {
-    nextInputs.wallpaperPublicWallLengthM = nextInputs.wallpaperWallLengthM;
-  }
-  if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperRoomMaterialGrade")) {
-    nextInputs.wallpaperRoomMaterialGrade = "besti";
-  }
-  for (const [id, value] of Object.entries(nextInputs)) {
-    if (isEstimateInputExcluded(id, COST_ITEM_BY_INPUT)) continue;
-    const input = el[id];
-    if (!input) continue;
-    if (input.type === "checkbox") {
-      input.checked = Boolean(value);
-    } else {
-      input.value = value;
-    }
-  }
-  if (el.targetMargin && Number(el.targetMargin.value) > 0 && Number(el.targetMargin.value) <= 1) {
-    el.targetMargin.value = String(Number(el.targetMargin.value) * 100);
-  }
-  if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomFixtureGrade") && el.bathroomFixtureGrade) {
-    el.bathroomFixtureGrade.value = "standard";
-  }
-  if (!Object.prototype.hasOwnProperty.call(inputs, "bathroomPlumbingRelocationEnabled") && el.bathroomPlumbingRelocationEnabled) {
-    el.bathroomPlumbingRelocationEnabled.checked = Boolean(
-      inputs.sectionBathroomEnabled ||
-      inputs.bathroomEnabled ||
-      Number(inputs.bathroomUnits || 0) > 0
-    );
-  }
-  syncSectionLocks();
-  syncBlockLocks();
-  return { hadFractionalTargetMargin };
-}
+function restoreInputValues(inputs = {}) { return estimateRestore.restoreInputValues(inputs); }
 
 const groupedCustomerItems = (...args) => currentCalculationCore().groupedCustomerItems(...args);
 
@@ -3173,252 +2982,31 @@ function renderEstimateSnapshotOnly(estimate) {
   lastRenderedEstimateSnapshot = estimate;
 }
 
-function renderCustomerQuoteTable(quote, rows, groupTotals) {
-  rows.innerHTML = "";
-  groupTotals.innerHTML = "";
-  if (!quote) {
-    return;
-  }
-  for (const group of quote.groups) {
-    const headerRow = document.createElement("tr");
-    headerRow.className = "quote-group-row";
-    headerRow.innerHTML = `
-      <td>${group.label}</td>
-      <td>공정 합계</td>
-      <td>${group.totalText}</td>
-    `;
-    rows.appendChild(headerRow);
 
-    for (const item of group.items) {
-      const row = document.createElement("tr");
-      row.className = "quote-item-row";
-      row.innerHTML = `
-        <td></td>
-        <td>${item.name}</td>
-        <td>${item.amountText}</td>
-      `;
-      rows.appendChild(row);
-    }
-  }
 
-  const totalRow = document.createElement("tr");
-  totalRow.className = "quote-total-row";
-  totalRow.innerHTML = `
-    <td>총 금액</td>
-    <td>총 공사금액</td>
-    <td>${quote.totalText}</td>
-  `;
-  rows.appendChild(totalRow);
+function renderAdminEstimateDetailPanel(estimate) { return estimateView.renderAdminEstimateDetailPanel(estimateInternalViewModel(estimate), expandedAdminTradeKey); }
 
-  groupTotals.innerHTML = quote.groups.map((group) => `
-    <div>
-      <span>${group.label}</span>
-      <strong>${group.totalText}</strong>
-    </div>
-  `).join("");
-}
-
-function renderEstimateDiagnostics(estimate, summary) {
-  if (!canViewSystem()) return "";
-  const diagnostics = buildEstimateDiagnostics(estimate, summary, { pipeCleaningItemName: PIPE_CLEANING_ITEM_NAME, pipeCleaningAmount: PIPE_CLEANING_AMOUNT });
-  if (!diagnostics.length) return "";
-  return `
-    <div class="admin-estimate-diagnostics">
-      ${diagnostics.map((item) => `
-        <article class="admin-estimate-diagnostic">
-          <h4>${escapeHtml(item.title)}</h4>
-          <p><strong>${escapeHtml(item.causeLabel)}:</strong> ${escapeHtml(item.cause)}</p>
-          <p><strong>영향:</strong> ${escapeHtml(item.impact)}</p>
-          <p><strong>권장 조치:</strong> ${escapeHtml(item.action)}</p>
-        </article>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderAdminEstimateDetailPanel(estimate) {
-  if (!estimate) return `<div class="admin-estimate-detail-error">내부견적 상세를 불러오지 못했습니다.</div>`;
-  const summary = storedEstimateSummary(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder });
-  const groups = buildAdminMarginGroups(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder });
-  const diagnostics = renderEstimateDiagnostics(estimate, summary);
-  return `
-    <div class="admin-estimate-detail-panel">
-      <div class="admin-estimate-summary-grid">
-        <div><span>고객 견적 총액</span><strong>${customerWon(summary.customerTotal)}</strong></div>
-        <div><span>직접원가 합계</span><strong>${won(summary.directCost)}</strong></div>
-        <div><span>예상 이익</span><strong>${won(summary.profit)}</strong></div>
-        <div><span>전체 마진율</span><strong>${(summary.marginRate * 100).toFixed(1)}%</strong></div>
-        <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
-      </div>
-      ${diagnostics}
-      <div class="admin-trade-accordion">
-        ${groups.length ? groups.map((group, index) => renderAdminTradeGroup(group, index)).join("") : `<div class="system-empty-state">표시할 내부견적 상세가 없습니다.</div>`}
-      </div>
-    </div>
-  `;
-}
-
-function renderAdminTradeGroup(group, index) {
-  const key = String(index);
-  const open = expandedAdminTradeKey === key;
-  const details = Array.isArray(group.details) ? group.details : [];
-  return `
-    <section class="admin-trade-group${open ? " is-open" : ""}">
-      <button class="admin-trade-header" type="button" data-toggle-internal-trade="${key}">
-        <span>
-          <strong>${escapeHtml(group.label)}</strong>
-          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${won(group.cost)} · 이익 ${won(group.profit)} · 마진율 ${(group.marginRate * 100).toFixed(1)}%</small>
-        </span>
-        <span class="system-cost-toggle">${open ? "접기" : "펼치기"}</span>
-      </button>
-      ${open ? `
-        <div class="admin-trade-detail table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>항목</th>
-                <th>입력값</th>
-                <th>산출량</th>
-                <th>단위 원가</th>
-                <th>직접원가</th>
-                <th>보정률</th>
-                <th>고객가</th>
-                <th>이익</th>
-                <th>마진율</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${details.map((detail) => {
-                const customer = internalDetailCustomerAmount(detail);
-                const cost = moneyAmount(detail.cost);
-                const profit = customer - cost;
-                const marginRate = markupRate(profit, cost);
-                return `
-                  <tr>
-                    <td>${escapeHtml(detail.item || "-")}</td>
-                    <td>${escapeHtml(detail.input || "-")}</td>
-                    <td>${escapeHtml(String(detail.quantity ?? "-"))}</td>
-                    <td>${won(Number(detail.unitPrice) || 0)}</td>
-                    <td>${won(cost)}</td>
-                    <td>${((Number(detail.correction) || 0) * 100).toFixed(1)}%</td>
-                    <td>${customerWon(customer)}</td>
-                    <td>${won(profit)}</td>
-                    <td>${(marginRate * 100).toFixed(1)}%</td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-          </table>
-        </div>
-      ` : ""}
-    </section>
-  `;
-}
 
 function renderAdminMarginTable(estimate) {
-  const rows = document.getElementById("adminQuoteRows");
-  const groupTotals = document.getElementById("adminQuoteGroupTotals");
-  if (!rows || !groupTotals) return;
-  rows.innerHTML = "";
-  groupTotals.innerHTML = "";
-
-  const groups = buildAdminMarginGroups(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder });
-  if (!groups.length) {
-    rows.innerHTML = `<tr><td colspan="5">표시할 상세견적이 없습니다.</td></tr>`;
-    groupTotals.innerHTML = `<div><span>공정별 마진</span><strong>없음</strong></div>`;
-    return;
-  }
-
-  for (const group of groups) {
-    const row = document.createElement("tr");
-    row.className = "admin-margin-row";
-    row.innerHTML = `
-      <td>${group.label}</td>
-      <td>${customerWon(group.customer)}</td>
-      <td>${won(group.cost)}</td>
-      <td>${won(group.profit)}</td>
-      <td>${(group.marginRate * 100).toFixed(1)}%</td>
-    `;
-    rows.appendChild(row);
-  }
-
-  const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
-  const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
-  const totalProfit = totalCustomer - totalCost;
-  const totalMarginRate = markupRate(totalProfit, totalCost);
-  const totalRow = document.createElement("tr");
-  totalRow.className = "quote-total-row";
-  totalRow.innerHTML = `
-    <td>총계</td>
-    <td>${customerWon(totalCustomer)}</td>
-    <td>${won(totalCost)}</td>
-    <td>${won(totalProfit)}</td>
-    <td>${(totalMarginRate * 100).toFixed(1)}%</td>
-  `;
-  rows.appendChild(totalRow);
-
-  groupTotals.innerHTML = `
-    <div><span>고객용 총액</span><strong>${customerWon(totalCustomer)}</strong></div>
-    <div><span>내부 원가</span><strong>${won(totalCost)}</strong></div>
-    <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
-    <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
-  `;
+  if (!estimateView.hasAdminMarginTargets()) return;
+  return estimateView.renderAdminMarginTable(estimateInternalViewModel(estimate));
 }
 
-function renderStoredInternalSummary(estimate) {
-  if (!estimate) return;
-  const summary = estimate.internalSummary || {};
-  const directCost = Number(estimate.costTotal ?? summary.directCost) || 0;
-  const customerRevenue = Number(estimate.total ?? summary.customerRevenue) || 0;
-  const profit = Number.isFinite(summary.profit) ? summary.profit : customerRevenue - directCost;
-  const marginRate = Number.isFinite(summary.marginRate)
-    ? summary.marginRate
-    : (directCost > 0 ? markupRate(profit, directCost) * 100 : Number(estimate.marginRate) || 0);
-  setText("internalCost", won(directCost));
-  setText("internalRevenue", customerWon(customerRevenue));
-  setText("internalProfit", won(profit));
-  setText("internalMargin", `${Number(marginRate).toFixed(1)}%`);
-  setText("adminInternalCost", won(directCost));
-  setText("adminInternalRevenue", customerWon(customerRevenue));
-  setText("adminInternalProfit", won(profit));
-  setText("adminInternalMargin", `${Number(marginRate).toFixed(1)}%`);
-}
+function renderStoredInternalSummary(estimate) { return estimateView.renderStoredInternalSummary(buildStoredInternalSummaryModel(estimate, { markupRate })); }
 
 function renderCostSnapshotInfo(estimate) {
   if (!isAdmin()) return;
   const snapshot = estimate?.costSnapshot;
   const currentLatest = latestDate(currentCostItems().map((item) => item.updatedAt));
-  setText("costBasisLabel", estimate ? (snapshot ? "저장 당시 원가" : "기존 저장 계산 결과") : "저장된 견적 없음");
-  setText("costBasisSavedAt", estimate?.savedAt ? formatDateTime(estimate.savedAt) : "-");
-  setText("costSnapshotCapturedAt", snapshot?.capturedAt ? formatDateTime(snapshot.capturedAt) : "저장 원가 기준 없음");
-  setText("costDbLatestUpdatedAt", currentLatest ? formatDateTime(currentLatest) : "-");
-  const compareButton = document.getElementById("compareCostSnapshotButton");
-  const comparePanel = document.getElementById("costComparisonPanel");
-  const status = document.getElementById("costCompareStatus");
-  if (comparePanel) {
-    comparePanel.hidden = true;
-    comparePanel.innerHTML = "";
-  }
-  if (status) status.textContent = "";
-  if (!estimate) {
-    setText("costSnapshotStatus", "-");
-    if (compareButton) compareButton.disabled = true;
-    return;
-  }
-  if (!snapshot?.items?.length) {
-    setText("costSnapshotStatus", "저장 원가 기준 없음");
-    if (compareButton) compareButton.disabled = true;
-    return;
-  }
-  setText("costSnapshotStatus", costSnapshotChanged(snapshot) ? "저장 이후 변경됨" : "저장 당시와 동일");
-  if (compareButton) compareButton.disabled = !originalCostItems.size;
+  estimateView.renderCostSnapshotInfo(estimate, { currentLatest,
+    snapshotChanged: Boolean(snapshot?.items?.length && costSnapshotChanged(snapshot)),
+    hasCurrentItems: Boolean(originalCostItems.size),
+  });
 }
 
 function renderCostSnapshotComparison(estimate) {
-  const panel = document.getElementById("costComparisonPanel");
-  const status = document.getElementById("costCompareStatus");
-  if (!panel || !estimate?.costSnapshot?.items?.length) {
-    if (status) status.textContent = "원가 스냅샷이 없어 비교할 수 없습니다.";
+  if (!estimateView.hasCostComparisonTarget() || !estimate?.costSnapshot?.items?.length) {
+    estimateView.renderCostSnapshotComparison(null);
     return;
   }
   const saved = costSnapshotMap(estimate.costSnapshot);
@@ -3436,292 +3024,45 @@ function renderCostSnapshotComparison(estimate) {
   const currentSnapshot = buildEstimateSnapshot(calculate());
   const currentDirectCost = Number(currentSnapshot.costTotal) || 0;
   const directDiff = currentDirectCost - savedDirectCost;
-  panel.hidden = false;
-  panel.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>항목명</th>
-          <th>저장 당시 단가</th>
-          <th>현재 단가</th>
-          <th>증감액</th>
-          <th>증감률</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.length ? rows.map((item) => `
-          <tr>
-            <td>${item.itemName}</td>
-            <td>${won(item.savedPrice)}</td>
-            <td>${won(item.costPrice)}</td>
-            <td>${won(item.diff)}</td>
-            <td>${(item.diffRate * 100).toFixed(1)}%</td>
-          </tr>
-        `).join("") : `<tr><td colspan="5">현재 원가와 저장 당시 원가가 동일합니다.</td></tr>`}
-      </tbody>
-    </table>
-    <div class="quote-total-list">
-      <div><span>저장 당시 직접원가</span><strong>${won(savedDirectCost)}</strong></div>
-      <div><span>현재 원가 적용 예상 직접원가</span><strong>${won(currentDirectCost)}</strong></div>
-      <div><span>예상 증감액</span><strong>${won(directDiff)}</strong></div>
-    </div>
-  `;
-  if (status) status.textContent = "비교 완료";
+  estimateView.renderCostSnapshotComparison({ rows, savedDirectCost, currentDirectCost, directDiff });
 }
 
-function renderPrintQuote(quote) {
-  const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !quote) return;
-  sheet.innerHTML = `
-    <header>
-      <p>공사 견적서</p>
-      <h1>${quote.projectName}</h1>
-      <dl>
-        <div><dt>평형</dt><dd>${quote.areaPyeong}평</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(quote.savedAt)}</dd></div>
-      </dl>
-    </header>
-    <table>
-      <thead>
-        <tr><th>공정</th><th>금액</th></tr>
-      </thead>
-      <tbody>
-        ${quote.groups.map((group) => `
-          <tr>
-            <td>${printGroupLabels[group.label] || `${group.label}공사`}</td>
-            <td>${group.totalText}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-    <footer>
-      <div><span>총 공사금액</span><strong>${quote.totalText}</strong></div>
-      <p>※ 부가세 별도 금액입니다.</p>
-      <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
-    </footer>
-    <section class="and-print-footer" aria-label="ANTNEST DESIGN company information">
-      <div class="and-print-footer-grid">
-        <div class="and-print-footer-brand">
-          <img src="/logo.png" alt="ANTNEST DESIGN" />
-          <p>Architecture of Everyday Life</p>
-        </div>
-        <div>
-          <p class="and-print-footer-title">Company</p>
-          <p>AND · ANTNEST DESIGN</p>
-          <p>주식회사 앤트네스트디자인</p>
-          <p>대표자 이민영</p>
-          <p>사업자등록번호 149-85-03105</p>
-        </div>
-        <div>
-          <p class="and-print-footer-title">Contact</p>
-          <p>TEL 032.321.6722</p>
-          <p>FAX 032.321.6895</p>
-          <p>antnestdesign@naver.com</p>
-        </div>
-        <div class="and-print-footer-address">
-          <p class="and-print-footer-title">Address</p>
-          <p>인천 서구 중봉대로 612번길 10-20</p>
-          <p>506호 (청라동, 청라프라자1)</p>
-        </div>
-      </div>
-      <div class="and-print-footer-bottom">
-        <div>
-          <span>개인정보처리방침</span>
-          <span>© 2026 ANTNEST DESIGN</span>
-        </div>
-        <p>Interior · Architecture · Construction Management</p>
-      </div>
-    </section>
-  `;
-}
+function renderPrintQuote(quote) { return estimatePrint.renderPrintQuote(quote); }
 
 function currentEstimateForPrint() {
   if (currentProfile?.role === "staff") return activeQuoteEstimate || lastRenderedEstimateSnapshot;
   return activeQuoteEstimate || lastRenderedEstimateSnapshot || buildEstimateSnapshot(calculateForCurrentEstimate());
 }
 
-function renderAdminDetailPrint(estimate) {
-  const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !estimate) return;
-  const details = estimate.internalDetails || [];
-  sheet.innerHTML = `
-    <header>
-      <p>상세견적</p>
-      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
-      <dl>
-        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
-      </dl>
-    </header>
-    <table>
-      <thead>
-        <tr><th>항목</th><th>입력</th><th>산출</th><th>단가</th><th>직접원가</th><th>고객가</th><th>마진</th></tr>
-      </thead>
-      <tbody>
-        ${details.map((item) => `
-          <tr>
-            <td>${item.item}</td>
-            <td>${item.input}</td>
-            <td>${item.quantity}</td>
-            <td>${won(item.unitPrice)}</td>
-            <td>${won(item.cost)}</td>
-            <td>${customerWon(item.revenue)}</td>
-            <td>${won(item.customerRevenue - item.cost)}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-    <footer>
-      <div><span>고객용 총액</span><strong>${customerWon(estimate.total || 0)}</strong></div>
-      <div><span>내부 원가</span><strong>${won(estimate.costTotal || 0)}</strong></div>
-    </footer>
-  `;
-}
+function renderAdminDetailPrint(estimate) { return estimatePrint.renderAdminDetailPrint(estimate); }
 
 function renderAdminInternalPrint(estimate) {
-  const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !estimate) return;
-  const groups = buildAdminMarginGroups(estimate, { groupLabels: quoteGroupLabels, groupOrder: quoteGroupOrder });
-  const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
-  const totalCost = groups.reduce((sum, group) => sum + group.cost, 0);
-  const totalProfit = totalCustomer - totalCost;
-  const totalMarginRate = markupRate(totalProfit, totalCost);
-  sheet.innerHTML = `
-    <header>
-      <p>내부견적</p>
-      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
-      <dl>
-        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
-      </dl>
-    </header>
-    <table>
-      <thead>
-        <tr><th>공정</th><th>고객용</th><th>내부용</th><th>마진</th><th>마진율</th></tr>
-      </thead>
-      <tbody>
-        ${groups.map((group) => `
-          <tr>
-            <td>${group.label}</td>
-            <td>${customerWon(group.customer)}</td>
-            <td>${won(group.cost)}</td>
-            <td>${won(group.profit)}</td>
-            <td>${(group.marginRate * 100).toFixed(1)}%</td>
-          </tr>
-        `).join("")}
-        <tr>
-          <td>총계</td>
-          <td>${customerWon(totalCustomer)}</td>
-          <td>${won(totalCost)}</td>
-          <td>${won(totalProfit)}</td>
-          <td>${(totalMarginRate * 100).toFixed(1)}%</td>
-        </tr>
-      </tbody>
-    </table>
-  `;
+  if (!estimatePrint.hasPrintTarget() || !estimate) return;
+  estimatePrint.renderAdminInternalPrint(estimate, estimateInternalViewModel(estimate));
 }
 
 function renderPurchaseOrder(estimate) {
-  const rows = document.getElementById("purchaseOrderRows");
-  const summary = document.getElementById("purchaseOrderSummary");
-  if (!rows || !summary) return;
+  if (!estimateView.hasPurchaseOrderTargets()) return;
   const items = purchaseOrderItems(estimate || currentEstimateForPrint(), quoteGroupLabels);
-  rows.innerHTML = items.length
-    ? items.map((item) => `
-      <tr>
-        <td>${item.process}</td>
-        <td>${item.item}</td>
-        <td>${item.spec}</td>
-        <td>${item.quantity}</td>
-        <td>${won(item.budget)}</td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="5">발주 필요 품목이 없습니다.</td></tr>`;
-  summary.innerHTML = `
-    <div><span>발주 품목</span><strong>${items.length}개</strong></div>
-    <div><span>예상 원가</span><strong>${won(items.reduce((sum, item) => sum + item.budget, 0))}</strong></div>
-  `;
+  estimateView.renderPurchaseOrder(items);
 }
 
 function renderPurchaseOrderPrint(estimate) {
-  const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !estimate) return;
+  if (!estimatePrint.hasPrintTarget() || !estimate) return;
   const items = purchaseOrderItems(estimate, quoteGroupLabels);
-  sheet.innerHTML = `
-    <header>
-      <p>발주내역서</p>
-      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
-      <dl>
-        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
-      </dl>
-    </header>
-    <table>
-      <thead>
-        <tr><th>공정</th><th>품목</th><th>사양</th><th>수량</th><th>예상 원가</th></tr>
-      </thead>
-      <tbody>
-        ${items.length ? items.map((item) => `
-          <tr>
-            <td>${item.process}</td>
-            <td>${item.item}</td>
-            <td>${item.spec}</td>
-            <td>${item.quantity}</td>
-            <td>${won(item.budget)}</td>
-          </tr>
-        `).join("") : `<tr><td colspan="5">발주 필요 품목이 없습니다.</td></tr>`}
-      </tbody>
-    </table>
-    <footer>
-      <div><span>발주 품목</span><strong>${items.length}개</strong></div>
-      <div><span>예상 원가</span><strong>${won(items.reduce((sum, item) => sum + item.budget, 0))}</strong></div>
-    </footer>
-  `;
+  estimatePrint.renderPurchaseOrderPrint(estimate, items);
 }
 
-function renderAdminProcessTotals(quote) {
-  const box = document.getElementById("adminProcessTotals");
-  if (!box) return;
-  box.innerHTML = quote?.groups?.length
-    ? quote.groups.map((group) => `
-      <div>
-        <span>${group.label}</span>
-        <strong>${group.totalText}</strong>
-      </div>
-    `).join("")
-    : "<div><span>공정별 합계</span><strong>없음</strong></div>";
-}
+function renderAdminProcessTotals(quote) { return estimateView.renderAdminProcessTotals(quote); }
 
 function renderCustomerQuote(estimate) {
   const quote = estimate?.customerQuote;
-  const rows = document.getElementById("quoteRows");
-  const groupTotals = document.getElementById("quoteGroupTotals");
-  const adminRows = document.getElementById("adminQuoteRows");
-  const adminGroupTotals = document.getElementById("adminQuoteGroupTotals");
-
-  if (!quote) {
-    setText("quoteProject", "저장된 견적이 없습니다");
-    setText("quoteArea", "-");
-    setText("quoteDate", "-");
-    setText("quoteTotal", "0원");
-    renderCustomerQuoteTable(null, rows, groupTotals);
-    if (isAdmin() && adminRows && adminGroupTotals) renderAdminMarginTable(null);
-    renderPurchaseOrder(null);
-    renderAdminProcessTotals(null);
-    renderCostSnapshotInfo(null);
-    return;
-  }
-
-  setText("quoteProject", quote.projectName);
-  setText("quoteArea", `${quote.areaPyeong}평`);
-  setText("quoteDate", formatDateTime(quote.savedAt));
-  setText("quoteTotal", quote.totalText);
-  renderCustomerQuoteTable(quote, rows, groupTotals);
-  if (isAdmin() && adminRows && adminGroupTotals) renderAdminMarginTable(estimate);
-  renderPurchaseOrder(estimate);
-  renderPrintQuote(quote);
-  renderAdminProcessTotals(quote);
-  renderCostSnapshotInfo(estimate);
+  estimateView.renderCustomerQuote(estimate);
+  if (isAdmin() && estimateView.hasAdminMarginTargets()) renderAdminMarginTable(quote ? estimate : null);
+  renderPurchaseOrder(quote ? estimate : null);
+  if (quote) renderPrintQuote(quote);
+  renderAdminProcessTotals(quote || null);
+  renderCostSnapshotInfo(quote ? estimate : null);
 }
 
 function renderSavedEstimateRow(estimate, options = {}) {
@@ -3816,82 +3157,14 @@ async function renderSavedEstimateRows() {
   }
 }
 
-function renderStandardCheck(state) {
-  const checks = [
-    ["욕실", state.bathroomEnabled || state.bathroomUnits > 0],
-    ["주방 부속/기기", state.kitchenEnabled || state.kitchenSinkBowlUnits + state.kitchenFaucetUnits + state.kitchenHoodUnits > 0 || state.kitchenCustomAppliancePrice > 0 || state.kitchenStandardInstallEnabled],
-    ["일반 폐기물", state.generalWasteEnabled],
-    ["세대 내 보양", state.interiorProtectionEnabled],
-    ["입주청소", state.moveInCleaningEnabled],
-    ["기존 배관 청소", state.existingPipeCleaningEnabled],
-    ["중문", state.middleDoorUnits > 0],
-    ["일반도어", state.standardDoorUnits > 0],
-    ["슬라이딩도어", state.slidingDoorUnits > 0],
-    ["도배", state.wallpaperEnabled],
-    ["필름", state.filmEnabled],
-    ["바닥", state.flooringEnabled || state.flooringArea > 0],
-    ["마감", state.siliconeEnabled || state.elasticEnabled || state.elasticExtraRooms > 0],
-    ["도어/창호", state.middleDoorUnits > 0 || state.standardDoorUnits > 0 || state.slidingDoorUnits > 0 || state.windowNoticeEnabled],
-  ];
-  const selected = checks.filter(([, enabled]) => enabled).map(([label]) => label);
-  const unselected = checks.filter(([, enabled]) => !enabled).map(([label]) => label);
-  const separate = state.windowNoticeEnabled ? ["창호: 별도 실측 후 견적"] : [];
-  const renderList = (id, items) => {
-    const target = document.getElementById(id);
-    if (!target) return;
-    target.innerHTML = items.length
-      ? items.map((item) => `<li>${item}</li>`).join("")
-      : "<li>없음</li>";
-  };
-  renderList("standardSelectedItems", selected);
-  renderList("standardUnselectedItems", unselected);
-  renderList("standardSeparateItems", separate);
-  renderList("adminStandardSelectedItems", selected);
-  renderList("adminStandardUnselectedItems", unselected);
-  renderList("adminStandardSeparateItems", separate);
-}
+function renderStandardCheck(state) { return estimateView.renderStandardCheck(state); }
 
-function getSectionContentNodes(toggle) {
-  const heading = toggle.closest?.(".section-heading");
-  const nodes = [];
-  let node = heading?.nextElementSibling;
-  while (node && !node.classList?.contains("section-heading")) {
-    nodes.push(node);
-    node = node.nextElementSibling;
-  }
-  return nodes;
-}
 
-function syncSectionLocks() {
-  document.querySelectorAll(".section-toggle input[type='checkbox']").forEach((toggle) => {
-    for (const node of getSectionContentNodes(toggle)) {
-      node.querySelectorAll("input, select, textarea, button").forEach((control) => {
-        control.disabled = !toggle.checked;
-      });
-    }
-  });
-}
+function syncSectionLocks() { return estimateRestore.syncSectionLocks(); }
 
-function syncBlockLocks() {
-  document.querySelectorAll(".furniture-block > label.check-title input[type='checkbox']").forEach((toggle) => {
-    const block = toggle.closest?.(".furniture-block");
-    if (!block) return;
-    const disabled = toggle.disabled || !toggle.checked;
-    block.querySelectorAll("input, select, textarea, button").forEach((control) => {
-      if (control === toggle) return;
-      control.disabled = disabled;
-    });
-  });
-}
+function syncBlockLocks() { return estimateRestore.syncBlockLocks(); }
 
-function guardCheckboxLabelClicks() {
-  document.querySelectorAll("label.inline-check, label.check-title, label.section-toggle").forEach((label) => {
-    label.addEventListener("click", (event) => {
-      if (event.target?.matches?.("input[type='checkbox'], input[type='radio']")) return;
-      event.preventDefault();
-    });
-  });
-}
+function guardCheckboxLabelClicks() { return estimateRestore.guardCheckboxLabelClicks(); }
 
 function render() {
   if (currentProfile?.role === "staff") {
@@ -3899,53 +3172,17 @@ function render() {
     return;
   }
   const result = calculateForCurrentEstimate();
-  const { state, details, quoteLines, directCost, customerRevenue, profit, actualMargin, discountRoom, warnings, counts } = result;
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
   const calculatedSnapshot = buildEstimateSnapshot(result);
   const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
-  const displaySummary = displayEstimate.internalSummary || {};
-  const displayRevenue = Number(displaySummary.customerRevenue ?? displayEstimate.total ?? customerRevenue) || 0;
-  const displayCost = Number(displaySummary.directCost ?? displayEstimate.costTotal ?? directCost) || 0;
-  const displayProfit = Number(displaySummary.profit ?? profit) || 0;
-  const displayMarginRate = Number(displaySummary.marginRate ?? (actualMargin * 100)) || 0;
-
-  setText("selectionCount", `${quoteLines.length}개 항목`);
-  setText("cabinetSummary", state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택");
-  setText("islandSummary", state.islandEnabled && state.islandM > 0 ? `가로 ${mmText(state.islandM)} / 세로 ${mmText(state.islandDepthMm)}, 서랍 ${state.islandDrawers}개` : "미선택");
-  setText("homebarSummary", state.homebarEnabled && state.homebarM > 0 ? `${mmText(state.homebarM)}, 서랍 ${state.homebarDrawers}개` : "미선택");
-  setText("shoeSummary", state.shoeEnabled && state.shoeM > 0 ? `${mmText(state.shoeM)} / ${counts.shoeJa}자` : "미선택");
-  setText("fridgeLaundrySummary", state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? `${mmText(state.fridgeLaundryM)} / ${counts.fridgeLaundryJa}자` : "미선택");
-  setText("pantrySummary", state.pantryEnabled && state.pantryM > 0 ? `${mmText(state.pantryM)} / ${counts.pantryJa}자` : "미선택");
-  setText("builtInSummary", state.builtInEnabled && state.builtInM > 0 ? `${mmText(state.builtInM)} / ${counts.builtInJa}자` : "미선택");
-  setText("hangerSummary", state.hangerEnabled && state.hangerM > 0 ? `${mmText(state.hangerM)} / ${counts.hangerJa}자` : "미선택");
-  setText("demolitionSummary", groupTotalFromDetails(details, "demolition") > 0 ? customerWon(groupTotalFromDetails(details, "demolition")) : "미선택");
-  setText(
-    "electricalSummary",
-    groupTotalFromDetails(details, "electrical") > 0
-      ? `${state.electricalEnabled ? (state.electricalAgeType === "under10" ? "10년 이하" : "10년 이상") : "옵션"} / ${customerWon(groupTotalFromDetails(details, "electrical"))}`
-      : "미선택"
-  );
-  setText("lightingSummary", state.standardLightingEnabled ? customerWon(groupTotalFromDetails(details, "standardLighting")) : "미선택");
-  setText("clientTotal", customerWon(displayRevenue));
+  const presentation = buildCalculatedEstimatePresentation(result, displayEstimate, { groupTotalFromDetails, mmText, customerWon });
+  estimateView.renderInputSummary(presentation);
   renderCustomerQuote(displayEstimate);
-
-  setText("internalCost", won(displayCost));
-  setText("internalRevenue", customerWon(displayRevenue));
-  setText("internalProfit", won(displayProfit));
-  setText("internalMargin", `${displayMarginRate.toFixed(1)}%`);
-  setText("discountRoom", customerWon(discountRoom));
-  setText("marginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
-  setText("adminInternalCost", won(displayCost));
-  setText("adminInternalRevenue", customerWon(displayRevenue));
-  setText("adminInternalProfit", won(displayProfit));
-  setText("adminInternalMargin", `${displayMarginRate.toFixed(1)}%`);
-  setText("adminDiscountRoom", customerWon(discountRoom));
-  setText("adminMarginStatus", warnings.some((item) => item.includes("미달")) ? "미달" : "정상");
-  renderInternalRows(displayEstimate.internalDetails || details);
-  renderWarnings(warnings);
-  renderStandardCheck(state);
+  estimateView.renderCalculatedInternalSummary(presentation);
+  renderInternalRows(displayEstimate.internalDetails || result.details);
+  renderWarnings(result.warnings);
+  renderStandardCheck(result.state);
   renderPurchaseOrder(displayEstimate);
-
   if (usesStoredEstimateSnapshot && activeQuoteEstimate) {
     const storedTotal = Number(activeQuoteEstimate.total ?? activeQuoteEstimate.customerQuote?.total) || 0;
     setText("clientTotal", customerWon(storedTotal));
@@ -5861,12 +5098,7 @@ function loadEstimateIntoUi(estimate) {
   cancelStaffPreview();
   pipeCleaningAdjustmentDirty = false;
   lastRenderedEstimateSnapshot = null;
-  restoreInputValues(estimate.inputs);
-  el.projectName.value = estimate.projectName || "";
-  el.areaPyeong.value = estimate.areaPyeong ?? "";
-  el.clientName.value = estimate.clientName || "";
-  el.clientPhone.value = estimate.phone || estimate.clientPhone || "";
-  if (el.estimateStatus) el.estimateStatus.value = estimate.status || "견적";
+  estimateRestore.restoreEstimateForm(estimate);
   currentEditingEstimateId = estimate.id || null;
   activeQuoteEstimate = null;
   loadedContractEstimateState = null;

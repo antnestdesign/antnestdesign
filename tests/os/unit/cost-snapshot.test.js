@@ -7,6 +7,7 @@ import { analyze } from "eslint-scope";
 import { JSDOM } from "jsdom";
 import { describe, expect, test, vi } from "vitest";
 import { costSnapshotMap } from "../../../public/os-app/src/cost-snapshot.js";
+import { createEstimateView } from "../../../public/os-app/src/estimate-view.js";
 import { rateNumber, won } from "../../../public/os-app/src/utils.js";
 import { storedEstimateSummary, buildEstimateDiagnostics } from "../../../public/os-app/src/estimate-summary.js";
 import { costSnapshotCases, snapshotConsumerCases, decodeSnapshotValue } from "../fixtures/cost-snapshot-cases.js";
@@ -153,6 +154,7 @@ describe("existing privileged snapshot consumers", () => {
           ...nodes.map((node) => source.slice(...node.range)),
           "({ costSnapshotChanged, requiredMissingSnapshotItems, renderCostSnapshotComparison })",
         ].join("\n"), { document: dom.window.document, won, rateNumber, costSnapshotMap: lookup,
+          estimateView: createEstimateView({ document: dom.window.document }),
           originalCostItems: new Map(fixture.current.map((item) => [item.itemCode, item])),
           currentCostItems: () => fixture.current, calculate, buildEstimateSnapshot: (value) => value });
         expect(consumer.costSnapshotChanged(fixture.snapshot)).toBe(expected.changed);

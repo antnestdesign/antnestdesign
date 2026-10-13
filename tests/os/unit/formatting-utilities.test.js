@@ -90,14 +90,17 @@ describe("Phase 3B-1 frozen formatting behavior", () => {
     expect(result.stdout.trim()).toBe("browser-global-free PASS");
   });
 
-  test("main imports all four canonical exports and utils has no external dependencies", () => {
+  test("main/view model reuse canonical utility exports and utils has no external dependencies", () => {
     const mainUrl = new URL("../../../public/os-app/src/main.js", import.meta.url);
     const options = { ecmaVersion: "latest", sourceType: "module" };
     const main = parse(readFileSync(mainUrl, "utf8"), options);
     const utils = parse(readFileSync(utilityUrl, "utf8"), options);
     const utilityImport = main.body.find((node) => node.type === "ImportDeclaration" && node.source.value === "./utils.js");
     expect(utilityImport?.specifiers.map((node) => [node.imported.name, node.local.name]))
-      .toEqual(names.map((name) => [name, name]));
+      .toEqual(names.filter((name) => name !== "moneyAmount").map((name) => [name, name]));
+    const model = parse(readFileSync(new URL("../../../public/os-app/src/estimate-view-model.js", import.meta.url), "utf8"), options);
+    const modelImport = model.body.find((node) => node.type === "ImportDeclaration" && node.source.value === "./utils.js");
+    expect(modelImport.specifiers.map((node) => [node.imported.name, node.local.name])).toEqual([["moneyAmount", "moneyAmount"]]);
     const declarations = (body) => body.flatMap((node) => {
       const declaration = node.type === "ExportNamedDeclaration" ? node.declaration : node;
       if (declaration?.type === "FunctionDeclaration") return [declaration.id.name];

@@ -1172,3 +1172,166 @@ legacy restore/default/체크 해제/DOM side effect 순서를 먼저 characteri
 baseline/active quote의 persistence controller, staff HTTP whitelist와 계약 확정은 이동하지 않는다.
 작은 표시 helper만 추가 추출하거나 새 전역 store/저장 schema 개편으로 확대하지 않는다.
 제외 SQL 두 파일은 미접촉/unstaged이며, 이번 단계는 로컬 commit만 수행하고 push/deploy하지 않는다.
+
+## 22. Phase 3D: Estimate View / Restore / Print Layer
+
+### 조사 및 기존 구조
+
+기준 commit: 17a5c29. main.js 6,462행.
+견적 UI의 핵심 함수 34개(기존 916행)를 targeted 조사했다.
+원본 source hash는 4b2043858038fe4e7e0528c5912ce07c6c20a622d4512872c23b44988deedd2b다.
+아래 위치는 기준 commit의 main.js line이며 named callers를 기록한다.
+top-level 초기화와 delegated click/input 호출은 각각 기존 repair/refresh/event orchestration에 남는다.
+DOM과 state/config는 정적 직접 참조다. storage/network가 '-'인 함수도 상위 controller에서
+계산 또는 원가 조회 결과를 전달받을 수 있으므로 전체 앱의 무네트워크 경로라고 해석하지 않는다.
+원본 함수/callers/DOM/state/storage/subsystem dependency 메타데이터와 full HTML golden은
+tests/os/fixtures/estimate-view-characterization.json에 함께 고정했다.
+
+| 함수 | 기존 line | named callers | DOM / element | state/config | storage/network | contract/cost/calculation |
+| --- | --- | --- | --- | --- | --- | --- |
+| ensureEstimateStatusControl | 553-571 | repairStaticKoreanLabels | estimateStatus, .project-info-grid, #estimateStatus | el | - | - |
+| ensureSaveButtons | 573-584 | repairStaticKoreanLabels | saveEstimateButton, saveAsNewEstimateButton | - | - | - |
+| ensureAdminStandardCheckLists | 586-604 | repairStaticKoreanLabels | adminStandardSeparateItems | - | - | - |
+| ensureCostSnapshotPanel | 618-644 | repairStaticKoreanLabels | admin, savedEstimateRows, costSnapshotPanel | - | - | - |
+| restoreInputValues | 3056-3094 | loadEstimateIntoUi, handleSaveEstimate | - | COST_ITEM_BY_INPUT, el | - | - |
+| getSectionContentNodes | 3854-3863 | syncSectionLocks | - | - | - | - |
+| syncSectionLocks | 3865-3873 | restoreInputValues, refresh | .section-toggle input[type='checkbox'], input, select, textarea, button | - | - | - |
+| syncBlockLocks | 3875-3885 | restoreInputValues, refresh | .furniture-block > label.check-title input[type='checkbox'], input, select, textarea, button | - | - | - |
+| guardCheckboxLabelClicks | 3887-3894 | - | label.inline-check, label.check-title, label.section-toggle | - | - | - |
+| renderQuoteRows | 2943-3008 | - | quoteRows | quoteGroupLabels, quoteGroupOrder | - | - |
+| renderInternalRows | 3010-3031 | loadContractPackageToPreview, renderEstimateSnapshotOnly, render, loadEstimateIntoUi | internalDetailRows, adminInternalDetailRows | - | - | - |
+| renderWarnings | 3033-3043 | render | internalWarnings | - | - | - |
+| renderCustomerQuoteTable | 3176-3219 | renderCustomerQuote | - | - | - | - |
+| renderEstimateDiagnostics | 3221-3237 | renderAdminEstimateDetailPanel | - | PIPE_CLEANING_AMOUNT, PIPE_CLEANING_ITEM_NAME | - | - |
+| renderAdminEstimateDetailPanel | 3239-3259 | renderSavedEstimateRow | - | quoteGroupLabels, quoteGroupOrder | - | - |
+| renderAdminTradeGroup | 3261-3316 | renderAdminEstimateDetailPanel | - | expandedAdminTradeKey | - | - |
+| renderAdminMarginTable | 3318-3366 | renderCustomerQuote | adminQuoteRows, adminQuoteGroupTotals | quoteGroupLabels, quoteGroupOrder | - | - |
+| renderStoredInternalSummary | 3368-3385 | loadContractPackageToPreview, renderEstimateSnapshotOnly, render, loadEstimateIntoUi, handleSaveEstimate | - | - | - | - |
+| renderCostSnapshotInfo | 3387-3415 | renderCustomerQuote | compareCostSnapshotButton, costComparisonPanel, costCompareStatus | originalCostItems | - | costSnapshotChanged, currentCostItems, originalCostItems |
+| renderCostSnapshotComparison | 3417-3470 | - | costComparisonPanel, costCompareStatus | - | - | buildEstimateSnapshot, calculate, costSnapshotMap, currentCostItems |
+| renderPrintQuote | 3472-3536 | renderCustomerQuote | printQuoteSheet | printGroupLabels | - | - |
+| renderAdminDetailPrint | 3543-3579 | - | printQuoteSheet | - | - | - |
+| renderAdminInternalPrint | 3581-3622 | - | printQuoteSheet | quoteGroupLabels, quoteGroupOrder | - | - |
+| renderPurchaseOrder | 3624-3644 | loadContractPackageToPreview, renderEstimateSnapshotOnly, renderCustomerQuote, render, loadEstimateIntoUi | purchaseOrderRows, purchaseOrderSummary | quoteGroupLabels | - | - |
+| renderPurchaseOrderPrint | 3646-3680 | - | printQuoteSheet | quoteGroupLabels | - | - |
+| renderAdminProcessTotals | 3682-3693 | renderCustomerQuote | adminProcessTotals | - | - | - |
+| renderCustomerQuote | 3695-3725 | loadContractPackageToPreview, renderEstimateSnapshotOnly, render, displayStaffEstimate, loadEstimateIntoUi, handleSaveEstimate | quoteRows, quoteGroupTotals, adminQuoteRows, adminQuoteGroupTotals | - | - | - |
+| renderStandardCheck | 3819-3852 | render, displayStaffEstimate | - | - | - | - |
+| render | 3896-3957 | refresh | - | activeQuoteEstimate, currentProfile, lastRenderedEstimateSnapshot | - | buildEstimateSnapshot, calculateForCurrentEstimate |
+| displayStaffEstimate | 3968-3974 | renderStaffEstimate, handleSaveEstimate | - | activeQuoteEstimate, lastRenderedEstimateSnapshot | - | - |
+| renderEstimateSnapshotOnly | 3166-3174 | handleExistingPipeCleaningChanged | - | lastRenderedEstimateSnapshot | - | - |
+| formatDateTime | 3045-3050 | renderContractPackages, renderAllContractPackages, contractPrintHeader, renderCostSnapshotInfo, renderPrintQuote, renderAdminDetailPrint, renderAdminInternalPrint, renderPurchaseOrderPrint, renderCustomerQuote, renderSavedEstimateRow, renderSystemStatus, systemCostRowHtml, renderSystemHistoryRows, renderSystemPublishLogRows, renderRollbackPanel, renderUserManagementRows, renderAuditLogRows, handleSaveEstimate | - | - | - | - |
+| setText | 2016-2019 | renderContractPackagePanel, loadContractPackageToPreview, renderEstimateSnapshotOnly, renderStoredInternalSummary, renderCostSnapshotInfo, renderCustomerQuote, render, displayStaffEstimate, applyAccessControl, loadEstimateIntoUi | - | - | - | - |
+| costSnapshotChanged | 2072-2081 | renderCostSnapshotInfo | - | originalCostItems | - | costSnapshotMap, currentCostItems, originalCostItems |
+
+loadEstimateIntoUi의 form header 복원, applyAccessControl의 role shell,
+renderStaffEstimate의 async preview, renderSavedEstimateRow(s)의 project/권한 presentation도 연결 경계로 확인했다.
+이들의 전체 기능은 이동하지 않았다. 계약 status 기반 계약 옵션 lock, 원가 입력 권한,
+auth shell, navigation은 이번 view adapter의 새 정책으로 복제하지 않는다.
+
+### After Architecture
+
+| module | 책임 | 명시적 dependency |
+| --- | --- | --- |
+| estimate-restore.js (177행) | stored input/header 복원, legacy DOM presentation, section/block 잠금, checkbox label guard, estimate 전용 정적 control/panel 구성 | document, 기존 elements map, excludedInputById; estimate-input 재사용 |
+| estimate-view-model.js (69행) | internal summary/group/detail/diagnostics, 현재 계산 결과의 화면 presentation | estimate-summary/utils 재사용, quote label/order, formatter/pure math 인자 |
+| estimate-view.js (500행) | 고객 표, 내부 표/아코디언/경고/summary, 선택 항목, 원가 비교 결과 DOM, 발주 표 | document, labels/order/formatter, 준비된 view model |
+| estimate-print.js (184행) | 고객 견적·내부 상세·내부 공정·발주 인쇄 HTML | document, labels/formatter, estimate 및 준비된 내부/발주 model |
+
+factory의 document/element/formatter는 명시적 dependency이며 앱 store가 아니다.
+view factory 내부에는 currentProfile/activeQuoteEstimate/loadedEstimateBaseline이나 storage/API 접근이 없다.
+인쇄 sheet 생성만 수행하고 window.print 호출과 estimate 선택은 기존 main event controller에 남는다.
+기존 template literal의 공백/문구/행 구조를 유지했다. CSS, index.html, UI 디자인은 변경하지 않았다.
+계약서/계약 견적서/공사사양서 3종 print renderer는 이 module로 옮기지 않았다.
+
+```mermaid
+flowchart TD
+  Stored[저장 견적 / inputs] --> Restore[estimate-restore]
+  Restore --> Form[기존 form element map]
+  Form --> Pipeline[Phase 3C form / state pipeline]
+  Pipeline --> Core[기존 shared calculation core]
+  Core --> Main[main: display snapshot 선택]
+  Main --> Model[estimate-view-model]
+  Model --> View[estimate-view]
+  View --> DOM[DOM 표시]
+  Main --> PrintModel[견적 / 내부 model / purchase-order transform]
+  PrintModel --> Print[estimate-print]
+  Print --> Sheet[기존 printQuoteSheet]
+  Main --> Persist[기존 save/load orchestration / storage]
+  Main --> Contract[기존 계약 패키지 / 계약 3종 출력]
+```
+
+canonical 비교, baseline/active quote 선택, pipe dirty state, loaded cost swap,
+save/load, staff generation/timer/cancel race guard, contract/cost RPC는 main 또는 기존 subsystem에 남는다.
+원가 비교도 main이 currentCostItems와 saved snapshot을 비교하고 기존 calculate/buildEstimateSnapshot을 실행한 뒤,
+준비된 rows/totals만 view로 전달한다. view에서 계산 엔진이나 원가 subsystem을 실행하지 않는다.
+
+### 실제 이동량 및 Behavior Freeze
+
+- main.js: 6,462 -> 5,694행, 순감소 768행.
+- 기존 29개 함수의 UI 책임을 이동/분해했다. 이 수에는 순수 DOM 함수와 UI/controller 혼합 함수의
+  UI 부분 분리를 포함하며, 29개 전체 controller를 완전히 제거했다는 의미가 아니다.
+- 추가로 loadEstimateIntoUi의 header/input DOM 반영을 restoreEstimateForm에 위임했다.
+- 신규 4개 module 합계 930행. view model/target guard/factory API가 추가되어 이동 전후 순행수와 다르다.
+- readState와 Phase 3C state pipeline, 계산식/원가/마진/pipe 정책은 미변경.
+- main의 얇은 facade는 기존 caller와 초기화 순서/권한 검사/저장 선택을 보존한다.
+  요약/diagnostics는 기존 estimate-summary 결과를 view model에서 준비한다.
+  renderer는 합계 보정 행을 만들거나 저장 금액을 수정하지 않는다.
+- stored internal summary와 live presentation의 기존 fallback 우선순위가 서로 다르므로
+  각각의 기존 표현을 별도 pure model로 유지했다. 이를 하나로 강제 통일하지 않았다.
+- internal DOM target이 없으면 이전처럼 데이터 parsing 전에 반환한다.
+  view model 생성 전에 main facade에서 target 유무를 확인하여 legacy early-return도 보존한다.
+- section -> block 잠금 순서, parent disabled 우선순위, 체크 해제 상태, legacy targetMargin/벽지/욕실 fallback,
+  rate 제외 정책 및 기존 select value semantics를 유지했다.
+- 현재 견적 form에는 계약 완료라는 이유만으로 모든 input을 잠그는 정책이 없다.
+  계약 확정/문서 불변성은 기존 계약 API/DB 경계다. 이번 단계에서 새 finalized lock을 추가하지 않았다.
+  UI lock != authorization 원칙을 유지한다.
+
+### Characterization 및 회귀
+
+- 원본 제거 전에 41개 합성 사례에서 실제 함수의 HTML/DOM/form property/반환값을 캡처했다.
+  일반/단일·다중 공정/empty/optional·legacy/pipe on-off/내부 normal·누락·discount·unknown mismatch,
+  restore 0/false/empty/select/legacy/제외 원가, section/block locks, admin/manager/staff,
+  기존 계약 status, 인쇄, live/stored 선택, 정적 control 반복 구성과 원가 비교를 포함한다.
+- OLD frozen reference와 NEW pipeline을 같은 fixture로 실행해 full snapshot exact 비교했다.
+  렌더를 반복해도 기존 표/print/아코디언/empty state가 동일하다. 원본 estimate는 frozen/deepEqual로 불변 확인.
+- 신규 unit 46개 + 실제 앱 module role integration 3개 = 49개 추가.
+  internal model 계산/진단/pipe zero profit, checkbox event guard,
+  missing-target early return, fresh Node import와 storage/server 역방향 의존 금지를 함께 검증한다.
+- actual app integration은 admin/manager/staff의 read-only 조회, 입력 활성 상태, 삭제 버튼 권한,
+  internal accordion 열기/공정 펼침/닫기, 고객 인쇄와 민감정보 미노출을 검증한다.
+  manager는 기존 form 편집 presentation 유지/삭제 버튼 없음, staff는 내부 원가 DOM/진단 없음.
+  서버 저장 권한이나 manager 역할 자체를 바꾸거나 새 저장 권한을 부여하지 않았다.
+- 기존 pipe checkbox -> save -> GET regression 유지:
+  고객가/원가 +300,000원, 이익 불변, 다른 공정/세부 행 유지, toggle/save/reload 표시 동일.
+- 계약 3종 문서 생성/확정/출력과 server safe projection/whitelist 코드는 변경하지 않았다.
+- 기존 pure utility/summary/input 및 purchase/cost snapshot 테스트는 canonical 계산/기대 HTML을 유지하고,
+  'main에 import/DOM body가 있어야 함'이라는 위치 단정만 새 view/model/restore adapter 경계로 갱신했다.
+  import reuse, transformation spy count, fallback timing과 exact golden assertions를 제거하지 않았다.
+- 초기 신규 테스트 실패는 re-render 후 detached button을 클릭한 테스트와,
+  'target 없음' fixture에 legacy admin table이 남은 테스트 가정이었다.
+  production event/navigation을 바꾸지 않고 fixture/element 재선택만 바로잡았다.
+- 최종 Regression: 572/572 PASS. Known Failure / Unexpected Fail / Skip / Unhandled Errors 0.
+- Staff Boundary: 격리 local candidate Test DB 23/23 PASS x2.
+  기존 ACCOUNT-STATE GAP OBSERVED helper probe는 baseline 원본 비교 안내이며 candidate fail-closed 검증은 PASS다.
+- DB Security/Integrity 별도 미실행: server/shared calculation/storage/API/SQL 수정 없음.
+- lint/build/syntax/diff PASS. 기존 lint warning 5개 유지, 신규 warning 0.
+  module 이동으로 unused가 된 moneyAmount import만 main에서 제거했고 canonical 구현은 utils 재사용.
+- 실제 고객 데이터/운영 DB 사용 없음. fixture는 합성 데이터와 공개 인쇄 footer만 포함한다.
+
+### 남은 견적 UI 책임 및 Phase 3E
+
+main에는 high-level render facade와 display snapshot 선택, load/save baseline 갱신,
+견적 입력 event orchestration, staff async preview, 현재 print estimate 선택/window.print,
+견적과 계약/원가 화면의 연결, 정적 한국어 label repair, 프로젝트 목록/role shell/navigation이 남는다.
+renderEstimateSnapshotOnly/displayStaffEstimate/loadEstimateIntoUi의 몇몇 total/status 표시도
+state controller와 함께 유지했다. 전역 app shell·프로젝트 관리까지 이번 단계에서 옮기지 않는다.
+
+Phase 3D verdict: PASS. Phase 3E 진행 준비 완료, 별도 승인 필요.
+권장 범위는 계약 문서 preview/print presentation 분리와 options form adapter 경계다.
+확정 조문/조건부 문구/동적 field/3종 순서/role projection을 원본 HTML golden으로 먼저 고정하고,
+contract create/confirm/change approval orchestration, RPC/DB lock 및 authorization은 이동하지 않는다.
+계약 조문 변경, 신규 기능, DOCX/PDF 생성 엔진 또는 전체 app store 개편으로 확대하지 않는다.
+
+이번 단계는 단일 로컬 commit만 수행한다. push/deploy/Production migration 없음.
+기존 제외 SQL 두 파일은 미수정/unstaged/commit 제외 상태를 유지한다.

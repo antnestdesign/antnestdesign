@@ -7,6 +7,8 @@ import { analyze } from "eslint-scope";
 import { JSDOM } from "jsdom";
 import { describe, expect, test, vi } from "vitest";
 import { purchaseOrderItems } from "../../../public/os-app/src/purchase-order.js";
+import { createEstimateView } from "../../../public/os-app/src/estimate-view.js";
+import { createEstimatePrint } from "../../../public/os-app/src/estimate-print.js";
 import { won } from "../../../public/os-app/src/utils.js";
 import { purchaseOrderCases, decodePurchaseValue } from "../fixtures/purchase-order-cases.js";
 
@@ -144,8 +146,10 @@ describe("existing main rendering consumers", () => {
       try {
         const consumer = vm.runInNewContext([
           source.slice(...config.range), ...nodes.map((node) => source.slice(...node.range)),
+          "const estimateView = createEstimateView({ document, quoteGroupLabels, formatDateTime });",
+          "const estimatePrint = createEstimatePrint({ document, formatDateTime });",
           "({ renderPurchaseOrder, renderPurchaseOrderPrint })",
-        ].join("\n"), { document: dom.window.document, won, purchaseOrderItems: transform, currentEstimateForPrint: fallback });
+        ].join("\n"), { document: dom.window.document, won, purchaseOrderItems: transform, currentEstimateForPrint: fallback, createEstimateView, createEstimatePrint });
         consumer.renderPurchaseOrder(estimate);
         consumer.renderPurchaseOrderPrint(estimate);
         expect(dom.window.document.getElementById("purchaseOrderRows").innerHTML).toBe(expected.rows);
