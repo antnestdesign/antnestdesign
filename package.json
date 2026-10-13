@@ -13,6 +13,7 @@
     "test:db": "node tests/os/db/run.mjs",
     "test:db:start": "node tests/os/db/run.mjs --start",
     "test:db:rebuild": "node tests/os/db/rebuild/run.mjs",
+    "test:db:compatibility": "node tests/os/db/compatibility/run.mjs",
     "test:db:integrity": "node tests/os/db/run.mjs --integrity",
     "test:staff-boundary": "node tests/os/db/run.mjs --staff",
     "test:documents": "node tests/os/document-output/run.mjs",

@@ -1,0 +1,398 @@
+{
+  "stack": "and-os-migration-rebuild-test",
+  "origin": "http://127.0.0.1:56321",
+  "oldCommit": "522cbb8",
+  "latestCommit": "bdbe95f",
+  "productionChanges": false,
+  "linked": false,
+  "apiMock": false,
+  "matrix": {
+    "A": {
+      "phase": "baseline",
+      "oldCommit": "522cbb8",
+      "scope": "actual old storage module in Chromium; not a full old backend deployment",
+      "login": "PASS",
+      "rows": 2,
+      "foundSavedEstimate": true,
+      "legacyRawInternalExposure": true,
+      "saveError": "",
+      "responses": [
+        {
+          "method": "GET",
+          "status": 200
+        }
+      ],
+      "savedRowsUnchanged": true,
+      "verdict": "REFERENCE_CONFIRMED"
+    },
+    "C": {
+      "phase": "baseline",
+      "apiMock": false,
+      "roles": [
+        {
+          "role": "admin-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "PASS",
+          "internalBrowserProjection": "INTERNAL_ALLOWED"
+        },
+        {
+          "role": "manager-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "DENIED",
+          "internalBrowserProjection": "INTERNAL_ALLOWED"
+        },
+        {
+          "role": "staff-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "PASS",
+          "internalBrowserProjection": "SAFE"
+        }
+      ],
+      "checks": [
+        "old estimate read has no row mutation",
+        "inactive and forced-password API fail closed on both schemas",
+        "staff internal-field injection denied",
+        "published price unchanged through draft/cancel RPC",
+        "actual admin package + three FINAL documents on both schemas"
+      ],
+      "result": "PASS",
+      "managerRawDelete": "OLD_POLICY_ALLOWS_SYNTHETIC_DELETE",
+      "staffRawRest": "PREEXISTING_BROAD_RLS"
+    },
+    "D": {
+      "phase": "canonical",
+      "apiMock": false,
+      "roles": [
+        {
+          "role": "admin-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "PASS",
+          "internalBrowserProjection": "INTERNAL_ALLOWED"
+        },
+        {
+          "role": "manager-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "DENIED",
+          "internalBrowserProjection": "INTERNAL_ALLOWED"
+        },
+        {
+          "role": "staff-active",
+          "login": "PASS",
+          "list": "PASS",
+          "create": "PASS",
+          "update": "PASS",
+          "reread": "PASS",
+          "preview": "PASS",
+          "internalBrowserProjection": "SAFE"
+        }
+      ],
+      "checks": [
+        "old estimate read has no row mutation",
+        "inactive and forced-password API fail closed on both schemas",
+        "staff internal-field injection denied",
+        "published price unchanged through draft/cancel RPC",
+        "actual admin package + three FINAL documents on both schemas"
+      ],
+      "result": "PASS",
+      "managerRawDelete": "DENIED",
+      "staffRawRest": "DENIED"
+    },
+    "B": {
+      "phase": "canonical",
+      "oldCommit": "522cbb8",
+      "scope": "actual old storage module in Chromium; not a full old backend deployment",
+      "login": "PASS",
+      "rows": 0,
+      "foundSavedEstimate": false,
+      "legacyRawInternalExposure": false,
+      "saveError": "데이터 저장에 실패했습니다. (403)\n데이터 저장에 실패했습니다. (403)\n데이터 저장에 실패했습니다. (403)",
+      "responses": [
+        {
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "status": 403
+        },
+        {
+          "method": "POST",
+          "status": 403
+        },
+        {
+          "method": "POST",
+          "status": 403
+        }
+      ],
+      "savedRowsUnchanged": true,
+      "verdict": "EXPECTED_STAFF_FAILURE_REPRODUCED"
+    }
+  },
+  "timingsSeconds": {
+    "latestAppStartSimulation": 3.88,
+    "oldClientBaselineReference": 6.52,
+    "latestOldDbSmoke": 14.35,
+    "forwardMigrations": 2.18,
+    "latestNewDbSmoke": 12.5,
+    "oldClientNewDbFailure": 3.42,
+    "canonicalExtendedSuites": 291.89
+  },
+  "migrationHashes": {
+    "20261013000000_prod_baseline.sql": "45c341d0348851a5a95df4a71c2da6e747470f886bb26d643acd4190d06937d1",
+    "20261013000100_auth_account_boundary.sql": "f14c9a4f6b4c240d41309f00e9ffbc4434598fae7762b6fe7840c7fa3ed3aa15",
+    "20261013000200_estimate_role_boundary.sql": "c8b965cf7dfa4e537f68b14712cf16e9664157c2bb75e2fb8e4f19295c785fc0",
+    "20261013000300_contract_integrity.sql": "950703f3c3d35ff9cbb38c8698672902ec77712cd26a928ff9f4f038ea79f90e",
+    "20261013000400_cost_rpc_canonical.sql": "e3c2d64c8304f576324c287e763a9e5745f27518a565c9d7cdc66f5a251f4de4"
+  },
+  "result": "PASS",
+  "container": "c0e6db3aae02e7fa1145e46ad7fb26cd2885f99d7b0b5495622b24ff303c6acd",
+  "version": "17.11",
+  "oldCatalog": {
+    "result": "PASS",
+    "phase": "baseline",
+    "fingerprint": "a83cc48fab2cff052ab1cd559b7291b9890a0787cb8b81375c301d73cf70d0cf",
+    "tables": 15,
+    "functions": 24,
+    "columns": 229,
+    "constraints": 80,
+    "indexes": 48,
+    "triggers": 15,
+    "policies": 14,
+    "views": 0
+  },
+  "oldUi": {
+    "engine": "155.0.4283.45",
+    "syntheticOnly": true,
+    "browserOnlyLocalConfig": true,
+    "apiMock": false,
+    "roles": [
+      {
+        "role": "admin-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "PASS",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      },
+      {
+        "role": "manager-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "PASS",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      },
+      {
+        "role": "staff-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "HIDDEN",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      }
+    ],
+    "result": "PASS"
+  },
+  "businessFixtureRowsUnchangedByMigration": true,
+  "fixtureTableHashes": {
+    "change_order_approvals": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "change_orders": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "contract_document_versions": "bc39811a9ac40c2f38ddf2c9fbf90c8a860a26982e3fec2cf4c2b2d83572be6b",
+    "contract_package_snapshots": "8a660b982592c0f1b4985991c4a8b601c289fd81c48cf5593b883e5347e7b50d",
+    "cost_item_history": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "cost_items": "d031d3c3c3766dcf879f2d216dc7b849f72375e19b18cfc466e107d68f5a8e5d",
+    "cost_publish_log": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "customers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "estimate_document_options": "30d30cad35c9b02a858743a7c37e43f3e20d3d365e772579684ca5c93dd65ecd",
+    "estimate_items": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "estimates": "6a43c7183dcdce92495d5472f1d9e4cbc689d40099b5d5a55ac11ca924d71b8b",
+    "os_audit_logs": "b0ba14dd3343bf1e4d320c4dbef1b827e890ffcbef2da19d1186da9e90e60eb0",
+    "profiles": "bdfd595f9c8970c240eac4d4cd4407ef5d8d2c625b71c122e93dbdf98cb1495a",
+    "projects": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "standard_spec_catalog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "newCatalog": {
+    "result": "PASS",
+    "phase": "final",
+    "fingerprint": "542532b3dd4099eb14b738a3ae9fcaac5ccb54db803284ed412edc2df26fc7c5",
+    "tables": 15,
+    "functions": 25,
+    "columns": 229,
+    "constraints": 80,
+    "indexes": 48,
+    "triggers": 16,
+    "policies": 17,
+    "views": 1
+  },
+  "newUi": {
+    "engine": "155.0.4283.45",
+    "syntheticOnly": true,
+    "browserOnlyLocalConfig": true,
+    "apiMock": false,
+    "roles": [
+      {
+        "role": "admin-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "PASS",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      },
+      {
+        "role": "manager-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "PASS",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      },
+      {
+        "role": "staff-active",
+        "login": "PASS",
+        "oldEstimateRead": "PASS",
+        "estimateWritesOnRead": 0,
+        "quoteTotal": 3770000,
+        "contractPanel": "PASS",
+        "costAccountAudit": "HIDDEN",
+        "pageErrors": 0,
+        "hostedDbAttempts": 0
+      }
+    ],
+    "result": "PASS"
+  },
+  "rehearsalFixturesCleaned": 5,
+  "suites": [
+    {
+      "name": "Security",
+      "passed": 190,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Integrity",
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Staff Boundary",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "strategy": "APP_FIRST",
+  "bridgeNeeded": false,
+  "bundleBoundary": {
+    "result": "PASS",
+    "build": "PASS",
+    "clientFilesScanned": 76,
+    "serverSentinelExposure": 0,
+    "productionCredentialsLoaded": false,
+    "hostedFetchAllowed": false,
+    "realProductionEnvValuesInspected": false
+  },
+  "finalChecks": {
+    "regression": {
+      "passed": 702,
+      "failed": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "result": "PASS",
+      "existingWarnings": 5,
+      "newWarnings": 0
+    },
+    "syntax": {
+      "files": 4,
+      "result": "PASS"
+    },
+    "build": "PASS",
+    "documents": {
+      "currentRendererChanges": 0,
+      "phase4CReferencePassed": 9,
+      "rerun": false
+    }
+  },
+  "vercelEnvironmentAudit": {
+    "date": "2026-10-14",
+    "method": "authenticated project + shared UI; names/targets only",
+    "valuesOpened": false,
+    "projectVariables": [
+      {
+        "name": "SUPABASE_SERVICE_ROLE_KEY",
+        "type": "Secret",
+        "environments": [
+          "Production",
+          "Preview"
+        ],
+        "classification": "PRESENT"
+      }
+    ],
+    "sharedVariables": [],
+    "urlGroup": {
+      "names": [
+        "SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_URL"
+      ],
+      "classification": "MISSING",
+      "existingCodeFallback": true
+    },
+    "legacyServerAlias": {
+      "name": "SUPABASE_SERVICE_KEY",
+      "present": false,
+      "classification": "LEGACY"
+    },
+    "publicKeys": {
+      "names": [
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      ],
+      "present": false,
+      "classification": "UNUSED"
+    },
+    "publicServiceSecretNamesPresent": false,
+    "productionMutations": 0
+  },
+  "appFirstFunctionalReady": true,
+  "productionGoReady": false,
+  "finalGateA": "HOLD",
+  "holdReason": "Explicit Production URL environment configuration is absent; fallback works but requested no-missing-env GO policy applies",
+  "push": false,
+  "deploy": false
+}
