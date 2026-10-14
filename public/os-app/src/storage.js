@@ -8,16 +8,17 @@ const COST_PUBLISH_LOG_ENDPOINT = `${SUPABASE_URL}/rest/v1/cost_publish_log`;
 const AUTH_STORAGE_KEY = "and-os.auth-session";
 
 let authSession = null;
+let refreshRequest = null;
 
 const baseHeaders = {
   apikey: SUPABASE_KEY,
   "Content-Type": "application/json",
 };
 
-function authHeaders() {
+function authHeaders(session = authSession) {
   return {
     ...baseHeaders,
-    Authorization: `Bearer ${authSession?.access_token || SUPABASE_KEY}`,
+    Authorization: `Bearer ${session?.access_token || SUPABASE_KEY}`,
   };
 }
 
@@ -44,6 +45,80 @@ export function getAuthSession() {
   return authSession || loadStoredSession();
 }
 
+function sessionWithExpiry(session) {
+  const expiresAt = Number(session.expires_at);
+  const expiresIn = Number(session.expires_in);
+  return {
+    ...session,
+    ...(expiresAt > 0 ? { expires_at: expiresAt } : expiresIn > 0
+      ? { expires_at: Math.floor(Date.now() / 1000) + expiresIn } : {}),
+  };
+}
+
+async function refreshAuthSession(source) {
+  if (!source?.refresh_token) throw new Error("로그인이 필요합니다.");
+  if (refreshRequest?.source === source) return refreshRequest.promise;
+  const request = { source, promise: null };
+  request.promise = (async () => {
+    let response;
+    try {
+      response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: baseHeaders,
+        body: JSON.stringify({ refresh_token: source.refresh_token }),
+      });
+    } catch {
+      throw new Error("로그인 세션을 갱신하지 못했습니다.");
+    }
+    // Logout or a new login must never be overwritten by an older refresh.
+    if (authSession !== source) throw new Error("로그인이 필요합니다.");
+    if (!response.ok) {
+      if ([400, 401, 403].includes(response.status)) {
+        persistSession(null);
+        verifiedEstimateRole = null;
+        verifiedEstimateUserId = null;
+        throw new Error("로그인이 필요합니다.");
+      }
+      throw new Error("로그인 세션을 갱신하지 못했습니다.");
+    }
+    const renewed = await response.json().catch(() => null);
+    if (authSession !== source) throw new Error("로그인이 필요합니다.");
+    if (!renewed?.access_token || !renewed?.refresh_token
+      || (renewed.user?.id && renewed.user.id !== source.user?.id)) {
+      throw new Error("로그인 세션을 갱신하지 못했습니다.");
+    }
+    const session = sessionWithExpiry({ ...renewed, user: renewed.user || source.user });
+    persistSession(session);
+    return session;
+  })().finally(() => {
+    if (refreshRequest === request) refreshRequest = null;
+  });
+  refreshRequest = request;
+  return request.promise;
+}
+
+async function fetchAuthenticated(url, options = {}) {
+  let session = getAuthSession();
+  const expiry = Number(session?.expires_at);
+  if (session && expiry > 0 && expiry <= Date.now() / 1000 + 30) {
+    session = await refreshAuthSession(session);
+  }
+  const send = (current) => fetch(url, {
+    ...options,
+    headers: { ...baseHeaders, ...(options.headers || {}), Authorization: authHeaders(current).Authorization },
+  });
+  let response = await send(session);
+  // Only authentication rejection is replayed, once. Permission and network
+  // errors must not retry writes or relax role checks.
+  if (response.status === 401 && session?.refresh_token) {
+    const current = getAuthSession();
+    if (!current || current.user?.id !== session.user?.id) throw new Error("로그인이 필요합니다.");
+    session = current.access_token !== session.access_token ? current : await refreshAuthSession(current);
+    response = await send(session);
+  }
+  return response;
+}
+
 function userFacingApiError(status, message) {
   if (status === 401) return "로그인이 필요합니다.";
   if (status === 403 && message) return message;
@@ -58,7 +133,7 @@ async function requestOsApi(path, options = {}) {
   if (!session?.access_token) {
     throw new Error("로그인이 필요합니다.");
   }
-  const response = await fetch(`/api/os${path}`, {
+  const response = await fetchAuthenticated(`/api/os${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -210,26 +285,28 @@ export async function signIn(email, password) {
     await response.text();
     throw new Error("로그인에 실패했습니다.");
   }
-  const session = await response.json();
+  const session = sessionWithExpiry(await response.json());
+  verifiedEstimateRole = null;
+  verifiedEstimateUserId = null;
   persistSession(session);
   return session;
 }
 
 export async function signOut() {
   const session = getAuthSession();
-  if (session?.access_token) {
-    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-      method: "POST",
-      headers: authHeaders(),
-    }).catch(() => {});
-  }
   persistSession(null);
   verifiedEstimateRole = null;
   verifiedEstimateUserId = null;
+  if (session?.access_token) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: "POST",
+      headers: authHeaders(session),
+    }).catch(() => {});
+  }
 }
 
 async function requestGeneric(path, options = {}) {
-  const response = await fetch(`${SUPABASE_URL}${path}`, {
+  const response = await fetchAuthenticated(`${SUPABASE_URL}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -302,7 +379,7 @@ function normalizeEstimate(row) {
   };
 }
 async function request(path = "", options = {}) {
-  const response = await fetch(`${ESTIMATES_ENDPOINT}${path}`, {
+  const response = await fetchAuthenticated(`${ESTIMATES_ENDPOINT}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -315,7 +392,7 @@ async function request(path = "", options = {}) {
 }
 
 async function insertEstimatePayload(payload) {
-  const response = await fetch(ESTIMATES_ENDPOINT, {
+  const response = await fetchAuthenticated(ESTIMATES_ENDPOINT, {
     method: "POST",
     headers: {
       ...authHeaders(),
@@ -458,7 +535,7 @@ export async function deleteEstimate(id) {
 }
 
 async function requestCostItems(path = "", options = {}) {
-  const response = await fetch(`${COST_ITEMS_ENDPOINT}${path}`, {
+  const response = await fetchAuthenticated(`${COST_ITEMS_ENDPOINT}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -484,7 +561,7 @@ export async function loadSystemCostItems() {
 }
 
 async function requestCostHistory(path = "", options = {}) {
-  const response = await fetch(`${COST_ITEM_HISTORY_ENDPOINT}${path}`, {
+  const response = await fetchAuthenticated(`${COST_ITEM_HISTORY_ENDPOINT}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -502,7 +579,7 @@ async function requestCostHistory(path = "", options = {}) {
 }
 
 async function requestCostPublishLog(path = "", options = {}) {
-  const response = await fetch(`${COST_PUBLISH_LOG_ENDPOINT}${path}`, {
+  const response = await fetchAuthenticated(`${COST_PUBLISH_LOG_ENDPOINT}${path}`, {
     ...options,
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
@@ -520,7 +597,7 @@ async function requestCostPublishLog(path = "", options = {}) {
 }
 
 async function requestRpc(functionName, payload = {}) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+  const response = await fetchAuthenticated(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
     method: "POST",
     headers: { ...authHeaders(), Prefer: "return=representation" },
     body: JSON.stringify(payload),
@@ -547,7 +624,7 @@ export async function loadCostPublishLogs(limit = 100) {
 }
 
 export async function loadEstimateCount() {
-  const response = await fetch(`${ESTIMATES_ENDPOINT}?select=id`, {
+  const response = await fetchAuthenticated(`${ESTIMATES_ENDPOINT}?select=id`, {
     method: "HEAD",
     headers: { ...authHeaders(), Prefer: "count=exact" },
   });
