@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { internalEstimate, testProfile, testSession } from "../fixtures/estimates.js";
 import { createEstimateDatabase } from "../helpers/os-harness.js";
-import { clearRequestLog, mutations, requestLog, setMockHandler } from "../helpers/network.js";
+import { clearRequestLog, jsonResponse, mutations, requestLog, setMockHandler } from "../helpers/network.js";
 
 async function storageAs(role) {
   vi.resetModules();
@@ -15,6 +15,63 @@ async function storageAs(role) {
   clearRequestLog();
   return { database, storage };
 }
+
+test.each(["admin", "manager"])("new %s estimate returns the database ID for immediate update", async (role) => {
+  const { storage, database } = await storageAs(role);
+  const id = "70000000-0000-4000-8000-000000000001";
+  const createdAt = "2026-10-14T02:00:00.000Z";
+  setMockHandler((request) => {
+    if (request.url.pathname === "/rest/v1/estimates" && request.method === "POST") {
+      database.row = { ...database.row, ...request.body, id, created_at: createdAt };
+      return jsonResponse([database.row], 201);
+    }
+    return database.handle(request);
+  });
+  const input = { ...internalEstimate(), id: "" };
+  const saved = await storage.saveEstimate(input);
+  expect(saved.id).toBe(id);
+  expect(saved.savedAt).toBe(createdAt);
+  expect(saved.total).toBe(input.total);
+  expect(saved.costTotal).toBe(input.costTotal);
+  expect(saved.internalDetails).toEqual(input.internalDetails);
+  expect(input.id).toBe("");
+  const insert = vi.mocked(fetch).mock.calls.find(([, options]) => options.method === "POST");
+  expect(insert[1].headers.Prefer).toBe("return=representation");
+  const updated = await storage.updateEstimate(saved.id, { ...saved, areaPyeong: 35 });
+  expect(updated.id).toBe(id);
+  expect(updated.areaPyeong).toBe(35);
+  expect(mutations().map(({ method }) => method)).toEqual(["POST", "PATCH"]);
+  expect(mutations()[1].url.searchParams.get("id")).toBe(`eq.${id}`);
+});
+
+test("legacy insert fallback returns the successful database row", async () => {
+  const { storage, database } = await storageAs("admin");
+  let attempts = 0;
+  setMockHandler((request) => {
+    if (request.url.pathname === "/rest/v1/estimates" && request.method === "POST") {
+      attempts += 1;
+      if (attempts === 1) return jsonResponse({ code: "PGRST204" }, 400);
+      return jsonResponse([{ ...database.row, ...request.body }], 201);
+    }
+    return database.handle(request);
+  });
+  const saved = await storage.saveEstimate({ ...internalEstimate(), id: "" });
+  expect(saved.id).toBe(database.row.id);
+  expect(saved.costTotal).toBe(internalEstimate().costTotal);
+  expect(attempts).toBe(2);
+});
+
+test.each(["missing ID", "invalid JSON"])("successful insert with %s is never retried", async (responseKind) => {
+  const { storage, database } = await storageAs("manager");
+  setMockHandler((request) => {
+    if (request.url.pathname === "/rest/v1/estimates" && request.method === "POST") {
+      return responseKind === "missing ID" ? jsonResponse([{}], 201) : new Response("invalid", { status: 201 });
+    }
+    return database.handle(request);
+  });
+  await expect(storage.saveEstimate({ ...internalEstimate(), id: "" })).rejects.toThrow();
+  expect(mutations().map(({ method }) => method)).toEqual(["POST"]);
+});
 
 test("P0-2 staff contract metadata request uses the protected Next API", async () => {
   const { storage, database } = await storageAs("staff");

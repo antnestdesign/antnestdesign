@@ -319,7 +319,7 @@ async function insertEstimatePayload(payload) {
     method: "POST",
     headers: {
       ...authHeaders(),
-      Prefer: "return=minimal",
+      Prefer: "return=representation",
     },
     body: JSON.stringify(payload),
   });
@@ -327,14 +327,14 @@ async function insertEstimatePayload(payload) {
     await response.text();
     throw new Error(`데이터 저장에 실패했습니다. (${response.status})`);
   }
+  return response;
 }
 
 async function insertWithFallbacks(payload, fallbacks) {
   const errors = [];
   for (const candidate of [payload, ...fallbacks]) {
     try {
-      await insertEstimatePayload(candidate);
-      return;
+      return await insertEstimatePayload(candidate);
     } catch (error) {
       errors.push(error?.message || String(error));
     }
@@ -373,7 +373,7 @@ export async function saveEstimate(estimate) {
     status,
   };
 
-  await insertWithFallbacks(payload, [
+  const response = await insertWithFallbacks(payload, [
     {
       project_name: projectName,
       total_price: estimate.total || 0,
@@ -385,11 +385,12 @@ export async function saveEstimate(estimate) {
       estimate_data: payload.estimate_data,
     },
   ]);
-  return normalizeEstimate({
-    ...payload,
-    id: estimate.id || "",
-    created_at: new Date().toISOString(),
-  });
+  const rows = await response.json();
+  const row = Array.isArray(rows) ? rows[0] : null;
+  if (!row?.id) {
+    throw new Error("견적이 저장됐으나 저장 결과를 확인하지 못했습니다. 프로젝트 목록에서 확인해 주세요.");
+  }
+  return normalizeEstimate(row);
 }
 
 export async function updateEstimate(id, estimate) {
