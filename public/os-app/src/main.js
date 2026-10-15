@@ -1428,6 +1428,8 @@ function renderCostSnapshotComparison(estimate) {
 
 function renderPrintQuote(quote) { return estimatePrint.renderPrintQuote(quote); }
 
+function renderCustomerSummaryPrint(quote) { return estimatePrint.renderCustomerSummaryPrint(quote); }
+
 function currentEstimateForPrint() {
   if (currentProfile?.role === "staff") return activeQuoteEstimate || lastRenderedEstimateSnapshot;
   return activeQuoteEstimate || lastRenderedEstimateSnapshot || buildEstimateSnapshot(calculateForCurrentEstimate());
@@ -2792,7 +2794,7 @@ function onPrintQuoteClick() {
     setSaveStatus("고객 견적 계산이 완료된 후 출력해 주세요.");
     return;
   }
-  renderPrintQuote(activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote);
+  renderCustomerSummaryPrint(activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote);
   window.print();
 }
 
@@ -3028,7 +3030,7 @@ function onStaffQuoteAction(event) {
   if (!button) return;
   activateTab("quote");
   if (button.id === "staffPrintClientQuoteButton") {
-    renderPrintQuote(currentEstimateForPrint()?.customerQuote);
+    renderCustomerSummaryPrint(currentEstimateForPrint()?.customerQuote);
     window.print();
   }
 }

@@ -11,6 +11,9 @@ export const documentCases = [
   { name: "spec-large", type: "SPEC", count: 120, long: true },
   { name: "all-normal", type: "ALL", count: 55 },
   { name: "estimate-small", type: "ESTIMATE", count: 3 },
+  { name: "customer-summary-normal", type: "ESTIMATE_SUMMARY", count: 55 },
+  { name: "customer-summary-many", type: "ESTIMATE_SUMMARY", count: 1000 },
+  { name: "customer-summary-long", type: "ESTIMATE_SUMMARY", count: 200, longProcessName: true },
 ];
 
 export function documentFixture(entry) {
@@ -27,6 +30,9 @@ export function documentFixture(entry) {
     groups[groupIndex].totalText = `${groups[groupIndex].total.toLocaleString("ko-KR")}원`;
   }
   const total = groups.reduce((sum, group) => sum + group.total, 0);
+  if (entry.type === "ESTIMATE_SUMMARY") groups.forEach((group, index) => {
+    group.label = `T${String(index).padStart(4, "0")} ${entry.longProcessName ? "긴 합성 공정명 및 대분류 명칭 ".repeat(10) : group.label} TE${String(index).padStart(4, "0")}`;
+  });
   const quote = { projectName: project, areaPyeong: 33, savedAt: "2026-01-01T00:00:00Z", groups, total, totalText: `${total.toLocaleString("ko-KR")}원` };
   Object.assign(snapshot.contract_info, { project_name: project, total_amount: total, site_address: entry.long ? "합성 지역 합성 현장 주소 ".repeat(15) : "합성 지역 합성 현장 101호" });
   Object.assign(snapshot.estimate_snapshot, { project_name: project, total_price: total, customer_quote: quote });

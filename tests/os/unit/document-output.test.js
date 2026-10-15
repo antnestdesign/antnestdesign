@@ -37,6 +37,15 @@ describe("Phase 3G customer print semantics survive layout changes", () => {
       expect(customerEstimateSemantics(output.innerHTML)).toStrictEqual(customerEstimateSemantics(previous));
       for (const group of fixture.quote.groups) for (const item of group.items) expect(output.textContent).toContain(item.name);
     }
+    if (entry.type === "ESTIMATE_SUMMARY") {
+      const print = createEstimatePrint({ document, customerWon: won, formatDateTime: e.runtime.formatDateTime, printGroupLabels: {} });
+      print.renderPrintQuote(fixture.quote);
+      const detailed = customerEstimateSemantics(document.getElementById("printQuoteSheet").innerHTML);
+      print.renderCustomerSummaryPrint(fixture.quote);
+      const output = document.getElementById("printQuoteSheet");
+      expect(customerEstimateSemantics(output.innerHTML)).toStrictEqual(detailed);
+      for (const group of fixture.quote.groups) for (const item of group.items) expect(output.textContent).not.toContain(item.name);
+    }
     expect(hash(fixture)).toBe(before);
     e.dom.window.close();
   });

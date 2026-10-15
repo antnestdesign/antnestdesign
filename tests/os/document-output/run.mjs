@@ -94,6 +94,17 @@ try {
       if (startPage !== endPage) splitRows++;
     }
     assert.equal(splitRows, 0);
+    if (entry.type === "ESTIMATE_SUMMARY") {
+      assert(compact.includes(fixture.quote.totalText.replace(/\s/g, "")), "Missing customer total");
+      assert(!/Q\d{4}|QE\d{4}/.test(text), "Summary leaked detailed customer items");
+      for (let index = 0; index < fixture.quote.groups.length; index++) {
+        const start = `T${String(index).padStart(4, "0")}`;
+        const end = `TE${String(index).padStart(4, "0")}`;
+        const startPage = words.findIndex(list => list.some(w => w.textContent.includes(start)));
+        const endPage = words.findIndex(list => list.some(w => w.textContent.includes(end)));
+        assert(startPage >= 0 && startPage === endPage, `Missing or split summary trade ${start}`);
+      }
+    }
     if (entry.type === "CONTRACT" || entry.type === "ALL") {
       for (const line of fixture.documents[0].content_json.generated_sections.fixed_term_lines) assert(compact.includes(line.replace(/\s/g, "")), `Missing clause: ${line.slice(0, 40)}`);
       assert(compact.includes("서명및날인"));

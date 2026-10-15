@@ -2,9 +2,10 @@ import { won, escapeHtml } from "./utils.js";
 import { renderCustomerQuoteRows } from "./document-print.js";
 
 export function createEstimatePrint({ document, customerWon, formatDateTime, printGroupLabels }) {
-function renderPrintQuote(quote) {
+function renderPrintQuote(quote, { mode = "detail" } = {}) {
   const sheet = document.getElementById("printQuoteSheet");
   if (!sheet || !quote) return;
+  const summary = mode === "customer-summary";
   sheet.innerHTML = `
     <article class="contract-print-page customer-quote-document">
     <header class="contract-print-header">
@@ -16,11 +17,12 @@ function renderPrintQuote(quote) {
         <div><dt>작성일</dt><dd>${formatDateTime(quote.savedAt)}</dd></div>
       </dl>
     </header>
-    <table class="contract-print-table document-quote-table">
+    <table class="contract-print-table document-quote-table${summary ? " document-summary-table" : ""}">
       <thead>
-        <tr><th>공정</th><th>항목</th><th>금액</th></tr>
+        ${summary ? "<tr><th>공정</th><th>금액</th></tr>" : "<tr><th>공정</th><th>항목</th><th>금액</th></tr>"}
       </thead>
-      ${renderCustomerQuoteRows(quote.groups, customerWon, label => printGroupLabels[label] || `${label}공사`)}
+      ${summary ? renderCustomerSummaryRows(quote.groups)
+        : renderCustomerQuoteRows(quote.groups, customerWon, label => printGroupLabels[label] || `${label}공사`)}
     </table>
     <footer>
       <div><span>총 공사금액</span><strong>${quote.totalText}</strong></div>
@@ -62,6 +64,19 @@ function renderPrintQuote(quote) {
     </section>
     </article>
   `;
+}
+
+function renderCustomerSummaryRows(groups) {
+  if (!groups.length) return '<tbody><tr><td colspan="2">표시할 견적 항목이 없습니다.</td></tr></tbody>';
+  // Existing customer groups own both ordering and calculated subtotals.
+  return `<tbody>${groups.map(group => `<tr>
+    <td>${escapeHtml(printGroupLabels[group.label] || `${group.label}공사`)}</td>
+    <td class="document-number">${escapeHtml(group.totalText || customerWon(group.total))}</td>
+  </tr>`).join("")}</tbody>`;
+}
+
+function renderCustomerSummaryPrint(quote) {
+  return renderPrintQuote(quote, { mode: "customer-summary" });
 }
 
 function renderAdminDetailPrint(estimate) {
@@ -177,5 +192,5 @@ function renderPurchaseOrderPrint(estimate, items) {
 }
 
 function hasPrintTarget() { return Boolean(document.getElementById("printQuoteSheet")); }
-return { renderPrintQuote, renderAdminDetailPrint, renderAdminInternalPrint, renderPurchaseOrderPrint, hasPrintTarget };
+return { renderPrintQuote, renderCustomerSummaryPrint, renderAdminDetailPrint, renderAdminInternalPrint, renderPurchaseOrderPrint, hasPrintTarget };
 }

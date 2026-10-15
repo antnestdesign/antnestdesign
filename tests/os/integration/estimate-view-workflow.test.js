@@ -41,6 +41,21 @@ describe("Phase 3D real application role presentation and print orchestration", 
       expect(print.textContent).toContain(fixture.projectName);
       expect(print.textContent).toContain("3,770,000원");
       expect(print.textContent).not.toMatch(/직접원가|내부 원가|마진율|구버전 견적 원가 누락/);
+      expect(print.querySelectorAll("thead th")).toHaveLength(2);
+      expect(print.querySelectorAll("tbody tr")).toHaveLength(fixture.customerQuote.groups.length);
+      for (const group of fixture.customerQuote.groups) for (const item of group.items) expect(print.textContent).not.toContain(item.name);
+      if (role === "admin") {
+        document.getElementById("printAdminDetailButton").click();
+        expect(print.querySelectorAll("thead th")).toHaveLength(7);
+        for (const item of fixture.internalDetails) expect(print.textContent).toContain(item.item);
+        document.getElementById("printQuoteButton").click();
+        expect(print.querySelectorAll("thead th")).toHaveLength(2);
+      } else if (role === "staff") {
+        document.getElementById("staffPrintClientQuoteButton").click();
+        expect(print.querySelectorAll("thead th")).toHaveLength(2);
+      } else {
+        expect(document.getElementById("printAdminDetailButton")).toBeNull();
+      }
       expect(database.row).toStrictEqual(before);
       expect(mutations()).toEqual([]);
     });

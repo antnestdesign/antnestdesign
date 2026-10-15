@@ -98,6 +98,8 @@
   #printQuoteSheet .document-quote-table th:nth-child(1) { width: 17%; }
   #printQuoteSheet .document-quote-table th:nth-child(2) { width: 63%; }
   #printQuoteSheet .document-quote-table th:nth-child(3) { width: 20%; text-align: right; }
+  #printQuoteSheet .document-summary-table th:nth-child(1) { width: 70%; }
+  #printQuoteSheet .document-summary-table th:nth-child(2) { width: 30%; text-align: right; }
   #printQuoteSheet .document-payment-table th:nth-child(1) { width: 18%; }
   #printQuoteSheet .document-payment-table th:nth-child(2) { width: 44%; }
   #printQuoteSheet .document-payment-table th:nth-child(3) { width: 12%; text-align: right; }

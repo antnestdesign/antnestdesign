@@ -33,11 +33,13 @@ test("49 authorization, login/password, estimate and mutation orchestration func
   for (const [name, old] of Object.entries(golden.protectedSources)) expect(functionSource(source, name), name).toBe(old);
 });
 
-test("27 extracted business event callbacks preserve the original bodies", () => {
+test("27 business event callbacks preserve bodies except the two customer print entry projections", () => {
   for (const { name, body } of golden.events) {
     const current = functionSource(source, name);
     const ast = parse(current, { ecmaVersion: "latest", sourceType: "module", range: true });
-    expect(current.slice(...ast.body[0].body.range), name).toBe(body);
+    const expected = ["onPrintQuoteClick", "onStaffQuoteAction"].includes(name)
+      ? body.replace("renderPrintQuote(", "renderCustomerSummaryPrint(") : body;
+    expect(current.slice(...ast.body[0].body.range), name).toBe(expected);
   }
 });
 
