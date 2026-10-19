@@ -7,6 +7,7 @@ import { won, rateNumber, escapeHtml } from "./utils.js";
 import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
 import { createEstimateView } from "./estimate-view.js";
+import { mountPreliminaryEstimateView } from "./preliminary-estimate-view.js";
 import { createEstimatePrint } from "./estimate-print.js";
 import { buildInternalRowsModel, buildStoredInternalSummaryModel, buildEstimateInternalViewModel, buildCalculatedEstimatePresentation } from "./estimate-view-model.js";
 import { purchaseOrderItems } from "./purchase-order.js";
@@ -3060,6 +3061,17 @@ function bootstrap() {
 }
 
 bootstrap();
+
+mountPreliminaryEstimateView({
+  document,
+  getContext: () => ({
+    estimate: activeQuoteEstimate || lastRenderedEstimateSnapshot,
+    editingId: currentEditingEstimateId,
+    storedSnapshot: Boolean(loadedEstimateBaseline?.estimate &&
+      (activeQuoteEstimate || lastRenderedEstimateSnapshot) === loadedEstimateBaseline.estimate),
+  }),
+  onPrint: onPrintQuoteClick,
+});
 
 export {
   CONTRACT_FIXED_TERM_LINES,

@@ -248,6 +248,91 @@ select:focus {
   display: block;
 }
 
+.preliminary-workspace .panel-grid {
+  display: block;
+}
+
+.preliminary-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 28px;
+  padding: 20px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.preliminary-context,
+.preliminary-identity {
+  grid-column: 1 / -1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.preliminary-context {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.preliminary-identity { font-weight: 700; }
+.preliminary-site-address:not(:empty)::before { content: " · "; }
+.preliminary-source-notice { grid-column: 1 / -1; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.preliminary-source-notice[hidden] { display: none; }
+.preliminary-trade-price { text-align: right; }
+.preliminary-amount-source { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.preliminary-amount-source[hidden] { display: none; }
+.preliminary-overview .summary-title { display: none; }
+.preliminary-overview .summary-list { grid-column: 1; }
+.preliminary-overview .summary-list > div { border: 0; align-items: center; padding: 0; }
+.preliminary-overview #clientTotal { font-size: 28px; font-variant-numeric: tabular-nums; }
+.preliminary-overview #saveStatus { grid-column: 1 / -1; margin: 0; }
+.preliminary-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.preliminary-actions button { margin: 0; width: auto; }
+.preliminary-trade > .section-heading {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr) minmax(110px, auto) 88px;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-top: 0;
+  border-bottom: 1px solid var(--line);
+}
+.preliminary-trade .section-toggle { min-width: 0; font-size: 16px; }
+.preliminary-trade-summary { margin: 0; overflow-wrap: anywhere; }
+.preliminary-trade-amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.preliminary-detail-button { min-height: 40px; padding: 8px; }
+.preliminary-trade.is-selected > .section-heading { border-left: 3px solid var(--accent); padding-left: 17px; }
+.preliminary-trade-detail { background: var(--soft); border-bottom: 1px solid var(--line); }
+.preliminary-trade-detail[hidden] { display: none; }
+.preliminary-detail-summary { padding: 0 20px; }
+.preliminary-detail-summary > div { flex-wrap: wrap; }
+.preliminary-workspace .excluded-work { margin: 0; padding: 16px 20px; border: 0; }
+.preliminary-workspace input,
+.preliminary-workspace select { min-width: 0; max-width: 100%; }
+.preliminary-workspace button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (max-width: 760px) {
+  .preliminary-overview { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .preliminary-actions { grid-column: 1; }
+  .preliminary-trade > .section-heading { grid-template-columns: minmax(0, 1fr) 88px; gap: 8px 12px; }
+  .preliminary-trade .section-toggle { grid-column: 1; grid-row: 1; }
+  .preliminary-detail-button { grid-column: 2; grid-row: 1 / 3; }
+  .preliminary-trade-price { grid-column: 1; grid-row: 2; text-align: left; }
+  .preliminary-trade-summary { grid-column: 1 / -1; }
+  .preliminary-workspace .control-grid,
+  .preliminary-workspace .demolition-layout,
+  .preliminary-workspace .demolition-extra {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .preliminary-workspace label { min-width: 0; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 400px) {
+  .preliminary-workspace .control-grid:not(.project-info-grid) { grid-template-columns: minmax(0, 1fr); }
+  .preliminary-workspace .project-info-grid > label:first-child { grid-column: 1 / -1; }
+  .preliminary-actions button { flex: 1 1 auto; }
+}
+
 .panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -968,6 +1053,60 @@ th:last-child {
 }
 
 @media (max-width: 640px) {
+  .preliminary-shell .topbar {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 10px 8px;
+    padding: 12px;
+    align-items: center;
+  }
+  .preliminary-shell .topbar h1 { font-size: 18px; white-space: nowrap; }
+  .preliminary-shell .topbar .eyebrow,
+  .preliminary-shell .auth-strip > strong { display: none; }
+  .preliminary-shell .auth-strip {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    align-self: center;
+    min-width: 0;
+  }
+  .preliminary-shell #currentUserLabel { font-size: 10px; word-break: keep-all; overflow-wrap: break-word; text-align: right; }
+  .preliminary-shell #logoutButton { font-size: 11px; padding: 0 7px; }
+  .preliminary-shell .project-strip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr) 74px;
+    gap: 8px;
+  }
+  .preliminary-shell .project-strip > label:first-child { grid-column: 1 / -1; }
+  .preliminary-shell .project-strip > label { min-width: 0; }
+  .preliminary-shell .project-field-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .preliminary-shell .project-strip input,
+  .preliminary-shell .project-strip select,
+  .preliminary-shell #loadProjectButton { min-height: 36px; font-size: 12px; }
+  .preliminary-shell #loadProjectButton { padding: 0 8px; white-space: nowrap; }
+  .preliminary-shell .preliminary-identity-repeat { display: none; }
+  .preliminary-shell .preliminary-identity[data-has-address="false"] { display: none; }
+  .preliminary-shell .preliminary-site-address::before { content: none; }
+  .preliminary-shell .preliminary-overview,
+  .preliminary-shell .preliminary-workspace .project-info-grid { padding: 14px; }
+  .preliminary-shell .preliminary-workspace .project-info-grid { gap: 12px; }
+  .preliminary-shell .project-info-grid input,
+  .preliminary-shell .project-info-grid select { min-height: 38px; }
+  .preliminary-shell .option-panel > .section-heading { padding: 12px 14px; }
+  .preliminary-shell .preliminary-actions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; }
+  .preliminary-shell .preliminary-actions button { min-height: 40px; font-size: 12px; padding: 0 8px; white-space: nowrap; }
+
   .app-shell {
     padding: 10px;
   }
