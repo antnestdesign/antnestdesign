@@ -333,6 +333,27 @@ select:focus {
   .preliminary-actions button { flex: 1 1 auto; }
 }
 
+.detailed-workspace { width: min(840px, calc(100% - 24px)); max-height: 90dvh; overflow: auto; border: 1px solid var(--line); padding: 20px; border-radius: 8px; }
+.detailed-workspace::backdrop { background: rgb(0 0 0 / 35%); }
+.detailed-workspace header, .detailed-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.detailed-workspace h2 { font-size: 20px; margin: 0; }
+.detailed-workspace #detailedStatus:not(:empty) { position: sticky; top: 0; z-index: 1; background: white; border: 1px solid var(--line); padding: 10px; overflow-wrap: anywhere; }
+.detailed-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.detailed-workspace label { display: block; min-width: 0; }
+.detailed-workspace input, .detailed-workspace select { max-width: 100%; }
+.detailed-workspace label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 8px; }
+.detailed-workspace input[type="checkbox"] { width: 18px; height: 18px; min-height: 18px; flex: 0 0 18px; margin: 0; }
+.detailed-workspace [hidden] { display: none !important; }
+.detailed-workspace td, .detailed-workspace dd { overflow-wrap: anywhere; }
+.detailed-workspace table { width: 100%; table-layout: fixed; }
+.detailed-workspace table th, .detailed-workspace table td { white-space: normal; overflow-wrap: anywhere; }
+.detailed-workspace dl > div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; }
+.detailed-workspace dd { margin: 0; }
+.detailed-state { font-weight: 700; }
+#detailedEvents { white-space: pre-line; }
+@media (max-width: 600px) { .detailed-fields { grid-template-columns: minmax(0, 1fr); } .detailed-workspace { padding: 12px; } }
+@media print { .detailed-workspace, #startDetailedEstimateButton { display: none !important; } }
+
 .panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;

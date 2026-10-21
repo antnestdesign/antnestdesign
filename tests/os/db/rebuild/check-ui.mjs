@@ -10,7 +10,7 @@ for(const a of ACCOUNTS) {
   const r=await fetch(`${ORIGIN}/auth/v1/token?grant_type=password`,{method:"POST",redirect:"error",headers:{apikey:s.ANON_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:a.email,password:ACCOUNT_PASSWORD})});
   if(!r.ok)throw new Error("Owned synthetic session unavailable");const v=await r.json();accounts[a.label]={...a,id:v.user.id,token:v.access_token};
 }
-const env={...cleanEnv(),AND_OS_DB_TEST:"1",AND_OS_DB_REBUILD:"1",AND_OS_DB_ANON:s.ANON_KEY,AND_OS_DB_SERVICE:s.SERVICE_ROLE_KEY,
+const env={...cleanEnv(),AND_OS_PROJECT_FOUNDATION_MODE:"ON",AND_OS_DB_TEST:"1",AND_OS_DB_REBUILD:"1",AND_OS_DB_ANON:s.ANON_KEY,AND_OS_DB_SERVICE:s.SERVICE_ROLE_KEY,
   AND_OS_DB_ACCOUNTS:JSON.stringify(accounts),SUPABASE_URL:ORIGIN,NEXT_PUBLIC_SUPABASE_URL:ORIGIN,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,SUPABASE_SERVICE_KEY:"",
   NEXT_TELEMETRY_DISABLED:"1",NODE_OPTIONS:`--import=${pathToFileURL(resolve(WORKDIR,"network-guard.mjs")).href}`};
 const child=spawn(process.execPath,[resolve(ROOT,"node_modules/next/dist/bin/next"),"dev","--hostname","127.0.0.1","--port","3044"],{cwd:ROOT,env,windowsHide:true,stdio:["ignore","pipe","pipe"]});

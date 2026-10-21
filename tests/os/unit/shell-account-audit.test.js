@@ -39,7 +39,10 @@ test("27 business event callbacks preserve bodies except the two customer print 
     const ast = parse(current, { ecmaVersion: "latest", sourceType: "module", range: true });
     const expected = ["onPrintQuoteClick", "onStaffQuoteAction"].includes(name)
       ? body.replace("renderPrintQuote(", "renderCustomerSummaryPrint(") : body;
-    expect(current.slice(...ast.body[0].body.range), name).toBe(expected);
+    const approved = name === "onSavedEstimateAction"
+      ? expected.replace('alert("견적 삭제에 실패했습니다.");', 'alert(error?.message?.startsWith("프로젝트·") ? error.message : "견적 삭제에 실패했습니다.");')
+      : expected;
+    expect(current.slice(...ast.body[0].body.range), name).toBe(approved);
   }
 });
 

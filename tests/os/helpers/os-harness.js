@@ -42,6 +42,7 @@ export function createEstimateDatabase(estimate, packages = []) {
       }
     }
     if (method !== "GET") return null;
+    if (url.pathname === "/api/os/features/project-foundation") return jsonResponse({ mode: "OFF" });
     if (url.pathname === "/api/os/me") return jsonResponse(database.profile || testProfile());
     if (url.pathname === "/rest/v1/cost_items") {
       return jsonResponse([{

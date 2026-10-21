@@ -10,24 +10,31 @@ import { assertContainer, cli, cleanEnv, command, CONTAINER, forgetContainer, OR
 const artifacts = resolve(WORKDIR, "artifacts");
 const copied = resolve(WORKDIR, "supabase/migrations");
 const canonical = resolve(ROOT, "supabase/migrations");
-const files = readdirSync(canonical).filter((name) => /^20261013000[0-4]00_[a-z_]+\.sql$/.test(name)).sort();
-if (files.length !== 5 || readdirSync(canonical).filter((name) => name.endsWith(".sql")).length !== 5) throw new Error("Unexpected migration chain");
+const baseFiles = readdirSync(canonical).filter((name) => /^20261013000[0-4]00_[a-z_]+\.sql$/.test(name)).sort();
+const files = [...baseFiles, "20261019000000_project_detailed_foundation.sql"];
+if (baseFiles.length !== 5 || JSON.stringify(readdirSync(canonical).filter((name) => name.endsWith(".sql")).sort()) !== JSON.stringify(files)) throw new Error("Unexpected migration chain");
 mkdirSync(copied, { recursive:true }); mkdirSync(artifacts, { recursive:true });
+const migrationHashes=Object.fromEntries(files.map(name=>[name,createHash("sha256").update(readFileSync(resolve(canonical,name))).digest("hex")]));
+function assertSourcesFrozen() {
+  for(const name of files)if(createHash("sha256").update(readFileSync(resolve(canonical,name))).digest("hex")!==migrationHashes[name])throw new Error("Migration source changed during rebuild; discard this attempt");
+}
 const report = { stack:STACK, host:"127.0.0.1", apiPort:56321, dbPort:56322, linked:false, productionCredentialsLoaded:false,
-  migrationFiles:files, manualSchemaPatch:0, archiveExecution:0, historicalSchemaExecution:0, runs:[] };
+  migrationFiles:files, migrationHashes, manualSchemaPatch:0, archiveExecution:0, historicalSchemaExecution:0, runs:[] };
 const PYTHON = process.env.AND_OS_PDF_PYTHON || "C:/Users/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe";
 const parserEnv = { ...cleanEnv(), PYTHONDONTWRITEBYTECODE:"1", PYTHONPATH:"C:/Users/user/Documents/Codex/phase4-sql-tools" };
 const captureSql = readFileSync(resolve(ROOT,"scripts/db/capture-app-catalog.sql"),"utf8");
 function save(name, value) { writeFileSync(resolve(artifacts,name), JSON.stringify(value,null,2)+"\n"); }
 function fail(message) { save("report.json", report); throw new Error(message); }
 function apply() {
+  assertSourcesFrozen();
   const result = cli(["migration","up","--local"],120000);
   if (result.status !== 0) fail(`Migration replay failed: ${result.stderr.replace(/(?:eyJ|sb_secret_|sb_publishable_)[A-Za-z0-9._-]+/g,"[REDACTED]")}`);
 }
-function capture(run, label, final=false) {
+function capture(run, label, final=false, phase5=false) {
+  assertSourcesFrozen();
   const data = JSON.parse(sql(captureSql));
   const path = resolve(artifacts,`run-${run}-${label}.json`); save(`run-${run}-${label}.json`,data);
-  const result = command(PYTHON,[resolve(ROOT,"scripts/db/compare-rebuilt-catalog.py"),path,...(final?["--final"]:[])],{env:parserEnv,cwd:ROOT});
+  const result = command(PYTHON,[resolve(ROOT,"scripts/db/compare-rebuilt-catalog.py"),path,...(final?["--final"]:[]),...(phase5?["--phase5"]:[])],{env:parserEnv,cwd:ROOT});
   if (result.status !== 0) fail(`Catalog ${label} comparison failed: ${result.stderr}`);
   return JSON.parse(result.stdout);
 }
@@ -75,12 +82,14 @@ try {
     const entry={run,version,containerId:owner.id,volumes:owner.volumes,blankAppObjects:0,migrationResult:"PENDING",suites:[]}; report.runs.push(entry); save(`run-${run}-blank.json`,blank);
     copyFileSync(resolve(canonical,files[0]),resolve(copied,files[0])); apply();
     entry.baseline=capture(run,"baseline");
-    for(const name of files.slice(1))copyFileSync(resolve(canonical,name),resolve(copied,name));
+    for(const name of baseFiles.slice(1))copyFileSync(resolve(canonical,name),resolve(copied,name));
+    apply(); entry.canonical=capture(run,"canonical",true);
+    copyFileSync(resolve(canonical,files[5]),resolve(copied,files[5]));
     for(const name of files)if(!readFileSync(resolve(copied,name)).equals(readFileSync(resolve(canonical,name))))fail("Migration copy differs from canonical bytes");
     apply(); entry.migrationResult="PASS";
     const history=sql("SELECT coalesce(json_agg(version ORDER BY version),'[]'::json) FROM supabase_migrations.schema_migrations;");
     entry.history=JSON.parse(history); if(JSON.stringify(entry.history)!==JSON.stringify(files.map((name)=>name.slice(0,14))))fail("Migration history mismatch");
-    entry.final=capture(run,"final",true);
+    entry.final=capture(run,"final",true,true);
     const countSql="SELECT "+JSON.parse(readFileSync(resolve(ROOT,"docs/db-baseline/AND_OS_PROD_APP_SCHEMA_2026-10-13.json"),"utf8")).tables.map((t)=>`(SELECT count(*) FROM public.\"${t.name}\")`).join("+")+";";
     entry.preFixtureRows=Number(sql(countSql)); if(entry.preFixtureRows!==0)fail("Migration inserted business rows");
     const s=settings(), accounts={};
@@ -90,7 +99,7 @@ try {
       const session=await auth(s,"token?grant_type=password",{email:account.email,password:ACCOUNT_PASSWORD},s.ANON_KEY);
       accounts[account.label]={...account,id,token:session.access_token};
     }
-    const env={...cleanEnv(),AND_OS_DB_TEST:"1",AND_OS_DB_REBUILD:"1",AND_OS_DB_ANON:s.ANON_KEY,AND_OS_DB_SERVICE:s.SERVICE_ROLE_KEY,
+    const env={...cleanEnv(),AND_OS_PROJECT_FOUNDATION_MODE:"ON",AND_OS_DB_TEST:"1",AND_OS_DB_REBUILD:"1",AND_OS_DB_ANON:s.ANON_KEY,AND_OS_DB_SERVICE:s.SERVICE_ROLE_KEY,
       AND_OS_DB_ACCOUNTS:JSON.stringify(accounts),SUPABASE_URL:ORIGIN,NEXT_PUBLIC_SUPABASE_URL:ORIGIN,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,SUPABASE_SERVICE_KEY:""};
     sql("NOTIFY pgrst, 'reload schema';"); await new Promise((done)=>setTimeout(done,1000));
     let app;
@@ -107,10 +116,21 @@ try {
       const ui=command(process.execPath,[resolve(WORKDIR,"ui-smoke.mjs")],{cwd:ROOT,env,timeout:180000,stdio:"inherit"});
       if(ui.status!==0)fail("Real browser UI smoke failed; no source/API mock repair applied");
       entry.ui=JSON.parse(readFileSync(resolve(artifacts,"ui-report.json"),"utf8"));
+      entry.featureModes=[];
+      for(const label of ["ON","READ_ONLY","OFF","MISSING","INVALID"]) {
+        const modeEnv={...env};
+        if(label==="MISSING")delete modeEnv.AND_OS_PROJECT_FOUNDATION_MODE;
+        else modeEnv.AND_OS_PROJECT_FOUNDATION_MODE=label==="INVALID"?"invalid":label;
+        if(label!=="ON") { await stopApp(app); app=null; app=await startApp(modeEnv); }
+        const checked=command(process.execPath,[resolve(WORKDIR,"feature-modes.mjs"),label],{cwd:ROOT,env:modeEnv,timeout:240000,stdio:"inherit"});
+        if(checked.status!==0)fail(`Feature mode ${label} failed`);
+        const modeReport=JSON.parse(readFileSync(resolve(artifacts,`feature-mode-${label}.json`),"utf8"));
+        entry.featureModes.push({label,actualServerMode:modeReport.actualServerMode,checks:modeReport.checks.length,result:modeReport.result});
+      }
     } finally { await stopApp(app); }
     process.env.AND_OS_DB_REBUILD="1";
     sql(readFileSync(resolve(WORKDIR,"reset-integrity.sql"),"utf8"),true);
-    entry.afterTests=capture(run,"after-tests",true);
+    entry.afterTests=capture(run,"after-tests",true,true);
     if(entry.afterTests.fingerprint!==entry.final.fingerprint)fail("Test schema leakage");
     save("report.json",report);
   }

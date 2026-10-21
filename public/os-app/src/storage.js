@@ -128,7 +128,7 @@ function userFacingApiError(status, message) {
   return message || "요청을 처리하지 못했습니다.";
 }
 
-async function requestOsApi(path, options = {}) {
+async function requestOsApi(path, options = {}, preserveMessage = false) {
   const session = getAuthSession();
   if (!session?.access_token) {
     throw new Error("로그인이 필요합니다.");
@@ -144,18 +144,30 @@ async function requestOsApi(path, options = {}) {
   const text = await response.text();
   if (!response.ok) {
     let message = "";
+    let code = "";
     try {
-      message = JSON.parse(text)?.error || "";
+      const body = JSON.parse(text);
+      message = body?.error || "";
+      code = body?.code || "";
     } catch {
       message = "";
     }
-    throw new Error(userFacingApiError(response.status, message));
+    const error = new Error(preserveMessage && /^[가-힣]/.test(message) ? message : userFacingApiError(response.status, message));
+    if (preserveMessage) { error.status = response.status; error.code = code; }
+    throw error;
   }
   if (response.status === 204 || !text.trim()) return null;
   return JSON.parse(text);
 }
 
 let verifiedEstimateRole = null;
+export function loadProjectFoundationMode() {
+  return requestOsApi("/features/project-foundation");
+}
+export function requestProjectFoundation(path, options = {}) {
+  if (!/^\/(projects|detailed-estimates)(\/|$|\?)/.test(path)) throw new Error("본견적 요청 경로가 올바르지 않습니다.");
+  return requestOsApi(path, options, true);
+}
 let verifiedEstimateUserId = null;
 
 export async function loadCurrentOsUser() {
@@ -384,7 +396,14 @@ async function request(path = "", options = {}) {
     headers: { ...authHeaders(), ...(options.headers || {}) },
   });
   if (!response.ok) {
-    await response.text();
+    const body = await response.text();
+    if (options.method === "DELETE") {
+      try {
+        if (JSON.parse(body)?.code === "23503") throw new Error("프로젝트·본견적·계약에서 참조 중인 견적은 삭제할 수 없습니다.");
+      } catch (error) {
+        if (error?.message?.startsWith("프로젝트·")) throw error;
+      }
+    }
     throw new Error(`데이터 요청에 실패했습니다. (${response.status})`);
   }
   if (response.status === 204) return null;

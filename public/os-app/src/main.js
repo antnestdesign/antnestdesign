@@ -8,6 +8,7 @@ import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
 import { createEstimateView } from "./estimate-view.js";
 import { mountPreliminaryEstimateView } from "./preliminary-estimate-view.js";
+import { mountDetailedEstimateView } from "./detailed-estimate-view.js";
 import { createEstimatePrint } from "./estimate-print.js";
 import { buildInternalRowsModel, buildStoredInternalSummaryModel, buildEstimateInternalViewModel, buildCalculatedEstimatePresentation } from "./estimate-view-model.js";
 import { purchaseOrderItems } from "./purchase-order.js";
@@ -61,6 +62,8 @@ import {
   signOut,
   loadStoredSession,
   getAuthSession,
+  requestProjectFoundation,
+  loadProjectFoundationMode,
 } from "./storage.js";
 
 const rates = {
@@ -3021,7 +3024,7 @@ async function onSavedEstimateAction(event) {
       renderSavedEstimateRows();
     } catch (error) {
       console.error("견적 삭제 실패", error);
-      alert("견적 삭제에 실패했습니다.");
+      alert(error?.message?.startsWith("프로젝트·") ? error.message : "견적 삭제에 실패했습니다.");
     }
   }
 }
@@ -3071,6 +3074,10 @@ mountPreliminaryEstimateView({
       (activeQuoteEstimate || lastRenderedEstimateSnapshot) === loadedEstimateBaseline.estimate),
   }),
   onPrint: onPrintQuoteClick,
+});
+
+mountDetailedEstimateView({ document, request: requestProjectFoundation, loadMode: loadProjectFoundationMode,
+  getContext: () => ({ estimateId: currentEditingEstimateId }),
 });
 
 export {

@@ -16,6 +16,22 @@ async function storageAs(role) {
   return { database, storage };
 }
 
+test("referenced estimate delete explains the FK restriction without exposing the rejected row", async () => {
+  const { storage, database } = await storageAs("admin");
+  const before = structuredClone(database.row);
+  setMockHandler(request => request.method === "DELETE" && request.url.pathname === "/rest/v1/estimates"
+    ? jsonResponse({ code: "23503", details: "SYNTHETIC_PRIVATE_ROW" }, 409) : database.handle(request));
+  await expect(storage.deleteEstimate(database.row.id)).rejects.toThrow("프로젝트·본견적·계약에서 참조 중인 견적은 삭제할 수 없습니다.");
+  expect(database.row).toEqual(before);
+  expect(mutations().filter(r => r.method === "DELETE")).toHaveLength(1);
+});
+
+test("foundation adapter reuses auth but rejects unrelated endpoint paths", async () => {
+  const { storage } = await storageAs("staff");
+  expect(() => storage.requestProjectFoundation("/users")).toThrow("본견적 요청 경로");
+  expect(mutations()).toEqual([]);
+});
+
 test.each(["admin", "manager"])("new %s estimate returns the database ID for immediate update", async (role) => {
   const { storage, database } = await storageAs(role);
   const id = "70000000-0000-4000-8000-000000000001";

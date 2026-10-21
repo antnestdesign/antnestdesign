@@ -8,9 +8,14 @@ const functions=JSON.parse(executeSql(`SELECT jsonb_agg(jsonb_build_object('name
   'public',EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE')) ORDER BY p.proname)
   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef
   AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e');`));
-expect(functions).toHaveLength(15);
+expect(functions).toHaveLength(17);
 for(const f of functions) {
   test(`REBUILD-DEFINER ${f.name} runtime owner/path/ACL`,()=>{
+    if (f.name.startsWith("and_os_5b_")) {
+      expect(f.owner).toBe("postgres"); expect(f.public).toBe(false); expect(f.anon).toBe(false); expect(f.authenticated).toBe(false);
+      expect(f.config).toContain(f.name === "and_os_5b_command" ? "search_path=pg_catalog, public, extensions" : "search_path=pg_catalog, public");
+      expect(f.service).toBe(f.name === "and_os_5b_command"); return;
+    }
     expect(f.owner).toBe("postgres");expect(f.config).toContain("search_path=public");expect(f.public).toBe(false);expect(f.anon).toBe(false);
     const serviceOnly=["create_contract_package_snapshot","confirm_contract_package_snapshot","create_contract_change_order","approve_contract_change_order","next_cost_publish_version"];
     expect(f.authenticated).toBe(f.name!=="and_os_require_cost_rpc_mutation"&&!serviceOnly.includes(f.name));

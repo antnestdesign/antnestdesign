@@ -63,7 +63,7 @@ def verify(actual, baseline, final):
     assert len(actual['tables']) == 15 and len(actual['functions']) == 25 and len(actual['views']) == 1
     assert not actual['sequences'] and not actual['types']
     expected_functions = {f['name']: f['definition'] for f in baseline['functions']}
-    for file in sorted((ROOT / 'supabase/migrations').glob('*.sql'))[1:]:
+    for file in sorted((ROOT / 'supabase/migrations').glob('20261013000[1-4]00_*.sql')):
         for stmt in split(file.read_text(encoding='utf-8')):
             node = parse_sql(stmt)[0].stmt
             if isinstance(node, ast.CreateFunctionStmt):
@@ -114,10 +114,48 @@ def verify(actual, baseline, final):
 parser = argparse.ArgumentParser()
 parser.add_argument('capture', type=Path)
 parser.add_argument('--final', action='store_true')
+parser.add_argument('--phase5', action='store_true')
 args = parser.parse_args()
 actual = json.loads(args.capture.read_text(encoding='utf-8-sig'))
 baseline = json.loads((ROOT / 'docs/db-baseline/AND_OS_PROD_APP_SCHEMA_2026-10-13.json').read_text(encoding='utf-8'))
-verify(actual, baseline, args.final)
+if args.phase5:
+    import copy
+    original = copy.deepcopy(actual)
+    names = {'project_preliminary_estimates', 'detailed_estimates', 'detailed_estimate_drafts', 'detailed_estimate_references', 'detailed_estimate_events'}
+    additions = [t for t in actual['tables'] if t['name'] in names]
+    assert len(additions) == 5
+    for table in additions:
+        assert table['rls_enabled'] and table['owner'] == 'postgres'
+        assert set(table['effective_acl']) == {'postgres=arwdDxtm/postgres', 'service_role=arwd/postgres'}
+        assert not table['policies']
+    expected = {}
+    for stmt in split((ROOT / 'supabase/migrations/20261019000000_project_detailed_foundation.sql').read_text(encoding='utf-8')):
+        node = parse_sql(stmt)[0].stmt
+        if isinstance(node, ast.CreateFunctionStmt):
+            expected[node.funcname[-1].sval] = stmt
+    new_functions = [f for f in actual['functions'] if f['name'] in expected]
+    assert len(new_functions) == len(expected)
+    for f in new_functions:
+        assert function_model(f['definition']) == function_model(expected[f['name']]), f['name']
+        assert f['owner'] == 'postgres'
+        assert f['proconfig'] == ['search_path=pg_catalog, public' + (', extensions' if f['name'] in ('and_os_5b_source', 'and_os_5b_command') else '')]
+        assert set(f['effective_acl']) == ({'postgres=X/postgres', 'service_role=X/postgres'} if f['name'] == 'and_os_5b_command' else {'postgres=X/postgres'})
+    actual = copy.deepcopy(actual)
+    actual['tables'] = [t for t in actual['tables'] if t['name'] not in names]
+    actual['functions'] = [f for f in actual['functions'] if f['name'] not in expected]
+    for t in actual['tables']:
+        if t['name'] == 'projects':
+            assert {c['name'] for c in t['columns'][-2:]} == {'os_managed_at', 'os_managed_by'}
+            t['columns'] = t['columns'][:-2]
+            t['constraints'] = [c for c in t['constraints'] if c['name'] not in ('projects_managed_pair', 'projects_os_managed_by_fkey')]
+            t['indexes'] = [i for i in t['indexes'] if i['name'] != 'projects_managed_idx']
+        if t['name'] == 'estimates':
+            assert any(g['name'] == 'estimates_project_consistency' for g in t['triggers'])
+            t['triggers'] = [g for g in t['triggers'] if g['name'] != 'estimates_project_consistency']
+    verify(actual, baseline, True)
+    actual = original
+else:
+    verify(actual, baseline, args.final)
 print(json.dumps({'result':'PASS', 'phase':'final' if args.final else 'baseline', 'fingerprint':fingerprint(actual),
                   'tables':len(actual['tables']), 'functions':len(actual['functions']),
                   'columns':sum(len(t['columns']) for t in actual['tables']), 'constraints':sum(len(t['constraints']) for t in actual['tables']),
