@@ -31,17 +31,17 @@
 
 export const projects: Record<string, Project> = {
   "cheongna-hanwha-kkumegreen-44a": {
-    title: "인천 청라 한화꿈에그린 44A",
-    cardTitle: "인천 청라 한화꿈에그린 44A",
+    title: "인천 청라 한화꿈에그린 113.75㎡",
+    cardTitle: "인천 청라 한화꿈에그린 113.75㎡",
     seo: {
-      title: "인천 청라 한화꿈에그린 44A 인테리어 | 깊이 있는 재료, 간결한 동선",
-      description: "인천 청라 한화꿈에그린 44A, 공급 148.48A㎡·전용 113.75A㎡의 2026년 인테리어 디자인 제안입니다. 짙은 우드와 석재, 브론즈 선반을 연결하고 주방과 라운지, 서재와 욕실의 수납 및 동선을 정리했습니다.",
+      title: "인천 청라 한화꿈에그린 113.75㎡ 인테리어 | 깊이 있는 재료, 간결한 동선",
+      description: "인천 청라 한화꿈에그린 전용 113.75㎡·공급 148.48㎡의 2026년 인테리어 디자인 제안입니다. 짙은 우드와 석재, 브론즈 선반을 연결하고 주방과 라운지, 서재와 욕실의 수납 및 동선을 정리했습니다.",
     },
     category: "Residential Interior",
     projectGroup: "Residential",
     type: "Apartment Interior",
     year: "2026",
-    area: "공급 148.48A㎡ · 전용 113.75A㎡ · 44A",
+    area: "전용 113.75㎡ · 공급 148.48㎡",
     location: "인천 청라",
     images: 16,
     heroImage: "/projects/cheongna-hanwha-kkumegreen-44a/01-living-day.webp",

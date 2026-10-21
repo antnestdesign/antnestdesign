@@ -14,7 +14,7 @@ export default function CheongnaHanwhaKkumegreen44A() {
         <div className="space-y-6 text-lg md:text-xl leading-[2] md:leading-[2.2] text-neutral-700 break-keep">
           <p>짙은 우드와 석재, 브론즈의 차분한 깊이 위에 필요한 빛을 더했습니다. 재료의 존재감은 살리되, 수납과 이동은 일상에 맞게 간결하게 정리한 집입니다.</p>
           <p>벽체 끝까지 이어지는 아일랜드와 홈바, 다이닝과 라운지로 나눈 거실, 한쪽 벽으로 모은 서재 가구. 각 공간의 쓰임을 분명히 하면서 같은 재료와 은은한 조명으로 하나의 흐름을 만들었습니다.</p>
-          <p className="text-sm md:text-base text-neutral-500">공급면적 148.48A㎡ · 전용면적 113.75A㎡ (전용률 약 77%) · 44A</p>
+          <p className="text-sm md:text-base text-neutral-500">공급면적 148.48㎡ · 전용면적 113.75㎡ (전용률 약 77%)</p>
         </div>
       </section>
 
