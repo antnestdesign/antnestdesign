@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  productionBrowserSourceMaps: false,
   images: {
     unoptimized: true,
   },
@@ -18,6 +19,7 @@ const nextConfig: NextConfig = {
       {
         source: "/os-app/:path*",
         headers: [
+          { key: "Cache-Control", value: "no-store" },
           {
             key: "X-Robots-Tag",
             value: "noindex, nofollow",

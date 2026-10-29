@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 const state = vi.hoisted(() => ({ actor: "90000000-0000-4000-8000-000000000001", role: "staff", rpc: vi.fn() }));
 vi.mock("../../../app/api/os/_lib/server", () => ({
   ApiError: class extends Error { constructor(status, message) { super(message); this.status = status; } },
@@ -90,10 +90,12 @@ test("database errors never echo rejected rows or private detail", async () => {
   const response = await handle(new Request("http://localhost/api/os"), "projects");
   expect(response.status).toBe(409); expect(await response.text()).not.toContain("SYNTHETIC_PRIVATE");
 });
-test("migration source whitelist equals the existing approved public input schema", () => {
+test("frozen reference whitelist contains public calculation inputs, not UI-only estimate status", () => {
   const migration = readFileSync("supabase/migrations/20261019000000_project_detailed_foundation.sql", "utf8");
   const csv = migration.match(/'projectName,areaPyeong,[^']+'/)[0].slice(1, -1).split(",");
-  expect(csv).toEqual(Object.keys(ESTIMATE_INPUT_SCHEMA).filter(id => !PRIVATE_ESTIMATE_INPUTS.includes(id)));
+  expect(csv).toEqual(Object.keys(ESTIMATE_INPUT_SCHEMA).filter(id => !PRIVATE_ESTIMATE_INPUTS.includes(id) && id !== "estimateStatus"));
+  expect(csv).not.toContain("estimateStatus");
+  expect(ESTIMATE_INPUT_SCHEMA.estimateStatus).toMatchObject({ type: "select", value: "견적" });
 });
 
 test.each(["legacy", "foundation", "both"])("preview discovers established %s project connection without modifying source semantics", async kind => {

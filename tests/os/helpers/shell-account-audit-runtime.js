@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { escapeHtml } from "../../../public/os-app/src/utils.js";
 import { createEstimateRestore } from "../../../public/os-app/src/estimate-restore.js";
 import { accountUsers, auditRows } from "../fixtures/shell-account-audit-cases.js";
+import { hydratePrivateTestDefaults } from "./private-defaults.js";
 
 const html = readFileSync(new URL("../../../public/os-app/index.html", import.meta.url), "utf8");
 const functionMaps = new Map();
@@ -19,6 +20,7 @@ export function functionSource(source, name) {
 export async function shellAccountAuditRuntime(golden, entry, original = false) {
   const dom = new JSDOM(html);
   const document = dom.window.document;
+  hydratePrivateTestDefaults(document);
   const trace = [];
   const state = { users: entry.state === "empty" ? [] : accountUsers(), logs: entry.state === "empty" ? [] : auditRows() };
   const role = entry.role || "admin";

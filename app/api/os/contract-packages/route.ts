@@ -21,6 +21,7 @@ import {
   requireEstimateScopeForStaff,
   sanitizePackageList,
 } from "./_lib/contracts";
+import { issuedLinks, readIssuedPackage } from "./_lib/issued-access";
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,7 +70,16 @@ export async function GET(request: NextRequest) {
         return haystack.includes(keyword);
       })
       : rows;
-    return json(sanitizePackageList(filteredRows, context.profile.role));
+    const linked = new Set((await issuedLinks()).map(l => l.package_id));
+    const accessible = [];
+    for (const row of filteredRows) {
+      if (!linked.has(String(row.id))) { accessible.push(row); continue; }
+      try { accessible.push(await readIssuedPackage(context, String(row.id))); } catch (error) {
+        const status = (error as { status?: number }).status;
+        if (![403, 423, 503].includes(status || 0) && !/42501|P5F01/.test((error as Error).message)) throw error;
+      }
+    }
+    return json(sanitizePackageList(accessible, context.profile.role));
   } catch (error) {
     return errorResponse(error);
   }

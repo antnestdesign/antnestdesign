@@ -7,6 +7,8 @@ import {
   writeAuditLog,
 } from "../../../_lib/server";
 import { assertUuid } from "../../_lib/contracts";
+import { requireFoundationAction } from "../../../projects/_lib/feature-state";
+import { issuedLinks } from "../../_lib/issued-access";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -17,11 +19,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     const context = await requireAdmin(request);
     const { id } = await params;
     const packageId = assertUuid(id, "계약 패키지 ID");
+    const links = await issuedLinks(packageId);
     const result = await supabaseFetch<Record<string, unknown>>(
-      "/rest/v1/rpc/confirm_contract_package_snapshot",
+      links.length ? "/rest/v1/rpc/and_os_5b_contract" : "/rest/v1/rpc/confirm_contract_package_snapshot",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: JSON.stringify(links.length ? { p_actor: context.authUser.id, p_action: "confirm", p_package: packageId,
+          p_mode: requireFoundationAction("contract") } : {
           p_package_id: packageId,
           p_actor_user_id: context.authUser.id,
         }),

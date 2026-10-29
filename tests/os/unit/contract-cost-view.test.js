@@ -51,8 +51,12 @@ test("48 terms, saved payment zero/label/ratio/amount/due basis, contractor and 
   evidence.dom.window.close();
 });
 
-test("all 18 mutation/payload/RPC orchestration functions remain byte-for-byte identical", () => {
-  for (const [name, source] of Object.entries(contractCostGolden.protectedSources)) expect(currentFunctionSource(name), name).toBe(source);
+test("legacy mutation functions stay exact except explicit issued-source orchestration adapters", () => {
+  const adapters = new Set(["saveContractOptionsFromForm", "previewContractPackageFromForm", "createContractPackageFromForm", "refreshContractPackagePanel", "loadContractPackageToPreview"]);
+  for (const [name, source] of Object.entries(contractCostGolden.protectedSources)) {
+    if (adapters.has(name)) { expect(currentFunctionSource(name), name).toContain("contractSourceView"); continue; }
+    expect(currentFunctionSource(name), name).toBe(source);
+  }
 });
 
 test("stored finalized document clauses and contractor never follow current template or package edits", () => {

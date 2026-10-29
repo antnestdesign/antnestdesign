@@ -11,6 +11,8 @@ import { createEstimateView } from "../../../public/os-app/src/estimate-view.js"
 import { rateNumber, won } from "../../../public/os-app/src/utils.js";
 import { storedEstimateSummary, buildEstimateDiagnostics } from "../../../public/os-app/src/estimate-summary.js";
 import { costSnapshotCases, snapshotConsumerCases, decodeSnapshotValue } from "../fixtures/cost-snapshot-cases.js";
+import { calculatePrivilegedEstimate } from "../../../app/api/os/estimates/_lib/estimates.js";
+import { jsonResponse, setMockHandler } from "../helpers/network.js";
 
 const moduleUrl = new URL("../../../public/os-app/src/cost-snapshot.js", import.meta.url);
 const mainUrl = new URL("../../../public/os-app/src/main.js", import.meta.url);
@@ -138,36 +140,45 @@ describe("key, value, duplicate and ownership semantics", () => {
 
 describe("existing privileged snapshot consumers", () => {
   for (const expected of golden.consumers) {
-    test(`${expected.name}: changed flag, missing-item diagnostic and comparison HTML retain original output`, () => {
+    test(`${expected.name}: changed flag, protected missing-item guard and comparison HTML retain output`, async () => {
       const fixture = freeze(structuredClone(snapshotConsumerCases.find((entry) => entry.name === expected.name)));
       const before = structuredClone(fixture);
       const source = readFileSync(mainUrl, "utf8");
       const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", range: true });
-      const names = ["costSnapshotChanged", "requiredMissingSnapshotItems", "renderCostSnapshotComparison"];
+      const names = ["costSnapshotChanged", "renderCostSnapshotComparison"];
       const nodes = ast.body.filter((node) => node.type === "FunctionDeclaration" && names.includes(node.id.name));
-      expect(nodes).toHaveLength(3);
+      expect(nodes).toHaveLength(2);
       const dom = new JSDOM('<section id="costComparisonPanel" hidden></section><p id="costCompareStatus"></p>');
       const lookup = vi.fn(costSnapshotMap);
-      const calculate = vi.fn(() => ({ costTotal: fixture.currentCost }));
+      const previewInternalEstimate = vi.fn(async () => ({ snapshot: { costTotal: fixture.currentCost } }));
       try {
         const consumer = vm.runInNewContext([
           ...nodes.map((node) => source.slice(...node.range)),
-          "({ costSnapshotChanged, requiredMissingSnapshotItems, renderCostSnapshotComparison })",
+          "({ costSnapshotChanged, renderCostSnapshotComparison })",
         ].join("\n"), { document: dom.window.document, won, rateNumber, costSnapshotMap: lookup,
           estimateView: createEstimateView({ document: dom.window.document }),
           originalCostItems: new Map(fixture.current.map((item) => [item.itemCode, item])),
-          currentCostItems: () => fixture.current, calculate, buildEstimateSnapshot: (value) => value });
+          currentCostItems: () => fixture.current, previewInternalEstimate, privateCalculationBody: () => ({ inputs: {} }) });
         expect(consumer.costSnapshotChanged(fixture.snapshot)).toBe(expected.changed);
-        expect([...consumer.requiredMissingSnapshotItems(fixture.snapshot, { wallpaperMaterialEnabled: true })]).toEqual(expected.missing);
-        expect([...consumer.requiredMissingSnapshotItems(fixture.snapshot, { wallpaperMaterialEnabled: false })]).toEqual([]);
-        consumer.renderCostSnapshotComparison({ costSnapshot: fixture.snapshot, costTotal: fixture.savedCost });
+        await consumer.renderCostSnapshotComparison({ costSnapshot: fixture.snapshot, costTotal: fixture.savedCost });
         const panel = dom.window.document.getElementById("costComparisonPanel");
         expect(panel.innerHTML).toBe(expected.html);
         expect(panel.hidden).toBe(expected.hidden);
         expect(dom.window.document.getElementById("costCompareStatus").textContent).toBe(expected.status);
-        expect(calculate).toHaveBeenCalledTimes(fixture.snapshot?.items?.length ? 1 : 0);
+        expect(previewInternalEstimate).toHaveBeenCalledTimes(fixture.snapshot?.items?.length ? 1 : 0);
+        vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "synthetic-network-mock-only");
+        const saved = { id: "10000000-0000-4000-8000-000000000001", estimate_data: { inputs: { sectionWallpaperEnabled: false }, costSnapshot: fixture.snapshot } };
+        setMockHandler(({ url, method }) => method === "GET" && url.pathname === "/rest/v1/estimates" ? jsonResponse([saved])
+          : method === "GET" && url.pathname === "/rest/v1/cost_items" ? jsonResponse([{ item_code: "CABINET_LOWER", item_name: "합성 원가 기준", category: "가구", unit: "자", cost_price: 120000, default_margin_rate: .3, is_active: true }]) : null);
+        const context = { authUser: { id: "synthetic-admin" }, profile: { role: "admin" } };
+        const request = { estimateId: saved.id, inputs: { sectionWallpaperEnabled: true } };
+        const calculation = calculatePrivilegedEstimate(request, context);
+        if (fixture.snapshot?.items?.length && expected.missing.length) await expect(calculation).rejects.toMatchObject({ status: 409, message: expect.stringContaining("도배 자재비") });
+        else await expect(calculation).resolves.toHaveProperty("snapshot");
+        await expect(calculatePrivilegedEstimate({ ...request, inputs: { sectionWallpaperEnabled: false } }, context)).resolves.toHaveProperty("snapshot");
         expect(fixture).toStrictEqual(before);
       } finally {
+        vi.unstubAllEnvs();
         dom.window.close();
       }
     });
@@ -194,7 +205,7 @@ describe("pure lookup and staff security boundaries", () => {
     expect(result.stdout.trim()).toBe("cost snapshot import PASS");
   });
 
-  test("one canonical definition, zero imports/state leakage and unchanged four callers", () => {
+  test("one canonical definition, zero state leakage and client comparison callers only", () => {
     const source = readFileSync(moduleUrl, "utf8");
     const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", range: true });
     expect(ast.body).toHaveLength(1);
@@ -206,7 +217,9 @@ describe("pure lookup and staff security boundaries", () => {
     const mainAst = parse(main, { ecmaVersion: "latest", sourceType: "module" });
     expect(mainAst.body.filter((node) => node.type === "FunctionDeclaration" && node.id.name === "costSnapshotMap")).toEqual([]);
     expect(mainAst.body.filter((node) => node.type === "ImportDeclaration" && node.source.value === "./cost-snapshot.js")).toHaveLength(1);
-    expect(main.match(/costSnapshotMap\(/g)).toHaveLength(4);
+    expect(main.match(/costSnapshotMap\(/g)).toHaveLength(2);
+    expect(main).not.toContain("function requiredMissingSnapshotItems");
+    expect(main).toContain("await previewInternalEstimate(privateCalculationBody(null))");
     const server = readFileSync(new URL("../../../app/api/os/estimates/_lib/estimates.js", import.meta.url), "utf8");
     expect(server).not.toMatch(/costSnapshotMap|cost-snapshot\.js/);
     expect(main.replaceAll("\r\n", "\n")).toContain('if (currentProfile?.role === "staff") {\n    renderStaffEstimate();\n    return;');

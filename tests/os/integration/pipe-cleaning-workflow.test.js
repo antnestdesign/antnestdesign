@@ -1,19 +1,22 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { latestEstimate, testProfile } from "../fixtures/estimates.js";
 import { createEstimateDatabase, flushAsyncWork, mountOs } from "../helpers/os-harness.js";
 import { clearRequestLog, mutations } from "../helpers/network.js";
 
 test("P0-3 checkbox -> save -> GET uses one snapshot without other trade recalculation", async () => {
   const fixture = latestEstimate();
+  fixture.inputs.sectionFinishEnabled = false;
   const database = createEstimateDatabase(fixture);
   const { main, storage } = await mountOs(database, testProfile());
   main.loadEstimateIntoUi(await storage.getEstimate(fixture.id));
   await flushAsyncWork();
+  expect(document.getElementById("sectionFinishEnabled").checked).toBe(false);
   clearRequestLog();
   const checkbox = document.getElementById("existingPipeCleaningEnabled");
   checkbox.checked = true;
   checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-  expect(document.getElementById("clientTotal").textContent).toBe("4,070,000원");
+  await flushAsyncWork();
+  await vi.waitFor(() => expect(document.getElementById("clientTotal").textContent).toBe("4,070,000원"));
   expect(mutations()).toEqual([]);
   await main.handleSaveEstimate("update");
   await flushAsyncWork();

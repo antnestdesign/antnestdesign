@@ -5,12 +5,13 @@ import { PRELIMINARY_TRADES } from "../../../public/os-app/src/preliminary-estim
 import { mutations, jsonResponse } from "../helpers/network.js";
 import { calculateStaffEstimate, projectStaffEstimate } from "../../../app/api/os/estimates/_lib/estimates.js";
 
-function assertDisplayedMoney(expected) {
+async function assertDisplayedMoney(expected) {
   const sum = [...document.querySelectorAll(".preliminary-trade-amount")]
     .reduce((total, node) => total + Number(node.textContent.replace(/[^\d-]/g, "")), 0);
   expect(sum).toBe(expected);
   for (const id of ["clientTotal", "quoteTotal"]) expect(Number(document.getElementById(id).textContent.replace(/[^\d-]/g, ""))).toBe(expected);
   document.querySelector(".preliminary-actions button:last-child").click();
+  await flushAsyncWork();
   const print = document.getElementById("printQuoteSheet");
   const printedSum = [...print.querySelectorAll("tbody tr td:last-child")]
     .reduce((total, node) => total + Number(node.textContent.replace(/[^\d-]/g, "")), 0);
@@ -38,8 +39,10 @@ for (const role of ["admin", "manager", "staff"]) test(`${role}: existing load -
   expect(mutations()).toEqual([]);
   expect(database.row).toStrictEqual(before);
   document.getElementById("printQuoteButton").click();
+  await flushAsyncWork();
   const oldPrint = document.getElementById("printQuoteSheet").innerHTML;
   document.querySelector(".preliminary-actions button:last-child").click();
+  await flushAsyncWork();
   expect(document.getElementById("printQuoteSheet").innerHTML).toBe(oldPrint);
   expect(document.querySelector(".preliminary-overview").textContent).not.toMatch(/직접원가|내부 원가|이익|마진/);
   if (role === "staff") expect(document.getElementById("internalDetailRows")).toBeNull();
@@ -58,6 +61,7 @@ test("folded controls retain the update payload, saved snapshot and exact reload
   const input = document.getElementById("demolitionFurnitureM");
   input.value = "1800";
   input.dispatchEvent(new Event("input", { bubbles: true }));
+  await main.ensureServerCalculation();
   const expected = main.buildEstimateSnapshot(main.calculateForCurrentEstimate());
   expect(expected.total).toBe(195000);
   await flushAsyncWork();
@@ -105,6 +109,7 @@ for (const loaded of [false, true]) test(`${loaded ? "loaded estimate copy" : "n
   if (loaded) main.loadEstimateIntoUi(await storage.getEstimate(fixture.id));
   else document.getElementById("projectName").value = "SYSTEM_SYNTHETIC_NEW";
   const original = structuredClone(database.row);
+  await main.ensureServerCalculation();
   const expected = main.buildEstimateSnapshot(main.calculateForCurrentEstimate());
   document.getElementById("preliminary-sectionFurnitureEnabled-button").click();
   await main.handleSaveEstimate("new");
@@ -134,17 +139,17 @@ for (const role of ["admin", "manager", "staff"]) test(`${role}: saved selection
   main.loadEstimateIntoUi(await storage.getEstimate(fixture.id));
   await flushAsyncWork();
   const original = JSON.stringify(database.row);
-  assertDisplayedMoney(3770000);
+  await assertDisplayedMoney(3770000);
   expect(document.getElementById("clientTotal").previousElementSibling.textContent).toBe("저장 견적 총액");
   expect(document.querySelector(".preliminary-source-notice").hidden).toBe(false);
   expect(document.querySelector('[data-trade="sectionElectricalEnabled"] .preliminary-amount-source').textContent).toBe("저장 금액 포함");
-  if (role !== "staff") expect(main.buildEstimateSnapshot(main.calculateForCurrentEstimate()).total).toBe(130000);
+  if (role !== "staff") expect(main.buildEstimateSnapshot(main.calculateForCurrentEstimate()).total).toBe(fixture.total);
   const toggle = document.getElementById("sectionDemolitionEnabled");
   toggle.checked = false;
   toggle.dispatchEvent(new Event("change", { bubbles: true }));
   await new Promise(done => setTimeout(done, 210));
   await flushAsyncWork();
-  assertDisplayedMoney(0);
+  await assertDisplayedMoney(0);
   expect(document.querySelector(".preliminary-source-notice").hidden).toBe(true);
   expect(document.getElementById("clientTotal").previousElementSibling.textContent).toBe("현재 견적 총액");
   expect(document.getElementById("demolitionFurnitureM").value).toBe("1200");
@@ -152,7 +157,7 @@ for (const role of ["admin", "manager", "staff"]) test(`${role}: saved selection
   toggle.dispatchEvent(new Event("change", { bubbles: true }));
   await new Promise(done => setTimeout(done, 210));
   await flushAsyncWork();
-  assertDisplayedMoney(3770000);
+  await assertDisplayedMoney(3770000);
   expect(document.getElementById("clientTotal").previousElementSibling.textContent).toBe("저장 견적 총액");
   expect(JSON.stringify(database.row)).toBe(original);
   expect(database.mutations).toEqual([]);
@@ -179,11 +184,11 @@ for (const role of ["admin", "manager"]) test(`${role}: all 9 current-input trad
     await flushAsyncWork();
     const expected = main.buildEstimateSnapshot(main.calculateForCurrentEstimate()).total;
     expect(expected).toBeGreaterThan(0);
-    assertDisplayedMoney(expected);
+    await assertDisplayedMoney(expected);
     toggle.checked = false;
     toggle.dispatchEvent(new Event("change", { bubbles: true }));
     await flushAsyncWork();
-    assertDisplayedMoney(0);
+    await assertDisplayedMoney(0);
   }
   for (const trade of PRELIMINARY_TRADES) {
     const toggle = document.getElementById(trade.id);
@@ -191,6 +196,6 @@ for (const role of ["admin", "manager"]) test(`${role}: all 9 current-input trad
     toggle.dispatchEvent(new Event("change", { bubbles: true }));
   }
   await flushAsyncWork();
-  assertDisplayedMoney(main.buildEstimateSnapshot(main.calculateForCurrentEstimate()).total);
+  await assertDisplayedMoney(main.buildEstimateSnapshot(main.calculateForCurrentEstimate()).total);
   expect(database.mutations).toEqual([]);
 }, 15000);

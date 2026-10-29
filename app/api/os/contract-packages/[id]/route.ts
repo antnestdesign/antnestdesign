@@ -6,6 +6,7 @@ import {
   projectContractPackage,
   requireEstimateScopeForStaff,
 } from "../_lib/contracts";
+import { issuedLinks, readIssuedPackage } from "../_lib/issued-access";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -16,6 +17,9 @@ export async function GET(request: NextRequest, { params }: Params) {
     const context = await getUserContext(request);
     const { id } = await params;
     const packageId = assertUuid(id, "계약 패키지 ID");
+    if ((await issuedLinks(packageId)).length) {
+      return json(projectContractPackage(await readIssuedPackage(context, packageId), context.profile.role));
+    }
     const url = new URL(request.url);
     const estimateId = url.searchParams.get("estimateId")
       ? assertUuid(url.searchParams.get("estimateId"), "저장 견적 ID")

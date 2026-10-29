@@ -1,4 +1,5 @@
 export const ESTIMATE_INPUT_SCHEMA = {
+  "estimateStatus": { "type": "select", "value": "견적", "choices": ["견적","계약","착공","준공"] },
   "projectName": {
     "type": "text",
     "value": ""
@@ -778,41 +779,41 @@ export const ESTIMATE_INPUT_SCHEMA = {
   },
   "manualAdjustment": {
     "type": "number",
-    "value": "0"
+    "value": "",
   },
   "targetMargin": {
     "type": "number",
-    "value": "30",
+    "value": "",
     "min": 5,
     "max": 60
   },
   "baseCorrection": {
     "type": "number",
-    "value": "0",
+    "value": "",
     "min": -20,
     "max": 50
   },
   "islandCorrection": {
     "type": "number",
-    "value": "0",
+    "value": "",
     "min": -20,
     "max": 50
   },
   "homebarCorrection": {
     "type": "number",
-    "value": "0",
+    "value": "",
     "min": -20,
     "max": 50
   },
   "countertopCorrection": {
     "type": "number",
-    "value": "0",
+    "value": "",
     "min": -20,
     "max": 50
   },
   "optionCorrection": {
     "type": "number",
-    "value": "0",
+    "value": "",
     "min": -20,
     "max": 50
   }

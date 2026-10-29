@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parse } from "espree";
-import { createEstimateCalculation } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import * as utils from "../../../public/os-app/src/utils.js";
 import * as summary from "../../../public/os-app/src/estimate-summary.js";
 import * as input from "../../../public/os-app/src/estimate-input.js";
@@ -39,6 +39,7 @@ export function createViewRuntime(entry, original = false) {
     currentProfile: { role: entry.role || "admin" },
     calculateForCurrentEstimate: () => result, calculate: () => result, syncLoadedEstimateSnapshot: () => Boolean(entry.stored),
     buildEstimateSnapshot: () => estimate, activeQuoteEstimate: estimate, lastRenderedEstimateSnapshot: null, readState: () => result.state,
+    privateCalculationBody: () => ({}), previewInternalEstimate: async () => ({ snapshot: estimate }),
     estimateRestore: createEstimateRestore({ document, elements, excludedInputById: excluded }),
     estimateView: createEstimateView({ document, customerWon: core.customerWon, formatDateTime, ...viewGolden.config }),
     estimatePrint: createEstimatePrint({ document, customerWon: core.customerWon, formatDateTime, ...viewGolden.config }),
@@ -47,12 +48,14 @@ export function createViewRuntime(entry, original = false) {
     if (original) return true;
     return ast.body.some((node) => node.id?.name === name || node.declarations?.some((item) => item.id.name === name));
   });
-  if (!original) selected.push("estimateInternalViewModel");
+  if (!original) selected.push("estimateInternalViewModel", "renderCalculatedEstimate");
   const script = selected.map((name) => {
     if (original) return viewGolden.sources[name];
     const node = ast.body.find((node) => node.id?.name === name || node.declarations?.some((item) => item.id.name === name));
     return source.slice(...node.range);
   }).join("\n");
   vm.runInContext(script + "\nglobalThis.runtime = { document, " + selected.filter((name) => !["ids", "quoteGroupLabels", "quoteGroupOrder", "printGroupLabels"].includes(name)).join(",") + " };", context);
+  // Pure renderer characterization starts after the protected calculation has completed.
+  if (!original) context.runtime.render = () => context.runtime.renderCalculatedEstimate(result);
   return { dom, document, elements, estimate, result, runtime: context.runtime, context };
 }

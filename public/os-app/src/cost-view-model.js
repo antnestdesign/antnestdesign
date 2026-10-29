@@ -72,7 +72,7 @@ export function systemTradeOrderIndex(label = "") {
   return index === -1 ? SYSTEM_TRADE_ORDER.length : index;
 }
 
-export function createCostViewModel({ originalCostItems, costItemFilters, systemCostHistory, systemPublishLogs, systemEstimateCount, expandedSystemCostCategory: initialExpanded, costItemEditorMode, costItemEditorSourceCode, formatDateTime }) {
+export function createCostViewModel({ originalCostItems, costItemFilters, systemCostHistory, systemPublishLogs, systemEstimateCount, expandedSystemCostCategory: initialExpanded, costItemEditorMode, costItemEditorSourceCode, formatDateTime, costManagementDefaults }) {
 function changedCostItems() {
   return [...originalCostItems.values()].filter(hasDraft);
 }
@@ -154,7 +154,7 @@ function costItemFormDefaults(source = {}) {
     unit: source.unit || "",
     calculation_basis: source.calculation_basis || "manual_input",
     cost_price: source.cost_price ?? "",
-    default_margin_rate: source.default_margin_rate ?? 0.3,
+    default_margin_rate: source.default_margin_rate ?? costManagementDefaults?.defaultMarginRate ?? "",
     is_active: source.draft_is_active ?? source.is_active ?? true,
     sort_order: source.sort_order ?? 0,
     memo: source.memo || "",

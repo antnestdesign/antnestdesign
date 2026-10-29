@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
+import { ESTIMATE_INPUT_SCHEMA,PRIVATE_ESTIMATE_INPUTS } from "../../../app/api/os/_lib/calculation/estimate-inputs.js";
 
 export const estimateStateCases = [
   { name: "default form" },
@@ -31,6 +32,8 @@ export const estimateStateCases = [
 export function createCaseElements(entry, ids) {
   const dom = new JSDOM(readFileSync(new URL("../../../public/os-app/index.html", import.meta.url), "utf8"));
   const elements = Object.fromEntries(ids.map((id) => [id, dom.window.document.getElementById(id)]));
+  // These privileged characterization fixtures model defaults delivered after authorization.
+  for(const id of PRIVATE_ESTIMATE_INPUTS)if(elements[id])elements[id].value=ESTIMATE_INPUT_SCHEMA[id].value;
   for (const [id, input] of Object.entries(elements)) {
     if (!input) continue;
     if (entry.allChecked !== undefined && input.type === "checkbox") input.checked = entry.allChecked;

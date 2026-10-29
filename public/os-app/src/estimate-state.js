@@ -1,5 +1,5 @@
 // Raw values are not authorization input; server validation remains independent.
-export function buildEstimateState(raw) {
+export function buildEstimateState(raw, privateDefaultMarkup = 0) {
   const numberValue = (id) => Number(raw.values[id]) || 0;
   const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
   const checkedValue = (id) => Boolean(raw.checked[id]);
@@ -20,7 +20,7 @@ export function buildEstimateState(raw) {
     clientName: raw.values.clientName || "",
     clientPhone: raw.values.clientPhone || "",
     status: raw.values.estimateStatus || "견적",
-    targetMargin: (numberValue("targetMargin") || 30) / 100,
+    targetMargin: numberValue("targetMargin") / 100 || privateDefaultMarkup,
     baseEnabled: furnitureSection && checkedValue("baseEnabled"),
     lowerCabinetM: numberValue("lowerCabinetM"),
     upperCabinetM: numberValue("upperCabinetM"),

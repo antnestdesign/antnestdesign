@@ -1,4 +1,6 @@
 import { escapeHtml } from "./utils.js";
+import { mountDetailedEditor } from "./detailed-editor.js";
+import { mountDetailedVersions } from "./detailed-version-view.js";
 
 export function projectDifferences(source, target) {
   const labels = { project_name: "프로젝트명", client_name: "고객명", phone: "연락처", address: "현장 주소", area_pyeong: "평형" };
@@ -15,29 +17,44 @@ export function foundationErrorMessage(error) {
   return message;
 }
 
-export function mountDetailedEstimateView({ document, getContext, request, loadMode = async () => ({ mode: "OFF" }) }) {
+export function mountDetailedEstimateView({ document, getContext, request, onContract, loadMode = async () => ({ mode: "OFF" }) }) {
   const host = document.getElementById("appShell"), actions = document.querySelector(".preliminary-actions");
   if (!host || !actions) return null;
   const start = document.createElement("button");
   start.type = "button"; start.id = "startDetailedEstimateButton"; start.textContent = "본견적 작성 시작";
   start.hidden = true;
   actions.before(start);
-  const dialog = document.createElement("dialog");
+  const dialog = document.createElement("section");
   dialog.id = "detailedEstimateDialog"; dialog.className = "detailed-workspace";
+  dialog.hidden = true; dialog.open = false; dialog.tabIndex = -1;
   dialog.setAttribute("aria-labelledby", "detailedWorkspaceTitle");
-  host.append(dialog);
+  host.after(dialog);
+  let returnScroll = 0;
+  const showWorkspace = () => {
+    returnScroll = document.defaultView?.scrollY || 0;
+    dialog.hidden = false; dialog.open = true;
+    document.body.classList.add("detailed-page-open");
+    (document.scrollingElement || document.documentElement).scrollTop = 0; dialog.focus({ preventScroll: true });
+  };
+  const closeWorkspace = (restoreScroll = true) => {
+    dialog.hidden = true; dialog.open = false;
+    document.body.classList.remove("detailed-page-open");
+    if (restoreScroll) (document.scrollingElement || document.documentElement).scrollTop = returnScroll;
+  };
   let preview = null, selected = null, draft = null, sourceId = null, busy = false, dirty = false;
   let projects = [], customers = [], lastCommand = null;
+  let editorView = null;
+  let versionsView = null;
   let mode = "OFF", modeRequest = 0, projectRequest = 0;
   const hasUnsavedChanges = () => dialog.open && dirty;
   const canClose = () => !hasUnsavedChanges() || confirm("저장하지 않은 본견적 변경사항을 닫을까요?");
-  const discardChanges = () => { projectRequest++; dirty = false; };
+  const discardChanges = () => { projectRequest++; editorView?.destroy(); versionsView?.destroy(); dirty = false; };
   const refreshMode = async () => {
     const generation = ++modeRequest;
     let next = "OFF";
     try { const value = await loadMode(); if (["ON", "READ_ONLY"].includes(value?.mode)) next = value.mode; } catch { /* Fail closed without blocking legacy workflows. */ }
     if (generation !== modeRequest) return mode;
-    if (next !== mode && dialog.open) { projectRequest++; dialog.close(); draft = null; dirty = false; }
+    if (next !== mode && dialog.open) { projectRequest++; closeWorkspace(); draft = null; dirty = false; }
     mode = next; start.hidden = mode === "OFF";
     start.textContent = mode === "READ_ONLY" ? "본견적 조회" : "본견적 작성 시작";
     return mode;
@@ -50,17 +67,25 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
       n.textContent = message; n.setAttribute("role", error ? "alert" : "status");
       if (error) { n.focus(); n.scrollIntoView?.({ block: "nearest" }); }
     }
+    const state = dialog.querySelector("#detailedSaveState"); if (state) state.textContent = dirty ? "저장되지 않음" : "저장됨";
   };
   const run = async fn => {
     if (busy) return;
     busy = true;
-    dialog.querySelectorAll("button").forEach(n => { n.disabled = true; });
+    if (dialog.querySelector("#detailedBody")) dialog.querySelector("#detailedBody").inert = true;
+    let focusField = null;
+    const controls = [...dialog.querySelectorAll("button,input,select")].map(n => [n, n.disabled]);
+    controls.forEach(([n]) => { n.disabled = true; });
     status("처리 중입니다. 잠시 기다려 주세요.");
     try { await fn(); } catch (error) {
       status(foundationErrorMessage(error), true);
-      if (error.field) dialog.querySelector(`#${error.field}`)?.focus();
+      focusField = error.field;
     }
-    finally { busy = false; dialog.querySelectorAll("button").forEach(n => { n.disabled = false; }); }
+    finally {
+      busy = false; controls.forEach(([n, disabled]) => { if (n.isConnected) n.disabled = disabled; });
+      if (dialog.querySelector("#detailedBody")) dialog.querySelector("#detailedBody").inert = false;
+      if (focusField) dialog.querySelector(`#${focusField}`)?.focus();
+    }
   };
   const command = (path, method, body) => {
     if (mode !== "ON") throw new Error("프로젝트·본견적 기능은 현재 읽기 전용입니다.");
@@ -69,24 +94,40 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
     return request(path, { method, body: JSON.stringify({ ...body, request_id: lastCommand.request_id }) });
   };
   const shell = title => {
+    editorView?.destroy(); editorView = null;
+    versionsView?.destroy(); versionsView = null;
+    dialog.classList.remove("detailed-editor-screen");
     projectRequest++;
-    dialog.innerHTML = `<header><h2 id="detailedWorkspaceTitle">${title}</h2><button type="button" data-detailed-close aria-label="닫기">닫기</button></header><p id="detailedStatus" role="status" tabindex="-1"></p><div id="detailedBody"></div>`;
+    dialog.innerHTML = `<header class="detailed-page-header"><div><p class="detailed-brand">AND OS · 본견적</p><h2 id="detailedWorkspaceTitle">${title}</h2><p id="detailedContext"></p></div><div class="detailed-page-total" ${draft ? "" : "hidden"}><span id="detailedSaveState">저장됨</span><strong id="detailedLiveTotal">—</strong></div><div class="detailed-actions">${draft && mode === "ON" ? '<button type="button" id="saveDetailedDraftButton">작성본 저장</button>' : ""}<div id="detailedVersionActions"></div><button type="button" data-detailed-close aria-label="기존 화면으로 돌아가기">기존 화면으로</button></div></header><p id="detailedStatus" role="status" tabindex="-1"></p><div id="detailedBody"></div>`;
+    dialog.querySelector("#detailedBody").inert = busy;
   };
   const projectOptions = () => `<option value="">선택</option>${projects.map(p => `<option value="${esc(p.id)}">${esc(p.project_name)}${mode === "ON" && !p.managed ? " (도입 확인 필요)" : ""}</option>`).join("")}`;
   const load = async id => {
+    const uiState = draft?.id === id ? editorView?.uiState() : undefined;
     draft = await request(`/detailed-estimates/${encodeURIComponent(id)}`);
     dirty = false; lastCommand = null;
-    shell("본견적 준비 작성본");
+    const [editorState, standards] = await Promise.all([request(`/detailed-estimates/${encodeURIComponent(id)}/editor`), request("/detailed-estimates/catalog?view=standards")]);
+    const catalog=editorState.internal===undefined?[]:await request("/detailed-estimates/catalog");
+    if (editorState.context) draft.context = editorState.context;
+    draft.revision = editorState.revision;
+    shell("본견적 작성본");
+    dialog.classList.add("detailed-editor-screen");
     const c = draft.context;
     dialog.querySelector("#detailedBody").innerHTML = `
-      <p class="detailed-state">준비 작성본 · 상세 품목 및 금액 미작성</p>
-      <dl><div><dt>프로젝트</dt><dd>${esc(draft.project.project_name)}</dd></div><div><dt>저장 상태</dt><dd>저장됨</dd></div>
-      <div><dt>참고 가견적</dt><dd>${esc(draft.reference.snapshot.header.project_name)}</dd></div>
-      <div><dt>참고 당시 고객금액</dt><dd>${Number(draft.reference.snapshot.header.total_price || 0).toLocaleString("ko-KR")}원</dd></div></dl>
+      <details class="detailed-context-edit"><summary>고객·현장 정보 · 작성본</summary><p>참고 가견적: ${esc(draft.reference.snapshot.header.project_name)} · ${Number(draft.reference.snapshot.header.total_price || 0).toLocaleString("ko-KR")}원</p>
       <div class="detailed-fields">${field("detailedProjectName", "작성 현장명", c.project_name)}${field("detailedClientName", "고객명", c.client_name)}
       ${field("detailedPhone", "연락처", c.phone)}${field("detailedAddress", "현장 주소", c.address)}${field("detailedArea", "평형", c.area_pyeong, "number")}
-      <label><input id="detailedCustomerUndecided" type="checkbox" ${c.customer_undecided ? "checked" : ""}> 고객 미정</label></div>
-      <div class="detailed-actions">${mode === "ON" ? '<button type="button" id="saveDetailedDraftButton">작성본 저장</button>' : ""}<button type="button" id="reloadDetailedDraftButton">다시 불러오기</button><button type="button" id="loadDetailedEventsButton">작업 이력</button></div><div id="detailedEvents"></div>`;
+      <label><input id="detailedCustomerUndecided" type="checkbox" ${c.customer_undecided ? "checked" : ""}> 고객 미정</label></div></details>
+      <div id="detailedEditorHost"></div><section id="detailedVersionsHost"></section><div class="detailed-actions"><button type="button" id="reloadDetailedDraftButton">다시 불러오기</button><button type="button" id="loadDetailedEventsButton">작업 이력</button></div><div id="detailedEvents"></div>`;
+    dialog.querySelector("#detailedContext").textContent = `${c.project_name} · ${c.client_name || "고객 미정"} · ${c.address || ""}`;
+    editorView = mountDetailedEditor({ host: dialog.querySelector("#detailedEditorHost"), initial: editorState, catalog, standards, reference: draft.reference.snapshot, sourceId: draft.reference.source_estimate_id, request, draftId: draft.id,
+      readOnly: mode !== "ON", uiState, summaryChanged: summary => { dialog.querySelector("#detailedLiveTotal").textContent = `${summary.total.toLocaleString("ko-KR")}원`; },
+      changed: () => { dirty = true; status("저장하지 않은 변경사항이 있습니다."); }, message: status });
+    versionsView = mountDetailedVersions({ host: dialog.querySelector("#detailedVersionsHost"), draftId: draft.id, revision: draft.revision,
+      canIssue: editorState.internal !== undefined, readOnly: mode !== "ON", isDirty: () => dirty, request, run, message: status,
+      actionsHost: dialog.querySelector("#detailedVersionActions"),
+      onContract: onContract ? async (head, version) => { if (!canClose()) return; await onContract(head, version); discardChanges(); closeWorkspace(false); document.getElementById("contractPackagePanel")?.scrollIntoView?.({ block: "start" }); } : undefined });
+    await versionsView.refresh();
     if (mode !== "ON") dialog.querySelectorAll("input").forEach(n => { n.disabled = true; });
     status(mode === "READ_ONLY" ? "읽기 전용으로 불러왔습니다." : "작성본을 불러왔습니다.");
   };
@@ -140,7 +181,7 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
     const c = getContext();
     if (mode === "ON" && !c.estimateId) { alert("저장된 가견적을 불러온 뒤 시작해 주세요."); return; }
     sourceId = c.estimateId; draft = null; dirty = false; lastCommand = null;
-    shell("가견적에서 본견적 작성 시작"); dialog.showModal();
+    shell("가견적에서 본견적 작성 시작"); showWorkspace();
     if (mode === "READ_ONLY") {
       preview = null; selected = null; projects = await request("/projects");
       shell("본견적 조회"); status("읽기 전용입니다. 생성·도입·저장은 할 수 없습니다.");
@@ -164,15 +205,15 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
       dialog.querySelector("#detailedExistingCustomer").hidden = event.target.value !== "existing";
     } else if (id === "detailedProjectSelect") void selectProject(event.target.value);
   });
-  dialog.addEventListener("input", () => { if (draft) { dirty = true; status("저장하지 않은 변경사항이 있습니다."); } });
+  dialog.addEventListener("input", event => { if (draft && !event.target.closest("#detailedEditorHost")) { dirty = true; status("저장하지 않은 변경사항이 있습니다."); } });
   dialog.addEventListener("cancel", event => { if (busy || !canClose()) event.preventDefault(); else discardChanges(); });
   dialog.addEventListener("click", event => {
     const id = event.target.closest("button")?.id;
     if (event.target.closest("[data-detailed-close]")) {
-      if (!busy && canClose()) { discardChanges(); dialog.close(); }
+      if (!busy && canClose()) { discardChanges(); closeWorkspace(); }
       return;
     }
-    if (!id) return;
+    if (!["newIndependentDetailedButton", "createDetailedDraftButton", "adoptDetailedProjectButton", "openDetailedDraftButton", "reloadDetailedDraftButton", "saveDetailedDraftButton", "loadDetailedEventsButton"].includes(id)) return;
     run(async () => {
       if (id === "newIndependentDetailedButton") {
         dialog.querySelector("#createDetailedDraftButton").hidden = false;
@@ -223,8 +264,9 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
       else if (id === "reloadDetailedDraftButton") {
         if (!dirty || confirm("저장하지 않은 변경사항을 버리고 다시 불러올까요?")) await load(draft.id);
       } else if (id === "saveDetailedDraftButton") {
+        if (editorView.confirmReview && !editorView.confirmReview()) { status("작성본 저장을 취소했습니다."); return; }
         const value = id => dialog.querySelector(`#${id}`).value;
-        const saved = await command(`/detailed-estimates/${draft.id}/draft`, "PATCH", { expected_revision: draft.revision,
+        const saved = await command(`/detailed-estimates/${draft.id}/editor`, "PATCH", { ...editorView.collect(), expected_revision: draft.revision,
           context: { project_name: value("detailedProjectName"), client_name: value("detailedClientName"), phone: value("detailedPhone"), address: value("detailedAddress"),
             area_pyeong: value("detailedArea") === "" ? "" : Number(value("detailedArea")), customer_undecided: dialog.querySelector("#detailedCustomerUndecided").checked } });
         await load(saved.id); status("작성본을 저장했습니다.");
@@ -240,12 +282,12 @@ export function mountDetailedEstimateView({ document, getContext, request, loadM
   const authChanged = () => {
     if (host.classList.contains("app-locked")) {
       modeRequest++; projectRequest++; mode = "OFF"; start.hidden = true;
-      if (dialog.open) dialog.close(); draft = null; dirty = false;
+      if (dialog.open) closeWorkspace(); draft = null; dirty = false;
     } else void refreshMode();
   };
   const Observer = document.defaultView?.MutationObserver;
   const authObserver = Observer ? new Observer(authChanged) : null;
   authObserver?.observe(host, { attributes: true, attributeFilter: ["class"] });
   authChanged();
-  return { open, refreshMode, destroy() { modeRequest++; projectRequest++; authObserver?.disconnect(); start.remove(); dialog.remove(); document.defaultView?.removeEventListener("beforeunload", beforeUnload); } };
+  return { open, refreshMode, destroy() { modeRequest++; projectRequest++; editorView?.destroy(); versionsView?.destroy(); closeWorkspace(); authObserver?.disconnect(); start.remove(); dialog.remove(); document.defaultView?.removeEventListener("beforeunload", beforeUnload); } };
 }

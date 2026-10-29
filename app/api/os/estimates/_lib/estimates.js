@@ -3,12 +3,12 @@ import { customerQuoteProjection } from "../../../../../public/os-app/src/custom
 import {
   COST_ITEM_DEFINITIONS, ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS,
   createEstimateCalculation,
-} from "../../../../../public/os-app/src/calculator/estimate-core.js";
+} from "../../_lib/calculation/calculator/estimate-core.js";
 
 const privateInputs = new Set(PRIVATE_ESTIMATE_INPUTS);
 export const staffInputIds = Object.keys(ESTIMATE_INPUT_SCHEMA).filter((id) => !privateInputs.has(id));
 const allowedInputs = new Set(staffInputIds);
-const metadataInputs = new Set(["projectName", "clientName", "clientPhone", "estimateStatus"]);
+const metadataInputs = new Set(["projectName", "clientName", "clientPhone", "estimateStatus", "projectSearch", "projectSearchResults"]);
 const money = (value) => `${(Math.floor(value / 1000) * 1000).toLocaleString("ko-KR")}원`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const text = (value) => typeof value === "string" ? value : "";
@@ -146,6 +146,54 @@ async function trustedCostContext(existing) {
     capturedAt: new Date().toISOString(), source: "supabase_cost_items", items,
     costDbUpdatedAt: items.map((item) => item.updatedAt).filter(Boolean).sort().at(-1) || null,
   } };
+}
+
+export function privateEstimateDefaults() {
+  return Object.fromEntries(PRIVATE_ESTIMATE_INPUTS.map(id=>[id,ESTIMATE_INPUT_SCHEMA[id].value]));
+}
+
+// Same engine and rounding as the former browser runtime; only its execution location changes.
+export async function calculatePrivilegedEstimate(body, context) {
+  if(!['admin','manager'].includes(context.profile.role))throw new ApiError(403,'내부 견적 계산 권한이 없습니다.');
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
+  if(JSON.stringify(body).length>100000)throw new ApiError(413,'견적 입력값이 너무 큽니다.');
+  const incoming={};
+  for(const [id,value] of Object.entries(body.inputs)){
+    if(['projectSearch','projectSearchResults'].includes(id)){if(typeof value!=='string'||value.length>500)throw new ApiError(400,'견적 입력값을 확인해 주세요.');incoming[id]=value;continue;}
+    if(!ESTIMATE_INPUT_SCHEMA[id])throw new ApiError(400,'허용되지 않은 견적 필드입니다.');
+    incoming[id]=inputValue(id,value,true);
+  }
+  const existing=body.estimateId?await readEstimate(body.estimateId):null;
+  const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{}),inputs={...baseline,...incoming};
+  const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
+  delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
+  const changed=Object.keys(ESTIMATE_INPUT_SCHEMA).filter(id=>!metadataInputs.has(id)&&inputValue(id,inputs[id])!==inputValue(id,baseline[id]));
+  const costs=await trustedCostContext(existing);
+  const rateValues={...costs.rateValues};
+  if(body.rateValues!==undefined){
+    if(!body.rateValues||typeof body.rateValues!=='object'||Array.isArray(body.rateValues))throw new ApiError(400,'적용 원가를 확인해 주세요.');
+    for(const [id,value] of Object.entries(body.rateValues)){
+      if(!COST_ITEM_DEFINITIONS.some(d=>d.inputId===id)||typeof value!=='number'||!Number.isFinite(value)||value<0||value>1e9)throw new ApiError(400,'적용 원가를 확인해 주세요.');
+      if(!old?.costSnapshot?.items?.length||!changed.length)rateValues[id]=value;
+    }
+  }
+  const core=createEstimateCalculation({rateValues}),state=core.readState(inputs),result=core.calculate(state);
+  if(old?.costSnapshot?.items?.length&&changed.length&&state.wallpaperMaterialEnabled&&!old.costSnapshot.items.some(i=>i.itemCode==='WALLPAPER_MATERIAL_PER_PYEONG'))throw new ApiError(409,'저장 당시 원가 스냅샷에 도배 자재비가 없어 현재 원가와 섞어 계산하지 않았습니다.');
+  const groups=core.groupedCustomerItems(result.details,result.quoteLines),total=groups.reduce((n,g)=>n+amount(g.total),0),savedAt=new Date().toISOString();
+  let snapshot=core.applyExistingPipeCleaningAdjustment({
+    projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,
+    address:body.address??existing?.address??old?.address??'',savedAt,total,totalText:money(total),costTotal:result.directCost,
+    marginRate:Number((result.actualMargin*100).toFixed(2)),costSnapshot:costs.snapshot,
+    inputs:{...(old?.inputs||{}),...inputs,...core.effectiveEstimateInputOverrides(state)},
+    author:old?.author||{user_id:context.authUser.id,user_email:context.profile.email,role:context.profile.role},
+    internalDetails:result.details,internalSummary:{directCost:result.directCost,customerRevenue:result.customerRevenue,profit:result.profit,marginRate:Number((result.actualMargin*100).toFixed(2)),discountRoom:result.discountRoom},
+    customerQuote:{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,total,totalText:money(total),groups},
+  },state.existingPipeCleaningEnabled);
+  if(Array.isArray(old?.customerQuote?.groups)&&changed.length===0)snapshot=clone(old);
+  else if(Array.isArray(old?.customerQuote?.groups)&&changed.length===1&&changed[0]==='existingPipeCleaningEnabled')snapshot=core.applyExistingPipeCleaningAdjustment(old,inputs.existingPipeCleaningEnabled === true);
+  Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,inputs:{...snapshot.inputs,...incoming}});
+  Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
+  return {snapshot,result};
 }
 
 export async function calculateStaffEstimate(validated, context, existing = null) {

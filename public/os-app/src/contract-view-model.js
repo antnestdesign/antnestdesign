@@ -100,6 +100,10 @@ export function contractPrintInfo(snapshot = {}) {
   const estimate = snapshot.estimate_snapshot || {};
   return {
     contractNo: contractPrintValue(info.contract_no || snapshot.contract_no),
+    issuedVersion: info.issued_version_id || null,
+    issuedSourceLabel: info.issued_version_id ? `${info.issued_quote_number} · V${info.issued_version}` : "",
+    supplyAmount: info.supply_amount,
+    vatAmount: info.vat_amount,
     projectName: contractPrintValue(info.project_name || estimate.project_name || "계약 프로젝트"),
     siteAddress: contractPrintValue(info.site_address || estimate.site_address),
     areaPyeong: contractPrintValue(info.area_pyeong || estimate.area_pyeong),

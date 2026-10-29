@@ -37,6 +37,7 @@ describe("Phase 3D real application role presentation and print orchestration", 
         expect(document.querySelector(".admin-estimate-detail-panel")).toBeNull();
       }
       document.getElementById("printQuoteButton").click();
+      await flushAsyncWork();
       const print = document.getElementById("printQuoteSheet");
       expect(print.textContent).toContain(fixture.projectName);
       expect(print.textContent).toContain("3,770,000원");
@@ -46,9 +47,11 @@ describe("Phase 3D real application role presentation and print orchestration", 
       for (const group of fixture.customerQuote.groups) for (const item of group.items) expect(print.textContent).not.toContain(item.name);
       if (role === "admin") {
         document.getElementById("printAdminDetailButton").click();
+        await flushAsyncWork();
         expect(print.querySelectorAll("thead th")).toHaveLength(7);
         for (const item of fixture.internalDetails) expect(print.textContent).toContain(item.item);
         document.getElementById("printQuoteButton").click();
+        await flushAsyncWork();
         expect(print.querySelectorAll("thead th")).toHaveLength(2);
       } else if (role === "staff") {
         document.getElementById("staffPrintClientQuoteButton").click();

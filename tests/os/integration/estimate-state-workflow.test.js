@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import vm from "node:vm";
 import { expect, test, vi } from "vitest";
-import { createEstimateCalculation, COST_ITEM_DEFINITIONS } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { createEstimateCalculation, COST_ITEM_DEFINITIONS } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { isEstimateInputExcluded } from "../../../public/os-app/src/estimate-input.js";
 import { latestEstimate, testProfile, TEST_ADDRESS } from "../fixtures/estimates.js";
 import { createEstimateDatabase, mountOs, flushAsyncWork } from "../helpers/os-harness.js";
@@ -48,6 +48,7 @@ test("composed form/state result reaches the existing admin snapshot, update pay
   input.dispatchEvent(new Event("input", { bubbles: true }));
   const old = oldStateForCurrentForm(elements);
   const oldCalculation = createEstimateCalculation(old.config).calculate(old.state);
+  await main.ensureServerCalculation();
   const calculation = main.calculateForCurrentEstimate();
   expect(calculation.state).toStrictEqual(old.state);
   expect(calculation).toStrictEqual(oldCalculation);

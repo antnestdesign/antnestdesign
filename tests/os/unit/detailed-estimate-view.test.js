@@ -1,5 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { foundationErrorMessage, mountDetailedEstimateView, projectDifferences } from "../../../public/os-app/src/detailed-estimate-view.js";
+import { emptyEditor } from "../../../app/api/os/projects/_lib/editor-model.ts";
 
 test("project differences retain zero, empty and distinct customer/site values", () => {
   expect(projectDifferences({ project_name: "A", client_name: "", area_pyeong: 0 }, { project_name: "B", client_name: "C", area_pyeong: 0 }))
@@ -68,6 +69,9 @@ async function selectionFixture(hooks = {}) {
     if (path.startsWith("/projects/")) return await hooks.detail?.(path.slice(10), managed, detail) ?? detail(path.slice(10));
     if (path.endsWith("preview")) return { snapshot: { header: { project_name: "원본 가견적", client_name: "합성 고객", phone: "000", address: "저장 주소", area_pyeong: 0, total_price: 3770000 }, customerQuote: { groups: [] } }, confirmation: "source-confirmed", connection: hooks.connection ?? null };
     if (path === "/detailed-estimates/draft-a" && !options) return structuredClone(saved);
+    if (path === "/detailed-estimates/draft-a/editor" && !options) return { editor: emptyEditor(), revision: saved.revision };
+    if (path === "/detailed-estimates/catalog" || path === "/detailed-estimates/catalog?view=standards") return [];
+    if (path === "/detailed-estimates/draft-a/versions") return [];
     throw new Error(`Unexpected fixture request ${path}`);
   });
   const view = mountDetailedEstimateView({ document, request, loadMode: async () => ({ mode: "ON" }), getContext: () => ({ estimateId: "source-a" }) });

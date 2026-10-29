@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { vi } from "vitest";
 import { clone, estimateRow, testProfile, testSession } from "../fixtures/estimates.js";
 import { clearRequestLog, jsonResponse, setMockHandler } from "./network.js";
-import { projectStaffEstimate } from "../../../app/api/os/estimates/_lib/estimates.js";
-import { createEstimateCalculation } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { projectStaffEstimate, privateEstimateDefaults, calculatePrivilegedEstimate } from "../../../app/api/os/estimates/_lib/estimates.js";
+import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 
 const html = readFileSync(resolve("public/os-app/index.html"), "utf8");
 
@@ -14,7 +14,12 @@ export function createEstimateDatabase(estimate, packages = []) {
     packages: clone(packages),
     mutations: [],
   };
-  database.handle = ({ url, method, body }) => {
+  database.handle = async ({ url, method, body }) => {
+    if(url.pathname==='/api/os/estimates/calculate'){
+      if(!['admin','manager'].includes(database.profile?.role))return jsonResponse({error:'권한이 없습니다.'},403);
+      if(method==='GET')return jsonResponse({defaults:privateEstimateDefaults()});
+      return jsonResponse(await calculatePrivilegedEstimate(body,{authUser:{id:database.profile.id},profile:database.profile}));
+    }
     if (url.pathname === "/api/os/estimates" && method === "GET") return jsonResponse(database.row ? [projectStaffEstimate(database.row)] : []);
     if (url.pathname === `/api/os/estimates/${database.row?.id}` && method === "GET") return jsonResponse(projectStaffEstimate(database.row));
     if (method === "POST" && url.pathname === "/api/os/estimates/preview") {
@@ -65,6 +70,7 @@ export function createEstimateDatabase(estimate, packages = []) {
 }
 
 export async function mountOs(database, profile = null) {
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','synthetic-network-mock-only');
   vi.resetModules();
   sessionStorage.clear();
   document.open();
@@ -79,6 +85,7 @@ export async function mountOs(database, profile = null) {
     storage.loadStoredSession();
     await storage.loadCurrentOsUser();
     await main.enterAuthenticatedApp(profile);
+    if (["admin", "manager"].includes(profile.role)) await main.ensureServerCalculation();
   }
   await flushAsyncWork();
   clearRequestLog();

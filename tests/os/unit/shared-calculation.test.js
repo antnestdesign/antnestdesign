@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { createEstimateCalculation, ESTIMATE_INPUT_SCHEMA } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { createEstimateCalculation, ESTIMATE_INPUT_SCHEMA } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { createEstimateDatabase, mountOs } from "../helpers/os-harness.js";
 import { latestEstimate, testProfile } from "../fixtures/estimates.js";
 
@@ -35,6 +35,7 @@ for (const input of scenarios) {
     }));
     const core = createEstimateCalculation();
     const state = core.readState(inputs);
+    await main.ensureServerCalculation();
     expect(core.calculate(state)).toEqual(main.calculateForCurrentEstimate());
   });
 }

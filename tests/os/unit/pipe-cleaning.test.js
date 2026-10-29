@@ -1,15 +1,10 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { clone, latestEstimate, pipeCleaningEstimate } from "../fixtures/estimates.js";
-import { createEstimateDatabase, mountOs } from "../helpers/os-harness.js";
+import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { mutations } from "../helpers/network.js";
 
 const PIPE = "기존 배관 청소";
-let adjust;
-
-beforeEach(async () => {
-  const { main } = await mountOs(createEstimateDatabase(latestEstimate()));
-  adjust = main.applyExistingPipeCleaningAdjustment;
-});
+const adjust = createEstimateCalculation().applyExistingPipeCleaningAdjustment;
 
 function otherRows(estimate) {
   return {

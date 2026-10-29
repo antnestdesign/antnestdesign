@@ -30,13 +30,13 @@ export function context(value: unknown) {
   }
   return data;
 }
-function seal(actor: string, purpose: string, target: string, fingerprint: string) {
+export function seal(actor: string, purpose: string, target: string, fingerprint: string) {
   const iv = randomBytes(12), key = createHash("sha256").update(requireServiceRoleKey()).digest();
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([cipher.update(JSON.stringify({ actor, purpose, target, fingerprint, expires: Date.now() + 15 * 60_000 }), "utf8"), cipher.final()]);
   return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString("base64url");
 }
-function unseal(value: unknown, actor: string, purpose: string, target: string): string {
+export function unseal(value: unknown, actor: string, purpose: string, target: string): string {
   try {
     if (typeof value !== "string" || value.length > 2000) throw new Error();
     const bytes = Buffer.from(value, "base64url"), key = createHash("sha256").update(requireServiceRoleKey()).digest();

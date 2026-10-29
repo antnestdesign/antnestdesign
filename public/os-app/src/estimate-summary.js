@@ -1,7 +1,7 @@
 import { moneyAmount, won } from "./utils.js";
-import { createEstimateCalculation } from "./calculator/estimate-core.js";
-
-const { floorThousand, customerWon, markupRate } = createEstimateCalculation();
+const floorThousand = value => Math.floor(value / 1000) * 1000;
+const customerWon = value => `${floorThousand(value).toLocaleString("ko-KR")}원`;
+const markupRate = (profit,cost) => cost>0?profit/cost:0;
 
 export function buildAdminMarginGroups(estimate, { groupLabels, groupOrder }) {
   if (!estimate) return [];

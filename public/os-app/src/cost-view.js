@@ -295,7 +295,7 @@ function renderCostItemEditor() {
 function systemCostRowHtml(row) {
     const dirty = hasDraft(row);
     const draftCost = row.draft_cost_price ?? "";
-    const draftMargin = row.draft_margin_rate ?? 0.3;
+    const draftMargin = row.draft_margin_rate ?? model.costItemFormDefaults().default_margin_rate;
     const draftActive = draftValue(row, "active");
     const draftCostCell = canEditCost()
       ? `<input class="system-draft-input" data-system-field="cost" data-item-code="${row.item_code}" type="number" step="1000" min="0" value="${draftCost}">`

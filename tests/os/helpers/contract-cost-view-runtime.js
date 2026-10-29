@@ -29,9 +29,11 @@ export function createContractCostRuntime(kind, entry, original = false) {
     canViewContractPackage: () => true, canEditContractPackageOptions: () => role !== "manager", canCreateContractPackage: () => role === "admin", isStaff: () => role === "staff",
     canViewSystem: () => role !== "staff", canEditCost: () => role === "admin", canPublishCost: () => role === "admin",
     contractOptionsState: fixture.options, contractPreviewState: fixture.preview, contractPackagesState: fixture.packages || [], allContractPackagesState: fixture.packages || [], contractSelectedDocumentType: fixture.selectedType || "CONTRACT", selectedContractEstimate: () => fixture.estimate,
+    issuedContractEstimate: null, issuedContractMode: "OFF",
     originalCostItems: new Map((fixture.rows || []).map((row) => [row.item_code, row])), costItemFilters: fixture.filters,
     expandedSystemCostCategory: fixture.expanded, costItemEditorMode: fixture.mode, costItemEditorSourceCode: fixture.source, costItemActionBusy: Boolean(entry.busy),
     systemCostHistory: fixture.history || [], systemPublishLogs: fixture.logs || [], systemEstimateCount: 4,
+    costManagementDefaults: { defaultMarginRate: 0.3 },
     activateTab() {}, refreshSystemManagement: async () => {}, renderSystemManagement() {}, alert() {},
   });
   const names = [...contractCostGolden.contract, ...contractCostGolden.cost, "formatDateTime", "setText"];

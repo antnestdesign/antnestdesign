@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { latestEstimate, pipeCleaningEstimate } from "./estimates.js";
+import { hydratePrivateTestDefaults } from "../helpers/private-defaults.js";
 
 export const estimateViewCases = [
   { name: "customer normal", kind: "customer" },
@@ -84,6 +85,7 @@ export function viewCaseEstimate(entry) {
 export function createViewCaseDom(entry, ids) {
   const dom = new JSDOM(readFileSync(new URL("../../../public/os-app/index.html", import.meta.url), "utf8"), { url: "https://os.invalid/" });
   const document = dom.window.document;
+  hydratePrivateTestDefaults(document);
   const elements = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
   for (const input of Object.values(elements)) {
     if (entry.allChecked !== undefined && input?.type === "checkbox") input.checked = entry.allChecked;
@@ -113,7 +115,7 @@ export function snapshotView(document, elements, returns = {}) {
   };
 }
 
-export function exerciseViewCase(runtime, entry, estimate, result) {
+export async function exerciseViewCase(runtime, entry, estimate, result) {
   const returns = {};
   if (entry.kind === "customer") runtime.renderCustomerQuote(estimate);
   if (entry.kind === "internal") {
@@ -149,7 +151,7 @@ export function exerciseViewCase(runtime, entry, estimate, result) {
   if (entry.kind === "cost") {
     runtime.ensureCostSnapshotPanel();
     runtime.renderCostSnapshotInfo(estimate);
-    runtime.renderCostSnapshotComparison(estimate);
+    await runtime.renderCostSnapshotComparison(estimate);
   }
   return returns;
 }

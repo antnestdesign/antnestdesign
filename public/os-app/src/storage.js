@@ -98,6 +98,7 @@ async function refreshAuthSession(source) {
 }
 
 async function fetchAuthenticated(url, options = {}) {
+  options = {...options,cache:"no-store"};
   let session = getAuthSession();
   const expiry = Number(session?.expires_at);
   if (session && expiry > 0 && expiry <= Date.now() / 1000 + 30) {
@@ -192,6 +193,12 @@ export async function previewStaffEstimate(inputs, estimateId = null) {
   return requestOsApi("/estimates/preview", {
     method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId }),
   });
+}
+export async function previewInternalEstimate(body) {
+  return requestOsApi('/estimates/calculate',{method:'POST',body:JSON.stringify(body)});
+}
+export async function loadPrivateEstimateDefaults() {
+  return requestOsApi('/estimates/calculate');
 }
 
 export async function loadOsUsers() {

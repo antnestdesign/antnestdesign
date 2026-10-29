@@ -65,6 +65,6 @@ describe("Phase 3E real contract/cost view and main action boundary", () => {
     }
     expect(database.mutations).toEqual([]);
     expect(database.row).toStrictEqual(before);
-    expect(requestLog.requests.filter((request) => !["GET", "HEAD"].includes(request.method)).every((request) => request.url.pathname.endsWith("/preview"))).toBe(true);
+    expect(requestLog.requests.filter((request) => !["GET", "HEAD"].includes(request.method)).every((request) => request.url.pathname.endsWith("/preview") || request.url.pathname === "/api/os/estimates/calculate")).toBe(true);
   });
 });

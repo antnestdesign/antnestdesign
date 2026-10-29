@@ -29,18 +29,58 @@ describe("Phase 3F exact account/audit/shell characterization at cdc2b05", () =>
   });
 });
 
-test("49 authorization, login/password, estimate and mutation orchestration functions are unchanged", () => {
-  for (const [name, old] of Object.entries(golden.protectedSources)) expect(functionSource(source, name), name).toBe(old);
+test("unmodified orchestration stays exact; approved server and issued-contract paths retain their guards", () => {
+  const changed = {
+    leavePasswordChangeFlow: ["await signOut()", "window.location.reload()", "setAuthenticated(false)"],
+    enterAuthenticatedApp: ["await loadRateSettings()", "if(canViewSystem()){const config=await loadPrivateEstimateDefaults()", "setAuthenticated(true)", "applyAccessControl()"],
+    buildEstimateSnapshot: ["serverCalculation.key!==serverCalculationKey()", "throw new Error", "structuredClone(serverCalculation.snapshot)"],
+    applyExistingPipeCleaningAdjustment: ["privateCalculationBody(estimate.id||null)", "body.inputs.existingPipeCleaningEnabled=enabled", "await previewInternalEstimate(body)", "return value.snapshot"],
+    loadEstimateIntoUi: ["loadedEstimateBaseline", "renderCustomerQuote", "refresh()"],
+    handleSaveEstimate: ["saveEstimateInProgress", "await ensureServerCalculation()", "currentProfile?.role === \"staff\"", "updateEstimate", "saveEstimate"],
+    calculateForCurrentEstimate: ["return calculate()"],
+    syncLoadedEstimateSnapshot: ["loadedEstimateMatchesCurrentInputs()", "activeQuoteEstimate = loadedEstimateBaseline.estimate", "currentPipeCleaningDerivedEstimate()"],
+    saveContractOptionsFromForm: ["contractSourceView.pending", "contractSourceView.source", "canEditContractPackageOptions()", "await saveContractOptions"],
+    previewContractPackageFromForm: ["contractSourceView.pending", "canPreviewContractPackage()", "currentPipeCleaningDerivedEstimate()", "action: \"preview\"", "await previewContractPackage"],
+    createContractPackageFromForm: ["contractSourceView.pending", "canCreateContractPackage()", "currentPackage?.status === \"CONTRACTED\"", "issued?.linked_package_id", "await confirmContractPackage"],
+    refreshContractPackagePanel: ["canViewContractPackage()", "loadContractOptions(estimate.id)", "loadContractPackages(estimate.id)", "await contractSourceView.load(estimate.id)"],
+    loadContractPackageToPreview: ["await loadContractPackage(packageId)", "contractSourceView.reset()", "estimateFromContractPackage(contractPackage)", "renderContractPackagePanel"],
+  };
+  for (const [name, old] of Object.entries(golden.protectedSources)) {
+    const current = functionSource(source, name);
+    if (!changed[name]) expect(current, name).toBe(old);
+    else {
+      for (const guard of changed[name]) expect(current, `${name}: ${guard}`).toContain(guard);
+      if (["buildEstimateSnapshot", "applyExistingPipeCleaningAdjustment", "loadEstimateIntoUi", "calculateForCurrentEstimate"].includes(name)) expect(current).not.toMatch(/await (updateEstimate|createEstimate)|fetch\(/);
+    }
+  }
 });
 
 test("27 business event callbacks preserve bodies except the two customer print entry projections", () => {
   for (const { name, body } of golden.events) {
     const current = functionSource(source, name);
     const ast = parse(current, { ecmaVersion: "latest", sourceType: "module", range: true });
+    if (name === "onLogoutClick") {
+      for (const step of ["await signOut()", "contractSourceView.reset()", "serverCalculation=null", "serverCalculationPending=null", "calculationGeneration++", "currentProfile = null", "setAuthenticated(false)"]) expect(current).toContain(step);
+      continue;
+    }
+    if (name === "onInternalPrintClick") {
+      expect(current).toContain("if(canViewSystem())");
+      expect(current.indexOf("await ensureServerCalculation()")).toBeLessThan(current.indexOf("const estimate = currentEstimateForPrint()"));
+      for (const renderer of ["renderAdminDetailPrint(estimate)", "renderAdminInternalPrint(estimate)", "renderPurchaseOrderPrint(estimate)", "window.print()"]) expect(current).toContain(renderer);
+      continue;
+    }
+    if (name === "onPrintQuoteClick") {
+      expect(current).toContain("if(canViewSystem())");
+      expect(current.indexOf("await ensureServerCalculation()")).toBeLessThan(current.indexOf("renderCustomerSummaryPrint("));
+      expect(current).toContain("currentProfile?.role === \"staff\"");
+      expect(current).toContain("window.print()");
+      expect(current).not.toMatch(/renderAdmin|renderInternal/);
+      continue;
+    }
     const expected = ["onPrintQuoteClick", "onStaffQuoteAction"].includes(name)
       ? body.replace("renderPrintQuote(", "renderCustomerSummaryPrint(") : body;
     const approved = name === "onSavedEstimateAction"
-      ? expected.replace('alert("견적 삭제에 실패했습니다.");', 'alert(error?.message?.startsWith("프로젝트·") ? error.message : "견적 삭제에 실패했습니다.");')
+      ? expected.replace('alert("견적 삭제에 실패했습니다.");', 'alert(error?.message?.startsWith("프로젝트·") ? error.message : "견적 삭제에 실패했습니다.");').replace("renderCustomerQuote(buildEstimateSnapshot(calculate()));", "refresh();")
       : expected;
     expect(current.slice(...ast.body[0].body.range), name).toBe(approved);
   }

@@ -52,7 +52,9 @@ export class ApiError extends Error {
 }
 
 export function json(data: unknown, init?: ResponseInit) {
-  return NextResponse.json(data, init);
+  const headers=new Headers(init?.headers);
+  headers.set("Cache-Control","private, no-store");
+  return NextResponse.json(data, {...init,headers});
 }
 
 export function errorResponse(error: unknown) {

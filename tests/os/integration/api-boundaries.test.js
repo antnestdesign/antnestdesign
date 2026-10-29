@@ -43,6 +43,7 @@ async function serverAs(profile, { invalidAuth = false, packages = [syntheticPac
         : jsonResponse({ id: TEST_USER_ID, email: "synthetic@example.invalid" });
     }
     if (url.pathname === "/rest/v1/profiles") return jsonResponse([profile]);
+    if (url.pathname === "/rest/v1/contract_issued_sources") return jsonResponse([]);
     if (url.pathname === "/rest/v1/contract_package_snapshots") return jsonResponse(packages);
     return null;
   });

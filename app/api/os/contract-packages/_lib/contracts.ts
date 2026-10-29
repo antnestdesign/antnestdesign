@@ -9,7 +9,7 @@ export const DOCUMENT_TYPES = ["CONTRACT", "QUOTE", "SPEC"] as const;
 
 export type ContractDocumentType = (typeof DOCUMENT_TYPES)[number];
 
-type EstimateRow = {
+export type EstimateRow = {
   id: string;
   project_name: string | null;
   client_name: string | null;
@@ -584,8 +584,9 @@ export async function buildContractPackageSnapshot(
   estimateId: string,
   optionsOverride?: ContractOptionsPayload,
   assignedContractNo?: string | null,
+  sourceOverride?: EstimateRow,
 ) {
-  const estimate = await loadEstimateRow(estimateId);
+  const estimate = sourceOverride || await loadEstimateRow(estimateId);
   const savedOptions = await loadDocumentOptions(estimateId);
   const options = {
     ...optionsFromSaved(savedOptions),
@@ -702,6 +703,8 @@ function staffContractInfo(value: unknown) {
     site_address: info.site_address ?? "",
     area_pyeong: info.area_pyeong ?? null,
     total_amount: info.total_amount ?? 0,
+    ...(info.issued_version_id ? { issued_version_id: info.issued_version_id, issued_quote_number: info.issued_quote_number,
+      issued_version: info.issued_version, supply_amount: info.supply_amount, vat_amount: info.vat_amount } : {}),
   };
 }
 
@@ -720,6 +723,7 @@ function staffEstimateSnapshot(value: unknown) {
     status: estimate.status,
     customer_quote: customerQuoteProjection(objectValue(estimate.customer_quote)),
     quote_items: estimate.quote_items,
+    ...(estimate.issued_version_id ? { issued_version_id: estimate.issued_version_id, supply_amount: estimate.supply_amount, vat_amount: estimate.vat_amount } : {}),
   };
 }
 

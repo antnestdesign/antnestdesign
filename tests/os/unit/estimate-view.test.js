@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { parse } from "espree";
 import { expect, describe, test } from "vitest";
-import { createEstimateCalculation } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { buildEstimateInternalViewModel, buildStoredInternalSummaryModel, buildInternalRowsModel } from "../../../public/os-app/src/estimate-view-model.js";
 import { estimateViewCases, exerciseViewCase, snapshotView, viewCaseEstimate } from "../fixtures/estimate-view-cases.js";
 import { createViewRuntime, viewGolden } from "../helpers/estimate-view-runtime.js";
@@ -15,7 +15,7 @@ function freeze(value) {
 }
 describe("Phase 3D exact OLD/NEW DOM and HTML characterization at 17a5c29", () => {
   for (const entry of estimateViewCases) {
-    test(`${entry.name}: HTML, controls, disabled/readOnly, totals and empty state`, () => {
+    test(`${entry.name}: HTML, controls, disabled/readOnly, totals and empty state`, async () => {
       const old = createViewRuntime(entry, true);
       const current = createViewRuntime(entry);
       const expected = viewGolden.cases.find((item) => item.name === entry.name).result;
@@ -23,13 +23,13 @@ describe("Phase 3D exact OLD/NEW DOM and HTML characterization at 17a5c29", () =
       freeze(current.estimate);
       freeze(current.result);
       for (const evidence of [old, current]) {
-        const returns = exerciseViewCase(evidence.runtime, entry, evidence.estimate, evidence.result);
+        const returns = await exerciseViewCase(evidence.runtime, entry, evidence.estimate, evidence.result);
         const snapshot = snapshotView(evidence.document, evidence.elements, structuredClone(returns));
         expect(normalizeEstimatePrintResult(snapshot)).toStrictEqual(normalizeEstimatePrintResult(expected));
       }
       expect(current.estimate).toStrictEqual(before);
       // Re-rendering is deterministic and never appends stale quote/internal rows.
-      const repeated = exerciseViewCase(current.runtime, entry, current.estimate, current.result);
+      const repeated = await exerciseViewCase(current.runtime, entry, current.estimate, current.result);
       expect(normalizeEstimatePrintResult(snapshotView(current.document, current.elements, structuredClone(repeated))))
         .toStrictEqual(normalizeEstimatePrintResult(expected));
       old.dom.window.close(); current.dom.window.close();

@@ -5,7 +5,7 @@ import { parse } from "espree";
 import { analyze } from "eslint-scope";
 import { describe, expect, test } from "vitest";
 import { isEstimateInputExcluded, canonicalInputValues } from "../../../public/os-app/src/estimate-input.js";
-import { COST_ITEM_DEFINITIONS } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { COST_ITEM_DEFINITIONS } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { canonicalCases, exclusionProbeIds } from "../fixtures/estimate-input-cases.js";
 
 const moduleUrl = new URL("../../../public/os-app/src/estimate-input.js", import.meta.url);

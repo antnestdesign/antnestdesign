@@ -4,7 +4,7 @@ import { mountPreliminaryEstimateView, PRELIMINARY_TRADES } from "../../../publi
 import { createEstimateRestore } from "../../../public/os-app/src/estimate-restore.js";
 import { readEstimateForm, collectEstimateFormValues } from "../../../public/os-app/src/estimate-form.js";
 import { buildEstimateState } from "../../../public/os-app/src/estimate-state.js";
-import { createEstimateCalculation } from "../../../public/os-app/src/calculator/estimate-core.js";
+import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { latestEstimate } from "../fixtures/estimates.js";
 
 const html = readFileSync("public/os-app/index.html", "utf8");

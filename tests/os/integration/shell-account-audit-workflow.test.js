@@ -70,6 +70,7 @@ describe("Phase 3F actual app shell and account/audit controller integration", (
         expect(request.url.searchParams.get("action")).toBe("USER_CREATED");
         expect(document.getElementById("auditLogRows").textContent).toContain("UNKNOWN_LEGACY");
         document.getElementById("printPurchaseOrderButton").click();
+        await flushAsyncWork();
         expect(document.getElementById("printQuoteSheet").textContent).toContain("발주");
       } else expect(document.querySelector("[data-delete-estimate]")).toBeNull();
     }
@@ -89,12 +90,14 @@ for (const state of ["active", "password-required", "inactive", "profile-error",
     return handler(request);
   };
   await mountOs(database);
+  database.profile = profile;
   expect(document.getElementById("appShell").classList.contains("app-locked")).toBe(true);
   expect(requestLog.requests).toHaveLength(0);
   document.getElementById("loginEmail").value = "synthetic@example.invalid";
   document.getElementById("loginPassword").value = "Synthetic123";
   document.getElementById("loginForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   for (let i = 0; i < 4; i++) await flushAsyncWork();
+  if (state === "active") await vi.waitFor(() => expect(document.getElementById("appShell").classList.contains("app-locked")).toBe(false));
   expect(document.getElementById("appShell").classList.contains("app-locked")).toBe(state !== "active");
   expect(document.getElementById("passwordChangeScreen").hidden).toBe(state !== "password-required");
   const dataRequests = requestLog.requests.filter(r => ["/rest/v1/cost_items", "/rest/v1/estimates", "/api/os/users", "/api/os/contract-packages"].includes(r.url.pathname));

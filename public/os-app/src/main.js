@@ -2,13 +2,15 @@ import { createAccountView } from "./account-view.js";
 import { createAuditView } from "./audit-view.js";
 import { createUiShell } from "./ui-shell.js";
 import { bindApplicationEvents } from "./application-events.js";
-import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "./calculator/estimate-core.js";
+import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
+import { ESTIMATE_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { won, rateNumber, escapeHtml } from "./utils.js";
 import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
 import { createEstimateView } from "./estimate-view.js";
 import { mountPreliminaryEstimateView } from "./preliminary-estimate-view.js";
 import { mountDetailedEstimateView } from "./detailed-estimate-view.js";
+import { createContractSourceView } from "./contract-source-view.js";
 import { createEstimatePrint } from "./estimate-print.js";
 import { buildInternalRowsModel, buildStoredInternalSummaryModel, buildEstimateInternalViewModel, buildCalculatedEstimatePresentation } from "./estimate-view-model.js";
 import { purchaseOrderItems } from "./purchase-order.js";
@@ -18,19 +20,16 @@ import { createContractView } from "./contract-view.js";
 import { createContractPrint, CONTRACT_FIXED_TERM_LINES } from "./contract-print.js";
 import { createCostViewModel, percentText, hasDraft, marginDistribution, existingDraftCount } from "./cost-view-model.js";
 import { createCostView } from "./cost-view.js";
-import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "./estimate-form.js";
-import { buildEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides as projectEffectiveEstimateInputs } from "./estimate-state.js";
-import { bathroomRates } from "./rates/bathroom.js";
-import { kitchenRates } from "./rates/kitchen.js";
-import { doorRates } from "./rates/door.js";
-import { finishMaterialRates } from "./rates/finish.js";
-import { miscRates } from "./rates/misc.js";
+import { readEstimateForm, collectEstimateFormValues, normalizeIntegerInput } from "./estimate-form.js";
+import { buildEstimateState, composeEstimateInputs } from "./estimate-state.js";
 import {
   saveEstimate,
   updateEstimate,
   loadEstimates,
   getEstimate,
   previewStaffEstimate,
+  previewInternalEstimate,
+  loadPrivateEstimateDefaults,
   deleteEstimate,
   loadSystemCostItems,
   loadCostItemHistory,
@@ -66,105 +65,7 @@ import {
   loadProjectFoundationMode,
 } from "./storage.js";
 
-const rates = {
-  lowerPerJa: 120000,
-  upperPerJa: 90000,
-  islandPerJa: 180000,
-  homebarStorageBaseJa: 3,
-  homebarBuildPerJa: 210000,
-  tallPerJa: 130000,
-  storagePerJa: 130000,
-  fridgeLaundryPerJa: 90000,
-  shoePerJa: 80000,
-  pantryPerJa: 65000,
-  pantryDrawer: 270000,
-  builtInPerJa: 160000,
-  hangerPerJa: 90000,
-  riceCabinetPerUnit: 560000,
-  endPanelShallow: 90000,
-  endPanelDeep: 130000,
-  drawer: 60000,
-  bachmannOutlet: 160000,
-  lightingPerCabinetUnit: 240000,
-  t3LightingUnit: 50000,
-  standardLighting: {
-    downlight: 10000,
-    square: 35000,
-    cylinder: 30000,
-    t3PerM: 10000,
-    bedWallLight: 200000,
-  },
-  demolition: {
-    floorPerPyeong: 30000,
-    decoTilePerPyeong: 15000,
-    furniturePerJa: 25000,
-    bathroomWaterproof: 800000,
-    ceilingPerPyeong: 160000,
-    elevatorProtect: 200000,
-    elevatorProtectRemoval: 50000,
-    permit: 200000,
-    consent: 150000,
-  },
-  electrical: {
-    workerDay: 300000,
-    helperDay: 250000,
-    under10YearsDays: 6,
-    over10YearsDays: 8,
-    wiring: 600000,
-    standardSwitch: 400000,
-  },
-  finish: {
-    tileWorkerDay: 350000,
-    tileHelperDay: 280000,
-    tileGrout: 350000,
-    wallpaperWorkerDay: 300000,
-    wallpaperMaterialPerPyeong: 10000,
-    filmWorkerDay: 280000,
-    flooringPerPyeong: 150000,
-    silicone: 450000,
-    elasticBase: 650000,
-    elasticExtraRoom: 250000,
-  },
-  carpentry: {
-    workerDay: 300000,
-    machineDay: 150000,
-    lifting: 200000,
-    subsidiary: 150000,
-    curtainBoxDaysPerTwo: 1,
-    cofferNewDays: 2,
-    cofferChangeDays: 1.5,
-    artwallDaysPerM: 0.3,
-    hiddenDoorDays: 1,
-    lineLightDaysPerM: 0.1,
-    indirectLightDays: 0.1,
-    ceilingFanUnit: 500000,
-    dropCeilingDays: 0.5,
-    moldingDays: 2,
-    baseboardDays: 1,
-    boardWidth: 2400,
-    boardHeight: 1200,
-    studSpacing: 450,
-    studPieceLength: 3600,
-    studPiecesPerBundle: 12,
-    wasteFactor: 1.15,
-    drywallSheet: 4500,
-    mdfSheet: 12500,
-    plywoodSheet: 30000,
-    studBundle: 22000,
-  },
-  countertop: {
-    himacs: { label: "하이막스", costPerM: 220000 },
-    khanstone: { label: "칸스톤", costPerM: 360000, slabCost: 1500000, factoryCost: 700000, installCost: 900000 },
-    ceramic: { label: "세라믹", costPerM: 520000, slabCost: 1500000, factoryCost: 700000, installCost: 900000 },
-    epPanel: { label: "EP판", costPerM: 130000 },
-    none: { label: "없음", costPerM: 0 },
-  },
-  bathroom: bathroomRates,
-  kitchen: kitchenRates,
-  door: doorRates,
-  finishMaterial: finishMaterialRates,
-  misc: miscRates,
-};
+
 
 const ids = [
   "projectName",
@@ -500,6 +401,9 @@ let contractPreviewState = null;
 let contractOptionsDirty = false;
 let contractSelectedDocumentType = "CONTRACT";
 let contractBusy = false;
+let issuedContractEstimate = null;
+let preliminaryContractEstimate = null;
+let issuedContractMode = "OFF";
 let snapshotCalculationMissingItems = [];
 let costItemEditorMode = null;
 let costItemEditorSourceCode = null;
@@ -515,21 +419,19 @@ let costItemFilters = {
 };
 
 
-const customerWon = (...args) => currentCalculationCore().customerWon(...args);
+const customerWon = value => `${(Math.floor(Number(value||0)/1000)*1000).toLocaleString("ko-KR")}원`;
 
 
-const mmText = (...args) => currentCalculationCore().mmText(...args);
+const mmText = mm => `${Math.round(mm).toLocaleString("ko-KR")}mm`;
 
 
-const mText = (...args) => currentCalculationCore().mText(...args);
+const mText = m => mmText(m*1000);
 
-const markupRate = (...args) => currentCalculationCore().markupRate(...args);
+const markupRate = (profit,cost) => cost>0?profit/cost:0;
 
-const isSlabMaterial = (...args) => currentCalculationCore().isSlabMaterial(...args);
+const isSlabMaterial = material => ["khanstone","ceramic"].includes(material);
 
-const slabBaseCost = (...args) => currentCalculationCore().slabBaseCost(...args);
 
-const khanstoneBaseCost = () => slabBaseCost("khanstone");
 
 const COST_ITEM_BY_CODE = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.itemCode, item]));
 const COST_ITEM_BY_INPUT = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item]));
@@ -545,6 +447,8 @@ function ensureCostSnapshotPanel() { return estimateRestore.ensureCostSnapshotPa
 function ensureContractPackagePanel() { return currentContractView().ensureContractPackagePanel(); }
 
 function selectedContractEstimate() {
+  if (issuedContractEstimate) return issuedContractEstimate;
+  if (preliminaryContractEstimate) return preliminaryContractEstimate;
   if (currentEditingEstimateId) {
     return activeQuoteEstimate || cachedEstimates.find((estimate) => estimate.id === currentEditingEstimateId) || loadedContractEstimateState || null;
   }
@@ -701,7 +605,11 @@ function renderContractPrintSheet(type = "ALL") {
 
 function renderContractPreview() { return currentContractView().renderContractPreview(); }
 
-function renderContractPackagePanel(estimate = selectedContractEstimate()) { return currentContractView().renderContractPackagePanel(estimate); }
+function renderContractPackagePanel(estimate = selectedContractEstimate()) {
+  currentContractView().renderContractPackagePanel(estimate);
+  const save = document.getElementById("saveContractOptionsButton"); if (save) save.hidden = Boolean(issuedContractEstimate);
+  const create = document.getElementById("createContractPackageButton"); if (create) create.disabled = Boolean(issuedContractEstimate && issuedContractMode !== "ON");
+}
 
 async function refreshContractPackagePanel(estimate = selectedContractEstimate()) {
   ensureContractPackagePanel();
@@ -720,6 +628,7 @@ async function refreshContractPackagePanel(estimate = selectedContractEstimate()
     contractPreviewState = null;
     contractOptionsDirty = false;
     renderContractPackagePanel(estimate);
+    await contractSourceView.load(estimate.id);
     contractStatus("계약 정보를 불러왔습니다.", "success");
   } catch (error) {
     console.error("계약 패키지 조회 실패", error);
@@ -746,6 +655,8 @@ async function refreshAllContractPackages() {
 }
 
 async function saveContractOptionsFromForm() {
+  if (contractSourceView.pending) { contractStatus("기준 견적을 확인 중입니다. 잠시 기다려 주세요."); return; }
+  if (contractSourceView.source) { contractStatus("발행본 계약 옵션은 계약 패키지 저장 시 함께 보관됩니다."); return; }
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canEditContractPackageOptions()) return;
   if (contractBusy) return;
@@ -766,10 +677,11 @@ async function saveContractOptionsFromForm() {
 }
 
 async function previewContractPackageFromForm() {
+  if (contractSourceView.pending) { contractStatus("기준 견적을 확인 중입니다. 잠시 기다려 주세요."); return; }
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canPreviewContractPackage()) return;
   if (contractBusy) return;
-  if (currentPipeCleaningDerivedEstimate()) {
+  if (!contractSourceView.source && currentPipeCleaningDerivedEstimate()) {
     contractStatus("기존 배관 청소 변경사항을 수정 저장한 뒤 3종 문서 미리보기를 생성해 주세요.", "error");
     return;
   }
@@ -778,7 +690,10 @@ async function previewContractPackageFromForm() {
     const payload = collectContractOptionsPayload();
     validateContractOptionsForPreview(payload);
     contractStatus("3종 문서 미리보기를 생성하는 중입니다.");
-    contractPreviewState = await previewContractPackage(estimate.id, payload);
+    const issued = contractSourceView.source;
+    contractPreviewState = issued
+      ? await requestProjectFoundation(`/detailed-estimates/${issued.head_id}/contracts`, { method: "POST", body: JSON.stringify({ ...contractSourceView.payload(), action: "preview", options: payload }) })
+      : await previewContractPackage(estimate.id, payload);
     contractSelectedDocumentType = "CONTRACT";
     renderContractPackagePanel(estimate);
     contractStatus("미리보기를 생성했습니다. 데이터는 저장되지 않았습니다.", "success");
@@ -814,10 +729,11 @@ function estimateFromContractPackage(contractPackage) {
 }
 
 async function createContractPackageFromForm() {
+  if (contractSourceView.pending) { contractStatus("기준 견적을 확인 중입니다. 잠시 기다려 주세요."); return; }
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canCreateContractPackage()) return;
   if (contractBusy) return;
-  if (currentPipeCleaningDerivedEstimate()) {
+  if (!contractSourceView.source && currentPipeCleaningDerivedEstimate()) {
     contractStatus("기존 배관 청소 변경사항을 수정 저장한 뒤 계약 패키지를 확정 저장해 주세요.", "error");
     return;
   }
@@ -831,7 +747,11 @@ async function createContractPackageFromForm() {
     const payload = collectContractOptionsPayload();
     validateContractOptionsForPreview(payload);
     contractStatus("계약 패키지를 확정 저장하는 중입니다.");
-    const draftPackage = currentPackage || await createContractPackage(estimate.id, payload);
+    const issued = contractSourceView.source;
+    if (issued?.linked_package_id) { await loadContractPackageToPreview(issued.linked_package_id); return; }
+    const draftPackage = currentPackage || (issued
+      ? await requestProjectFoundation(`/detailed-estimates/${issued.head_id}/contracts`, { method: "POST", body: JSON.stringify({ ...contractSourceView.payload(), action: "create", options: payload }) })
+      : await createContractPackage(estimate.id, payload));
     const confirmedPackage = await confirmContractPackage(draftPackage.id);
     const contractPackage = {
       ...draftPackage,
@@ -846,7 +766,7 @@ async function createContractPackageFromForm() {
     };
     contractSelectedDocumentType = "CONTRACT";
     contractOptionsDirty = false;
-    await refreshContractPackagePanel(estimate);
+    if (!issued) await refreshContractPackagePanel(estimate);
     await refreshAllContractPackages();
     contractPreviewState = {
       status: contractPackage.status || "CONTRACTED",
@@ -869,6 +789,11 @@ async function loadContractPackageToPreview(packageId) {
     contractBusy = true;
     contractStatus("저장된 계약 패키지를 불러오는 중입니다.");
     const contractPackage = await loadContractPackage(packageId);
+    if (!contractPackage.contract_info?.issued_version_id || contractSourceView.source?.document.id !== contractPackage.contract_info.issued_version_id) {
+      issuedContractEstimate = null;
+      preliminaryContractEstimate = null;
+      contractSourceView.reset();
+    }
     loadedContractEstimateState = estimateFromContractPackage(contractPackage);
     currentEditingEstimateId = loadedContractEstimateState.id;
     activeQuoteEstimate = loadedContractEstimateState;
@@ -996,16 +921,6 @@ function currentCostItems() {
     .filter(Boolean);
 }
 
-function buildCostSnapshot() {
-  if (!canViewSystem() || !originalCostItems.size) return null;
-  const items = currentCostItems();
-  return {
-    capturedAt: new Date().toISOString(),
-    costDbUpdatedAt: latestDate(items.map((item) => item.updatedAt)),
-    source: "supabase_cost_items",
-    items,
-  };
-}
 
 function costSnapshotChanged(snapshot) {
   if (!snapshot?.items?.length || !originalCostItems.size) return false;
@@ -1169,15 +1084,13 @@ function removeDuplicateManagementCriteriaBlock() { return uiShell.removeDuplica
 
 function removeLegacyAdminEstimatePanels() { return uiShell.removeLegacyAdminEstimatePanels(); }
 
-function updateRatesFromAdmin() {
-  const context = { rates, flooringSheetGradeOptions, flooringWoodGradeOptions, pipeCleaningAmount: PIPE_CLEANING_AMOUNT };
-  syncEstimateFormRates(el, context);
-  PIPE_CLEANING_AMOUNT = context.pipeCleaningAmount;
-}
+let privateDefaultMarkup=0;
+let costManagementDefaults=null;
+function updateRatesFromAdmin() {}
 
 function readState() {
   updateRatesFromAdmin();
-  return buildEstimateState(readEstimateForm(el));
+  return buildEstimateState(readEstimateForm(el),privateDefaultMarkup);
 }
 
 const lightingText = (lineUnits, t3Units) =>
@@ -1208,18 +1121,8 @@ const quoteGroupLabels = {
   hanger: "가구",
 };
 const quoteGroupOrder = ["철거", "욕실", "전기/조명", "목공", "가구", "도배", "필름", "바닥", "마감", "도어/창호", "기타"];
-const flooringSheetGradeOptions = {
-  t18: { label: "1.8T", unitPrice: 27000 },
-  t20: { label: "2T", unitPrice: 36000 },
-  t22: { label: "2.2T", unitPrice: 46000 },
-  t32: { label: "3.2T", unitPrice: 73000 },
-  t45: { label: "4.5T", unitPrice: 90000 },
-  t50: { label: "5T", unitPrice: 100000 },
-};
-const flooringWoodGradeOptions = {
-  editone: { label: "LX 에디톤급", unitPrice: 150000 },
-  standard: { label: "일반마루", unitPrice: 100000 },
-};
+
+
 const printGroupLabels = {
   철거: "철거공사",
   욕실: "욕실공사",
@@ -1259,7 +1162,7 @@ function currentContractView() {
 }
 function currentCostViewModel() {
   return createCostViewModel({ originalCostItems, costItemFilters, systemCostHistory, systemPublishLogs, systemEstimateCount,
-    expandedSystemCostCategory, costItemEditorMode, costItemEditorSourceCode, formatDateTime,
+    expandedSystemCostCategory, costItemEditorMode, costItemEditorSourceCode, formatDateTime, costManagementDefaults,
   });
 }
 function currentCostView() {
@@ -1281,14 +1184,14 @@ function estimateInternalViewModel(estimate) {
 
 const countertopQuoteText = (material, billingM) =>
   isSlabMaterial(material) ? "1장 + 가공/시공" : mText(billingM);
-const groupTotalFromDetails = (...args) => currentCalculationCore().groupTotalFromDetails(...args);
+const groupTotalFromDetails = (details,group) => details.filter(d=>d.group===group).reduce((sum,d)=>sum+(Number(d.revenue)||0),0);
 
 const carpentryCofferLabel = (type) => ({
   new: "우물천장 신설",
   change: "우물천장 변경",
 }[type] || "");
 
-function calculate() { return currentCalculationCore().calculate(readState()); }
+function calculate() { if(!serverCalculation || serverCalculation.key!==serverCalculationKey())throw new Error("견적 계산이 완료될 때까지 기다려 주세요.");return serverCalculation.result; }
 
 
 function renderQuoteRows(lines, details, total) { return estimateView.renderQuoteRows(lines, details, total); }
@@ -1313,63 +1216,20 @@ function collectInputValues() {
 
 function restoreInputValues(inputs = {}) { return estimateRestore.restoreInputValues(inputs); }
 
-const groupedCustomerItems = (...args) => currentCalculationCore().groupedCustomerItems(...args);
-
-
-function buildEstimateSnapshot(result, options = {}) {
-  const savedAt = new Date().toISOString();
-  const customerGroups = groupedCustomerItems(result.details, result.quoteLines);
-  const customerTotal = customerGroups.reduce((sum, group) => sum + (Number(group.total) || 0), 0);
-  const inputOverrides = effectiveEstimateInputOverrides(result.state);
-  const snapshot = {
-    projectName: result.state.projectName,
-    ...(options.address != null ? { address: options.address } : {}),
-    areaPyeong: result.state.areaPyeong,
-    clientName: result.state.clientName,
-    phone: result.state.clientPhone,
-    savedAt,
-    total: customerTotal,
-    totalText: customerWon(customerTotal),
-    costTotal: result.directCost,
-    marginRate: Number((result.actualMargin * 100).toFixed(2)),
-    status: result.state.status || "견적",
-    costSnapshot: options.costSnapshot || buildCostSnapshot(),
-    author: {
-      user_id: currentProfile?.id || getAuthSession()?.user?.id || "",
-      user_email: currentProfile?.email || getAuthSession()?.user?.email || "",
-      role: currentProfile?.role || "",
-    },
-    inputs: {
-      ...collectInputValues(),
-      ...inputOverrides,
-    },
-    internalSummary: {
-      directCost: result.directCost,
-      customerRevenue: result.customerRevenue,
-      profit: result.profit,
-      marginRate: Number((result.actualMargin * 100).toFixed(2)),
-      discountRoom: result.discountRoom,
-    },
-    internalDetails: result.details,
-    customerQuote: {
-      projectName: result.state.projectName,
-      areaPyeong: result.state.areaPyeong,
-      clientName: result.state.clientName,
-      phone: result.state.clientPhone,
-      savedAt,
-      total: customerTotal,
-      totalText: customerWon(customerTotal),
-      status: result.state.status || "견적",
-      groups: customerGroups,
-    },
-  };
-  return applyExistingPipeCleaningAdjustment(snapshot, result.state.existingPipeCleaningEnabled);
+let serverCalculation=null, serverCalculationPending=null, calculationGeneration=0;
+function serverCalculationKey(){return JSON.stringify([currentEditingEstimateId,currentInputKey(),COST_ITEM_DEFINITIONS.map(d=>el[d.inputId]?.value)]);}
+function privateCalculationBody(estimateId=currentEditingEstimateId){return {inputs:Object.fromEntries(Object.entries(currentEstimateInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id)||['projectSearch','projectSearchResults'].includes(id))),estimateId,rateValues:Object.fromEntries(COST_ITEM_DEFINITIONS.filter(d=>el[d.inputId]?.value!=="").map(d=>[d.inputId,Number(el[d.inputId]?.value)||0]))};}
+async function ensureServerCalculation(){
+  const key=serverCalculationKey();if(serverCalculation?.key===key)return serverCalculation;
+  if(serverCalculationPending?.key===key)return serverCalculationPending.promise;
+  const pending={key,promise:null};pending.promise=previewInternalEstimate(privateCalculationBody()).then(value=>{const result={...value,key};if(key===serverCalculationKey())serverCalculation=result;return result;}).finally(()=>{if(serverCalculationPending===pending)serverCalculationPending=null;});serverCalculationPending=pending;return pending.promise;
 }
+function buildEstimateSnapshot(result,options={}){if(!serverCalculation || serverCalculation.key!==serverCalculationKey())throw new Error("현재 입력의 견적 계산이 필요합니다.");return {...structuredClone(serverCalculation.snapshot),...(options.address!=null?{address:options.address}:{}),...(options.costSnapshot?{costSnapshot:options.costSnapshot}:{})};}
 
 const PIPE_CLEANING_ITEM_NAME = "기존 배관 청소";
-let PIPE_CLEANING_AMOUNT = 300000;
+let PIPE_CLEANING_AMOUNT = 0;
 
-function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) { return currentCalculationCore().applyExistingPipeCleaningAdjustment(estimate, enabled); }
+async function applyExistingPipeCleaningAdjustment(estimate, enabled = Boolean(el.existingPipeCleaningEnabled?.checked)) { const body=privateCalculationBody(estimate.id||null);body.inputs.existingPipeCleaningEnabled=enabled;const value=await previewInternalEstimate(body);return value.snapshot; }
 
 
 function currentPipeCleaningDerivedEstimate() {
@@ -1407,7 +1267,7 @@ function renderCostSnapshotInfo(estimate) {
   });
 }
 
-function renderCostSnapshotComparison(estimate) {
+async function renderCostSnapshotComparison(estimate) {
   if (!estimateView.hasCostComparisonTarget() || !estimate?.costSnapshot?.items?.length) {
     estimateView.renderCostSnapshotComparison(null);
     return;
@@ -1424,7 +1284,7 @@ function renderCostSnapshotComparison(estimate) {
     })
     .filter((item) => item && item.diff !== 0);
   const savedDirectCost = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
-  const currentSnapshot = buildEstimateSnapshot(calculate());
+  const currentSnapshot = (await previewInternalEstimate(privateCalculationBody(null))).snapshot;
   const currentDirectCost = Number(currentSnapshot.costTotal) || 0;
   const directDiff = currentDirectCost - savedDirectCost;
   estimateView.renderCostSnapshotComparison({ rows, savedDirectCost, currentDirectCost, directDiff });
@@ -1572,11 +1432,16 @@ function syncBlockLocks() { return estimateRestore.syncBlockLocks(); }
 function guardCheckboxLabelClicks() { return estimateRestore.guardCheckboxLabelClicks(); }
 
 function render() {
+  if(!currentProfile)return;
   if (currentProfile?.role === "staff") {
     renderStaffEstimate();
     return;
   }
-  const result = calculateForCurrentEstimate();
+  const generation=++calculationGeneration;
+  setSaveStatus("견적을 계산 중입니다.");
+  ensureServerCalculation().then(value=>{if(generation===calculationGeneration&&value.key===serverCalculationKey()&&canViewSystem()){renderCalculatedEstimate(value.result);setSaveStatus(loadedEstimateMatchesCurrentInputs()?"저장 당시 계산 결과를 표시 중입니다.":"입력값으로 계산했습니다. 저장 전까지 원본은 변경되지 않습니다.");}}).catch(error=>{if(generation===calculationGeneration)setSaveStatus(error.message||"견적 계산에 실패했습니다.");});
+}
+function renderCalculatedEstimate(result){
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
   const calculatedSnapshot = buildEstimateSnapshot(result);
   const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
@@ -1662,9 +1527,6 @@ function rowsBySystemFilter(options) { return currentCostViewModel().rowsBySyste
 
 function systemSubcategories(category = "") { return currentCostViewModel().systemSubcategories(category); }
 
-function effectiveEstimateInputOverrides(state = readState()) {
-  return projectEffectiveEstimateInputs(state);
-}
 
 function currentEstimateInputValues() {
   const formValues = collectInputValues();
@@ -1680,7 +1542,7 @@ function loadedEstimateMatchesCurrentInputs() {
 }
 
 function syncLoadedEstimateSnapshot() {
-  if (!loadedEstimateBaseline?.estimate) return false;
+  if (!loadedEstimateBaseline?.estimate?.customerQuote) return false;
   if (loadedEstimateMatchesCurrentInputs()) {
     activeQuoteEstimate = loadedEstimateBaseline.estimate;
     return true;
@@ -1703,42 +1565,8 @@ function shouldUseLoadedCostSnapshot() {
   );
 }
 
-function requiredMissingSnapshotItems(snapshot, state) {
-  const saved = costSnapshotMap(snapshot);
-  const missing = [];
-  if (state?.wallpaperMaterialEnabled && !saved.has("WALLPAPER_MATERIAL_PER_PYEONG")) {
-    missing.push("도배 자재비");
-  }
-  return missing;
-}
 
-function calculateForCurrentEstimate() {
-  snapshotCalculationMissingItems = [];
-  if (!shouldUseLoadedCostSnapshot()) return calculate();
-
-  const snapshot = loadedEstimateBaseline.estimate.costSnapshot;
-  const saved = costSnapshotMap(snapshot);
-  const previousValues = [];
-  for (const definition of COST_ITEM_DEFINITIONS) {
-    const input = el[definition.inputId];
-    const item = saved.get(definition.itemCode);
-    if (!input || !item) continue;
-    previousValues.push([input, input.value]);
-    input.value = rateNumber(item.costPrice);
-  }
-
-  try {
-    updateRatesFromAdmin();
-    const result = calculate();
-    snapshotCalculationMissingItems = requiredMissingSnapshotItems(snapshot, result.state);
-    return result;
-  } finally {
-    previousValues.forEach(([input, value]) => {
-      input.value = value;
-    });
-    updateRatesFromAdmin();
-  }
-}
+function calculateForCurrentEstimate() { snapshotCalculationMissingItems=[];return calculate(); }
 
 async function writeSystemAudit(action, payload = {}) {
   if (!canManageUsers()) return;
@@ -2392,6 +2220,7 @@ function validateOwnPassword(password, confirm) {
 
 async function leavePasswordChangeFlow() {
   await signOut();
+  window.location.reload();
   currentProfile = null;
   clearPasswordChangeInputs();
   setPasswordChangeRequired(false);
@@ -2446,6 +2275,8 @@ async function enterAuthenticatedApp(profile) {
     return;
   }
   await loadRateSettings();
+  costManagementDefaults=null;
+  if(canViewSystem()){const config=await loadPrivateEstimateDefaults();costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
   setAuthenticated(true);
   applyAccessControl();
   refresh();
@@ -2505,13 +2336,9 @@ function loadEstimateIntoUi(estimate) {
   const hasStoredResult = estimate.customerQuote || estimate.internalSummary || estimate.internalDetails;
   const displayEstimate = hasStoredResult || currentProfile?.role === "staff"
     ? estimate
-    : {
-      ...estimate,
-      ...buildEstimateSnapshot(calculate()),
-      id: estimate.id,
-      savedAt: estimate.savedAt,
-      costSnapshot: estimate.costSnapshot,
-  };
+    : estimate;
+
+
   activeQuoteEstimate = displayEstimate;
   lastRenderedEstimateSnapshot = displayEstimate;
   currentEditingEstimateId = estimate.id || null;
@@ -2552,7 +2379,7 @@ function handleEstimateInputChanged() {
   refresh();
 }
 
-function handleExistingPipeCleaningChanged() {
+async function handleExistingPipeCleaningChanged() {
   if (currentProfile?.role === "staff") {
     pipeCleaningAdjustmentDirty = true;
     renderStaffEstimate();
@@ -2561,7 +2388,7 @@ function handleExistingPipeCleaningChanged() {
   const enabled = Boolean(el.existingPipeCleaningEnabled?.checked);
   const baseEstimate = activeQuoteEstimate || loadedEstimateBaseline?.estimate || lastRenderedEstimateSnapshot;
   if (!baseEstimate?.customerQuote) return;
-  const adjustedEstimate = applyExistingPipeCleaningAdjustment(baseEstimate, enabled);
+  const adjustedEstimate = await applyExistingPipeCleaningAdjustment(baseEstimate, enabled);
   if (!adjustedEstimate) return;
   activeQuoteEstimate = adjustedEstimate;
   pipeCleaningAdjustmentDirty = true;
@@ -2597,6 +2424,7 @@ async function handleSaveEstimate(mode = "update") {
       activateTab("quote");
       return;
     }
+    await ensureServerCalculation();
     const pipeCleaningSnapshot = isUpdate ? currentPipeCleaningDerivedEstimate() : null;
     const result = pipeCleaningSnapshot ? null : calculateForCurrentEstimate();
     if (!pipeCleaningSnapshot && isUpdate && shouldUseLoadedCostSnapshot() && snapshotCalculationMissingItems.length) {
@@ -2685,6 +2513,9 @@ async function onLoginSubmit(event) {
 }
 
 async function onLogoutClick() {
+  issuedContractEstimate = null;
+  preliminaryContractEstimate = null;
+  contractSourceView.reset();
   await signOut();
   cancelStaffPreview();
   activeQuoteEstimate = null;
@@ -2693,6 +2524,7 @@ async function onLogoutClick() {
   currentEditingEstimateId = null;
   cachedEstimates = [];
   currentProfile = null;
+  serverCalculation=null;serverCalculationPending=null;calculationGeneration++;
   contractOptionsState = null;
   contractPackagesState = [];
   contractPreviewState = null;
@@ -2793,7 +2625,8 @@ function onBeforeUnload(event) {
   event.returnValue = "";
 }
 
-function onPrintQuoteClick() {
+async function onPrintQuoteClick() {
+  if(canViewSystem()){try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){setSaveStatus(error.message);return;}}
   if (currentProfile?.role === "staff" && !activeQuoteEstimate?.customerQuote) {
     setSaveStatus("고객 견적 계산이 완료된 후 출력해 주세요.");
     return;
@@ -2802,9 +2635,10 @@ function onPrintQuoteClick() {
   window.print();
 }
 
-function onInternalPrintClick(event) {
+async function onInternalPrintClick(event) {
   const button = event.target?.closest?.("#printAdminDetailButton, #printAdminInternalButton, #printPurchaseOrderButton");
   if (!button) return;
+  if(canViewSystem()){try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){setSaveStatus(error.message);return;}}
   const estimate = currentEstimateForPrint();
   if (button.id === "printAdminDetailButton") {
     renderAdminDetailPrint(estimate);
@@ -3019,7 +2853,7 @@ async function onSavedEstimateAction(event) {
       if (activeQuoteEstimate?.id === deleteId) {
         activeQuoteEstimate = null;
         currentEditingEstimateId = null;
-        renderCustomerQuote(buildEstimateSnapshot(calculate()));
+        refresh();
       }
       renderSavedEstimateRows();
     } catch (error) {
@@ -3076,8 +2910,36 @@ mountPreliminaryEstimateView({
   onPrint: onPrintQuoteClick,
 });
 
+const contractSourceView = createContractSourceView({ document, request: requestProjectFoundation,
+  loadMode: loadProjectFoundationMode,
+  loadPreliminary: getEstimate,
+  canEdit: () => canEditContractPackageOptions(),
+  openPackage: loadContractPackageToPreview,
+  changed: error => { contractOptionsDirty = true; contractPreviewState = null; contractStatus(error || "저장되지 않은 계약 기준 변경사항이 있습니다.", error ? "error" : ""); },
+  selected: source => {
+    const d = source?.document, c = d?.context;
+    preliminaryContractEstimate = source?.preliminary || null;
+    issuedContractMode = source?.mode || "OFF";
+    issuedContractEstimate = d ? { id: source.estimate_id, projectName: c.project_name, clientName: c.client_name,
+      address: c.address, phone: c.phone, areaPyeong: c.area_pyeong, total: d.editor.summary.total, totalText: won(d.editor.summary.total) } : null;
+    contractPreviewState = null;
+    renderContractPackagePanel();
+    const save = document.getElementById("saveContractOptionsButton"); if (save) save.hidden = Boolean(d);
+  },
+});
+
 mountDetailedEstimateView({ document, request: requestProjectFoundation, loadMode: loadProjectFoundationMode,
   getContext: () => ({ estimateId: currentEditingEstimateId }),
+  onContract: async (head, version) => {
+    ensureContractPackagePanel();
+    const source = await contractSourceView.open(head, version);
+    const options = await loadContractOptions(source.estimate_id);
+    contractOptionsState = resolveContractOptionsForEstimate(options, issuedContractEstimate);
+    renderContractPackagePanel(issuedContractEstimate);
+    activateTab("admin");
+    document.getElementById("contractPackagePanel")?.scrollIntoView({ block: "start" });
+    if (source.linked_package_id) await loadContractPackageToPreview(source.linked_package_id);
+  },
 });
 
 export {
@@ -3086,11 +2948,8 @@ export {
   applyExistingPipeCleaningAdjustment,
   buildEstimateSnapshot,
   calculateForCurrentEstimate,
+  ensureServerCalculation,
   enterAuthenticatedApp,
   handleSaveEstimate,
   loadEstimateIntoUi,
 };
-
-function currentCalculationCore() {
-  return createEstimateCalculation({ rates, flooringSheetGradeOptions, flooringWoodGradeOptions, pipeCleaningAmount: PIPE_CLEANING_AMOUNT });
-}

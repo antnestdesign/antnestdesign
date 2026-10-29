@@ -198,11 +198,11 @@ describe("pure module dependency boundary", () => {
     expect(result.stdout.trim()).toBe("summary pure import PASS");
   });
 
-  test("only utils/core imports, no leaked globals, and one canonical definition per function", () => {
+  test("only public formatting utilities, no private calculator imports or leaked globals", () => {
     const source = readFileSync(moduleUrl, "utf8");
     const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", range: true });
     const imports = ast.body.filter((node) => node.type === "ImportDeclaration").map((node) => node.source.value);
-    expect(imports).toEqual(["./utils.js", "./calculator/estimate-core.js"]);
+    expect(imports).toEqual(["./utils.js"]);
     const scope = analyze(ast, { ecmaVersion: 2022, sourceType: "module" });
     expect([...new Set(scope.globalScope.through.map((reference) => reference.identifier.name))].sort()).toEqual(["Array", "Map", "Math", "Number"]);
     expect(source).not.toMatch(/\b(document|window|localStorage|sessionStorage|fetch|supabase|storage|currentProfile|activeQuoteEstimate|loadedEstimateBaseline)\b|\bel\./);

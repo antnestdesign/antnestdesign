@@ -327,6 +327,7 @@ function contractPrintHeader(title, info) {
       <dl>
         <div><dt>계약번호</dt><dd>${escapeHtml(info.contractNo)}</dd></div>
         <div><dt>프로젝트</dt><dd>${escapeHtml(info.projectName)}</dd></div>
+        ${info.issuedVersion ? `<div><dt>기준 견적</dt><dd>${escapeHtml(info.issuedSourceLabel)}</dd></div>` : ""}
         <div><dt>작성일</dt><dd>${formatDateTime(new Date().toISOString())}</dd></div>
       </dl>
     </header>
@@ -361,6 +362,10 @@ function renderContractDefinitionTable(rows) {
 }
 
 function renderContractAmountTable(info) {
+  if (info.issuedVersion) return renderContractDefinitionTable([
+    [["공급가액", contractPrintMoney(info.supplyAmount)], ["부가가치세", contractPrintMoney(info.vatAmount)]],
+    [["총 계약금액", `${contractPrintMoney(info.totalAmount)} (VAT 포함)`], ["비고", "발행 견적 기준"]],
+  ]);
   return renderContractDefinitionTable([
     [["공급가액", contractPrintMoney(info.totalAmount)], ["부가가치세", "별도"]],
     [["총 계약금액", `${contractPrintMoney(info.totalAmount)} (VAT 별도)`], ["비고", "-"]],
@@ -479,7 +484,7 @@ function renderContractQuotePrint(snapshot) {
           <div><dt>연락처</dt><dd>${escapeHtml(info.customerPhone)}</dd></div>
           <div><dt>공사현장</dt><dd>${escapeHtml(info.siteAddress)}</dd></div>
           <div><dt>평형</dt><dd>${escapeHtml(info.areaPyeong)}평</dd></div>
-          <div><dt>총 공사금액</dt><dd>${contractPrintMoney(info.totalAmount)} VAT 별도</dd></div>
+          <div><dt>총 공사금액</dt><dd>${contractPrintMoney(info.totalAmount)} VAT ${info.issuedVersion ? "포함" : "별도"}</dd></div>
         </dl>
       </section>
       <section class="contract-print-section">
@@ -491,7 +496,7 @@ function renderContractQuotePrint(snapshot) {
       </section>
       <footer>
         <div><span>총 공사금액</span><strong>${contractPrintMoney(info.totalAmount)}</strong></div>
-        <p>※ 부가세 별도 금액입니다.</p>
+        <p>${info.issuedVersion ? `공급가액 ${contractPrintMoney(info.supplyAmount)} · 부가세 ${contractPrintMoney(info.vatAmount)}` : "※ 부가세 별도 금액입니다."}</p>
         <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
       </footer>
       ${contractPrintFooter(info, (snapshot.parties || snapshot.parties_info)?.contractor)}

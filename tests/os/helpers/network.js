@@ -39,5 +39,6 @@ export function clearRequestLog() {
 }
 
 export function mutations() {
-  return requestLog.requests.filter(({ method }) => !["GET", "HEAD"].includes(method));
+  return requestLog.requests.filter(({ method, url }) => !["GET", "HEAD"].includes(method)
+    && !(method === "POST" && ["/api/os/estimates/calculate", "/api/os/estimates/preview", "/api/os/contract-packages/preview"].includes(url.pathname)));
 }

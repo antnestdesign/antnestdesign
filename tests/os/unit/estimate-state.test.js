@@ -5,13 +5,13 @@ import vm from "node:vm";
 import { parse } from "espree";
 import { describe, expect, test } from "vitest";
 import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "../../../public/os-app/src/estimate-form.js";
-import { buildEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides, buildEstimateRateUpdates, ESTIMATE_RATE_BINDINGS } from "../../../public/os-app/src/estimate-state.js";
+import { buildEstimateState as buildPublicEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides, buildEstimateRateUpdates, ESTIMATE_RATE_BINDINGS } from "../../../public/os-app/src/estimate-state.js";
 import { canonicalInputValues, isEstimateInputExcluded } from "../../../public/os-app/src/estimate-input.js";
-import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "../../../public/os-app/src/calculator/estimate-core.js";
-import { costSnapshotMap } from "../../../public/os-app/src/cost-snapshot.js";
-import { rateNumber } from "../../../public/os-app/src/utils.js";
+import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { estimateStateCases, createCaseElements, setElementValues, decodeStateValue } from "../fixtures/estimate-state-cases.js";
 
+const privateMarkup = Number(createEstimateCalculation().readState().targetMargin);
+const buildEstimateState = raw => buildPublicEstimateState(raw,privateMarkup);
 const golden = JSON.parse(readFileSync(new URL("../fixtures/estimate-state-characterization.json", import.meta.url), "utf8"));
 const excluded = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item]));
 const mainSource = readFileSync(new URL("../../../public/os-app/src/main.js", import.meta.url), "utf8");
@@ -97,7 +97,7 @@ describe("Phase 3C OLD vs NEW full-state characterization at bf22db7", () => {
   }
 });
 
-test("actual main orchestration synchronizes rates before form reads without DOM writes or identity replacement", () => {
+test("public form reads do not calculate or overwrite private rates", () => {
   const { dom, elements } = createCaseElements({ values: { rateLowerPerJa: "123456.75" } }, golden.initial.ids);
   const context = newContext();
   const ratesIdentity = context.rates;
@@ -110,9 +110,9 @@ test("actual main orchestration synchronizes rates before form reads without DOM
     trace.push(context.rates.lowerPerJa);
     return area.value;
   } };
-  const sandbox = vm.createContext({ el: elements, ...context, syncEstimateFormRates, readEstimateForm, buildEstimateState, PIPE_CLEANING_AMOUNT: context.pipeCleaningAmount });
+  const sandbox = vm.createContext({ el: elements, ...context, syncEstimateFormRates, readEstimateForm, buildEstimateState, privateDefaultMarkup:privateMarkup, PIPE_CLEANING_AMOUNT: context.pipeCleaningAmount });
   vm.runInContext(mainFunction("updateRatesFromAdmin") + "\n" + mainFunction("readState") + "\nglobalThis.result = readState();", sandbox);
-  expect(trace).toEqual([123456.75]);
+  expect(trace).toEqual([golden.initial.rates.lowerPerJa]);
   expect(context.rates).toBe(ratesIdentity);
   expect(context.rates.standardLighting).toBe(nestedIdentity);
   expect(context.flooringSheetGradeOptions.t20).toBe(sheetIdentity);
@@ -133,68 +133,19 @@ test("rate resolver is pure, retains zero/empty fallback and preserves fractiona
   expect(context).toStrictEqual(before);
 });
 
-test("calculation factory creation still precedes readState, including primitive pipe-rate timing", () => {
-  const entry = { checked: { sectionFinishEnabled: true, existingPipeCleaningEnabled: true }, values: { rateExistingPipeCleaning: "300123.25", rateLowerPerJa: "123456.75" } };
-  const oldForm = createCaseElements(entry, golden.initial.ids);
-  const newForm = createCaseElements(entry, golden.initial.ids);
-  const old = createOld(oldForm.elements);
-  const context = newContext();
-  const factories = [];
-  const sandbox = vm.createContext({ ...context, el: newForm.elements, PIPE_CLEANING_AMOUNT: context.pipeCleaningAmount, syncEstimateFormRates, readEstimateForm, buildEstimateState, createEstimateCalculation: (options) => {
-    factories.push(options.pipeCleaningAmount);
-    return createEstimateCalculation(options);
-  } });
-  vm.runInContext(["currentCalculationCore", "updateRatesFromAdmin", "readState", "calculate"].map(mainFunction).join("\n") + "\nglobalThis.run = calculate;", sandbox);
-  for (let repeat = 0; repeat < 2; repeat += 1) {
-    const oldCore = createEstimateCalculation(old.context());
-    const oldResult = oldCore.calculate(structuredClone(old.readState()));
-    expect(sandbox.run()).toStrictEqual(oldResult);
-  }
-  expect(factories).toEqual([300000, 300123.25]);
-  expect(sandbox.PIPE_CLEANING_AMOUNT).toBe(300123.25);
-  oldForm.dom.window.close();
-  newForm.dom.window.close();
-});
+test("public calculation accepts only a matching authenticated server cache",()=>{const value={state:{projectName:"synthetic"}},sandbox=vm.createContext({serverCalculation:{key:"current",result:value},serverCalculationKey:()=>"current"});vm.runInContext(mainFunction("calculate")+";globalThis.run=calculate",sandbox);expect(sandbox.run()).toBe(value);sandbox.serverCalculation.key="stale";expect(()=>sandbox.run()).toThrow();expect(mainSource).not.toContain("createEstimateCalculation");});
 
 test("form/state dependency direction is explicit and state has no DOM/storage/core reverse dependency", () => {
   const stateSource = readFileSync(new URL("../../../public/os-app/src/estimate-state.js", import.meta.url), "utf8");
   const stateAst = parse(stateSource, { ecmaVersion: "latest", sourceType: "module" });
   expect(stateAst.body.filter((node) => node.type === "ImportDeclaration")).toEqual([]);
   expect(stateSource).not.toMatch(/\b(document|window|localStorage|sessionStorage|fetch|supabase|currentProfile|activeQuoteEstimate|loadedEstimateBaseline)\b|\bel\./);
-  expect(mainFunction("readState")).toBe("function readState() {\n  updateRatesFromAdmin();\n  return buildEstimateState(readEstimateForm(el));\n}");
-  expect(mainFunction("calculate")).toBe("function calculate() { return currentCalculationCore().calculate(readState()); }");
+  expect(mainFunction("readState")).toBe("function readState() {\n  updateRatesFromAdmin();\n  return buildEstimateState(readEstimateForm(el),privateDefaultMarkup);\n}");
+  expect(mainFunction("calculate")).toContain("serverCalculation.result");
   expect(mainFunction("currentInputKey")).toContain("canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT)");
 });
 
-test("actual saved-cost adapter uses estimate-specific prices and restores operating prices even on failure", () => {
-  for (const shouldThrow of [false, true]) {
-    const { dom, elements } = createCaseElements({ values: { rateLowerPerJa: "123456.75" } }, golden.initial.ids);
-    const context = newContext();
-    const calls = [];
-    const sandbox = vm.createContext({
-      ...context, el: elements, PIPE_CLEANING_AMOUNT: context.pipeCleaningAmount,
-      COST_ITEM_DEFINITIONS, costSnapshotMap, rateNumber,
-      loadedEstimateBaseline: { estimate: { costSnapshot: { items: [{ itemCode: "CABINET_LOWER", costPrice: 654321.25 }] } } },
-      shouldUseLoadedCostSnapshot: () => true,
-      snapshotCalculationMissingItems: [],
-      requiredMissingSnapshotItems: () => [],
-      syncEstimateFormRates, readEstimateForm, buildEstimateState,
-      currentCalculationCore: () => ({ calculate(state) {
-        calls.push({ state, price: context.rates.lowerPerJa });
-        if (shouldThrow) throw new Error("synthetic calculation failure");
-        return { state };
-      } }),
-    });
-    vm.runInContext(["updateRatesFromAdmin", "readState", "calculate", "calculateForCurrentEstimate"].map(mainFunction).join("\n") + "\nglobalThis.run = calculateForCurrentEstimate;", sandbox);
-    if (shouldThrow) expect(() => sandbox.run()).toThrow("synthetic calculation failure");
-    else expect(sandbox.run().state).toStrictEqual(buildEstimateState(readEstimateForm(elements)));
-    expect(calls).toHaveLength(1);
-    expect(calls[0].price).toBe(654321.25);
-    expect(elements.rateLowerPerJa.value).toBe("123456.75");
-    expect(context.rates.lowerPerJa).toBe(123456.75);
-    dom.window.close();
-  }
-});
+test("public calculation adapter leaves rate inputs unchanged on success and failure",()=>{for(const fail of [false,true]){const {dom,elements}=createCaseElements({values:{rateLowerPerJa:"123456.75"}},golden.initial.ids);const result={state:{projectName:"synthetic"}},sandbox=vm.createContext({snapshotCalculationMissingItems:[],calculate:()=>{if(fail)throw Error("synthetic failure");return result;}});vm.runInContext(mainFunction("calculateForCurrentEstimate")+";globalThis.run=calculateForCurrentEstimate",sandbox);if(fail)expect(()=>sandbox.run()).toThrow("synthetic failure");else expect(sandbox.run()).toBe(result);expect(elements.rateLowerPerJa.value).toBe("123456.75");dom.window.close();}});
 
 test("form reader preserves primitive types and normalizer keeps integer/default/gating meanings separate", () => {
   const { dom, elements } = createCaseElements({ allChecked: true, values: { bathroomUnits: "2.9", kitchenCustomAppliancePrice: "0.5", baseLightingUnits: "-3", targetMargin: "0", carpentryCeilingHeight: "0" } }, golden.initial.ids);
