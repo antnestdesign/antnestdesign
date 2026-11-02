@@ -13,6 +13,7 @@ import LuxuryHouse from "./LuxuryHouse";
 import EntClinic from "./EntClinic";
 import CheongnaHallaVivaldi from "./CheongnaHallaVivaldi";
 import CheongnaHanwhaKkumegreen44A from "./CheongnaHanwhaKkumegreen44A";
+import CheongnaHanyangSujainLakeparkBlue from "./CheongnaHanyangSujainLakeparkBlue";
 import PrivateHouse from "./PrivateHouse";
 import ProjectLayout from "./ProjectLayout";
 import { projects } from "../../data/projects";
@@ -156,6 +157,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
   };
 
   const hasCustomPage =
+    slug === "cheongna-hanyang-sujain-lakepark-blue" ||
     slug === "cheongna-hanwha-kkumegreen-44a" ||
     slug === "cheongna-halla-vivaldi" ||
     slug === "ent-clinic" ||
@@ -187,6 +189,7 @@ export default async function ProjectPage({ params }: ProjectPageParams) {
       />
       {slug === "apartment-a" && <ApartmentA project={project} />}
       {slug === "apartment-b" && <ApartmentB />}
+      {slug === "cheongna-hanyang-sujain-lakepark-blue" && <CheongnaHanyangSujainLakeparkBlue />}
       {slug === "ent-clinic" && <EntClinic />}
       {slug === "cheongna-halla-vivaldi" && <CheongnaHallaVivaldi />}
       {slug === "cheongna-hanwha-kkumegreen-44a" && <CheongnaHanwhaKkumegreen44A />}
