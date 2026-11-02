@@ -31,10 +31,10 @@
 
 export const projects: Record<string, Project> = {
   "cheongna-hanwha-kkumegreen-44a": {
-    title: "인천 청라 한화꿈에그린 113.75㎡",
-    cardTitle: "인천 청라 한화꿈에그린 113.75㎡",
+    title: "인천 청라 한화꿈에그린 113.75A",
+    cardTitle: "인천 청라 한화꿈에그린 113.75A",
     seo: {
-      title: "인천 청라 한화꿈에그린 113.75㎡ 인테리어 | 깊이 있는 재료, 간결한 동선",
+      title: "인천 청라 한화꿈에그린 113.75A 인테리어 | 깊이 있는 재료, 간결한 동선",
       description: "인천 청라 한화꿈에그린 전용 113.75㎡·공급 148.48㎡의 2026년 인테리어 디자인 제안입니다. 짙은 우드와 석재, 브론즈 선반을 연결하고 주방과 라운지, 서재와 욕실의 수납 및 동선을 정리했습니다.",
     },
     category: "Residential Interior",
@@ -73,10 +73,10 @@ export const projects: Record<string, Project> = {
     status: "Design Proposal",
   },
   "cheongna-halla-vivaldi": {
-    title: "인천 청라 한라비발디",
-    cardTitle: "인천 청라 한라비발디",
+    title: "인천 청라 한라비발디 145.32B",
+    cardTitle: "인천 청라 한라비발디 145.32B",
     seo: {
-      title: "인천 청라 한라비발디 43B 인테리어 | 소재와 빛으로 이어지는 집",
+      title: "인천 청라 한라비발디 145.32B 인테리어 | 소재와 빛으로 이어지는 집",
       description: "인천 청라 한라비발디 145.32B㎡ · 43B 아파트 디자인 제안입니다. 화이트 광폭마루와 웜화이트 벽지, 우드와 석재, 패브릭을 연결하고 은은한 조명으로 일상의 공간을 구성했습니다.",
     },
     category: "Residential Interior",
