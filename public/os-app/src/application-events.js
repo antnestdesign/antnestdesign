@@ -7,6 +7,8 @@ el.projectSearch?.addEventListener("input", actions.onProjectSearchInput);
 
 document.getElementById("loadProjectButton")?.addEventListener("click", actions.onLoadProjectClick);
 
+document.getElementById("newEstimateButton")?.addEventListener("click", actions.onNewEstimateClick);
+
 document.getElementById("saveEstimateButton")?.addEventListener("click", actions.onSaveEstimateClick);
 
 document.getElementById("saveAsNewEstimateButton")?.addEventListener("click", actions.onSaveAsNewEstimateClick);

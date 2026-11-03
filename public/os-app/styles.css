@@ -195,6 +195,15 @@ label {
   color: #e9e2dd;
 }
 
+.new-estimate-button {
+  margin-top: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 input,
 select {
   min-height: 42px;

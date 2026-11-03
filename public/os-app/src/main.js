@@ -385,6 +385,10 @@ let passwordChangeBusy = false;
 let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
+let newEstimateInputBaseline = null;
+let newEstimatePrivateDefaults = {};
+let estimateNavigationGeneration = 0;
+let contractContextGeneration = 0;
 let pipeCleaningAdjustmentDirty = false;
 let lastRenderedEstimateSnapshot = null;
 let contractOptionsState = null;
@@ -612,6 +616,7 @@ function renderContractPackagePanel(estimate = selectedContractEstimate()) {
 }
 
 async function refreshContractPackagePanel(estimate = selectedContractEstimate()) {
+  const generation = ++contractContextGeneration;
   ensureContractPackagePanel();
   if (!estimate?.id || !canViewContractPackage()) {
     renderContractPackagePanel(null);
@@ -623,14 +628,17 @@ async function refreshContractPackagePanel(estimate = selectedContractEstimate()
       loadContractOptions(estimate.id),
       loadContractPackages(estimate.id),
     ]);
+    if (generation !== contractContextGeneration) return;
     contractOptionsState = resolveContractOptionsForEstimate(options, estimate);
     contractPackagesState = Array.isArray(packages) ? packages : [];
     contractPreviewState = null;
     contractOptionsDirty = false;
     renderContractPackagePanel(estimate);
     await contractSourceView.load(estimate.id);
+    if (generation !== contractContextGeneration) return;
     contractStatus("계약 정보를 불러왔습니다.", "success");
   } catch (error) {
+    if (generation !== contractContextGeneration) return;
     console.error("계약 패키지 조회 실패", error);
     contractStatus(error.message || "계약 정보를 불러오지 못했습니다.", "error");
     renderContractPackagePanel(estimate);
@@ -2276,7 +2284,9 @@ async function enterAuthenticatedApp(profile) {
   }
   await loadRateSettings();
   costManagementDefaults=null;
-  if(canViewSystem()){const config=await loadPrivateEstimateDefaults();costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
+  newEstimatePrivateDefaults = {};
+  if(canViewSystem()){const config=await loadPrivateEstimateDefaults();newEstimatePrivateDefaults={...config.defaults};costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
+  newEstimateInputBaseline = currentInputKey();
   setAuthenticated(true);
   applyAccessControl();
   refresh();
@@ -2361,6 +2371,8 @@ let saveEstimateInProgress = false;
 function setSaveStatus(message) {
   const status = document.getElementById("saveStatus");
   if (status) status.textContent = message;
+  const saveButton = document.getElementById("saveEstimateButton");
+  if (saveButton) saveButton.textContent = currentEditingEstimateId ? "견적 수정" : "견적 저장";
 }
 
 function handleEstimateInputChanged() {
@@ -2388,8 +2400,10 @@ async function handleExistingPipeCleaningChanged() {
   const enabled = Boolean(el.existingPipeCleaningEnabled?.checked);
   const baseEstimate = activeQuoteEstimate || loadedEstimateBaseline?.estimate || lastRenderedEstimateSnapshot;
   if (!baseEstimate?.customerQuote) return;
+  const generation = estimateNavigationGeneration;
+  const estimateId = currentEditingEstimateId;
   const adjustedEstimate = await applyExistingPipeCleaningAdjustment(baseEstimate, enabled);
-  if (!adjustedEstimate) return;
+  if (!adjustedEstimate || generation !== estimateNavigationGeneration || estimateId !== currentEditingEstimateId) return;
   activeQuoteEstimate = adjustedEstimate;
   pipeCleaningAdjustmentDirty = true;
   renderEstimateSnapshotOnly(adjustedEstimate);
@@ -2399,6 +2413,8 @@ async function handleExistingPipeCleaningChanged() {
 async function handleSaveEstimate(mode = "update") {
   if (saveEstimateInProgress) return;
   saveEstimateInProgress = true;
+  const newEstimateButton = document.getElementById("newEstimateButton");
+  if (newEstimateButton) newEstimateButton.disabled = true;
   try {
     setSaveStatus("저장 준비 중입니다.");
     const isUpdate = mode === "update";
@@ -2477,6 +2493,7 @@ async function handleSaveEstimate(mode = "update") {
     alert(error.message || "견적 저장에 실패했습니다.");
   } finally {
     saveEstimateInProgress = false;
+    if (newEstimateButton) newEstimateButton.disabled = false;
   }
 }
 
@@ -2555,9 +2572,10 @@ function onProjectSearchInput() {
 async function onLoadProjectClick() {
   const id = el.projectSearchResults.value;
   if (!id) return;
+  const generation = ++estimateNavigationGeneration;
   try {
     const estimate = await getEstimate(id);
-    if (!estimate) return;
+    if (!estimate || generation !== estimateNavigationGeneration) return;
     loadEstimateIntoUi(estimate);
   } catch (error) {
     console.error("프로젝트 불러오기 실패", error);
@@ -2565,7 +2583,57 @@ async function onLoadProjectClick() {
   }
 }
 
-function onSaveEstimateClick() { return handleSaveEstimate("update"); }
+function onNewEstimateClick() {
+  if (!currentProfile) return;
+  if (saveEstimateInProgress || contractBusy) {
+    setSaveStatus("저장 작업이 끝난 뒤 새 견적을 작성해 주세요.");
+    return;
+  }
+  const dirty = loadedEstimateBaseline
+    ? !loadedEstimateMatchesCurrentInputs() || pipeCleaningAdjustmentDirty
+    : newEstimateInputBaseline !== null && currentInputKey() !== newEstimateInputBaseline;
+  if ((dirty || contractOptionsDirty) && !confirm("저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 견적을 작성할까요?")) return;
+  estimateNavigationGeneration++;
+  contractContextGeneration++;
+  cancelStaffPreview();
+  calculationGeneration++;
+  serverCalculation = null;
+  serverCalculationPending = null;
+  activeQuoteEstimate = null;
+  loadedEstimateBaseline = null;
+  lastRenderedEstimateSnapshot = null;
+  currentEditingEstimateId = null;
+  pipeCleaningAdjustmentDirty = false;
+  snapshotCalculationMissingItems = [];
+  loadedContractEstimateState = null;
+  contractOptionsState = null;
+  contractPackagesState = [];
+  contractPreviewState = null;
+  contractOptionsDirty = false;
+  contractSelectedDocumentType = "CONTRACT";
+  issuedContractEstimate = null;
+  preliminaryContractEstimate = null;
+  contractSourceView.reset();
+  restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults });
+  el.projectSearch.value = "";
+  el.projectSearchResults.value = "";
+  newEstimateInputBaseline = currentInputKey();
+  estimateView.renderCustomerQuote(null);
+  estimateView.renderPurchaseOrder([]);
+  renderAdminProcessTotals(null);
+  renderCostSnapshotInfo(null);
+  document.getElementById("printQuoteSheet")?.replaceChildren();
+  renderInternalRows([]);
+  for (const id of ["internalCost", "internalRevenue", "internalProfit", "internalMargin"]) setText(id, "—");
+  setText("clientTotal", customerWon(0));
+  renderContractPackagePanel(null);
+  activateTab("client");
+  refresh();
+  el.projectName.focus();
+  document.getElementById("client")?.scrollIntoView?.({ block: "start" });
+}
+
+function onSaveEstimateClick() { return handleSaveEstimate(currentEditingEstimateId ? "update" : "new"); }
 
 function onSaveAsNewEstimateClick() { return handleSaveEstimate("new"); }
 
@@ -2573,7 +2641,7 @@ function onDelegatedSaveClick(event) {
   const button = event.target?.closest?.("#saveEstimateButton, #saveAsNewEstimateButton");
   if (!button) return;
   event.preventDefault();
-  handleSaveEstimate(button.id === "saveAsNewEstimateButton" ? "new" : "update");
+  handleSaveEstimate(button.id === "saveAsNewEstimateButton" || !currentEditingEstimateId ? "new" : "update");
 }
 
 function onContractOptionsInput(event) {
@@ -2835,9 +2903,10 @@ async function onSavedEstimateAction(event) {
   const deleteId = event.target?.dataset?.deleteEstimate;
   if (!openId && !deleteId) return;
   if (openId) {
+    const generation = ++estimateNavigationGeneration;
     try {
       const estimate = await getEstimate(openId);
-      if (!estimate) return;
+      if (!estimate || generation !== estimateNavigationGeneration) return;
       loadEstimateIntoUi(estimate);
       if (isAdmin()) activateTab("admin");
     } catch (error) {
@@ -2881,7 +2950,7 @@ function bootstrap() {
   removeLegacyAdminEstimatePanels();
   bindPasswordChangeShell();
   bindApplicationEvents({ document, window, elements: el, actions: {
-    onLoginSubmit, onLogoutClick, onProjectSearchInput, onLoadProjectClick, onSaveEstimateClick, onSaveAsNewEstimateClick, onDelegatedSaveClick, onContractOptionsInput, onContractOptionsChange, onContractActionClick, onBeforeUnload, onPrintQuoteClick, onInternalPrintClick, onSystemActionClick, onCostCategoryClick, onUserActionClick, onReloadAuditClick, onCostItemSubmitClick, onManagementSubmit, onCostSearchInput, onCostFilterChange, onSaveRateDbClick, onCompareCostSnapshotClick, onInternalEstimateToggle, onInternalTradeToggle, onSavedEstimateAction, onStaffQuoteAction,
+    onLoginSubmit, onLogoutClick, onProjectSearchInput, onLoadProjectClick, onNewEstimateClick, onSaveEstimateClick, onSaveAsNewEstimateClick, onDelegatedSaveClick, onContractOptionsInput, onContractOptionsChange, onContractActionClick, onBeforeUnload, onPrintQuoteClick, onInternalPrintClick, onSystemActionClick, onCostCategoryClick, onUserActionClick, onReloadAuditClick, onCostItemSubmitClick, onManagementSubmit, onCostSearchInput, onCostFilterChange, onSaveRateDbClick, onCompareCostSnapshotClick, onInternalEstimateToggle, onInternalTradeToggle, onSavedEstimateAction, onStaffQuoteAction,
     onPipeCleaningChanged: handleExistingPipeCleaningChanged,
     onEstimateInput: handleBoundEstimateInput,
   } });
