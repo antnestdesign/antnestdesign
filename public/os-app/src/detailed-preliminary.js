@@ -21,6 +21,7 @@ export function buildPreliminaryPlan(reference, sourceId) {
   const one = (code, key, label, gate = true) => { if (gate && enabled(key)) add(code, 1, [key], label, "option"); };
   const ja = (code, key, label, gate, spec = "", part = "") => { if (gate && positive(i[key])) add(code, Math.ceil(Number(i[key]) / 300), [key], `${label} ${i[key]}mm ÷ 300, 올림`, "conversion", spec, part); };
   if (section("Demolition")) {
+    if (enabled("demolitionBasicEnabled")) review("demolition", `기본철거(${i.demolitionBasicType === "special" ? "특수" : "일반"})`, ["demolitionBasicEnabled", "demolitionBasicType", "demolitionBasicArea"], `독립 공사 · 입력 면적 ${positive(i.demolitionBasicArea) ? i.demolitionBasicArea : "미확인"}평. 대응 원가 마스터가 없어 현장 품목과 원가 확인이 필요합니다. 마루·가구·천장 철거에 포함하거나 차감하지 않습니다.`);
     if (enabled("demolitionFloorEnabled")) {
       const code = { wood: "DEMO_FLOOR_WOOD", decoTile: "DEMO_FLOOR_DECOTILE" }[i.demolitionFloorMaterial];
       if (code && positive(i.areaPyeong)) add(code, Number(i.areaPyeong), ["demolitionFloorEnabled", "demolitionFloorMaterial", "areaPyeong"], "가견적 평형 기준 · 철거 공간 실측 확인", "estimate");
@@ -33,6 +34,9 @@ export function buildPreliminaryPlan(reference, sourceId) {
     for (const [code, key] of [["DEMO_ELEVATOR_PROTECT", "demolitionElevatorProtectEnabled"], ["DEMO_ELEVATOR_PROTECT_REMOVAL", "demolitionElevatorProtectRemovalEnabled"], ["PERMIT_CONSTRUCTION", "demolitionPermitEnabled"], ["PERMIT_CONSENT", "demolitionConsentEnabled"]]) one(code, key, "가견적 선택 · 기본 1식");
   }
   if (section("Electrical")) {
+    for (const [label, gate, key] of [["콘센트 위치 이동", "electricalOutletMoveEnabled", "electricalOutletMoveUnits"], ["스위치 위치 이동", "electricalSwitchMoveEnabled", "electricalSwitchMoveUnits"]]) {
+      if (enabled(gate)) review("electrical", label, [gate, key], `이동 수량 ${positive(i[key]) ? Math.floor(Number(i[key])) : "미확인"}개. 기존 설치와 별도 공사이며 대응 원가 마스터가 없어 현장 품목과 원가 확인이 필요합니다.`);
+    }
     const lighting = !Object.hasOwn(i, "standardLightingEnabled") || enabled("standardLightingEnabled");
     for (const [code, key] of [["ELEC_DOWNLIGHT", "standardDownlightUnits"], ["ELEC_SQUARE_LIGHT", "standardSquareLightUnits"], ["ELEC_CYLINDER_LIGHT", "standardCylinderLightUnits"], ["ELEC_T3_PER_M", "standardT3M"]]) number(code, key, "가견적 조명 직접 입력", lighting);
     one("ELEC_BED_WALL_LIGHT", "standardBedWallLightEnabled", "침대 벽등 기본 1식"); one("ELEC_STANDARD_SWITCH", "standardSwitchEnabled", "스위치 기본 1식", lighting);
@@ -69,6 +73,9 @@ export function buildPreliminaryPlan(reference, sourceId) {
     else review("flooring", "바닥 공사", ["flooringArea", "flooringMaterialType", "flooringWoodGrade", "flooringSheetGrade"], "저장된 바닥 종류·등급의 명확한 대응이 없어 확인이 필요합니다.");
   }
   if (section("Carpentry")) {
+    for (const [label, gate, key] of [["천장몰딩 자재", "carpentryMoldingEnabled", "carpentryMoldingLengthM"], ["걸레받이 자재", "carpentryBaseboardEnabled", "carpentryBaseboardLengthM"]]) {
+      if (enabled(gate) && Object.hasOwn(i, key)) review("carpentry", label, [gate, key], `시공 길이 ${positive(i[key]) ? Number(i[key]) * 1000 : "미확인"}mm. 자재와 기존 목수 인건비의 적용 범위를 확인해 주세요. 대응 자재 원가 마스터가 없어 다른 목공 품목으로 자동 대체하지 않습니다.`);
+    }
     for (const [code, key] of [["WOOD_CURTAIN_BOX", "carpentryCurtainBoxUnits"], ["WOOD_ARTWALL", "carpentryArtwallM"], ["WOOD_PARTITION", "carpentryPartitionM"], ["WOOD_HIDDEN_DOOR", "carpentryHiddenDoorUnits"], ["WOOD_LINE_LIGHT", "carpentryLineLightM"], ["WOOD_INDIRECT_LIGHT", "carpentryIndirectLightUnits"], ["WOOD_DROP_CEILING", "carpentryDropCeilingUnits"]]) {
       if (positive(i[key])) { const length = standardById(`std-${code}`).unit === "m"; add(code, Number(i[key]) / (length ? 1000 : 1), [key], length ? "가견적 길이 mm → m" : "가견적 개소 직접 입력", length ? "conversion" : "input"); }
     }
@@ -105,6 +112,18 @@ export function buildPreliminaryPlan(reference, sourceId) {
   }
   if (enabled("windowNoticeEnabled")) review("finish", "창호·냉난방기 별도 견적", ["windowNoticeEnabled"], "별도 견적 경계를 유지합니다. 포함으로 자동 변경하지 않습니다.");
   const tradeLabels = { "철거": "demolition", "전기/조명": "electrical", "욕실": "bathroom", "도배": "wallpaper", "필름": "film", "바닥": "flooring", "목공": "carpentry", "가구": "furniture", "마감": "finish", "기타": "finish", "도어/창호": "carpentry" };
+  // The deployed reference RPC has a fixed legacy input whitelist. Do not silently
+  // omit new work when its public output survives but its quantity fields do not.
+  for (const [trade, pattern, key] of [
+    ["demolition", /^기본철거\(/, "demolitionBasicEnabled"],
+    ["electrical", /^콘센트 위치 이동$/, "electricalOutletMoveEnabled"],
+    ["electrical", /^스위치 위치 이동$/, "electricalSwitchMoveEnabled"],
+    ["carpentry", /^천장몰딩 자재$/, "carpentryMoldingLengthM"],
+    ["carpentry", /^걸레받이 자재$/, "carpentryBaseboardLengthM"],
+  ]) if (!Object.hasOwn(i, key)) {
+    const item = (reference?.customerQuote?.groups || []).flatMap(g => g.items || []).find(r => pattern.test(r.name));
+    if (item) review(trade, item.name, [], "현재 참조 사본 형식에서 신규 입력의 유형·수량·길이가 전달되지 않았습니다. 원본 가견적의 해당 공사를 확인해 현장 품목과 수량을 명시적으로 연결해야 합니다. 판매금액을 수량이나 본견적 단가로 역산하지 않습니다.");
+  }
   for (const group of reference?.customerQuote?.groups || []) {
     const trade = tradeLabels[group.label];
     if (Number(group.total) > 0 && (!trade || (!rows.some(r => r.trade === trade) && !reviews.some(r => r.trade === trade)))) review(trade || "finish", `저장 가견적 ${group.label}`, [], `입력 근거가 부족하여 자동 연결하지 않았습니다. ${(group.items || []).map(r => r.name).join(", ")} 내용을 확인해 주세요.`);

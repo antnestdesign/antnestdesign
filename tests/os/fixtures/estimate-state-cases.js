@@ -32,6 +32,12 @@ export const estimateStateCases = [
 export function createCaseElements(entry, ids) {
   const dom = new JSDOM(readFileSync(new URL("../../../public/os-app/index.html", import.meta.url), "utf8"));
   const elements = Object.fromEntries(ids.map((id) => [id, dom.window.document.getElementById(id)]));
+  // This fixture models the historical metre-based DOM captured by the golden file.
+  // The actual mm screen and persistence boundary are covered by estimate-length tests.
+  for (const input of Object.values(elements)) if (input?.dataset?.lengthUnit === "mm") {
+    input.value = String(Number(input.value) / 1000);
+    delete input.dataset.lengthUnit;
+  }
   // These privileged characterization fixtures model defaults delivered after authorization.
   for(const id of PRIVATE_ESTIMATE_INPUTS)if(elements[id])elements[id].value=ESTIMATE_INPUT_SCHEMA[id].value;
   for (const [id, input] of Object.entries(elements)) {

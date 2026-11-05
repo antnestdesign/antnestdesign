@@ -6,6 +6,8 @@ import { createEstimateCalculation, COST_ITEM_DEFINITIONS } from "../../../app/a
 import { isEstimateInputExcluded } from "../../../public/os-app/src/estimate-input.js";
 import { latestEstimate, testProfile, TEST_ADDRESS } from "../fixtures/estimates.js";
 import { createEstimateDatabase, mountOs, flushAsyncWork } from "../helpers/os-harness.js";
+import { legacyWorkFields } from "../helpers/preliminary-work-compat.js";
+import { storedEstimateInputValue } from "../../../public/os-app/src/estimate-length.js";
 
 const golden = JSON.parse(readFileSync(resolve("tests/os/fixtures/estimate-state-characterization.json"), "utf8"));
 async function mountWithCapturedElements(database, profile) {
@@ -24,7 +26,7 @@ async function mountWithCapturedElements(database, profile) {
 }
 function oldStateForCurrentForm(elements) {
   const context = vm.createContext({
-    el: Object.fromEntries(golden.initial.ids.map((id) => [id, elements[id] || null])),
+    el: Object.fromEntries(golden.initial.ids.map((id) => [id, elements[id]?.dataset?.lengthUnit === "mm" ? { value: storedEstimateInputValue(elements[id]), checked: elements[id].checked, type: elements[id].type } : elements[id] || null])),
     COST_ITEM_BY_INPUT: Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item])),
     isEstimateInputExcluded, syncSectionLocks() {}, syncBlockLocks() {},
     bathroomRates: structuredClone(golden.initial.rates.bathroom),
@@ -50,16 +52,16 @@ test("composed form/state result reaches the existing admin snapshot, update pay
   const oldCalculation = createEstimateCalculation(old.config).calculate(old.state);
   await main.ensureServerCalculation();
   const calculation = main.calculateForCurrentEstimate();
-  expect(calculation.state).toStrictEqual(old.state);
-  expect(calculation).toStrictEqual(oldCalculation);
+  expect(legacyWorkFields(calculation.state)).toStrictEqual(old.state);
+  expect({ ...calculation, state: legacyWorkFields(calculation.state) }).toStrictEqual(oldCalculation);
   const expectedSnapshot = main.buildEstimateSnapshot(oldCalculation, { address: TEST_ADDRESS, costSnapshot: fixture.costSnapshot });
-  expect(expectedSnapshot.inputs).toStrictEqual(old.inputs);
+  expect(legacyWorkFields(expectedSnapshot.inputs)).toStrictEqual(old.inputs);
   await main.handleSaveEstimate("update");
   await flushAsyncWork();
   const mutation = database.mutations.find((entry) => entry.method === "PATCH");
   expect(mutation).toBeDefined();
   const saved = mutation.body.estimate_data;
-  expect(saved.inputs).toStrictEqual(old.inputs);
+  expect(legacyWorkFields(saved.inputs)).toStrictEqual(old.inputs);
   expect(saved.address).toBe(TEST_ADDRESS);
   expect(saved.costSnapshot).toStrictEqual(fixture.costSnapshot);
   expect(saved.internalDetails).toStrictEqual(expectedSnapshot.internalDetails);
@@ -71,7 +73,7 @@ test("composed form/state result reaches the existing admin snapshot, update pay
   const restored = await storage.getEstimate(fixture.id);
   main.loadEstimateIntoUi(restored);
   await flushAsyncWork();
-  expect(main.calculateForCurrentEstimate().state).toStrictEqual(old.state);
+  expect(legacyWorkFields(main.calculateForCurrentEstimate().state)).toStrictEqual(old.state);
   expect(restored.inputs).toStrictEqual(saved.inputs);
   expect(restored.internalDetails).toStrictEqual(saved.internalDetails);
   expect(restored.customerQuote.groups).toStrictEqual(saved.customerQuote.groups);

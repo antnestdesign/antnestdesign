@@ -14,6 +14,7 @@ import { COST_ITEM_DEFINITIONS } from "../../../../../../public/os-app/src/cost-
 export { COST_ITEM_DEFINITIONS };
 
 export function createEstimateCalculation(options = {}) {
+const workRates = { basicNormal: 80000, basicSpecial: 120000, moldingMaterial: 1800, baseboardMaterial: 2100, outletMove: 150000, switchMove: 150000 };
 const rates = options.rates ?? structuredClone({
   lowerPerJa: 120000,
   upperPerJa: 90000,
@@ -858,6 +859,17 @@ function calculate(state) {
 
   addUnitDetail(details, {
     group: "demolition",
+    item: `기본철거(${state.demolitionBasicType === "special" ? "특수" : "일반"})`,
+    enabled: state.demolitionBasicEnabled && Number.isFinite(state.demolitionBasicArea),
+    input: `${state.demolitionBasicArea}평`,
+    quantity: `${state.demolitionBasicArea}평`,
+    unitPrice: state.demolitionBasicType === "special" ? workRates.basicSpecial : workRates.basicNormal,
+    units: state.demolitionBasicArea,
+    margin,
+    correction: state.corrections.option,
+  });
+  addUnitDetail(details, {
+    group: "demolition",
     item: floorDemolitionLabel(state.demolitionFloorMaterial),
     enabled: state.demolitionFloorEnabled,
     input: `${state.areaPyeong}평`,
@@ -944,6 +956,11 @@ function calculate(state) {
     margin,
     correction: state.corrections.option,
   });
+
+  for (const [item, enabled, units, unitPrice] of [
+    ["콘센트 위치 이동", state.electricalOutletMoveEnabled, state.electricalOutletMoveUnits, workRates.outletMove],
+    ["스위치 위치 이동", state.electricalSwitchMoveEnabled, state.electricalSwitchMoveUnits, workRates.switchMove],
+  ]) addUnitDetail(details, { group: "electrical", item, enabled: enabled && Number.isFinite(units), input: `${units}개`, quantity: `${units}개`, unitPrice, units, margin, correction: state.corrections.option });
 
   const electricalDays = state.electricalAgeType === "under10" ? rates.electrical.under10YearsDays : rates.electrical.over10YearsDays;
   addUnitDetail(details, {
@@ -1262,6 +1279,11 @@ function calculate(state) {
     margin,
     correction: state.corrections.option,
   });
+
+  for (const [item, enabled, units, unitPrice] of [
+    ["천장몰딩 자재", state.carpentryMoldingEnabled, state.carpentryMoldingLengthM, workRates.moldingMaterial],
+    ["걸레받이 자재", state.carpentryBaseboardEnabled, state.carpentryBaseboardLengthM, workRates.baseboardMaterial],
+  ]) addUnitDetail(details, { group: "carpentry", item, enabled: enabled && Number.isFinite(units), input: `${units}m`, quantity: `${units}m`, unitPrice, units, margin, correction: state.corrections.option });
 
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
@@ -1599,7 +1621,17 @@ function readState(inputs = {}) {
   const furnitureSection = checkedValue("sectionFurnitureEnabled");
   const finishSection = checkedValue("sectionFinishEnabled");
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
+  const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    demolitionBasicEnabled: demolitionSection && checkedValue("demolitionBasicEnabled"),
+    demolitionBasicType: el.demolitionBasicType.value === "special" ? "special" : "normal",
+    demolitionBasicArea: nonnegative("demolitionBasicArea"),
+    electricalOutletMoveEnabled: electricalSection && checkedValue("electricalOutletMoveEnabled"),
+    electricalOutletMoveUnits: Math.floor(nonnegative("electricalOutletMoveUnits")),
+    electricalSwitchMoveEnabled: electricalSection && checkedValue("electricalSwitchMoveEnabled"),
+    electricalSwitchMoveUnits: Math.floor(nonnegative("electricalSwitchMoveUnits")),
+    carpentryMoldingLengthM: nonnegative("carpentryMoldingLengthM"),
+    carpentryBaseboardLengthM: nonnegative("carpentryBaseboardLengthM"),
     projectName: el.projectName.value || "상담 프로젝트",
     areaPyeong: numberValue("areaPyeong"),
     clientName: el.clientName.value || "",
@@ -1760,6 +1792,9 @@ function readState(inputs = {}) {
 const correctionValue = (id) => numberValue(id) / 100;
 function effectiveEstimateInputOverrides(state) {
   return {
+    demolitionBasicEnabled: state.demolitionBasicEnabled,
+    electricalOutletMoveEnabled: state.electricalOutletMoveEnabled,
+    electricalSwitchMoveEnabled: state.electricalSwitchMoveEnabled,
     demolitionFloorEnabled: state.demolitionFloorEnabled,
     demolitionFurnitureEnabled: state.demolitionFurnitureEnabled,
     demolitionBathroomEnabled: state.demolitionBathroomEnabled,

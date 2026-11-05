@@ -7,6 +7,7 @@ import { describe, expect, test } from "vitest";
 import { readEstimateForm, collectEstimateFormValues, syncEstimateFormRates, normalizeIntegerInput } from "../../../public/os-app/src/estimate-form.js";
 import { buildEstimateState as buildPublicEstimateState, composeEstimateInputs, effectiveEstimateInputOverrides, buildEstimateRateUpdates, ESTIMATE_RATE_BINDINGS } from "../../../public/os-app/src/estimate-state.js";
 import { canonicalInputValues, isEstimateInputExcluded } from "../../../public/os-app/src/estimate-input.js";
+import { legacyWorkFields } from "../helpers/preliminary-work-compat.js";
 import { COST_ITEM_DEFINITIONS, createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { estimateStateCases, createCaseElements, setElementValues, decodeStateValue } from "../fixtures/estimate-state-cases.js";
 
@@ -14,7 +15,7 @@ const privateMarkup = Number(createEstimateCalculation().readState().targetMargi
 const buildEstimateState = raw => buildPublicEstimateState(raw,privateMarkup);
 const golden = JSON.parse(readFileSync(new URL("../fixtures/estimate-state-characterization.json", import.meta.url), "utf8"));
 const excluded = Object.fromEntries(COST_ITEM_DEFINITIONS.map((item) => [item.inputId, item]));
-const mainSource = readFileSync(new URL("../../../public/os-app/src/main.js", import.meta.url), "utf8");
+const mainSource = readFileSync(new URL("../../../public/os-app/src/main.js", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const mainAst = parse(mainSource, { ecmaVersion: "latest", sourceType: "module", range: true });
 function mainFunction(name) {
   const node = mainAst.body.find((node) => node.id?.name === name);
@@ -78,17 +79,17 @@ describe("Phase 3C OLD vs NEW full-state characterization at bf22db7", () => {
         } else {
           const oldState = structuredClone(old.readState());
           const state = readNew();
-          const inputs = composeEstimateInputs(collectEstimateFormValues(newForm.elements, excluded), state);
-          const result = { state, ...structuredClone(context), inputs, canonical: canonicalInputValues(inputs, excluded) };
-          expect(state).toStrictEqual(oldState);
+          const inputs = legacyWorkFields(composeEstimateInputs(collectEstimateFormValues(newForm.elements, excluded), state));
+          const result = { state: legacyWorkFields(state), ...structuredClone(context), inputs, canonical: canonicalInputValues(inputs, excluded) };
+          expect(legacyWorkFields(state)).toStrictEqual(oldState);
           expect(result).toStrictEqual(expected);
           expect(structuredClone(old.context())).toStrictEqual(context);
           expect(inputs).toStrictEqual(structuredClone({ ...old.collectInputValues(), ...old.effectiveEstimateInputOverrides(oldState) }));
-          expect(Object.keys(state)).toEqual(Object.keys(oldState));
+          expect(Object.keys(legacyWorkFields(state))).toEqual(Object.keys(oldState));
           // The shared core consumes the same typed state; it is not re-normalized as schema input.
           const oldCalculation = createEstimateCalculation(structuredClone(old.context())).calculate(oldState);
           const newCalculation = createEstimateCalculation(structuredClone(context)).calculate(state);
-          expect(newCalculation).toStrictEqual(oldCalculation);
+          expect({ ...newCalculation, state: legacyWorkFields(newCalculation.state) }).toStrictEqual(oldCalculation);
         }
       }
       oldForm.dom.window.close();

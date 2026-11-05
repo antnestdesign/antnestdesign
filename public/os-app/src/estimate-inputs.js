@@ -1,4 +1,17 @@
+export const PRELIMINARY_WORK_INPUT_SCHEMA = {
+  demolitionBasicEnabled: { type: "checkbox", value: false },
+  demolitionBasicType: { type: "select-one", value: "normal", choices: ["normal", "special"] },
+  demolitionBasicArea: { type: "number", value: "0", min: 0 },
+  electricalOutletMoveEnabled: { type: "checkbox", value: false },
+  electricalOutletMoveUnits: { type: "number", value: "0", min: 0 },
+  electricalSwitchMoveEnabled: { type: "checkbox", value: false },
+  electricalSwitchMoveUnits: { type: "number", value: "0", min: 0 },
+  carpentryMoldingLengthM: { type: "number", value: "0", min: 0 },
+  carpentryBaseboardLengthM: { type: "number", value: "0", min: 0 },
+};
+
 export const ESTIMATE_INPUT_SCHEMA = {
+  ...PRELIMINARY_WORK_INPUT_SCHEMA,
   "estimateStatus": { "type": "select", "value": "견적", "choices": ["견적","계약","착공","준공"] },
   "projectName": {
     "type": "text",

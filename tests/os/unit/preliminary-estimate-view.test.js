@@ -6,6 +6,7 @@ import { readEstimateForm, collectEstimateFormValues } from "../../../public/os-
 import { buildEstimateState } from "../../../public/os-app/src/estimate-state.js";
 import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { latestEstimate } from "../fixtures/estimates.js";
+import { PRELIMINARY_WORK_INPUT_SCHEMA } from "../../../public/os-app/src/estimate-inputs.js";
 
 const html = readFileSync("public/os-app/index.html", "utf8");
 let view;
@@ -29,14 +30,15 @@ function values() { return inputs().map(node => ({ id: node.id, attributes: node
 test("all 145 original controls retain identity, attributes, values, disabled state and unique IDs", () => {
   const original = inputs();
   const before = values().sort((a, b) => a.id.localeCompare(b.id));
-  expect(original).toHaveLength(145);
+  expect(original.filter(node => !Object.hasOwn(PRELIMINARY_WORK_INPUT_SCHEMA, node.id))).toHaveLength(145);
+  expect(original).toHaveLength(154);
   mount();
-  expect(inputs()).toHaveLength(145);
-  expect(new Set(inputs().map(node => node.id)).size).toBe(145);
+  expect(inputs()).toHaveLength(154);
+  expect(new Set(inputs().map(node => node.id)).size).toBe(154);
   for (const node of original) expect(document.getElementById(node.id)).toBe(node);
   expect(values().sort((a, b) => a.id.localeCompare(b.id))).toStrictEqual(before);
   expect(document.querySelectorAll(".preliminary-trade")).toHaveLength(9);
-  const count = [11, 9, 10, 6, 2, 4, 17, 65, 7];
+  const count = [14, 13, 10, 6, 2, 4, 19, 65, 7];
   PRELIMINARY_TRADES.forEach((trade, index) => {
     expect(document.getElementById(`preliminary-${trade.id}`).querySelectorAll("input, select, textarea")).toHaveLength(count[index]);
   });
@@ -135,7 +137,7 @@ test("presentation never calculates, saves, normalizes values or registers dupli
   expect(source).not.toMatch(/\b(calculate|refresh|fetch|saveEstimate|updateEstimate|normalizeIntegerInput)\s*\(/);
   mount();
   expect(mountPreliminaryEstimateView({ document, getContext: () => ({}), onPrint() {} })).toBeNull();
-  expect(inputs()).toHaveLength(145);
+  expect(inputs()).toHaveLength(154);
 });
 
 test("summary does not report a disabled demolition sub-option or an unused floor grade", () => {

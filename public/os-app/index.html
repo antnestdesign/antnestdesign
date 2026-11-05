@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="noindex,nofollow" name="robots"/>
 <title>AND OS</title>
-<link href="./styles.css?v=and-os-74" rel="stylesheet"/>
+<link href="./styles.css?v=and-os-75" rel="stylesheet"/>
 <link href="./document-print.css?v=phase-3g" rel="stylesheet"/>
 </head>
 <body>
@@ -88,6 +88,11 @@
 <p>바닥, 화장실, 가구, 천장 철거와 인허가 항목을 선택합니다.</p></div>
 <div class="furniture-block">
 <div class="demolition-layout">
+<div class="demo-unit">
+<label class="inline-check"><input id="demolitionBasicEnabled" type="checkbox"/><span>기본철거</span></label>
+<label>철거 유형<select id="demolitionBasicType"><option value="normal">일반</option><option value="special">특수</option></select></label>
+<label>철거면적(평)<input id="demolitionBasicArea" min="0" step="0.1" type="number" value="0"/></label>
+</div>
 <div class="demo-unit">
 <label class="inline-check">
 <input id="demolitionFloorEnabled" type="checkbox"/>
@@ -174,8 +179,8 @@
                   <input id="standardCylinderLightUnits" min="0" step="1" type="number" value="4"/>
 </label>
 <label>
-                  간접조명(T3) 길이(m)
-                  <input id="standardT3M" min="0" step="0.1" type="number" value="20"/>
+                  간접조명(T3) 길이(mm)
+                  <input id="standardT3M" data-length-unit="mm" min="0" step="100" type="number" value="20000"/>
 </label>
 <label class="inline-check">
 <input id="standardBedWallLightEnabled" type="checkbox"/>
@@ -184,6 +189,14 @@
 <input id="standardSwitchEnabled" type="checkbox"/>
 <span>AND 표준 콘센트 스위치(르그랑 급)</span>
 </label>
+</div>
+</div>
+<div class="furniture-block">
+<div class="control-grid">
+<label class="inline-check"><input id="electricalOutletMoveEnabled" type="checkbox"/><span>콘센트 위치 이동</span></label>
+<label>콘센트 이동 개수<input id="electricalOutletMoveUnits" min="0" step="1" type="number" value="0"/></label>
+<label class="inline-check"><input id="electricalSwitchMoveEnabled" type="checkbox"/><span>스위치 위치 이동</span></label>
+<label>스위치 이동 개수<input id="electricalSwitchMoveUnits" min="0" step="1" type="number" value="0"/></label>
 </div>
 </div>
 <div class="section-heading sub-heading">
@@ -414,11 +427,13 @@
 <div class="control-grid compact-row-grid">
 <label class="inline-check">
 <input id="carpentryMoldingEnabled" type="checkbox"/>
-<span>몰딩</span></label>
+<span>천장몰딩</span></label>
+<label>천장몰딩 시공 길이(mm)<input id="carpentryMoldingLengthM" data-length-unit="mm" min="0" step="100" type="number" value="0"/></label>
 <label class="inline-check">
 <input id="carpentryBaseboardEnabled" type="checkbox"/>
 <span>걸레받이</span>
 </label>
+<label>걸레받이 시공 길이(mm)<input id="carpentryBaseboardLengthM" data-length-unit="mm" min="0" step="100" type="number" value="0"/></label>
 </div>
 </div>
 <div class="section-heading sub-heading">
@@ -1338,6 +1353,6 @@
 </section>
 </main>
 <section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-74" type="module"></script>
+<script src="./src/main.js?v=and-os-75" type="module"></script>
 </body>
 </html>

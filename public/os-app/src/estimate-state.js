@@ -14,7 +14,17 @@ export function buildEstimateState(raw, privateDefaultMarkup = 0) {
   const furnitureSection = checkedValue("sectionFurnitureEnabled");
   const finishSection = checkedValue("sectionFinishEnabled");
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
+  const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    demolitionBasicEnabled: demolitionSection && checkedValue("demolitionBasicEnabled"),
+    demolitionBasicType: raw.values.demolitionBasicType === "special" ? "special" : "normal",
+    demolitionBasicArea: nonnegative("demolitionBasicArea"),
+    electricalOutletMoveEnabled: electricalSection && checkedValue("electricalOutletMoveEnabled"),
+    electricalOutletMoveUnits: Math.floor(nonnegative("electricalOutletMoveUnits")),
+    electricalSwitchMoveEnabled: electricalSection && checkedValue("electricalSwitchMoveEnabled"),
+    electricalSwitchMoveUnits: Math.floor(nonnegative("electricalSwitchMoveUnits")),
+    carpentryMoldingLengthM: nonnegative("carpentryMoldingLengthM"),
+    carpentryBaseboardLengthM: nonnegative("carpentryBaseboardLengthM"),
     projectName: raw.values.projectName || "상담 프로젝트",
     areaPyeong: numberValue("areaPyeong"),
     clientName: raw.values.clientName || "",
@@ -174,6 +184,9 @@ export function buildEstimateState(raw, privateDefaultMarkup = 0) {
 
 export function effectiveEstimateInputOverrides(state) {
   return {
+    demolitionBasicEnabled: state.demolitionBasicEnabled,
+    electricalOutletMoveEnabled: state.electricalOutletMoveEnabled,
+    electricalSwitchMoveEnabled: state.electricalSwitchMoveEnabled,
     demolitionFloorEnabled: state.demolitionFloorEnabled,
     demolitionFurnitureEnabled: state.demolitionFurnitureEnabled,
     demolitionBathroomEnabled: state.demolitionBathroomEnabled,

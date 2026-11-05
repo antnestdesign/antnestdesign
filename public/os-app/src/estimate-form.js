@@ -1,7 +1,10 @@
 import { isEstimateInputExcluded } from "./estimate-input.js";
+import { PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { storedEstimateInputValue } from "./estimate-length.js";
 import { ESTIMATE_RATE_BINDINGS, buildEstimateRateUpdates } from "./estimate-state.js";
 
 const ESTIMATE_FORM_FIELDS = [
+  ...Object.keys(PRELIMINARY_WORK_INPUT_SCHEMA),
   "sectionDemolitionEnabled",
   "sectionElectricalEnabled",
   "sectionBathroomEnabled",
@@ -163,7 +166,7 @@ export function readEstimateForm(elements) {
     if (elements[id] == null) throw new TypeError(`Missing estimate form element: ${id}`);
   }
   return {
-    values: Object.fromEntries(ESTIMATE_FORM_FIELDS.map((id) => [id, elements[id]?.value])),
+    values: Object.fromEntries(ESTIMATE_FORM_FIELDS.map((id) => [id, storedEstimateInputValue(elements[id])])),
     checked: Object.fromEntries(ESTIMATE_FORM_FIELDS.map((id) => [id, elements[id]?.checked])),
   };
 }
@@ -171,7 +174,7 @@ export function readEstimateForm(elements) {
 export function collectEstimateFormValues(elements, excludedInputById) {
   return Object.fromEntries(Object.entries(elements)
     .filter(([id]) => !isEstimateInputExcluded(id, excludedInputById))
-    .map(([id, input]) => [id, input?.type === "checkbox" ? Boolean(input.checked) : input?.value ?? ""]));
+    .map(([id, input]) => [id, input?.type === "checkbox" ? Boolean(input.checked) : storedEstimateInputValue(input) ?? ""]));
 }
 
 export function syncEstimateFormRates(elements, context) {

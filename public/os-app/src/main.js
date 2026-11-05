@@ -3,7 +3,7 @@ import { createAuditView } from "./audit-view.js";
 import { createUiShell } from "./ui-shell.js";
 import { bindApplicationEvents } from "./application-events.js";
 import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
-import { ESTIMATE_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { ESTIMATE_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { won, rateNumber, escapeHtml } from "./utils.js";
 import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
@@ -68,6 +68,7 @@ import {
 
 
 const ids = [
+  ...Object.keys(PRELIMINARY_WORK_INPUT_SCHEMA),
   "projectName",
   "areaPyeong",
   "clientName",
@@ -316,6 +317,8 @@ const ids = [
 ];
 
 const integerIds = [
+  "electricalOutletMoveUnits",
+  "electricalSwitchMoveUnits",
   "baseLightingUnits",
   "baseT3Units",
   "islandDrawers",

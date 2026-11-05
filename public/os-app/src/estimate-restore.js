@@ -1,4 +1,6 @@
 import { isEstimateInputExcluded } from "./estimate-input.js";
+import { PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { displayEstimateInputValue } from "./estimate-length.js";
 
 export function createEstimateRestore({ document, elements: el, excludedInputById }) {
 function ensureEstimateStatusControl() {
@@ -84,7 +86,8 @@ function ensureCostSnapshotPanel() {
 
 function restoreInputValues(inputs = {}) {
   const hadFractionalTargetMargin = Number(inputs.targetMargin) > 0 && Number(inputs.targetMargin) <= 1;
-  const nextInputs = { ...inputs };
+  // Older snapshots must not inherit new work from the previously opened estimate.
+  const nextInputs = { ...Object.fromEntries(Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...inputs };
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
     nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
   }
@@ -101,7 +104,7 @@ function restoreInputValues(inputs = {}) {
     if (input.type === "checkbox") {
       input.checked = Boolean(value);
     } else {
-      input.value = value;
+      input.value = displayEstimateInputValue(input, value);
     }
   }
   if (el.targetMargin && Number(el.targetMargin.value) > 0 && Number(el.targetMargin.value) <= 1) {
