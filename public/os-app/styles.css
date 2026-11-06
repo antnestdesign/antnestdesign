@@ -2333,3 +2333,99 @@ th:last-child {
 .quantity-comparison dd { margin: 4px 0 12px; overflow-wrap: anywhere; }
 [data-batch-quantities] { padding: 12px 0; border-bottom: 1px solid #d8d2ce; }
 @media (max-width: 600px) { .quantity-comparison { grid-template-columns: minmax(0, 1fr); } }
+
+.carpentry-policy { padding: 12px 20px; max-width: 360px; }
+[data-site-policy][hidden], [data-coffer-count][hidden], [data-legacy-indirect-input][hidden], [data-legacy-indirect-note][hidden], .site-cost-composition[hidden], #estimateReviewNotice[hidden] { display: none !important; }
+.carpentry-work-sales { display: grid; gap: 6px; padding: 0 20px; }
+.carpentry-work-sales > div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.site-cost-composition { margin: 12px 20px; min-width: 0; border-top: 1px solid var(--line); }
+.site-cost-composition > summary { padding: 12px 0; font-weight: 700; cursor: pointer; }
+.site-cost-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding-bottom: 12px; }
+.site-cost-work { border-top: 1px solid var(--line); padding: 12px 0; }
+.site-cost-work h4 { font-size: 14px; margin: 0 0 10px; }
+.site-cost-scroll { max-width: 100%; overflow-x: auto; }
+.site-cost-scroll table { min-width: 760px; font-size: 12px; }
+.site-cost-scroll th, .site-cost-scroll td { padding: 8px; vertical-align: top; }
+.site-cost-scroll small { display: block; white-space: normal; max-width: 270px; }
+.site-cost-scroll input { width: 108px; min-width: 0; }
+.site-cost-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.site-cost-actions button { font-size: 11px; padding: 5px 7px; }
+.site-cost-totals { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 10px 0; }
+.site-cost-totals > div { display: flex; gap: 8px; font-size: 12px; }
+.site-cost-totals dd { margin: 0; font-weight: 700; }
+.site-cost-warning { font-size: 12px; color: #9a3b23; }
+.preliminary-policy-management { padding: 14px 0 24px; border-bottom: 1px solid var(--line); min-width: 0; }
+.policy-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.policy-heading h3 { margin: 0; font-size: 17px; }
+.policy-heading p { font-size: 12px; }
+.policy-trades { display: grid; grid-template-columns: repeat(9,minmax(0,1fr)); gap: 2px; margin: 12px 0; }
+.policy-trades button { padding: 8px 3px; font-size: 12px; min-width: 0; }
+.policy-trades [aria-selected="true"],.policy-filters [aria-selected="true"] { background: var(--ink); color: white; }
+.policy-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 14px 0; }
+.policy-filters input { width: 240px; max-width: 100%; }
+.policy-price-row { display: grid; grid-template-columns: minmax(0,1fr) 190px 140px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.policy-price-row small { display: block; color: var(--muted); font-size: 12px; }
+.policy-price-row label { min-width: 0; }
+.policy-price-row input { text-align: right; }
+.policy-parameters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; padding: 12px 0; }
+.policy-parameters > label > span { display: flex; align-items: center; gap: 8px; }
+.policy-parameters input { min-width: 0; }
+.policy-rules details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.policy-rules summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.policy-expression { display: flex; align-items: start; flex-wrap: wrap; gap: 8px; min-width: 0; margin-top: 8px; }
+.policy-expression > select { width: 150px; max-width: 100%; }
+.policy-expression > input { width: 150px; max-width: 100%; }
+.policy-expression-args { flex: 1 1 240px; min-width: 0; padding-left: 12px; border-left: 1px solid var(--line); }
+.policy-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0; align-items: end; }
+.policy-actions > label { flex: 1 1 260px; }
+.policy-comparison { padding: 14px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.policy-comparison ul { margin-bottom: 0; }
+.policy-example-comparison { padding: 12px 0; font-size: 12px; }
+.policy-example-comparison > div { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.policy-history { padding: 12px 0; }
+.policy-history > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.policy-note { font-size: 12px; color: var(--muted); }
+.preliminary-policy-legacy { padding-top: 16px; }
+@media (max-width:600px) {
+  .policy-trades { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .policy-price-row { grid-template-columns: minmax(0,1fr) 130px; gap: 8px; }
+  .policy-price-row > small { grid-column: 1 / -1; }
+  .policy-parameters { grid-template-columns: minmax(0,1fr); }
+  .policy-expression { flex-direction: column; }
+  .policy-expression-args { flex-basis: auto; width: 100%; }
+  .policy-expression > select,.policy-expression > input { width: 100%; }
+  .policy-actions > button { flex: 1 1 120px; }
+  .policy-example-comparison > div { grid-template-columns: minmax(0,1fr); }
+}
+.cost-trade-navigation { display: grid; grid-template-columns: repeat(9,minmax(0,1fr)); gap: 6px; margin-bottom: 16px; }
+.cost-trade-navigation button { padding: 10px 4px; font-size: 12px; min-width: 0; }
+.cost-trade-navigation small { display: block; font-weight: 400; }
+.cost-trade-navigation [aria-expanded="true"] { background: var(--ink); color: white; }
+.cost-standard-record { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.cost-standard-summary { display: grid; grid-template-columns: minmax(0,1fr) 60px 120px; gap: 12px; align-items: center; }
+.cost-standard-summary small { display: block; color: var(--muted); font-size: 12px; }
+.cost-standard-record > details { margin-top: 10px; }
+.cost-standard-record summary { cursor: pointer; font-size: 12px; }
+.cost-standard-editor { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; padding: 12px 0; }
+.cost-standard-editor > label { flex: 1 1 180px; min-width: 0; max-width: 220px; }
+.cost-standard-editor .system-draft-input { width: 100%; min-width: 0; }
+.cost-standard-advanced { flex-basis: 100%; }
+.cost-standard-advanced > div { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0; }
+@media (max-width: 600px) {
+  .site-cost-composition { margin: 8px 12px; }
+  .site-cost-heading { align-items: start; flex-direction: column; }
+  .cost-trade-navigation { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .cost-standard-summary { grid-template-columns: minmax(0,1fr) 40px 100px; gap: 6px; font-size: 12px; }
+  .cost-standard-editor > label { flex-basis: 100%; max-width: none; }
+  .carpentry-work-sales { padding: 0 12px; }
+  .site-cost-scroll table, .site-cost-scroll tbody { display: block; min-width: 0; width: 100%; }
+  .site-cost-scroll thead { display: none; }
+  .site-cost-scroll tr { display: grid; grid-template-columns: minmax(0,1fr) 36px minmax(0,1.2fr); border-bottom: 1px solid var(--line); }
+  .site-cost-scroll td { min-width: 0; border: 0; padding: 6px 4px; }
+  .site-cost-scroll td:first-child, .site-cost-scroll td:nth-child(5), .site-cost-scroll td:nth-child(6) { grid-column: 1 / -1; }
+  .site-cost-scroll td:nth-child(2)::before { content: "적용 수량"; display: block; }
+  .site-cost-scroll td:nth-child(3)::before { content: "단위"; display: block; }
+  .site-cost-scroll td:nth-child(4)::before { content: "현장 단가"; display: block; }
+  .site-cost-scroll td:nth-child(5)::before { content: "원가 "; }
+  .site-cost-scroll input { width: 100%; max-width: 100%; }
+}

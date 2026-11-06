@@ -3,7 +3,9 @@ import { createAuditView } from "./audit-view.js";
 import { createUiShell } from "./ui-shell.js";
 import { bindApplicationEvents } from "./application-events.js";
 import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
-import { ESTIMATE_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { ESTIMATE_INPUT_SCHEMA, CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { mountSiteCostView } from "./site-cost-view.js";
+import { mountPreliminaryPolicyView } from "./preliminary-policy-view.js";
 import { won, rateNumber, escapeHtml } from "./utils.js";
 import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
@@ -62,12 +64,14 @@ import {
   loadStoredSession,
   getAuthSession,
   requestProjectFoundation,
+  requestPreliminaryPolicy,
   loadProjectFoundationMode,
 } from "./storage.js";
 
 
 
 const ids = [
+  ...Object.keys(CARPENTRY_INPUT_SCHEMA),
   ...Object.keys(PRELIMINARY_WORK_INPUT_SCHEMA),
   "projectName",
   "areaPyeong",
@@ -317,6 +321,7 @@ const ids = [
 ];
 
 const integerIds = [
+  "carpentryCofferUnits",
   "electricalOutletMoveUnits",
   "electricalSwitchMoveUnits",
   "baseLightingUnits",
@@ -388,6 +393,8 @@ let passwordChangeBusy = false;
 let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
+let siteCostView = null;
+let preliminaryPolicyView = null;
 let newEstimateInputBaseline = null;
 let newEstimatePrivateDefaults = {};
 let estimateNavigationGeneration = 0;
@@ -1333,6 +1340,12 @@ function renderAdminProcessTotals(quote) { return estimateView.renderAdminProces
 
 function renderCustomerQuote(estimate) {
   const quote = estimate?.customerQuote;
+  syncCarpentryMode(estimate);
+  const applyPolicy=document.getElementById('applyLatestPreliminaryPolicyButton');if(applyPolicy)applyPolicy.disabled=!currentEditingEstimateId||!canViewSystem();
+  const reviewNotice = document.getElementById("estimateReviewNotice");
+  if (reviewNotice) { reviewNotice.hidden=!estimate?.reviewNotice; reviewNotice.textContent=estimate?.reviewNotice?"시공 구성·수량·적용 기준을 담당자와 확인해 주세요.":""; }
+  const workSales = document.getElementById("carpentryWorkSales");
+  if (workSales) workSales.innerHTML = (quote?.groups || []).filter(g=>g.label==="목공").flatMap(g=>g.items||[]).filter(i=>/^(우물천장 신설|우물천장 평탄화|커튼박스|에어컨 단내림|실링팬 보강 설치\(자재 별도\))$/.test(i.name)).map(i=>`<div><span>${escapeHtml(i.name)}</span><strong>${escapeHtml(i.amountText || customerWon(i.amount))}</strong></div>`).join("");
   estimateView.renderCustomerQuote(estimate);
   if (isAdmin() && estimateView.hasAdminMarginTargets()) renderAdminMarginTable(quote ? estimate : null);
   renderPurchaseOrder(quote ? estimate : null);
@@ -1456,6 +1469,7 @@ function renderCalculatedEstimate(result){
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
   const calculatedSnapshot = buildEstimateSnapshot(result);
   const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
+  siteCostView?.render(displayEstimate.costBreakdown || serverCalculation?.costRows || []);
   const presentation = buildCalculatedEstimatePresentation(result, displayEstimate, { groupTotalFromDetails, mmText, customerWon });
   estimateView.renderInputSummary(presentation);
   renderCustomerQuote(displayEstimate);
@@ -1477,7 +1491,16 @@ function renderCalculatedEstimate(result){
 function refresh() {
   syncSectionLocks();
   syncBlockLocks();
+  syncCarpentryMode(activeQuoteEstimate || lastRenderedEstimateSnapshot);
   render();
+}
+function syncCarpentryMode(estimate) {
+  const publicModern=(estimate?.customerQuote?.groups || []).some(g=>g.label==="목공"&&(g.items||[]).some(i=>/^(우물천장 신설|우물천장 평탄화|커튼박스|에어컨 단내림|실링팬 보강 설치)/.test(i.name)));
+  const modern=canViewSystem()?el.carpentryCostMode?.value==="assembly-v1":el.carpentryCostMode?.value==="assembly-v1"||publicModern;
+  const option=document.querySelector('#carpentryCofferType option[value="change"]');if(option)option.textContent=modern?"없애기(평탄화)":"변경(기존 견적)";
+  const count=document.querySelector('[data-coffer-count]');if(count)count.hidden=!modern;
+  const legacyNote=document.querySelector('[data-legacy-indirect-note]');
+  if(legacyNote){const oldCount=Number(el.carpentryIndirectLightUnits?.value)||0;legacyNote.hidden=oldCount<=0||Number(el.carpentryIndirectT3Mm?.value)>0;legacyNote.textContent=legacyNote.hidden?"":`기존 견적의 간접등 ${oldCount}개소 기준을 유지 중입니다. T3 길이를 입력하면 길이 기준으로 대체합니다.`;}
 }
 
 let staffPreviewGeneration = 0;
@@ -1838,6 +1861,7 @@ async function refreshSystemManagement() {
     systemEstimateCount = Number(count) || cachedEstimates.length || 0;
     systemDataLoaded = true;
     renderSystemManagement();
+    await preliminaryPolicyView?.load();
     await refreshUserManagement();
     await refreshAuditLogs();
     setSystemStatus(systemDataLoaded ? "시스템 관리 데이터를 불러왔습니다." : "");
@@ -2281,6 +2305,11 @@ function setAuthenticated(isAuthenticated) { return uiShell.setAuthenticated(isA
 
 async function enterAuthenticatedApp(profile) {
   currentProfile = profile;
+  siteCostView?.clear();
+  preliminaryPolicyView?.clear();
+  serverCalculation=null;serverCalculationPending=null;calculationGeneration++;
+  if (profile.role === "staff" && el.siteCostConfig) el.siteCostConfig.value = "";
+  document.querySelectorAll('[data-site-policy]').forEach(node=>{node.hidden=profile.role==='staff';});
   if (currentProfile.role === "admin" && staffAdminShellApplied) {
     window.location.reload();
     return;
@@ -2511,6 +2540,7 @@ function handlePasswordChangeLogout() {
 }
 
 function handleBoundEstimateInput(input) {
+  if(input.id==="carpentryIndirectT3Mm")el.carpentryIndirectLightUnits.value="0";
   normalizeIntegerInput(input, integerIds);
   syncRateDirtyState(input);
   handleEstimateInputChanged();
@@ -2533,6 +2563,9 @@ async function onLoginSubmit(event) {
 }
 
 async function onLogoutClick() {
+  siteCostView?.clear();
+  preliminaryPolicyView?.clear();
+  if (el.siteCostConfig) el.siteCostConfig.value = "";
   issuedContractEstimate = null;
   preliminaryContractEstimate = null;
   contractSourceView.reset();
@@ -2691,7 +2724,7 @@ async function onContractActionClick(event) {
 }
 
 function onBeforeUnload(event) {
-  if (!contractOptionsDirty) return;
+  if (!contractOptionsDirty&&!preliminaryPolicyView?.isDirty()) return;
   event.preventDefault();
   event.returnValue = "";
 }
@@ -2839,6 +2872,11 @@ function onSaveRateDbClick(event) {
 }
 
 function onCompareCostSnapshotClick(event) {
+  if(event.target?.closest?.('#applyLatestPreliminaryPolicyButton')){
+    if(!canViewSystem()||!currentEditingEstimateId)return;
+    if(!confirm('현재 견적 입력에 최신 회사 산정 기준을 적용할까요? 저장 전에는 기존 견적이 변경되지 않으며, 현장별 수동 수량·단가는 유지됩니다.'))return;
+    el.preliminaryPolicySelection.value='current';handleEstimateInputChanged();return;
+  }
   const button = event.target?.closest?.("#compareCostSnapshotButton");
   if (!button) return;
   renderCostSnapshotComparison(activeQuoteEstimate);
@@ -2981,6 +3019,13 @@ mountPreliminaryEstimateView({
   }),
   onPrint: onPrintQuoteClick,
 });
+
+siteCostView = mountSiteCostView({ document, canView: canViewSystem, canStandardEdit: canEditCost,
+  readConfig:()=>el.siteCostConfig?.value || "", writeConfig:value=>{el.siteCostConfig.value=value;},
+  changed:()=>handleEstimateInputChanged(), openStandard:async category=>{expandedSystemCostCategory=category;costItemFilters.keyword="";costItemFilters.subcategory="";preliminaryPolicyView?.selectTrade(category);activateTab("system");await refreshSystemManagement();} });
+preliminaryPolicyView=mountPreliminaryPolicyView({document,request:requestPreliminaryPolicy,canView:canViewSystem,
+  getInputs:()=>Object.fromEntries(Object.entries(collectInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id))),
+  onPublished:async()=>{await loadRateSettings();serverCalculation=null;calculationGeneration++;} });
 
 const contractSourceView = createContractSourceView({ document, request: requestProjectFoundation,
   loadMode: loadProjectFoundationMode,

@@ -1,3 +1,11 @@
+export const CARPENTRY_INPUT_SCHEMA = {
+  carpentryCostMode: { type: "select-one", value: "assembly-v1", choices: ["legacy", "assembly-v1"] },
+  carpentryCofferUnits: { type: "number", value: "1", min: 0, max: 1000 },
+  carpentryIndirectT3Mm: { type: "number", value: "0", min: 0, max: 10000000 },
+  siteCostConfig: { type: "text", value: "", maxLength: 32000 },
+  preliminaryPolicySelection: { type: "select-one", value: "saved", choices: ["saved", "current"] },
+};
+
 export const PRELIMINARY_WORK_INPUT_SCHEMA = {
   demolitionBasicEnabled: { type: "checkbox", value: false },
   demolitionBasicType: { type: "select-one", value: "normal", choices: ["normal", "special"] },
@@ -11,6 +19,7 @@ export const PRELIMINARY_WORK_INPUT_SCHEMA = {
 };
 
 export const ESTIMATE_INPUT_SCHEMA = {
+  ...CARPENTRY_INPUT_SCHEMA,
   ...PRELIMINARY_WORK_INPUT_SCHEMA,
   "estimateStatus": { "type": "select", "value": "견적", "choices": ["견적","계약","착공","준공"] },
   "projectName": {
@@ -831,7 +840,7 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "max": 50
   }
 };
-export const PRIVATE_ESTIMATE_INPUTS = ["targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
+export const PRIVATE_ESTIMATE_INPUTS = ["carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
 
 export function staffEstimateInputs(inputs = {}) {
   return Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA)

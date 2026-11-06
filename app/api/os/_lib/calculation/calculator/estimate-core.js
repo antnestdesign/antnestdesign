@@ -3,6 +3,7 @@ import { kitchenRates } from "../rates/kitchen.js";
 import { doorRates } from "../rates/door.js";
 import { finishMaterialRates } from "../rates/finish.js";
 import { miscRates } from "../rates/misc.js";
+import { carpentryAssemblies, applySiteCostOverrides } from "../site-costs.js";
 import { bathroomDetails } from "./bathroom.js";
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
@@ -11,9 +12,14 @@ import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
 export { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS };
 import { COST_ITEM_DEFINITIONS } from "../../../../../../public/os-app/src/cost-item-definitions.js";
+import { ESTIMATE_RATE_BINDINGS } from "../../../../../../public/os-app/src/estimate-state.js";
+import { validatePolicy, policyRateValues, applyPolicySettings, policyRule, policyRuleChanged, PreliminaryPolicyError } from "../preliminary-policy.js";
 export { COST_ITEM_DEFINITIONS };
 
 export function createEstimateCalculation(options = {}) {
+const policy=options.preliminaryPolicy?validatePolicy(structuredClone(options.preliminaryPolicy)):null;
+const rule=(key,vars,fallback)=>policyRule(policy,key,vars,fallback);
+const parameter=(key,fallback)=>policy?.parameters[key]??fallback;
 const workRates = { basicNormal: 80000, basicSpecial: 120000, moldingMaterial: 1800, baseboardMaterial: 2100, outletMove: 150000, switchMove: 150000 };
 const rates = options.rates ?? structuredClone({
   lowerPerJa: 120000,
@@ -130,7 +136,7 @@ const quantityText = (value, suffix) => {
 
 const mText = (meters) => mmText(meters * 1000);
 
-const jaRounded = (mm) => (mm <= 0 ? 0 : Math.ceil(mm / 300));
+const jaRounded = (mm) => (mm <= 0 ? 0 : rule('furniture.ja',{lengthMm:mm},()=>Math.ceil(mm / 300)));
 
 const sellPrice = (cost, margin, correction = 0) => (cost * (1 + margin)) * (1 + correction);
 
@@ -158,8 +164,10 @@ function countertopQuantity(material, billingM) {
 }
 
 function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue }) {
+  if(policy&&(!Number.isFinite(cost)||cost<0||cost>1e12))throw new PreliminaryPolicyError('산식으로 계산한 원가가 허용 범위를 벗어났습니다.');
   const hasFixedCustomerRevenue = Number.isFinite(Number(fixedCustomerRevenue));
   const revenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : sellPrice(cost, margin, correction);
+  if(policy&&(!Number.isFinite(revenue)||Math.abs(revenue)>1e12))throw new PreliminaryPolicyError('산식으로 계산한 판매금액이 허용 범위를 벗어났습니다.');
   const customerRevenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : floorThousand(revenue);
   return {
     group,
@@ -190,12 +198,12 @@ function addModuleDetails(details, items, margin, correction) {
   }
 }
 
-function addT3Detail(details, { group, label, units, margin, corrections }) {
+function addT3Detail(details, { group, label, units, margin, corrections, lengthMm }) {
   if (units <= 0) return;
   addDetail(details, {
     group,
     item: `${label} 간접조명(T3)`,
-    input: `${units}라인`,
+    input: lengthMm === undefined ? `${units}라인` : policyRuleChanged(policy,'carpentry.t3')?`${lengthMm}mm → ${units}라인 · 게시된 산식`:`${lengthMm}mm ÷ 1,000mm = ${units}라인`,
     quantity: `${units}라인`,
     unitPrice: rates.t3LightingUnit,
     cost: units * rates.t3LightingUnit,
@@ -390,7 +398,7 @@ const floorDemolitionLabel = (material) => ({
 
 const floorDemolitionUnitPrice = (material) => ({
   wood: rates.demolition.floorPerPyeong,
-  vinyl: 0,
+  vinyl: policy?.prices.DEMO_VINYL??0,
   decoTile: rates.demolition.decoTilePerPyeong,
 }[material] || 0);
 
@@ -401,7 +409,7 @@ const wallpaperDays = (preset, baseCoat) => {
     p40: baseCoat ? 11 : 9,
     p50: baseCoat ? 15 : 11,
   };
-  return table[preset] || 0;
+  return Object.hasOwn(table,preset)?rule(`wallpaper.${preset}.${baseCoat?'base':'basic'}`,{},()=>table[preset]):0;
 };
 
 const wallpaperLabel = (preset) => ({
@@ -411,12 +419,12 @@ const wallpaperLabel = (preset) => ({
   p50: "50평 이상",
 }[preset] || "미선택");
 
-const filmDays = (preset) => ({
+const filmDays = (preset) => rule(`film.${preset}`,{},()=>({
   p20: 6,
   p30: 9,
   p40: 12,
   p50: 15,
-}[preset] || 0);
+}[preset] || 0));
 
 const filmLabel = (preset) => ({
   p20: "20평대",
@@ -427,7 +435,7 @@ const filmLabel = (preset) => ({
 
 const boardArea = () => rates.carpentry.boardWidth * rates.carpentry.boardHeight;
 
-const boardCountWithWaste = (rawCount) => (rawCount <= 0 ? 0 : Math.ceil(rawCount * rates.carpentry.wasteFactor));
+const boardCountWithWaste = (rawCount) => (rawCount <= 0 ? 0 : rule('carpentry.boardWaste',{quantity:rawCount,waste:rates.carpentry.wasteFactor},()=>Math.ceil(rawCount * rates.carpentry.wasteFactor)));
 
 const carpentryCofferDays = (type) => ({
   new: rates.carpentry.cofferNewDays,
@@ -460,15 +468,15 @@ function carpentryMaterialCounts(state) {
   const partitionLength = state.carpentryPartitionM;
   const wallArea = wallLength * state.carpentryCeilingHeight;
   const partitionArea = partitionLength * state.carpentryCeilingHeight;
-  const artwallBoards = wallArea > 0 ? Math.ceil(wallArea / boardArea()) : 0;
-  const partitionBoards = partitionArea > 0 ? Math.ceil(partitionArea / boardArea()) * 2 : 0;
+  const artwallBoards = wallArea > 0 ? rule('carpentry.wallBoards',{area:wallArea,boardArea:boardArea()},()=>Math.ceil(wallArea / boardArea())) : 0;
+  const partitionBoards = partitionArea > 0 ? rule('carpentry.wallBoards',{area:partitionArea,boardArea:boardArea()},()=>Math.ceil(partitionArea / boardArea())) * parameter('partitionSides',2) : 0;
   const totalWallBoards = artwallBoards + partitionBoards;
-  const plywoodBase = state.carpentryTvUnits * 2;
+  const plywoodBase = state.carpentryTvUnits * parameter('tvPlywood',2);
   const mdfBase = Math.max(0, artwallBoards - plywoodBase) + partitionBoards;
-  const verticalStuds = wallLength > 0 ? Math.ceil(wallLength / rates.carpentry.studSpacing) : 0;
-  const partitionVerticalStuds = partitionLength > 0 ? Math.ceil(partitionLength / rates.carpentry.studSpacing) : 0;
+  const verticalStuds = wallLength > 0 ? rule('carpentry.verticalStuds',{lengthMm:wallLength,spacingMm:rates.carpentry.studSpacing},()=>Math.ceil(wallLength / rates.carpentry.studSpacing)) : 0;
+  const partitionVerticalStuds = partitionLength > 0 ? rule('carpentry.verticalStuds',{lengthMm:partitionLength,spacingMm:rates.carpentry.studSpacing},()=>Math.ceil(partitionLength / rates.carpentry.studSpacing)) : 0;
   const wallStudLength = (wallLength * 2) + (state.carpentryCeilingHeight * verticalStuds);
-  const partitionStudLength = ((partitionLength * 2) + (state.carpentryCeilingHeight * partitionVerticalStuds)) * 2;
+  const partitionStudLength = ((partitionLength * 2) + (state.carpentryCeilingHeight * partitionVerticalStuds)) * parameter('partitionSides',2);
   const studLength = wallStudLength + partitionStudLength;
   const studBundleLength = rates.carpentry.studPieceLength * rates.carpentry.studPiecesPerBundle;
   return {
@@ -482,7 +490,7 @@ function carpentryMaterialCounts(state) {
     drywall: 0,
     studLength,
     studLengthWithWaste: studLength * rates.carpentry.wasteFactor,
-    studBundles: studLength > 0 ? Math.ceil((studLength * rates.carpentry.wasteFactor) / studBundleLength) : 0,
+    studBundles: studLength > 0 ? rule('carpentry.studBundles',{lengthMm:studLength,waste:rates.carpentry.wasteFactor,bundleLength:studBundleLength},()=>Math.ceil((studLength * rates.carpentry.wasteFactor) / studBundleLength)) : 0,
     verticalStuds,
     partitionVerticalStuds,
     wallStudLength,
@@ -518,14 +526,14 @@ function calculate(state) {
   const baseCounter = rates.countertop[state.baseCountertop];
   const homebarCounter = rates.countertop[state.homebarCountertop];
   const homebarMidway = rates.countertop[state.homebarMidway];
-  const baseCounterBillingM = state.lowerCabinetM > 0 ? Math.max(1, mmToM(state.lowerCabinetM)) : 0;
+  const baseCounterBillingM = state.lowerCabinetM > 0 ? Math.max(parameter('counterMinimumM',1), mmToM(state.lowerCabinetM)) : 0;
   const homebarStorageJa = rates.homebarStorageBaseJa;
   const homebarExtraJa = Math.max(0, homebarJa - homebarStorageJa);
   const homebarCounterActualMm = homebarExtraJa * 300;
-  const homebarCounterBillingM = homebarCounterActualMm > 0 ? Math.max(1, mmToM(homebarCounterActualMm)) : 0;
-  const islandCounterMultiplier = state.islandCountertop === "himacs" && state.islandDepthMm > 720 ? 2 : 1;
+  const homebarCounterBillingM = homebarCounterActualMm > 0 ? Math.max(parameter('counterMinimumM',1), mmToM(homebarCounterActualMm)) : 0;
+  const islandCounterMultiplier = state.islandCountertop === "himacs" && state.islandDepthMm > parameter('islandWideThreshold',720) ? parameter('islandWideMultiplier',2) : 1;
   const islandCounterBillingM = mmToM(state.islandM) * islandCounterMultiplier;
-  const islandSideLengthM = state.islandM > 3000 ? 0.9 : Math.max(0, mmToM(state.islandDepthMm));
+  const islandSideLengthM = state.islandM > parameter('islandSideThreshold',3000) ? parameter('islandLongSideM',.9) : Math.max(0, mmToM(state.islandDepthMm));
   const islandSideCalc = islandSideFinishCalc(state.islandSideFinish, state.islandSideFinishCount, islandSideLengthM);
 
   if (state.baseEnabled) {
@@ -1057,10 +1065,10 @@ function calculate(state) {
     group: "tile",
     item: "타일 기공",
     enabled: state.tileEnabled,
-    input: `${state.tileBathroomUnits}칸 x 3품`,
-    quantity: `${state.tileBathroomUnits * 3}품`,
+    input: policyRuleChanged(policy,'tile.worker')?`${state.tileBathroomUnits}칸 · 게시된 산정 기준`:`${state.tileBathroomUnits}칸 x 3품`,
+    quantity: `${rule('tile.worker',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits*3)}품`,
     unitPrice: rates.finish.tileWorkerDay,
-    units: state.tileBathroomUnits * 3,
+    units: rule('tile.worker',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits*3),
     margin,
     correction: state.corrections.option,
   });
@@ -1068,10 +1076,10 @@ function calculate(state) {
     group: "tile",
     item: "타일 조공",
     enabled: state.tileEnabled,
-    input: `${state.tileBathroomUnits}칸 x 1품`,
-    quantity: `${state.tileBathroomUnits}품`,
+    input: policyRuleChanged(policy,'tile.helper')?`${state.tileBathroomUnits}칸 · 게시된 산정 기준`:`${state.tileBathroomUnits}칸 x 1품`,
+    quantity: `${rule('tile.helper',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits)}품`,
     unitPrice: rates.finish.tileHelperDay,
-    units: state.tileBathroomUnits,
+    units: rule('tile.helper',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits),
     margin,
     correction: state.corrections.option,
   });
@@ -1091,14 +1099,14 @@ function calculate(state) {
     item: "조적벽 타일 기공 추가",
     enabled: state.bathroomEnabled,
     input: `${state.bathroomMasonryWallUnits}개`,
-    quantity: `${state.bathroomMasonryWallUnits}품`,
-    unitPrice: rates.finish.tileWorkerDay,
-    units: state.bathroomMasonryWallUnits,
+    quantity: `${rule('tile.masonry',{count:state.bathroomMasonryWallUnits},()=>state.bathroomMasonryWallUnits)}품`,
+    unitPrice: policy?.prices.BATH_MASONRY_LABOR??rates.finish.tileWorkerDay,
+    units: rule('tile.masonry',{count:state.bathroomMasonryWallUnits},()=>state.bathroomMasonryWallUnits),
     margin,
     correction: state.corrections.option,
   });
 
-  addModuleDetails(details, bathroomDetails(state, rates.bathroom), margin, state.corrections.option);
+  addModuleDetails(details, bathroomDetails(state, rates.bathroom, policy), margin, state.corrections.option);
 
   const wallpaperUnitDays = wallpaperDays(state.wallpaperPreset, state.wallpaperBaseCoatEnabled);
   addUnitDetail(details, {
@@ -1113,7 +1121,7 @@ function calculate(state) {
     correction: state.corrections.option,
   });
   addModuleDetails(details, [
-    ...wallpaperMaterialDetails(state, rates.finishMaterial),
+    ...wallpaperMaterialDetails(state, rates.finishMaterial, policy),
     wallpaperSupplyDetail(state, rates.finishMaterial),
   ], margin, state.corrections.option);
 
@@ -1129,7 +1137,7 @@ function calculate(state) {
     margin,
     correction: state.corrections.option,
   });
-  addModuleDetails(details, [filmMaterialDetail(state, rates.finishMaterial)], margin, state.corrections.option);
+  addModuleDetails(details, [filmMaterialDetail(state, rates.finishMaterial, policy)], margin, state.corrections.option);
 
   const flooringType = state.flooringMaterialType === "sheet" ? "sheet" : "wood";
   const flooringGrade = flooringType === "sheet"
@@ -1187,10 +1195,12 @@ function calculate(state) {
     correction: state.corrections.option,
   });
 
-  const carpentryRawDays = carpentryLaborDays(state);
-  const carpentryDays = Math.ceil(carpentryRawDays);
-  const carpentryMaterials = carpentryMaterialCounts(state);
-  const carpentryActive = hasCarpentryWork(state, carpentryRawDays, carpentryMaterials);
+  let legacyWork = state.carpentryCostMode === "assembly-v1" ? { ...state, carpentryCofferType: "none", carpentryCurtainBoxUnits: 0, carpentryDropCeilingUnits: 0, carpentryCeilingFanUnits: 0 } : state;
+  if (state.carpentryIndirectT3Mm > 0) legacyWork = { ...legacyWork, carpentryIndirectLightUnits: 0 };
+  const carpentryRawDays = carpentryLaborDays(legacyWork);
+  const carpentryDays = rule('carpentry.laborRound',{rawDays:carpentryRawDays},()=>Math.ceil(carpentryRawDays));
+  const carpentryMaterials = carpentryMaterialCounts(legacyWork);
+  const carpentryActive = hasCarpentryWork(legacyWork, carpentryRawDays, carpentryMaterials);
   addUnitDetail(details, {
     group: "carpentry",
     item: "목공 인건비",
@@ -1239,10 +1249,10 @@ function calculate(state) {
     group: "carpentry",
     item: "실링팬 보강",
     enabled: true,
-    input: `${state.carpentryCeilingFanUnits}개`,
-    quantity: `${state.carpentryCeilingFanUnits}개`,
+    input: `${legacyWork.carpentryCeilingFanUnits}개`,
+    quantity: `${legacyWork.carpentryCeilingFanUnits}개`,
     unitPrice: rates.carpentry.ceilingFanUnit,
-    units: state.carpentryCeilingFanUnits,
+    units: legacyWork.carpentryCeilingFanUnits,
     margin,
     correction: state.corrections.option,
   });
@@ -1285,6 +1295,13 @@ function calculate(state) {
     ["걸레받이 자재", state.carpentryBaseboardEnabled, state.carpentryBaseboardLengthM, workRates.baseboardMaterial],
   ]) addUnitDetail(details, { group: "carpentry", item, enabled: enabled && Number.isFinite(units), input: `${units}m`, quantity: `${units}m`, unitPrice, units, margin, correction: state.corrections.option });
 
+  if (state.carpentryCurtainBoxEnabled && state.carpentryIndirectT3Mm > 0) {
+    addT3Detail(details, { group: "carpentry", label: "목공", units: rule('carpentry.t3',{lengthMm:state.carpentryIndirectT3Mm},()=>mmToM(state.carpentryIndirectT3Mm)), lengthMm: state.carpentryIndirectT3Mm, margin, corrections: state.corrections });
+  }
+  for (const part of carpentryAssemblies(state, options.carpentryPrices, policy)) {
+    details.push({ ...makeDetail({ group: "carpentry", item: `${part.workLabel} · ${part.name}`, input: part.formula, quantity: `${part.quantity}${part.unit}`, unitPrice: part.price ?? 0, cost: part.quantity * (part.price ?? 0), margin, correction: state.corrections.option }), assembly: part });
+  }
+  applySiteCostOverrides(details, state, makeDetail);
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
   const customerRevenue = floorThousand(Math.max(0, rawRevenue));
@@ -1392,7 +1409,7 @@ function groupedCustomerItems(details, lines) {
 
   for (const detail of details.filter((item) => item.revenue > 0)) {
     const group = ensureGroup(quoteGroupLabels[detail.group] || detail.group);
-    addCustomerItem(group, customerItemName(detail.item), detail.customerRevenue ?? detail.revenue);
+    addCustomerItem(group, detail.assembly?.workLabel || customerItemName(detail.item), detail.customerRevenue ?? detail.revenue);
   }
 
   for (const line of lines.filter((item) => item.amountText)) {
@@ -1503,14 +1520,15 @@ function applyExistingPipeCleaningAdjustment(estimate, enabled = false) {
 }
 
 const el = Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, schema]) => [id, { value: schema.value, checked: schema.value }]));
-for (const [id, value] of Object.entries(options.rateValues || {})) el[id] = { value };
+el.carpentryCostMode.value = "legacy";
+for (const [id, value] of Object.entries({...(policy?policyRateValues(policy):{}),...options.rateValues})) el[id] = { value };
 const numberValue = (id) => Number(el[id]?.value) || 0;
 
 const integerValue = (id) => Math.max(0, Math.floor(numberValue(id)));
 
 const checkedValue = (id) => Boolean(el[id]?.checked);
 
-const rateValue = (id, fallback) => Number(el[id]?.value) || fallback;
+const rateValue = (id, fallback) => policy && el[id]?.value!=="" && el[id]?.value!=null && Number.isFinite(Number(el[id].value)) ? Number(el[id].value) : Number(el[id]?.value) || fallback;
 
 function updateRatesFromAdmin() {
   rates.lowerPerJa = rateValue("rateLowerPerJa", rates.lowerPerJa);
@@ -1605,6 +1623,11 @@ function updateRatesFromAdmin() {
   rates.carpentry.mdfSheet = rateValue("rateCarpentryMdfSheet", rates.carpentry.mdfSheet);
   rates.carpentry.plywoodSheet = rateValue("rateCarpentryPlywoodSheet", rates.carpentry.plywoodSheet);
   rates.carpentry.studBundle = rateValue("rateCarpentryStudBundle", rates.carpentry.studBundle);
+  applyPolicySettings({rates,work:workRates},policy);
+}
+function policyDefaults() {
+  const context={rates,flooringSheetGradeOptions,flooringWoodGradeOptions,pipeCleaningAmount:PIPE_CLEANING_AMOUNT};
+  return Object.fromEntries(ESTIMATE_RATE_BINDINGS.map(binding=>[binding.inputId,binding.path.reduce((v,k)=>v[k],context[binding.target])]));
 }
 function readState(inputs = {}) {
   for (const [id, value] of Object.entries(inputs)) {
@@ -1623,6 +1646,10 @@ function readState(inputs = {}) {
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    carpentryCostMode: el.carpentryCostMode.value === "assembly-v1" ? "assembly-v1" : "legacy",
+    carpentryCofferUnits: integerValue("carpentryCofferUnits"),
+    carpentryIndirectT3Mm: carpentrySection ? numberValue("carpentryIndirectT3Mm") : 0,
+    siteCostConfig: el.siteCostConfig.value || "",
     demolitionBasicEnabled: demolitionSection && checkedValue("demolitionBasicEnabled"),
     demolitionBasicType: el.demolitionBasicType.value === "special" ? "special" : "normal",
     demolitionBasicArea: nonnegative("demolitionBasicArea"),
@@ -1820,5 +1847,5 @@ function effectiveEstimateInputOverrides(state) {
     elasticEnabled: state.elasticEnabled,
   };
 }
-return { calculate, floorThousand, mmToM, mmText, quantityText, mText, jaRounded, markupRate, epUnitPrice, epDepthLabel, isSlabMaterial, slabBaseCost, countertopCost, countertopQuantity, addDetail, makeDetail, sellPrice, addModuleDetails, addT3Detail, addStorageDetails, addUnitDetail, islandSideFinishCalc, groupTotalFromDetails, floorDemolitionLabel, floorDemolitionUnitPrice, wallpaperDays, wallpaperLabel, filmDays, filmLabel, carpentryLaborDays, carpentryCofferDays, carpentryMaterialCounts, boardArea, boardCountWithWaste, hasCarpentryWork, groupedCustomerItems, customerWon, customerItemName, applyExistingPipeCleaningAdjustment, cloneJson, applyPipeCleaningToCustomerQuote, pipeCleaningInternalDetail, readState, effectiveEstimateInputOverrides };
+return { policyDefaults, calculate, floorThousand, mmToM, mmText, quantityText, mText, jaRounded, markupRate, epUnitPrice, epDepthLabel, isSlabMaterial, slabBaseCost, countertopCost, countertopQuantity, addDetail, makeDetail, sellPrice, addModuleDetails, addT3Detail, addStorageDetails, addUnitDetail, islandSideFinishCalc, groupTotalFromDetails, floorDemolitionLabel, floorDemolitionUnitPrice, wallpaperDays, wallpaperLabel, filmDays, filmLabel, carpentryLaborDays, carpentryCofferDays, carpentryMaterialCounts, boardArea, boardCountWithWaste, hasCarpentryWork, groupedCustomerItems, customerWon, customerItemName, applyExistingPipeCleaningAdjustment, cloneJson, applyPipeCleaningToCustomerQuote, pipeCleaningInternalDetail, readState, effectiveEstimateInputOverrides };
 }

@@ -16,6 +16,10 @@ export function buildEstimateState(raw, privateDefaultMarkup = 0) {
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    carpentryCostMode: raw.values.carpentryCostMode === "assembly-v1" ? "assembly-v1" : "legacy",
+    carpentryCofferUnits: integerValue("carpentryCofferUnits"),
+    carpentryIndirectT3Mm: carpentrySection ? nonnegative("carpentryIndirectT3Mm") : 0,
+    siteCostConfig: raw.values.siteCostConfig || "",
     demolitionBasicEnabled: demolitionSection && checkedValue("demolitionBasicEnabled"),
     demolitionBasicType: raw.values.demolitionBasicType === "special" ? "special" : "normal",
     demolitionBasicArea: nonnegative("demolitionBasicArea"),

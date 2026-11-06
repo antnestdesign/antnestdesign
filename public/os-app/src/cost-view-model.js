@@ -1,6 +1,6 @@
 import { rateNumber } from "./utils.js";
 
-export const SYSTEM_TRADE_ORDER = ["철거", "전기·조명", "목공", "가구", "타일·욕실", "도배·필름", "바닥", "마감·기타"];
+export const SYSTEM_TRADE_ORDER = ["철거", "전기·조명", "욕실·타일", "도배", "필름", "바닥", "목공", "가구", "마감·기타"];
 
 export const COST_CALCULATION_BASIS_OPTIONS = [
   ["fixed", "고정금액"],
@@ -60,10 +60,12 @@ export function systemCategoryLabel(category = "") {
   const value = category || "기타";
   if (["가구", "철거", "목공", "바닥"].includes(value)) return value;
   if (["전기", "조명"].includes(value)) return "전기·조명";
-  if (["욕실", "타일"].includes(value)) return "타일·욕실";
-  if (["도배", "필름"].includes(value)) return "도배·필름";
-  if (["도어", "중문", "창호"].includes(value)) return "도어·창호";
-  if (["마감", "기타", "상판", "설비", "인허가"].includes(value)) return "마감·기타";
+  if (["욕실", "타일", "타일·욕실", "욕실·타일"].includes(value)) return "욕실·타일";
+  if (["도배", "필름"].includes(value)) return value;
+  if (["도어", "중문", "창호"].includes(value)) return "목공";
+  if (value === "상판") return "가구";
+  if (value === "인허가") return "철거";
+  if (["마감", "기타", "설비"].includes(value)) return "마감·기타";
   return value;
 }
 

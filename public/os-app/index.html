@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="noindex,nofollow" name="robots"/>
 <title>AND OS</title>
-<link href="./styles.css?v=and-os-75" rel="stylesheet"/>
+<link href="./styles.css?v=and-os-76" rel="stylesheet"/>
 <link href="./document-print.css?v=phase-3g" rel="stylesheet"/>
 </head>
 <body>
@@ -350,6 +350,12 @@
 <label class="section-toggle"><input id="sectionCarpentryEnabled" type="checkbox"/><span>목공</span></label>
 <p>천장, 간접, 벽체, 도어 목공 항목을 입력합니다.</p>
 </div>
+<input id="siteCostConfig" type="hidden" value=""/>
+<select id="preliminaryPolicySelection" hidden aria-label="산정 기준 적용"><option value="saved">저장 기준</option><option value="current">최신 기준</option></select>
+<label class="carpentry-policy" data-site-policy>목공 산정 기준<select id="carpentryCostMode"><option value="assembly-v1" selected>공사별 물량 산출</option><option value="legacy">기존 견적 기준 유지</option></select></label>
+<div data-site-policy><button id="applyLatestPreliminaryPolicyButton" type="button" disabled>최신 회사 산정 기준 적용</button></div>
+<div id="carpentryWorkSales" class="carpentry-work-sales"></div>
+<p id="estimateReviewNotice" class="site-cost-warning" hidden role="status"></p>
 <div class="furniture-block">
 <div class="control-grid">
 <label>
@@ -363,14 +369,20 @@
 <option value="new"></option>
 <option value="change"></option></select>
 </label>
+<label data-coffer-count>우물천장 공사 수량(개소)<input id="carpentryCofferUnits" min="0" max="1000" step="1" type="number" value="1"/></label>
 <label>
                   단내림 개소
                   <input id="carpentryDropCeilingUnits" min="0" step="1" type="number" value="0"/>
 </label>
-<label>
-                  간접등 개소
+<label data-legacy-indirect-input hidden>
+                  기존 간접등 개소
                   <input id="carpentryIndirectLightUnits" min="0" step="1" type="number" value="0"/>
 </label>
+<label>
+                  간접등(T3) 길이(mm)
+                  <input id="carpentryIndirectT3Mm" min="0" max="10000000" step="1" type="number" value="0"/>
+</label>
+<p data-legacy-indirect-note hidden role="status"></p>
 <label>
                   실링팬 개수
                   <input id="carpentryCeilingFanUnits" min="0" step="1" type="number" value="0"/>
@@ -1353,6 +1365,6 @@
 </section>
 </main>
 <section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-75" type="module"></script>
+<script src="./src/main.js?v=and-os-76" type="module"></script>
 </body>
 </html>

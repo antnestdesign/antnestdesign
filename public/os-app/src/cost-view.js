@@ -1,5 +1,5 @@
 import { won, rateNumber, escapeHtml } from "./utils.js";
-import { COST_CALCULATION_BASIS_OPTIONS, COST_ROUNDING_OPTIONS, percentText, draftValue, hasDraft, marginDistribution } from "./cost-view-model.js";
+import { SYSTEM_TRADE_ORDER, COST_CALCULATION_BASIS_OPTIONS, COST_ROUNDING_OPTIONS, percentText, draftValue, hasDraft, marginDistribution } from "./cost-view-model.js";
 
 export function createCostView({ document, model, permissions, costItemFilters, expandedSystemCostCategory, systemCostHistory, systemPublishLogs, costItemEditorMode, costItemActionBusy, formatDateTime, onOpenSystem, onRenderSystem }) {
   const { changedCostItems, systemCategories, rowsBySystemFilter, systemTradeSubcategories } = model;
@@ -63,6 +63,14 @@ function ensureSystemManagementShell() {
     `;
     document.querySelector(".tab-panel#admin")?.insertAdjacentElement("afterend", section);
   }
+  for (const section of document.querySelectorAll(".system-status-card,.system-publish-card,.system-history-card,.system-log-card")) {
+    if (section.dataset.folded) continue;
+    const details=document.createElement("details"), summary=document.createElement("summary");
+    summary.textContent=section.querySelector("h2")?.textContent || "상세 내역";
+    details.append(summary,...section.childNodes);section.append(details);section.dataset.folded="true";
+  }
+  const bulk=document.getElementById("systemBulkMarginPanel");
+  if (bulk && bulk.parentElement.tagName!=="DETAILS") { const details=document.createElement("details"),summary=document.createElement("summary");summary.textContent="가산율 일괄 변경";bulk.before(details);details.append(summary,bulk); }
   onRenderSystem();
 }
 
@@ -318,21 +326,10 @@ function systemCostRowHtml(row) {
         </div>`
       : "";
     return `
-      <tr class="${dirty ? "system-dirty-row" : ""} ${row.is_pending_new ? "system-pending-row" : ""}">
-        <td>${escapeHtml(row.item_name || row.itemCode)}</td>
-        <td>${escapeHtml(row.subcategory || "-")}</td>
-        <td>${escapeHtml(row.unit || "-")}</td>
-        <td>${won(row.cost_price)}</td>
-        <td>${draftCostCell}</td>
-        <td>${percentText(row.default_margin_rate)}</td>
-        <td>${draftMarginCell}</td>
-        <td class="admin-system-only">${actionCell}</td>
-        <td>${row.is_active ? "활성" : "비활성"}</td>
-        <td>${draftActiveCell}</td>
-        <td>${stateLabel}</td>
-        <td>${row.updated_at ? formatDateTime(row.updated_at) : "-"}</td>
-        <td class="admin-system-only">${managementActions}</td>
-      </tr>`;
+      <div class="cost-standard-editor ${dirty ? "system-dirty-row" : ""}">
+        <label>변경 예정 원가${["ELEC_LABOR_WORKER","ELEC_LABOR_HELPER"].includes(row.item_code)?"(원/품)":""} ${draftCostCell}</label><span>${["ELEC_LABOR_WORKER","ELEC_LABOR_HELPER"].includes(row.item_code)?"수량 단위: ":""}${escapeHtml(row.unit)} · ${stateLabel}</span>${actionCell}
+        <details class="cost-standard-advanced"><summary>가산율·활성·기타 작업</summary><div><label>변경 예정 가산율(%) ${draftMarginCell}</label><label>변경 예정 활성 ${draftActiveCell}</label><span>표준 가산율 ${percentText(row.default_margin_rate)} · ${row.is_active?"활성":"비활성"}</span>${managementActions}</div></details>
+      </div>`;
 }
 
 function renderSystemCostRows(prepared) {
@@ -343,7 +340,9 @@ function renderSystemCostRows(prepared) {
     panel.innerHTML = `<div class="system-empty-state">조건에 맞는 원가 품목이 없습니다.</div>`;
     return;
   }
-  panel.innerHTML = groups.map(({ tradeLabel, rows, isOpen, meta }) => {
+  const selected = groups.find(g=>g.isOpen) || (costItemFilters.keyword ? groups[0] : null);
+  panel.innerHTML = `<nav class="cost-trade-navigation" aria-label="공정별 표준 원가">${SYSTEM_TRADE_ORDER.map(label=>{const group=groups.find(g=>g.tradeLabel===label);return `<button type="button" data-system-cost-category="${label}" aria-expanded="${selected?.tradeLabel===label}">${label}<small>${group?.rows.length || 0}개</small></button>`;}).join("")}</nav>` + groups.filter(g=>g===selected).map(({ tradeLabel, rows, meta }) => {
+    const isOpen = true;
     return `
       <section class="system-cost-group ${isOpen ? "is-open" : ""}">
         <button class="system-cost-group-header" type="button" data-system-cost-category="${escapeHtml(tradeLabel)}" aria-expanded="${isOpen ? "true" : "false"}">
@@ -354,16 +353,9 @@ function renderSystemCostRows(prepared) {
           <span class="system-cost-toggle">${isOpen ? "접기" : "펼치기"}</span>
         </button>
         ${isOpen ? `
-          <div class="table-wrap system-cost-wrap">
-            <table class="system-cost-table">
-              <thead><tr>
-                <th>품목명</th><th>세부분류</th><th>단위</th><th>운영<br>원가</th><th>변경 예정<br>원가</th><th>운영<br>마진율</th><th>변경 예정<br>마진율(%)</th><th class="admin-system-only">임시<br>저장</th><th>운영<br>상태</th><th>변경 예정<br>상태</th><th>상태</th><th>최근 수정일</th><th class="admin-system-only">작업</th>
-              </tr></thead>
-              <tbody>${rows.map(systemCostRowHtml).join("")}</tbody>
-            </table>
-          </div>` : ""}
+          <div class="cost-standard-list">${rows.map(row=>`<article class="cost-standard-record"><div class="cost-standard-summary"><div><strong>${escapeHtml(row.item_name)}</strong><small>규격: ${escapeHtml(row.specification || "미등록")} · ${escapeHtml(row.subcategory || "기타")}</small></div><span aria-label="수량 단위">${escapeHtml(row.unit)}</span><strong>${won(row.cost_price)}${["ELEC_LABOR_WORKER","ELEC_LABOR_HELPER"].includes(row.item_code)?"/품":""}</strong></div><details><summary>${canEditCost()?"표준 원가 수정":"표준 원가·변경 예정값"}</summary>${systemCostRowHtml(row)}</details></article>`).join("")}</div>` : ""}
       </section>`;
-  }).join("");
+  }).join("") + (!selected ? "<p>공정을 선택해 표준 원가 품목을 확인하세요.</p>" : "");
 }
 
 function draftChangeText(row) {

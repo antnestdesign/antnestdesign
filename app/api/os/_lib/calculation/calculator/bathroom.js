@@ -1,4 +1,4 @@
-export function bathroomDetails(state, rates) {
+export function bathroomDetails(state, rates, policy=null) {
   const units = state.bathroomUnits;
   if (!state.bathroomEnabled || units <= 0) return [];
   const fanUnit = state.bathroomFanType === "hugent"
@@ -7,7 +7,7 @@ export function bathroomDetails(state, rates) {
   const fixtureSet = {
     value: {
       item: "도기·수전·장식장·악세사리 기본세트(AND 실속)",
-      unitPrice: rates.fixtureSet * 0.75,
+      unitPrice: rates.fixtureSet * (policy?.parameters.fixtureValueMultiplier ?? .75),
     },
     standard: {
       item: "도기·수전·장식장·악세사리 기본세트",
@@ -15,7 +15,7 @@ export function bathroomDetails(state, rates) {
     },
     premium: {
       item: "도기·수전·장식장·악세사리 기본세트(AND 고급)",
-      unitPrice: rates.fixtureSet + 700000,
+      unitPrice: rates.fixtureSet + (policy?.prices.BATH_PREMIUM_EXTRA ?? 700000),
     },
   }[state.bathroomFixtureGrade] || {
     item: "도기·수전·장식장·악세사리 기본세트",

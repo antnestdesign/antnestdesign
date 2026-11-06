@@ -1,9 +1,10 @@
 import { isEstimateInputExcluded } from "./estimate-input.js";
-import { PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
+import { CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { storedEstimateInputValue } from "./estimate-length.js";
 import { ESTIMATE_RATE_BINDINGS, buildEstimateRateUpdates } from "./estimate-state.js";
 
 const ESTIMATE_FORM_FIELDS = [
+  ...Object.keys(CARPENTRY_INPUT_SCHEMA),
   ...Object.keys(PRELIMINARY_WORK_INPUT_SCHEMA),
   "sectionDemolitionEnabled",
   "sectionElectricalEnabled",

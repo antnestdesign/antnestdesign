@@ -5,6 +5,7 @@ import { clone, estimateRow, testProfile, testSession } from "../fixtures/estima
 import { clearRequestLog, jsonResponse, setMockHandler } from "./network.js";
 import { projectStaffEstimate, privateEstimateDefaults, calculatePrivilegedEstimate } from "../../../app/api/os/estimates/_lib/estimates.js";
 import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
+import {defaultPolicy,policyCatalog} from '../../../app/api/os/_lib/calculation/preliminary-policy.js';
 
 const html = readFileSync(resolve("public/os-app/index.html"), "utf8");
 
@@ -47,6 +48,8 @@ export function createEstimateDatabase(estimate, packages = []) {
       }
     }
     if (method !== "GET") return null;
+    if (url.pathname === '/rest/v1/preliminary_policy_state') return jsonResponse([{current_version:null}]);
+    if (url.pathname === '/api/os/preliminary-policy') return jsonResponse({version:0,revision:0,draft:null,master_hash:'synthetic',current:defaultPolicy(createEstimateCalculation().policyDefaults()),catalog:policyCatalog(),can_edit:database.profile?.role==='admin',history:[]});
     if (url.pathname === "/api/os/features/project-foundation") return jsonResponse({ mode: "OFF" });
     if (url.pathname === "/api/os/me") return jsonResponse(database.profile || testProfile());
     if (url.pathname === "/rest/v1/cost_items") {

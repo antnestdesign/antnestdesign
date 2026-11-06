@@ -169,6 +169,9 @@ export function requestProjectFoundation(path, options = {}) {
   if (!/^\/(projects|detailed-estimates)(\/|$|\?)/.test(path)) throw new Error("본견적 요청 경로가 올바르지 않습니다.");
   return requestOsApi(path, options, true);
 }
+export function requestPreliminaryPolicy(body) {
+  return requestOsApi('/preliminary-policy',body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
+}
 let verifiedEstimateUserId = null;
 
 export async function loadCurrentOsUser() {

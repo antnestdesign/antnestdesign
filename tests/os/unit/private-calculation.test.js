@@ -7,6 +7,11 @@ import { PRELIMINARY_WORK_INPUT_SCHEMA } from '../../../public/os-app/src/estima
 // Preserve the pre-extension fingerprint of every legacy field and monetary result.
 function legacyResult(result) {
   const copy = structuredClone(result);
+  expect(['legacy','assembly-v1']).toContain(copy.state.carpentryCostMode);
+  expect(copy.state.siteCostConfig).toBe('');
+  expect(copy.state.carpentryCofferUnits).toBe(1);
+  expect(copy.state.carpentryIndirectT3Mm).toBe(0);
+  for(const id of ['carpentryCostMode','carpentryCofferUnits','carpentryIndirectT3Mm','siteCostConfig'])delete copy.state[id];
   for (const [id, field] of Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA)) {
     const expected = field.type === 'checkbox' ? field.value : field.type === 'number' ? Number(field.value) : field.value;
     expect(copy.state[id]).toBe(expected);

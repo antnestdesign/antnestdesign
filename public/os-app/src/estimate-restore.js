@@ -87,7 +87,8 @@ function ensureCostSnapshotPanel() {
 function restoreInputValues(inputs = {}) {
   const hadFractionalTargetMargin = Number(inputs.targetMargin) > 0 && Number(inputs.targetMargin) <= 1;
   // Older snapshots must not inherit new work from the previously opened estimate.
-  const nextInputs = { ...Object.fromEntries(Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...inputs };
+  const nextInputs = { ...Object.fromEntries(Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), carpentryCostMode: "legacy", carpentryCofferUnits: "1", carpentryIndirectT3Mm: "0", siteCostConfig: "", ...inputs };
+  nextInputs.preliminaryPolicySelection="saved";
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
     nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
   }

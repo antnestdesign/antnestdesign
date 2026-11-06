@@ -1,6 +1,7 @@
-import { PRELIMINARY_WORK_INPUT_SCHEMA } from "../../../../../public/os-app/src/estimate-inputs.js";
+import { CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "../../../../../public/os-app/src/estimate-inputs.js";
 
 export const ESTIMATE_INPUT_SCHEMA = {
+  ...CARPENTRY_INPUT_SCHEMA,
   ...PRELIMINARY_WORK_INPUT_SCHEMA,
   "estimateStatus": { "type": "select", "value": "견적", "choices": ["견적","계약","착공","준공"] },
   "projectName": {
@@ -821,7 +822,7 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "max": 50
   }
 };
-export const PRIVATE_ESTIMATE_INPUTS = ["targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
+export const PRIVATE_ESTIMATE_INPUTS = ["carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
 
 export function staffEstimateInputs(inputs = {}) {
   return Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA)
