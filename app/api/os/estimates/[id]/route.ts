@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { ApiError, getUserContext, json, supabaseFetch } from "../../_lib/server";
-import { calculateStaffEstimate, estimateErrorResponse, estimateRowPayload, projectStaffEstimate, readEstimate, validateStaffBody } from "../_lib/estimates";
+import { assertBuilderActor } from '../../estimate-items/_lib/service';
+import { calculatePrivilegedEstimate, calculateStaffEstimate, estimateErrorResponse, estimateRowPayload, projectStaffEstimate, readEstimate, validateStaffBody } from "../_lib/estimates";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest, route: RouteContext) {
   try {
     const context = await getUserContext(request);
     const row = await readEstimate((await route.params).id);
+    if(row.estimate_data?.itemBuilder)await assertBuilderActor(context);
     return json(context.profile.role === "staff" ? projectStaffEstimate(row) : row);
   } catch (error) { return estimateErrorResponse(error); }
 }
@@ -16,7 +18,10 @@ export async function PATCH(request: NextRequest, route: RouteContext) {
   try {
     const context = await getUserContext(request);
     const row = await readEstimate((await route.params).id);
-    const snapshot = await calculateStaffEstimate(validateStaffBody(await request.json()), context, row);
+    const raw=await request.json();
+    const snapshot = context.profile.role!=='staff'&&(raw.itemSelections!==undefined||row.estimate_data?.itemBuilder)
+      ? (await calculatePrivilegedEstimate({...raw,estimateId:row.id},context)).snapshot
+      : await calculateStaffEstimate(validateStaffBody(raw), context, row);
     const expectedVersion = row.updated_at ? `&updated_at=eq.${encodeURIComponent(String(row.updated_at))}` : "";
     const rows = await supabaseFetch<Record<string, unknown>[]>(`/rest/v1/estimates?id=eq.${row.id}${expectedVersion}&select=*`, {
       method: "PATCH", headers: { Prefer: "return=representation" },

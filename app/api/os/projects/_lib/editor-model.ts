@@ -5,7 +5,7 @@ import { priceStamp } from "../../../../../public/os-app/src/detailed-completion
 export const TRADES = ["demolition", "electrical", "bathroom", "wallpaper", "film", "flooring", "carpentry", "furniture", "finish"] as const;
 type Obj = Record<string, unknown>;
 export type Master = { item_code: string; item_name: string; category: string; unit: string; cost_price: number; is_active: boolean };
-export type PrivateItem = { costUnit: number | null; costConfigured?: boolean; targetMargin: number; salePolicy?: string; marginOverride?: boolean; masterCode?: string; kind?: string; cost?: number | null; profit?: number | null; marginRate?: number | null; priceApproval?: { stamp: string; reason: string; actor?: string; at?: string; invalidated?: boolean }; tileRule?: { version: string; labor: number; waste: number; boxArea: number; boxCost: number } };
+export type PrivateItem = { costUnit: number | null; costConfigured?: boolean; targetMargin: number; salePolicy?: string; marginOverride?: boolean; masterCode?: string; kind?: string; cost?: number | null; profit?: number | null; marginRate?: number | null; priceApproval?: { stamp: string; reason: string; actor?: string; at?: string; invalidated?: boolean }; tileRule?: { version: string; labor: number; waste: number; boxArea: number; boxCost: number }; templateVersion?: { id:string; frozen:{engine:string;definition:{trade:string;unit:string;name:string};costUnit:number|null} } };
 export type PrivateEditor = { policy: { companyMargin: number; tradeMargins: Record<string, number> }; items: Record<string, PrivateItem>; costTotal?: number | null; profit?: number | null; marginRate?: number | null; groups?: Obj[] };
 export class EditorValidationError extends Error {}
 function fail(message: string): never { throw new EditorValidationError(message); }
@@ -81,8 +81,10 @@ export function calculateEditor(input: unknown, previous: PrivateEditor | undefi
     const masterCode = text(i.masterCode, 100), master = masters.find(m => m.item_code === masterCode);
     const prior = previous?.items?.[id];
     const standardId = i.standardId === undefined ? undefined : text(i.standardId, 100, true);
-    const standard = standardId ? standardById(standardId) : undefined;
-    const legacySource = standard?.legacySourceCode && prior?.masterCode === standard.legacySourceCode && masterCode === prior.masterCode;
+    const template=prior?.templateVersion;
+    if(template&&(standardId!==`tpl-${template.id}`||i.unit!==template.frozen.definition.unit))fail("게시 항목의 출처·단위는 변경할 수 없습니다.");
+    const standard = template?{trade:template.frozen.definition.trade,sourceCode:'',spaceAllowed:true,pricing:'master',legacySourceCode:undefined,salePolicy:undefined}:standardId ? standardById(standardId) : undefined;
+    const legacySource = standard?.legacySourceCode && prior?.masterCode === standard.legacySourceCode && masterCode === prior?.masterCode;
     if (standardId && (!standard || standard.trade !== trade || (masterCode && masterCode !== standard.sourceCode && !legacySource))) fail("표준 품목의 공정과 원가 연결을 확인해 주세요.");
     if (standard && !standard.spaceAllowed && spaceId && !prior) fail("현장 공통 품목은 공간 연결 없이 추가해 주세요.");
     if (masterCode && !master && !prior) fail("활성 원가 품목을 다시 선택해 주세요.");
@@ -124,7 +126,9 @@ export function calculateEditor(input: unknown, previous: PrivateEditor | undefi
     }
     const initialCostUnit = kind === "tile" ? quantity > 0 ? cost / quantity : 0 : itemPolicy.costUnit ?? 0;
     const pipeFixed = itemPolicy.salePolicy === "pipe-fixed-v1" && masterCode === "MISC_EXISTING_PIPE_CLEANING";
-    let price = i.saleUnitPrice == null ? pipeFixed ? 300000 : Math.round(initialCostUnit / (1 - itemPolicy.targetMargin)) : integer(i.saleUnitPrice);
+    const publishedPrice=(template?.frozen.definition as {pricing?:{detailedSaleUnit?:number|null}}|undefined)?.pricing?.detailedSaleUnit;
+    if(template&&i.saleUnitPrice==null&&!configured&&publishedPrice==null)fail("판매단가를 먼저 등록해 주세요.");
+    let price = i.saleUnitPrice == null ? publishedPrice??(pipeFixed ? 300000 : Math.round(initialCostUnit / (1 - itemPolicy.targetMargin))) : integer(i.saleUnitPrice);
     if (reprice.includes(id)) {
       if (!configured) fail("원가 미설정 품목은 적용 원가를 확인한 뒤 판매가를 재산정해 주세요.");
       if (!itemPolicy.marginOverride) itemPolicy.targetMargin = pipeFixed ? 0 : policy.tradeMargins[trade] ?? policy.companyMargin;

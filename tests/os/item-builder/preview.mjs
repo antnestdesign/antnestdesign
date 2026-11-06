@@ -1,0 +1,16 @@
+import {createRequire} from 'node:module';
+import {createServer} from 'node:http';
+import {existsSync,readFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+import {assertContainer,settings,ORIGIN} from '../db/rebuild/stack.mjs';
+assertContainer();if(ORIGIN!=='http://127.0.0.1:56321')throw Error('Owned local stack required');
+const root=fileURLToPath(new URL('../../../',import.meta.url)),mode=process.argv[2]||'ON';
+if(!['ON','OFF','READ_ONLY'].includes(mode)||existsSync(resolve(root,'.env.local')))throw Error('Explicit local mode and environment-free preview required');
+const s=settings();for(const k of Object.keys(process.env))if(/SUPABASE|DATABASE|^PG|^VERCEL|^NEXT_PUBLIC|^AND_OS/.test(k))delete process.env[k];
+Object.assign(process.env,{SUPABASE_URL:ORIGIN,NEXT_PUBLIC_SUPABASE_URL:ORIGIN,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,AND_OS_DB_REBUILD:'1',AND_OS_DB_TEST:'1',AND_OS_PROJECT_FOUNDATION_MODE:'ON',AND_OS_ESTIMATE_ITEM_BUILDER_MODE:mode,NEXT_TELEMETRY_DISABLED:'1'});
+await import('../db/rebuild/network-guard.mjs');
+const require=createRequire(resolve(root,'package.json')),app=require('next')({dev:true,webpack:true,dir:root,hostname:'127.0.0.1',port:3111});await app.prepare();const handler=app.getRequestHandler();
+const storage=readFileSync(resolve(root,'public/os-app/src/storage.js'),'utf8').replace(/const SUPABASE_URL = "[^"]+";/,`const SUPABASE_URL = ${JSON.stringify(ORIGIN)};`).replace(/const SUPABASE_KEY = "[^"]+";/,`const SUPABASE_KEY = ${JSON.stringify(s.ANON_KEY)};`);
+if(storage.includes('.supabase.co'))throw Error('Hosted authentication prohibited');
+createServer((req,res)=>{if(req.url.split('?')[0]==='/os-app/src/storage.js'){res.writeHead(200,{'Content-Type':'application/javascript','Cache-Control':'no-store'});res.end(storage);}else handler(req,res);}).listen(3111,'127.0.0.1',()=>console.log(`ISOLATED ${mode} http://127.0.0.1:3111/os-app/index.html`));

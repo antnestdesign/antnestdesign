@@ -2,12 +2,13 @@ import { moneyAmount } from "./utils.js";
 import { buildAdminMarginGroups, internalDetailCustomerAmount, storedEstimateSummary, buildEstimateDiagnostics } from "./estimate-summary.js";
 
 export function buildInternalRowsModel(details) {
-  return details.map((item) => ({ ...item, viewProfit: item.customerRevenue - item.cost }));
+  return details.map((item) => ({ ...item, viewProfit: item.cost===null?null:item.customerRevenue - item.cost }));
 }
 
 export function buildStoredInternalSummaryModel(estimate, { markupRate }) {
   if (!estimate) return null;
   const summary = estimate.internalSummary || {};
+  if(estimate.costIncomplete)return {directCost:null,customerRevenue:Number(estimate.total??summary.customerRevenue)||0,profit:null,marginRate:null};
   const directCost = Number(estimate.costTotal ?? summary.directCost) || 0;
   const customerRevenue = Number(estimate.total ?? summary.customerRevenue) || 0;
   const profit = Number.isFinite(summary.profit) ? summary.profit : customerRevenue - directCost;
@@ -24,9 +25,9 @@ export function buildEstimateInternalViewModel(estimate, options) {
     ...group,
     details: group.details.map((detail) => {
       const customer = internalDetailCustomerAmount(detail);
-      const cost = moneyAmount(detail.cost);
-      const profit = customer - cost;
-      return { ...detail, view: { customer, cost, profit, marginRate: options.markupRate(profit, cost) } };
+      const cost = detail.cost===null?null:moneyAmount(detail.cost);
+      const profit = cost===null?null:customer - cost;
+      return { ...detail, view: { customer, cost, profit, marginRate:cost===null?null:options.markupRate(profit, cost) } };
     }),
   }));
   const totalCustomer = groups.reduce((sum, group) => sum + group.customer, 0);
@@ -36,7 +37,7 @@ export function buildEstimateInternalViewModel(estimate, options) {
     summary,
     groups,
     diagnostics: options.canViewInternal ? buildEstimateDiagnostics(estimate, summary, options) : [],
-    totals: { totalCustomer, totalCost, totalProfit, totalMarginRate: options.markupRate(totalProfit, totalCost) },
+    totals: { totalCustomer, totalCost:estimate.costIncomplete?null:totalCost, totalProfit:estimate.costIncomplete?null:totalProfit, totalMarginRate:estimate.costIncomplete?null:options.markupRate(totalProfit, totalCost) },
   };
 }
 
@@ -48,7 +49,7 @@ export function buildCalculatedEstimatePresentation(result, displayEstimate, { g
   const displayProfit = Number(displaySummary.profit ?? profit) || 0;
   const displayMarginRate = Number(displaySummary.marginRate ?? (actualMargin * 100)) || 0;
   return {
-    displayRevenue, displayCost, displayProfit, displayMarginRate, discountRoom,
+    displayRevenue, displayCost:displayEstimate.costIncomplete?null:displayCost, displayProfit:displayEstimate.costIncomplete?null:displayProfit, displayMarginRate:displayEstimate.costIncomplete?null:displayMarginRate, discountRoom:displayEstimate.costIncomplete?null:discountRoom,
     marginStatus: warnings.some((item) => item.includes("미달")) ? "미달" : "정상",
     inputSummary: {
       selectionCount: `${quoteLines.length}개 항목`,

@@ -106,7 +106,8 @@ export function mountDetailedEstimateView({ document, getContext, request, onCon
     const uiState = draft?.id === id ? editorView?.uiState() : undefined;
     draft = await request(`/detailed-estimates/${encodeURIComponent(id)}`);
     dirty = false; lastCommand = null;
-    const [editorState, standards] = await Promise.all([request(`/detailed-estimates/${encodeURIComponent(id)}/editor`), request("/detailed-estimates/catalog?view=standards")]);
+    const [editorState, currentStandards] = await Promise.all([request(`/detailed-estimates/${encodeURIComponent(id)}/editor`), request("/detailed-estimates/catalog?view=standards")]);
+    const standards=[...new Map([...currentStandards,...editorState.templateStandards||[]].map(s=>[s.id,s])).values()];
     const catalog=editorState.internal===undefined?[]:await request("/detailed-estimates/catalog");
     if (editorState.context) draft.context = editorState.context;
     draft.revision = editorState.revision;

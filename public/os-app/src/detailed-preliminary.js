@@ -112,6 +112,11 @@ export function buildPreliminaryPlan(reference, sourceId) {
   }
   if (enabled("windowNoticeEnabled")) review("finish", "창호·냉난방기 별도 견적", ["windowNoticeEnabled"], "별도 견적 경계를 유지합니다. 포함으로 자동 변경하지 않습니다.");
   const tradeLabels = { "철거": "demolition", "전기/조명": "electrical", "욕실": "bathroom", "도배": "wallpaper", "필름": "film", "바닥": "flooring", "목공": "carpentry", "가구": "furniture", "마감": "finish", "기타": "finish", "도어/창호": "carpentry" };
+  for(const row of reference?.itemBuilderRows||[]){
+    if(!/^[0-9a-f-]{36}$/i.test(row.versionId)||!positive(row.quantity))continue;
+    const key=`template:${row.id}`,origin={key,sourceId,mappingVersion:PRELIMINARY_MAPPING_VERSION,inputs:[],quantity:round(row.quantity),unit:row.unit,kind:'input',label:'추가 공사 저장 수량'};
+    rows.push({key,standardId:`tpl-${row.versionId}`,trade:row.trade,name:row.name,unit:row.unit,quantity:round(row.quantity),spec:row.spec,workScope:'',origin});
+  }
   // The deployed reference RPC has a fixed legacy input whitelist. Do not silently
   // omit new work when its public output survives but its quantity fields do not.
   for (const [trade, pattern, key] of [

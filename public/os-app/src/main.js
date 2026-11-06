@@ -6,6 +6,7 @@ import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
 import { ESTIMATE_INPUT_SCHEMA, CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { mountSiteCostView } from "./site-cost-view.js";
 import { mountPreliminaryPolicyView } from "./preliminary-policy-view.js";
+import { mountEstimateItemBuilder } from "./estimate-item-builder.js";
 import { won, rateNumber, escapeHtml } from "./utils.js";
 import { canonicalInputValues } from "./estimate-input.js";
 import { createEstimateRestore } from "./estimate-restore.js";
@@ -65,6 +66,7 @@ import {
   getAuthSession,
   requestProjectFoundation,
   requestPreliminaryPolicy,
+  requestEstimateItems,
   loadProjectFoundationMode,
 } from "./storage.js";
 
@@ -395,6 +397,7 @@ let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
 let siteCostView = null;
 let preliminaryPolicyView = null;
+let itemBuilderView = null;
 let newEstimateInputBaseline = null;
 let newEstimatePrivateDefaults = {};
 let estimateNavigationGeneration = 0;
@@ -1236,7 +1239,7 @@ function restoreInputValues(inputs = {}) { return estimateRestore.restoreInputVa
 
 let serverCalculation=null, serverCalculationPending=null, calculationGeneration=0;
 function serverCalculationKey(){return JSON.stringify([currentEditingEstimateId,currentInputKey(),COST_ITEM_DEFINITIONS.map(d=>el[d.inputId]?.value)]);}
-function privateCalculationBody(estimateId=currentEditingEstimateId){return {inputs:Object.fromEntries(Object.entries(currentEstimateInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id)||['projectSearch','projectSearchResults'].includes(id))),estimateId,rateValues:Object.fromEntries(COST_ITEM_DEFINITIONS.filter(d=>el[d.inputId]?.value!=="").map(d=>[d.inputId,Number(el[d.inputId]?.value)||0]))};}
+function privateCalculationBody(estimateId=currentEditingEstimateId){return {inputs:Object.fromEntries(Object.entries(currentEstimateInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id)||['projectSearch','projectSearchResults'].includes(id))),estimateId,itemSelections:itemBuilderView?.selections()||[],rateValues:Object.fromEntries(COST_ITEM_DEFINITIONS.filter(d=>el[d.inputId]?.value!=="").map(d=>[d.inputId,Number(el[d.inputId]?.value)||0]))};}
 async function ensureServerCalculation(){
   const key=serverCalculationKey();if(serverCalculation?.key===key)return serverCalculation;
   if(serverCalculationPending?.key===key)return serverCalculationPending.promise;
@@ -1256,6 +1259,7 @@ function currentPipeCleaningDerivedEstimate() {
 }
 
 function renderEstimateSnapshotOnly(estimate) {
+  itemBuilderView?.result(estimate);
   const total = Number(estimate.total ?? estimate.customerQuote?.total) || 0;
   setText("clientTotal", customerWon(total));
   renderCustomerQuote(estimate);
@@ -1302,10 +1306,12 @@ async function renderCostSnapshotComparison(estimate) {
     })
     .filter((item) => item && item.diff !== 0);
   const savedDirectCost = Number(estimate.costTotal ?? estimate.internalSummary?.directCost) || 0;
-  const currentSnapshot = (await previewInternalEstimate(privateCalculationBody(null))).snapshot;
+  const comparisonBody=privateCalculationBody(estimate.itemBuilder?estimate.id:null);
+  if(estimate.itemBuilder)comparisonBody.inputs.preliminaryPolicySelection='current';
+  const currentSnapshot = (await previewInternalEstimate(comparisonBody)).snapshot;
   const currentDirectCost = Number(currentSnapshot.costTotal) || 0;
   const directDiff = currentDirectCost - savedDirectCost;
-  estimateView.renderCostSnapshotComparison({ rows, savedDirectCost, currentDirectCost, directDiff });
+  estimateView.renderCostSnapshotComparison({ rows, savedDirectCost, currentDirectCost, directDiff,incomplete:estimate.costIncomplete||currentSnapshot.costIncomplete });
 }
 
 function renderPrintQuote(quote) { return estimatePrint.renderPrintQuote(quote); }
@@ -1469,6 +1475,7 @@ function renderCalculatedEstimate(result){
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
   const calculatedSnapshot = buildEstimateSnapshot(result);
   const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
+  itemBuilderView?.result(displayEstimate);
   siteCostView?.render(displayEstimate.costBreakdown || serverCalculation?.costRows || []);
   const presentation = buildCalculatedEstimatePresentation(result, displayEstimate, { groupTotalFromDetails, mmText, customerWon });
   estimateView.renderInputSummary(presentation);
@@ -1507,6 +1514,7 @@ let staffPreviewGeneration = 0;
 let staffPreviewTimer = null;
 
 function displayStaffEstimate(estimate) {
+  itemBuilderView?.result(estimate);
   activeQuoteEstimate = estimate;
   lastRenderedEstimateSnapshot = estimate;
   setText("clientTotal", estimate.totalText || customerWon(estimate.total));
@@ -1533,7 +1541,7 @@ function renderStaffEstimate() {
   setSaveStatus("고객 견적을 계산 중입니다.");
   staffPreviewTimer = setTimeout(async () => {
     try {
-      const estimate = await previewStaffEstimate(inputs, estimateId);
+      const estimate = await previewStaffEstimate(inputs, estimateId, itemBuilderView?.selections()||[]);
       if (generation !== staffPreviewGeneration || currentProfile?.role !== "staff" || estimateId !== currentEditingEstimateId) return;
       displayStaffEstimate(estimate);
       setSaveStatus("입력값으로 고객 견적을 계산했습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
@@ -1568,7 +1576,8 @@ function currentEstimateInputValues() {
 }
 
 function currentInputKey() {
-  return canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT);
+  const base=canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT),items=itemBuilderView?.selections()||[];
+  return items.length?JSON.stringify([base,items]):base;
 }
 
 function loadedEstimateMatchesCurrentInputs() {
@@ -2305,6 +2314,7 @@ function setAuthenticated(isAuthenticated) { return uiShell.setAuthenticated(isA
 
 async function enterAuthenticatedApp(profile) {
   currentProfile = profile;
+  itemBuilderView?.reset();
   siteCostView?.clear();
   preliminaryPolicyView?.clear();
   serverCalculation=null;serverCalculationPending=null;calculationGeneration++;
@@ -2318,6 +2328,7 @@ async function enterAuthenticatedApp(profile) {
   costManagementDefaults=null;
   newEstimatePrivateDefaults = {};
   if(canViewSystem()){const config=await loadPrivateEstimateDefaults();newEstimatePrivateDefaults={...config.defaults};costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
+  await itemBuilderView?.loadCatalog();
   newEstimateInputBaseline = currentInputKey();
   setAuthenticated(true);
   applyAccessControl();
@@ -2326,6 +2337,7 @@ async function enterAuthenticatedApp(profile) {
   renderContractPackagePanel();
   await refreshAllContractPackages();
   await refreshSystemManagement();
+  await itemBuilderView?.load();
 }
 
 async function completeLogin() {
@@ -2367,6 +2379,7 @@ function renderProjectSearchResults() {
 }
 
 function loadEstimateIntoUi(estimate) {
+  itemBuilderView?.restore(estimate);
   cancelStaffPreview();
   pipeCleaningAdjustmentDirty = false;
   lastRenderedEstimateSnapshot = null;
@@ -2455,7 +2468,7 @@ async function handleSaveEstimate(mode = "update") {
       if (isUpdate && !updateId) throw new Error("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       cancelStaffPreview();
       const inputKeyAtSave = currentInputKey();
-      const inputEstimate = { inputs: staffCurrentEstimateInputs(),
+      const inputEstimate = { inputs: staffCurrentEstimateInputs(), itemSelections:itemBuilderView?.selections()||[],
         ...(isUpdate && loadedEstimateBaseline?.estimate?.address != null ? { address: loadedEstimateBaseline.estimate.address } : {}) };
       const saved = isUpdate ? await updateEstimate(updateId, inputEstimate) : await saveEstimate(inputEstimate);
       const unchanged = currentInputKey() === inputKeyAtSave
@@ -2563,6 +2576,7 @@ async function onLoginSubmit(event) {
 }
 
 async function onLogoutClick() {
+  if(itemBuilderView&&!itemBuilderView.canClose())return;
   siteCostView?.clear();
   preliminaryPolicyView?.clear();
   if (el.siteCostConfig) el.siteCostConfig.value = "";
@@ -2570,6 +2584,7 @@ async function onLogoutClick() {
   preliminaryContractEstimate = null;
   contractSourceView.reset();
   await signOut();
+  itemBuilderView?.clear();
   cancelStaffPreview();
   activeQuoteEstimate = null;
   loadedEstimateBaseline = null;
@@ -2650,6 +2665,7 @@ function onNewEstimateClick() {
   issuedContractEstimate = null;
   preliminaryContractEstimate = null;
   contractSourceView.reset();
+  itemBuilderView?.reset();
   restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults });
   el.projectSearch.value = "";
   el.projectSearchResults.value = "";
@@ -2724,7 +2740,7 @@ async function onContractActionClick(event) {
 }
 
 function onBeforeUnload(event) {
-  if (!contractOptionsDirty&&!preliminaryPolicyView?.isDirty()) return;
+  if (!contractOptionsDirty&&!preliminaryPolicyView?.isDirty()&&!itemBuilderView?.isDirty()) return;
   event.preventDefault();
   event.returnValue = "";
 }
@@ -3026,6 +3042,8 @@ siteCostView = mountSiteCostView({ document, canView: canViewSystem, canStandard
 preliminaryPolicyView=mountPreliminaryPolicyView({document,request:requestPreliminaryPolicy,canView:canViewSystem,
   getInputs:()=>Object.fromEntries(Object.entries(collectInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id))),
   onPublished:async()=>{await loadRateSettings();serverCalculation=null;calculationGeneration++;} });
+itemBuilderView=mountEstimateItemBuilder({document,request:requestEstimateItems,role:()=>currentProfile?.role,
+  changed:()=>handleEstimateInputChanged()});
 
 const contractSourceView = createContractSourceView({ document, request: requestProjectFoundation,
   loadMode: loadProjectFoundationMode,

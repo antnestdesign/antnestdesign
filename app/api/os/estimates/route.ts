@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
 import { getUserContext, json, supabaseFetch } from "../_lib/server";
-import { calculateStaffEstimate, estimateErrorResponse, estimateRowPayload, projectStaffEstimate, validateStaffBody } from "./_lib/estimates";
+import { assertBuilderActor } from '../estimate-items/_lib/service';
+import { calculatePrivilegedEstimate, calculateStaffEstimate, estimateErrorResponse, estimateRowPayload, projectStaffEstimate, validateStaffBody } from "./_lib/estimates";
 
 export async function GET(request: NextRequest) {
   try {
     const context = await getUserContext(request);
     const rows = await supabaseFetch<Record<string, unknown>[]>("/rest/v1/estimates?select=*&order=created_at.desc");
+    if(rows.some(row=>(row.estimate_data as {itemBuilder?:unknown})?.itemBuilder))await assertBuilderActor(context);
     return json(context.profile.role === "staff" ? rows.map(projectStaffEstimate) : rows);
   } catch (error) { return estimateErrorResponse(error); }
 }
@@ -13,8 +15,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const context = await getUserContext(request);
-    const body = validateStaffBody(await request.json());
-    const snapshot = await calculateStaffEstimate(body, context);
+    const raw = await request.json();
+    const snapshot = context.profile.role!=='staff'&&raw.itemSelections!==undefined
+      ? (await calculatePrivilegedEstimate(raw,context)).snapshot
+      : await calculateStaffEstimate(validateStaffBody(raw), context);
     const rows = await supabaseFetch<Record<string, unknown>[]>("/rest/v1/estimates?select=*", {
       method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(estimateRowPayload(snapshot)),
     });

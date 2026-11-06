@@ -141,6 +141,7 @@ function syncSectionLocks() {
   document.querySelectorAll(".section-toggle input[type='checkbox']").forEach((toggle) => {
     for (const node of getSectionContentNodes(toggle)) {
       node.querySelectorAll("input, select, textarea, button").forEach((control) => {
+        if(control.closest('[data-item-quote]'))return;
         control.disabled = !toggle.checked;
       });
     }

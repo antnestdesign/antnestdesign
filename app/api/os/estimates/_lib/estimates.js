@@ -3,6 +3,8 @@ import { customerQuoteProjection } from "../../../../../public/os-app/src/custom
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
 import { PreliminaryPolicyError,policyRateValues } from '../../_lib/calculation/preliminary-policy.js';
+import { baseEstimate, appendEstimateItems } from '../../estimate-items/_lib/preliminary';
+import { ItemDefinitionError, publicItemState } from '../../estimate-items/_lib/model.js';
 import {
   COST_ITEM_DEFINITIONS, ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS,
   createEstimateCalculation,
@@ -18,6 +20,7 @@ const text = (value) => typeof value === "string" ? value : "";
 const amount = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
 
 export function estimateErrorResponse(error) {
+  if (error instanceof ItemDefinitionError) return errorResponse(new ApiError(400,error.message));
   if (error instanceof SiteCostValidationError) return errorResponse(new ApiError(400,error.message));
   if (error instanceof PreliminaryPolicyError) return errorResponse(new ApiError(400,'회사 산정 기준을 확인할 수 없습니다. 관리자에게 문의해 주세요.'));
   // PostgREST constraint errors can contain the rejected full internal row.
@@ -82,7 +85,7 @@ export function safeInputs(raw = {}) {
 
 export function validateStaffBody(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)
-    || Object.keys(body).some((key) => !["inputs", "address"].includes(key))
+    || Object.keys(body).some((key) => !["inputs", "address", "itemSelections"].includes(key))
     || !body.inputs || typeof body.inputs !== "object" || Array.isArray(body.inputs)) {
     throw new ApiError(400, "견적 입력값만 전송해 주세요.");
   }
@@ -93,7 +96,7 @@ export function validateStaffBody(body) {
     inputs[id] = inputValue(id, value, true);
   }
   if (body.address !== undefined && (typeof body.address !== "string" || body.address.length > 500)) throw new ApiError(400, "현장 주소가 올바르지 않습니다.");
-  return { inputs, ...(body.address !== undefined ? { address: body.address } : {}) };
+  return { inputs, ...(body.address !== undefined ? { address: body.address } : {}), ...(body.itemSelections!==undefined?{itemSelections:body.itemSelections}:{}) };
 }
 
 export function projectStaffEstimate(row) {
@@ -111,6 +114,7 @@ export function projectStaffEstimate(row) {
     address: text(row.address || data.address), areaPyeong: amount(row.area_pyeong ?? data.areaPyeong),
     total, totalText: money(total), status: text(row.status || data.status), savedAt,
     updatedAt: text(row.updated_at), inputs,
+    ...(data.itemBuilder?publicItemState(data.itemBuilder):{}),
     ...(data.reviewNotice ? { reviewNotice: "시공 구성·수량·적용 기준을 담당자와 확인해 주세요." } : {}),
     customerQuote: {
       projectName, clientName, phone, areaPyeong: amount(row.area_pyeong ?? data.areaPyeong),
@@ -171,7 +175,7 @@ export function privateEstimateDefaults() {
 // Same engine and rounding as the former browser runtime; only its execution location changes.
 export async function calculatePrivilegedEstimate(body, context) {
   if(!['admin','manager'].includes(context.profile.role))throw new ApiError(403,'내부 견적 계산 권한이 없습니다.');
-  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address','itemSelections'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
   if(JSON.stringify(body).length>100000)throw new ApiError(413,'견적 입력값이 너무 큽니다.');
   const incoming={};
   for(const [id,value] of Object.entries(body.inputs)){
@@ -179,7 +183,7 @@ export async function calculatePrivilegedEstimate(body, context) {
     if(!ESTIMATE_INPUT_SCHEMA[id])throw new ApiError(400,'허용되지 않은 견적 필드입니다.');
     incoming[id]=inputValue(id,value,true);
   }
-  const existing=body.estimateId?await readEstimate(body.estimateId):null;
+  const original=body.estimateId?await readEstimate(body.estimateId):null,existing=baseEstimate(original);
   const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(old)),inputs={...baseline,...incoming};
   const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
   delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
@@ -217,10 +221,13 @@ export async function calculatePrivilegedEstimate(body, context) {
   Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,inputs:{...snapshot.inputs,...incoming}});
   snapshot.inputs.preliminaryPolicySelection='saved';
   Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
+  snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context);
+  if(snapshot.itemBuilder){result.directCost=snapshot.costTotal;result.customerRevenue=snapshot.total;result.profit=snapshot.costIncomplete?null:snapshot.total-snapshot.costTotal;result.details=snapshot.internalDetails;result.actualMargin=snapshot.marginRate===null?null:snapshot.marginRate/100;}
   return {snapshot,result,costRows:snapshot.costBreakdown||costRows};
 }
 
 export async function calculateStaffEstimate(validated, context, existing = null) {
+  const original=existing;existing=baseEstimate(existing);
   const oldData = existing?.estimate_data;
   const baseline = normalizedInputs({ ...(oldData?.inputs || {}), ...(existing ? {
     projectName: existing.project_name, clientName: existing.client_name || "", clientPhone: existing.phone || "",
@@ -275,7 +282,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   if (!existing) snapshot.author = { user_id: context.authUser.id, user_email: context.profile.email, role: context.profile.role };
   Object.assign(snapshot.customerQuote, { projectName: snapshot.projectName, clientName: snapshot.clientName,
     phone: snapshot.phone, areaPyeong: snapshot.areaPyeong, status: snapshot.status, savedAt: snapshot.savedAt });
-  return snapshot;
+  return appendEstimateItems(snapshot,validated.itemSelections,original,context);
 }
 
 export function estimateRowPayload(snapshot) {

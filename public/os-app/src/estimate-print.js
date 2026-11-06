@@ -1,5 +1,7 @@
-import { won, escapeHtml } from "./utils.js";
+import { won as formatWon, escapeHtml } from "./utils.js";
 import { renderCustomerQuoteRows } from "./document-print.js";
+const won=value=>value==null?'—':formatWon(value);
+const percent=value=>value==null?'—':`${(value*100).toFixed(1)}%`;
 
 export function createEstimatePrint({ document, customerWon, formatDateTime, printGroupLabels }) {
 function renderPrintQuote(quote, { mode = "detail" } = {}) {
@@ -105,14 +107,14 @@ function renderAdminDetailPrint(estimate) {
             <td>${won(item.unitPrice)}</td>
             <td>${won(item.cost)}</td>
             <td>${customerWon(item.revenue)}</td>
-            <td>${won(item.customerRevenue - item.cost)}</td>
+            <td>${item.cost===null?'—':won(item.customerRevenue - item.cost)}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>
     <footer>
       <div><span>고객용 총액</span><strong>${customerWon(estimate.total || 0)}</strong></div>
-      <div><span>내부 원가</span><strong>${won(estimate.costTotal || 0)}</strong></div>
+      <div><span>내부 원가</span><strong>${estimate.costIncomplete?'—':won(estimate.costTotal || 0)}</strong></div>
     </footer>
   `;
 }
@@ -141,7 +143,7 @@ function renderAdminInternalPrint(estimate, model) {
             <td>${customerWon(group.customer)}</td>
             <td>${won(group.cost)}</td>
             <td>${won(group.profit)}</td>
-            <td>${(group.marginRate * 100).toFixed(1)}%</td>
+            <td>${percent(group.marginRate)}</td>
           </tr>
         `).join("")}
         <tr>
@@ -149,7 +151,7 @@ function renderAdminInternalPrint(estimate, model) {
           <td>${customerWon(totalCustomer)}</td>
           <td>${won(totalCost)}</td>
           <td>${won(totalProfit)}</td>
-          <td>${(totalMarginRate * 100).toFixed(1)}%</td>
+          <td>${percent(totalMarginRate)}</td>
         </tr>
       </tbody>
     </table>

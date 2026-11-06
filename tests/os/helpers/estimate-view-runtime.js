@@ -11,6 +11,7 @@ import { createEstimateView } from "../../../public/os-app/src/estimate-view.js"
 import { createEstimatePrint } from "../../../public/os-app/src/estimate-print.js";
 import { purchaseOrderItems } from "../../../public/os-app/src/purchase-order.js";
 import { costSnapshotMap } from "../../../public/os-app/src/cost-snapshot.js";
+import {CARPENTRY_INPUT_SCHEMA,PRELIMINARY_WORK_INPUT_SCHEMA} from "../../../public/os-app/src/estimate-inputs.js";
 import { createViewCaseDom, viewCaseEstimate } from "../fixtures/estimate-view-cases.js";
 
 export const viewGolden = JSON.parse(readFileSync(new URL("../fixtures/estimate-view-characterization.json", import.meta.url), "utf8"));
@@ -21,6 +22,8 @@ const core = createEstimateCalculation();
 
 export function createViewRuntime(entry, original = false) {
   const { dom, document, elements } = createViewCaseDom(entry, viewGolden.config.ids);
+  // This historical renderer comparison starts with its captured m-era input, not today's mm default.
+  if(elements.standardT3M){const initial=viewGolden.cases[0].result.controls.find(c=>c.id==='standardT3M');elements.standardT3M.value=initial.value;}
   const estimate = viewCaseEstimate(entry);
   const state = structuredClone(inputGolden.cases.find((item) => item.name === "normal all processes").reads[0].state);
   const result = core.calculate(state);
@@ -29,7 +32,7 @@ export function createViewRuntime(entry, original = false) {
   const formatDateTime = (value) => new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
   const context = vm.createContext({
     ...utils, ...summary, ...input, ...core, ...models, purchaseOrderItems, costSnapshotMap,
-    document, el: elements, COST_ITEM_BY_INPUT: excluded,
+    document, el: elements, COST_ITEM_BY_INPUT: excluded,CARPENTRY_INPUT_SCHEMA,PRELIMINARY_WORK_INPUT_SCHEMA,
     PIPE_CLEANING_ITEM_NAME: "기존 배관 청소", PIPE_CLEANING_AMOUNT: 300000,
     isAdmin: () => !entry.role || entry.role === "admin", canViewSystem: () => entry.role !== "staff",
     expandedAdminTradeKey: entry.expanded ?? null,
@@ -37,6 +40,7 @@ export function createViewRuntime(entry, original = false) {
     latestDate: (dates) => dates.filter(Boolean).sort().at(-1) || null,
     currentEstimateForPrint: () => estimate,
     currentProfile: { role: entry.role || "admin" },
+    syncCarpentryMode:()=>{},currentEditingEstimateId:null,itemBuilderView:null,siteCostView:null,
     calculateForCurrentEstimate: () => result, calculate: () => result, syncLoadedEstimateSnapshot: () => Boolean(entry.stored),
     buildEstimateSnapshot: () => estimate, activeQuoteEstimate: estimate, lastRenderedEstimateSnapshot: null, readState: () => result.state,
     privateCalculationBody: () => ({}), previewInternalEstimate: async () => ({ snapshot: estimate }),

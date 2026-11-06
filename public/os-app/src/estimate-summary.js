@@ -19,6 +19,7 @@ export function buildAdminMarginGroups(estimate, { groupLabels, groupOrder }) {
     group.customer += internalDetailCustomerAmount(detail);
     group.count += 1;
     group.details.push(detail);
+    if(detail.cost===null)group.costIncomplete=true;
   }
 
   const orderedLabels = [
@@ -31,7 +32,7 @@ export function buildAdminMarginGroups(estimate, { groupLabels, groupOrder }) {
     .map((group) => {
       const profit = group.customer - group.cost;
       const marginRate = markupRate(profit, group.cost);
-      return { ...group, profit, marginRate };
+      return { ...group, cost:group.costIncomplete?null:group.cost,profit:group.costIncomplete?null:profit, marginRate:group.costIncomplete?null:marginRate };
     });
 }
 
@@ -43,9 +44,10 @@ export function internalDetailCustomerAmount(detail) {
 
 export function storedEstimateSummary(estimate, options) {
   const customerTotal = moneyAmount(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue);
-  const directCost = moneyAmount(estimate?.costTotal ?? estimate?.internalSummary?.directCost);
-  const profit = customerTotal - directCost;
-  const marginRate = markupRate(profit, directCost);
+  const incomplete=estimate?.costIncomplete===true;
+  const directCost = incomplete?null:moneyAmount(estimate?.costTotal ?? estimate?.internalSummary?.directCost);
+  const profit = incomplete?null:customerTotal - directCost;
+  const marginRate = incomplete?null:markupRate(profit, directCost);
   const details = Array.isArray(estimate?.internalDetails) ? estimate.internalDetails : [];
   const groups = buildAdminMarginGroups(estimate, options);
   const detailCustomerTotal = groups.reduce((sum, group) => sum + moneyAmount(group.customer), 0);
@@ -59,7 +61,7 @@ export function storedEstimateSummary(estimate, options) {
     detailCustomerTotal,
     detailCostTotal,
     customerDiff: detailCustomerTotal - customerTotal,
-    costDiff: detailCostTotal - directCost,
+    costDiff: incomplete?null:detailCostTotal - directCost,
   };
 }
 
@@ -93,6 +95,7 @@ export function findMatchingCostDetail(estimate, amount) {
 }
 
 export function buildEstimateDiagnostics(estimate, summary, options) {
+  if(estimate?.costIncomplete)return [];
   const diagnostics = [];
   if (hasPipeCleaningLegacyCostGap(estimate, summary, options)) {
     diagnostics.push({

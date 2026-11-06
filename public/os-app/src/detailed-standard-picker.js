@@ -12,7 +12,7 @@ export function mountStandardPicker({ host, items, spaces, recommended = [], rea
   function count() { host.querySelector("[data-standard-count]").textContent = `${selected.size}개 선택`; host.querySelector("[data-standard-add]").disabled = readOnly || selected.size === 0; }
   function renderRows() {
     const list = items.filter(i => (!group || i.group === group) && (!onlyRecommended || hints.has(i.id)) && `${i.name} ${i.spec} ${i.group}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
-    host.querySelector("[data-standard-list]").innerHTML = list.map(i => `<label class="standard-picker-row"><input type="checkbox" data-standard-id="${i.id}" ${selected.has(i.id) ? "checked" : ""} ${readOnly ? "disabled" : ""}>
+    host.querySelector("[data-standard-list]").innerHTML = list.map(i => `<label class="standard-picker-row"><input type="checkbox" data-standard-id="${i.id}" ${selected.has(i.id) ? "checked" : ""} ${readOnly || i.id.startsWith('tpl-')&&i.saleUnitPrice==null ? "disabled" : ""}>
       <span><strong>${esc(i.name)}</strong><small>${privileged ? `${esc(i.estimationType || i.scope)} · ` : ""}${esc(i.group)} · ${esc(i.unit)}${privileged ? ` · ${i.linked ? "회사 품목 연결" : i.pricing === "tile" ? "타일 산식 적용" : "직접 단가"}` : ""}${hints.has(i.id) ? " · 가견적 참고" : ""}</small>${privileged ? `<small>${esc(i.note)}</small>` : ""}</span>
       <span class="standard-picker-price">${money(i.saleUnitPrice)}${privileged && Object.hasOwn(i, "costUnit") ? `<small>${i.costUnit == null ? i.pricing === "tile" ? "기존 타일 기준" : "원가 미등록" : `기준 원가 ${money(i.costUnit)}`}</small>` : ""}</span></label>`).join("") || '<p class="muted">일치하는 품목 없음</p>';
     count();

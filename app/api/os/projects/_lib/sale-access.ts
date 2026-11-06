@@ -21,11 +21,11 @@ export function staffStandards(masters: Master[]) {
 export function staffEditor(editor: Editor) {
   return {...editor,items:editor.items.map(i=>({...i,masterCode:""}))};
 }
-export function prepareStaffInput(input: unknown, previous: Editor, masters: Master[]) {
+export function prepareStaffInput(input: unknown, previous: Editor, masters: Master[], extra:ReturnType<typeof standardCatalog> = []) {
   const e = structuredClone(input) as Editor;
   if(!e || !Array.isArray(e.items))bad("작성본 품목을 확인해 주세요.");
   if(e.addition!==(previous.addition??0) || e.discount!==(previous.discount??0))bad("총액 조정은 가격 검토가 필요합니다.",403);
-  const standards=standardCatalog(masters,false);
+  const standards=[...standardCatalog(masters,false),...extra];
   for(const i of e.items){
     const old=previous.items?.find(r=>r.id===i.id);
     if(old){
@@ -59,6 +59,8 @@ function unreviewed(editor: Editor, internal: Internal) {
     const a=state.authorized[i.id],d=internal.items?.[i.id];
     if(a&&a.price===i.saleUnitPrice&&a.condition===condition(i))return false;
     if(d?.priceApproval&&!d.priceApproval.invalidated&&d.priceApproval.stamp===priceStamp(i,d))return false;
+    const published=(d?.templateVersion?.frozen.definition as {pricing?:{detailedSaleUnit?:number|null}}|undefined)?.pricing?.detailedSaleUnit;
+    if(published!=null&&i.saleUnitPrice===published)return false;
     if(d?.cost==null)return true;
     const base=i.kind==="tile"?(i.quantity?d.cost/i.quantity:0):d.costUnit;
     const standard=d.salePolicy==="pipe-fixed-v1"?300000:base==null?null:Math.round(base/(1-d.targetMargin));

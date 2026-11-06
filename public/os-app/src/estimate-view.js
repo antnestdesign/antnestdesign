@@ -1,4 +1,6 @@
-import { won, escapeHtml } from "./utils.js";
+import { won as formatWon, escapeHtml } from "./utils.js";
+const won=value=>value==null?'—':formatWon(value);
+const percent=(value,scale=100)=>value==null?'—':`${(value*scale).toFixed(1)}%`;
 
 export function createEstimateView({ document, customerWon, formatDateTime, quoteGroupLabels, quoteGroupOrder }) {
 function setText(id, value) {
@@ -179,7 +181,7 @@ function renderAdminEstimateDetailPanel(model, expandedTradeKey) {
         <div><span>고객 견적 총액</span><strong>${customerWon(summary.customerTotal)}</strong></div>
         <div><span>직접원가 합계</span><strong>${won(summary.directCost)}</strong></div>
         <div><span>예상 이익</span><strong>${won(summary.profit)}</strong></div>
-        <div><span>전체 마진율</span><strong>${(summary.marginRate * 100).toFixed(1)}%</strong></div>
+        <div><span>전체 마진율</span><strong>${percent(summary.marginRate)}</strong></div>
         <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
       </div>
       ${diagnostics}
@@ -199,7 +201,7 @@ function renderAdminTradeGroup(group, index, expandedTradeKey) {
       <button class="admin-trade-header" type="button" data-toggle-internal-trade="${key}">
         <span>
           <strong>${escapeHtml(group.label)}</strong>
-          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${won(group.cost)} · 이익 ${won(group.profit)} · 마진율 ${(group.marginRate * 100).toFixed(1)}%</small>
+          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${won(group.cost)} · 이익 ${won(group.profit)} · 마진율 ${percent(group.marginRate)}</small>
         </span>
         <span class="system-cost-toggle">${open ? "접기" : "펼치기"}</span>
       </button>
@@ -227,12 +229,12 @@ function renderAdminTradeGroup(group, index, expandedTradeKey) {
                     <td>${escapeHtml(detail.item || "-")}</td>
                     <td>${escapeHtml(detail.input || "-")}</td>
                     <td>${escapeHtml(String(detail.quantity ?? "-"))}</td>
-                    <td>${won(Number(detail.unitPrice) || 0)}</td>
+                    <td>${detail.cost===null?'—':won(Number(detail.unitPrice) || 0)}</td>
                     <td>${won(cost)}</td>
                     <td>${((Number(detail.correction) || 0) * 100).toFixed(1)}%</td>
                     <td>${customerWon(customer)}</td>
                     <td>${won(profit)}</td>
-                    <td>${(marginRate * 100).toFixed(1)}%</td>
+                    <td>${percent(marginRate)}</td>
                   </tr>
                 `;
               }).join("")}
@@ -266,7 +268,7 @@ function renderAdminMarginTable(model) {
       <td>${customerWon(group.customer)}</td>
       <td>${won(group.cost)}</td>
       <td>${won(group.profit)}</td>
-      <td>${(group.marginRate * 100).toFixed(1)}%</td>
+      <td>${percent(group.marginRate)}</td>
     `;
     rows.appendChild(row);
   }
@@ -279,7 +281,7 @@ function renderAdminMarginTable(model) {
     <td>${customerWon(totalCustomer)}</td>
     <td>${won(totalCost)}</td>
     <td>${won(totalProfit)}</td>
-    <td>${(totalMarginRate * 100).toFixed(1)}%</td>
+    <td>${percent(totalMarginRate)}</td>
   `;
   rows.appendChild(totalRow);
 
@@ -287,7 +289,7 @@ function renderAdminMarginTable(model) {
     <div><span>고객용 총액</span><strong>${customerWon(totalCustomer)}</strong></div>
     <div><span>내부 원가</span><strong>${won(totalCost)}</strong></div>
     <div><span>총 마진</span><strong>${won(totalProfit)}</strong></div>
-    <div><span>마진율</span><strong>${(totalMarginRate * 100).toFixed(1)}%</strong></div>
+    <div><span>마진율</span><strong>${percent(totalMarginRate)}</strong></div>
   `;
 }
 
@@ -297,11 +299,11 @@ function renderStoredInternalSummary(model) {
   setText("internalCost", won(directCost));
   setText("internalRevenue", customerWon(customerRevenue));
   setText("internalProfit", won(profit));
-  setText("internalMargin", `${Number(marginRate).toFixed(1)}%`);
+  setText("internalMargin", percent(marginRate,1));
   setText("adminInternalCost", won(directCost));
   setText("adminInternalRevenue", customerWon(customerRevenue));
   setText("adminInternalProfit", won(profit));
-  setText("adminInternalMargin", `${Number(marginRate).toFixed(1)}%`);
+  setText("adminInternalMargin", percent(marginRate,1));
 }
 
 function renderCostSnapshotInfo(estimate, { currentLatest, snapshotChanged, hasCurrentItems }) {
@@ -403,6 +405,7 @@ function renderCostSnapshotComparison(model) {
   }
   const { rows, savedDirectCost, currentDirectCost, directDiff } = model;
   panel.hidden = false;
+  if(model.incomplete){panel.replaceChildren();if(status)status.textContent='원가 미등록 항목이 있어 전체 원가 비교를 보류합니다.';return;}
   panel.innerHTML = `
     <table>
       <thead>
@@ -485,14 +488,14 @@ function renderCalculatedInternalSummary(model) {
   setText("internalCost", won(displayCost));
   setText("internalRevenue", customerWon(displayRevenue));
   setText("internalProfit", won(displayProfit));
-  setText("internalMargin", `${displayMarginRate.toFixed(1)}%`);
-  setText("discountRoom", customerWon(discountRoom));
+  setText("internalMargin", percent(displayMarginRate,1));
+  setText("discountRoom", discountRoom==null?'—':customerWon(discountRoom));
   setText("marginStatus", marginStatus);
   setText("adminInternalCost", won(displayCost));
   setText("adminInternalRevenue", customerWon(displayRevenue));
   setText("adminInternalProfit", won(displayProfit));
-  setText("adminInternalMargin", `${displayMarginRate.toFixed(1)}%`);
-  setText("adminDiscountRoom", customerWon(discountRoom));
+  setText("adminInternalMargin", percent(displayMarginRate,1));
+  setText("adminDiscountRoom", discountRoom==null?'—':customerWon(discountRoom));
   setText("adminMarginStatus", marginStatus);
 }
 

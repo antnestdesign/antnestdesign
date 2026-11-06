@@ -172,6 +172,9 @@ export function requestProjectFoundation(path, options = {}) {
 export function requestPreliminaryPolicy(body) {
   return requestOsApi('/preliminary-policy',body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
 }
+export function requestEstimateItems(view='state',body) {
+  return requestOsApi(`/estimate-items?view=${encodeURIComponent(view)}`,body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
+}
 let verifiedEstimateUserId = null;
 
 export async function loadCurrentOsUser() {
@@ -189,12 +192,13 @@ function staffEstimateBody(estimate) {
   return {
     inputs: staffEstimateInputs(estimate.inputs),
     ...(estimate.address != null ? { address: estimate.address } : {}),
+    ...(estimate.itemSelections!==undefined||estimate.itemBuilder?{itemSelections:estimate.itemSelections??estimate.itemBuilder.selections}:{}),
   };
 }
 
-export async function previewStaffEstimate(inputs, estimateId = null) {
+export async function previewStaffEstimate(inputs, estimateId = null, itemSelections) {
   return requestOsApi("/estimates/preview", {
-    method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId }),
+    method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId, ...(itemSelections!==undefined?{itemSelections}:{}) }),
   });
 }
 export async function previewInternalEstimate(body) {
@@ -391,8 +395,8 @@ function normalizeEstimate(row) {
     areaPyeong: row.area_pyeong ?? data.areaPyeong ?? 0,
     total: row.total_price ?? data.total ?? 0,
     totalText: data.totalText || `${(Math.floor((row.total_price || 0) / 1000) * 1000).toLocaleString("ko-KR")}원`,
-    costTotal: row.cost_total ?? data.costTotal ?? 0,
-    marginRate: row.margin_rate ?? data.marginRate ?? 0,
+    costTotal: data.costIncomplete?null:row.cost_total ?? data.costTotal ?? 0,
+    marginRate: data.costIncomplete?null:row.margin_rate ?? data.marginRate ?? 0,
     status: row.status || data.status || "견적",
     savedAt,
     customerQuote: data.customerQuote
@@ -448,6 +452,7 @@ async function insertWithFallbacks(payload, fallbacks) {
   throw new Error(errors.filter(Boolean).join("\n") || "견적 저장에 실패했습니다.");
 }
 export async function saveEstimate(estimate) {
+  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined))return normalizeEstimate(await requestOsApi('/estimates',{method:'POST',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder.selections,address:estimate.address||''})}));
   if (usesSafeEstimatesApi()) {
     return requestOsApi("/estimates", { method: "POST", body: JSON.stringify(staffEstimateBody(estimate)) });
   }
@@ -500,6 +505,7 @@ export async function saveEstimate(estimate) {
 }
 
 export async function updateEstimate(id, estimate) {
+  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined))return normalizeEstimate(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder.selections,address:estimate.address||''})}));
   if (!id) {
     throw new Error("수정할 견적을 찾지 못했습니다.");
   }
