@@ -2385,6 +2385,37 @@ th:last-child {
 .policy-history { padding: 12px 0; }
 .policy-history > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
 .policy-note { font-size: 12px; color: var(--muted); }
+.policy-basic-section { margin: 18px 0; }
+.policy-basic-section h4 { font-size: 14px; margin: 0; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.preliminary-policy-management .policy-parameters, .policy-simple-rules { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 24px; padding: 0; }
+.policy-simple-field { min-width: 0; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.policy-simple-field > label { display: grid; grid-template-columns: minmax(0,1fr) 142px; gap: 12px; align-items: center; font-size: 13px; }
+.policy-simple-field > label > span:first-child { overflow-wrap: anywhere; }
+.policy-simple-field .policy-simple-value { display: grid; grid-template-columns: minmax(0,1fr) 24px; gap: 8px; align-items: center; }
+.policy-simple-value input { min-width: 0; width: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+.policy-simple-field > small { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.policy-simple-field > small:empty { display: none; }
+.policy-simple-field > strong { font-size: 13px; }
+.policy-readable-formula { font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; margin: 8px 0 0; color: var(--muted); }
+.policy-advanced { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 14px; }
+.policy-advanced > summary { font-size: 13px; cursor: pointer; }
+.policy-formula-overview { display: grid; gap: 8px; padding: 14px 0; margin: 8px 0; border-bottom: 1px solid var(--line); }
+.policy-formula-overview > strong { font-size: 12px; }
+.policy-formula-overview output { display: block; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.policy-formula-overview small { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.policy-expression-node { min-width: 0; padding: 12px 0; }
+.policy-expression-head { display: grid; grid-template-columns: minmax(0,1fr) minmax(220px,1fr); gap: 12px; align-items: center; }
+.policy-expression-head > strong { font-size: 13px; overflow-wrap: anywhere; }
+.policy-expression-head label { display: grid; gap: 5px; font-size: 11px; min-width: 0; }
+.policy-expression-node select, .policy-expression-node input { min-width: 0; width: 100%; max-width: 100%; font-size: 13px; box-sizing: border-box; }
+.policy-expression-help { margin: 8px 0 12px; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.policy-expression-node .policy-expression-args { display: grid; gap: 4px; padding-left: 16px; margin-top: 12px; border-left: 2px solid var(--line); box-sizing: border-box; }
+.policy-expression-field { display: grid; grid-template-columns: minmax(0,1fr) minmax(130px,200px); gap: 12px; align-items: center; padding-top: 10px; font-size: 12px; }
+.policy-expression-field > span { overflow-wrap: anywhere; }
+.policy-expression-field input { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .policy-expression-head, .policy-expression-field { grid-template-columns: minmax(0,1fr); gap: 8px; } .policy-expression-node .policy-expression-args { padding-left: 8px; } }
+@media (max-width: 900px) { .preliminary-policy-management .policy-parameters, .policy-simple-rules { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 600px) { .policy-simple-field > label { grid-template-columns: minmax(0,1fr) 116px; gap: 8px; } .policy-actions > button { font-size: 13px; padding: 10px 12px; min-height: 42px; } }
 .preliminary-policy-legacy { padding-top: 16px; }
 @media (max-width:600px) {
   .policy-trades { grid-template-columns: repeat(3,minmax(0,1fr)); }
