@@ -16,7 +16,7 @@ function freeze(value) {
 test('sale-only estimates keep private totals unknown in models and rendered summaries',()=>{
   const estimate=viewCaseEstimate({});estimate.costIncomplete=true;estimate.costTotal=null;estimate.marginRate=null;estimate.internalSummary={directCost:null,customerRevenue:estimate.total,profit:null,marginRate:null};estimate.internalDetails[0]={...estimate.internalDetails[0],unitPrice:null,cost:null,profit:null};
   const evidence=createViewRuntime({role:'admin'}),summary=buildStoredInternalSummaryModel(estimate,{markupRate:()=>0});expect(summary.directCost).toBeNull();expect(summary.profit).toBeNull();expect(summary.marginRate).toBeNull();
-  evidence.runtime.renderStoredInternalSummary(estimate);expect(evidence.document.getElementById('internalCost').textContent).toBe('—');expect(evidence.document.getElementById('internalProfit').textContent).toBe('—');expect(evidence.document.getElementById('internalMargin').textContent).toBe('—');const html=evidence.runtime.renderAdminEstimateDetailPanel(estimate);expect(html).toContain('—');expect(html).not.toMatch(/NaN|undefined/);evidence.dom.window.close();
+  evidence.runtime.renderStoredInternalSummary(estimate);expect(evidence.document.getElementById('internalCost').textContent).toBe('—');expect(evidence.document.getElementById('internalProfit').textContent).toBe('—');expect(evidence.document.getElementById('internalMargin').textContent).toBe('—');const html=evidence.runtime.renderAdminEstimateDetailPanel(estimate);expect(html).toContain('원가 미확정');expect(html).toContain('산정 보류');expect(html).not.toMatch(/NaN|undefined/);evidence.dom.window.close();
 });
 describe("Phase 3D exact OLD/NEW DOM and HTML characterization at 17a5c29", () => {
   for (const entry of estimateViewCases) {

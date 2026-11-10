@@ -3,13 +3,13 @@ import { createEstimateCalculation } from '../../_lib/calculation/calculator/est
 import { evaluateItem, itemCatalog, priceUnits, object } from './model.js';
 import { assertBuilderActor, builderMode, itemId, requireBuilder, versionForAdoption } from './service';
 import { isDeepStrictEqual } from 'node:util';
-import { normalizeManualWorks, manualWorkAmount, manualWorkName } from '../../../../../public/os-app/src/manual-work.js';
+import { normalizeManualWorks, publicManualWork, manualWorkAmount, manualWorkName } from '../../../../../public/os-app/src/manual-work.js';
 
 const labels:Record<string,string>={demolition:'철거',electrical:'전기/조명',bathroom:'욕실',wallpaper:'도배',film:'필름',flooring:'바닥',carpentry:'목공',furniture:'가구',finish:'기타'};
 const groups:Record<string,string>={demolition:'demolition',electrical:'electrical',bathroom:'bathroom',wallpaper:'wallpaper',film:'film',flooring:'flooring',carpentry:'carpentry',furniture:'base',finish:'misc'};
 type Version=Awaited<ReturnType<typeof versionForAdoption>>;
 type Selection={id:string;versionId:string;inputs:Record<string,number>};
-type ManualWork={id:string;trade:string;name:string;amount:number;note:string};
+type ManualWork={id:string;trade:string;name:string;amount:number;note:string;costAmount?:number|null};
 type PublicRow=(ReturnType<typeof itemCatalog>&{id:string;versionId:string;quantity:number;amount:number;values:Record<string,number>})|
   {id:string;kind:'manual';trade:string;name:string;spec:string;unit:string;quantity:number;amount:number;saleUnitPrice:number;inputs:[]};
 type Detail=Omit<ReturnType<ReturnType<typeof createEstimateCalculation>['makeDetail']>,'cost'|'profit'>&{cost:number|null;profit:number|null};
@@ -29,10 +29,20 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
   const previous=original?.estimate_data?.itemBuilder;
   const selections=requested===undefined?previous?.selections||[]:requested;
   if(!Array.isArray(selections)||selections.length>100)throw new ApiError(400,'추가 항목은 100개까지 사용할 수 있습니다.');
+  if(user.profile.role==='staff'&&Array.isArray(manualRequested)&&manualRequested.some(row=>row&&typeof row==='object'&&Object.hasOwn(row,'costAmount')))throw new ApiError(403,'직접 공사 변경은 관리자 또는 매니저가 처리해야 합니다.');
   let manualWorks:ManualWork[];
   try{manualWorks=normalizeManualWorks(manualRequested===undefined?previous?.manualWorks||[]:manualRequested);}catch(error){throw new ApiError(400,(error as Error).message);}
   const previousManual=normalizeManualWorks(previous?.manualWorks||[]);
-  if(user.profile.role==='staff'&&!isDeepStrictEqual(manualWorks,previousManual))throw new ApiError(403,'직접 공사 추가·금액 수정은 관리자 또는 매니저가 처리해야 합니다.');
+  if(user.profile.role!=='staff')manualWorks=manualWorks.map(row=>{
+    const old=previousManual.find(saved=>saved.id===row.id);
+    return !Object.hasOwn(row,'costAmount')&&old&&Object.hasOwn(old,'costAmount')?{...row,costAmount:old.costAmount}:row;
+  });
+  if(user.profile.role==='staff'){
+    if(manualRequested!==undefined&&manualWorks.some(row=>Object.hasOwn(row,'costAmount')))throw new ApiError(403,'직접 공사 변경은 관리자 또는 매니저가 처리해야 합니다.');
+    if(!isDeepStrictEqual(manualWorks.map(publicManualWork),previousManual.map(publicManualWork)))throw new ApiError(403,'직접 공사 추가·금액 수정은 관리자 또는 매니저가 처리해야 합니다.');
+    // Staff sends only public fields; retain the trusted private cost from the saved row.
+    manualWorks=structuredClone(previousManual);
+  }
   if(!selections.length&&!previous&&!manualWorks.length)return snapshot;
   await assertBuilderActor(user);
   const ids=new Set();
@@ -58,8 +68,9 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
   }
   for(const row of manualWorks){
     const sale=manualWorkAmount(row.amount);
-    const detail:Detail=core.makeDetail({group:groups[row.trade],item:manualWorkName(row),input:'직접 입력 판매금액',quantity:'1식',unitPrice:null,cost:0,margin:0,customerRevenue:sale});
-    detail.cost=null;detail.profit=null;
+    const cost=row.costAmount??null;
+    const detail:Detail=core.makeDetail({group:groups[row.trade],item:manualWorkName(row),input:'직접 입력 판매금액',quantity:'1식',unitPrice:cost,cost:cost??0,margin:0,customerRevenue:sale});
+    detail.cost=cost;detail.profit=cost===null?null:sale-cost;
     details.push(detail);
     publicRows.push({id:row.id,kind:'manual',trade:row.trade,name:row.name,spec:row.note,unit:'식',quantity:1,amount:sale,saleUnitPrice:sale,inputs:[]});
   }

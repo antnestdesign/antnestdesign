@@ -6,7 +6,8 @@ vi.mock('../../app/api/os/estimate-items/_lib/service',()=>({
 }));
 import {appendEstimateItems,baseEstimate} from '../../app/api/os/estimate-items/_lib/preliminary';
 import {publicItemState} from '../../app/api/os/estimate-items/_lib/model.js';
-import {normalizeManualWorks,MANUAL_WORK_TRADES} from '../../public/os-app/src/manual-work.js';
+import {normalizeManualWorks,publicManualWork,MANUAL_WORK_TRADES} from '../../public/os-app/src/manual-work.js';
+import {storedEstimateSummary,buildAdminMarginGroups} from '../../public/os-app/src/estimate-summary.js';
 import {mountManualWorkView} from '../../public/os-app/src/manual-work-view.js';
 import {versionForAdoption} from '../../app/api/os/estimate-items/_lib/service';
 const id='20000000-0000-4000-8000-000000000001';
@@ -57,6 +58,31 @@ describe('manual work shares existing atomic estimate snapshots',()=>{
     expect((await appendEstimateItems(baseEstimate(original).estimate_data,[],original,actor('manager'))).total).toBe(450000);
     await expect(appendEstimateItems(baseEstimate(original).estimate_data,[],original,actor('manager'),[{...row(),amount:400000}])).rejects.toThrow();
   });
+  it('uses optional actual cost without changing the selling amount; cost-only edits and resaves remain stable',async()=>{
+    const withCost={...row(),costAmount:200123};
+    const first=await appendEstimateItems(base(),[],null,actor('manager'),[withCost]);
+    expect(first.total).toBe(450000);expect(first.costTotal).toBe(280123);expect(first.costIncomplete).toBe(false);
+    expect(first.internalDetails.at(-1)).toMatchObject({unitPrice:200123,cost:200123,profit:149877,customerRevenue:350000});
+    const edited=await appendEstimateItems(baseEstimate({estimate_data:first}).estimate_data,[],{estimate_data:first},actor('admin'),[{...withCost,costAmount:300000}]);
+    expect(edited.total).toBe(first.total);expect(edited.costTotal).toBe(380000);expect(edited.internalSummary.profit).toBe(70000);
+    const saved=await appendEstimateItems(baseEstimate({estimate_data:edited}).estimate_data,undefined,{estimate_data:edited},actor('manager'));
+    expect(saved.total).toBe(450000);expect(saved.costTotal).toBe(380000);
+    const legacyClient=await appendEstimateItems(baseEstimate({estimate_data:saved}).estimate_data,[],{estimate_data:saved},actor('manager'),[row()]);
+    expect(legacyClient.costTotal).toBe(380000);expect(legacyClient.itemBuilder.manualWorks[0].costAmount).toBe(300000);
+  });
+  it('distinguishes unknown cost, explicit zero and mixed known/unknown amounts',async()=>{
+    for(const costAmount of [null,0]){const result=await appendEstimateItems(base(),[],null,actor('admin'),[{...row(),costAmount}]);expect(result.costTotal).toBe(costAmount===null?null:80000);}
+    const result=await appendEstimateItems(base(),[],null,actor('admin'),[{...row(),costAmount:100000},{...row('flooring'),id:'20000000-0000-4000-8000-000000000002'}]);
+    const summary=storedEstimateSummary(result,{groupLabels:{},groupOrder:[]});expect(summary.costIncomplete).toBe(true);expect(summary.missingCostCount).toBe(1);
+    const groups=buildAdminMarginGroups(result,{groupLabels:{},groupOrder:[]});expect(groups.find(g=>g.label==='carpentry').cost).toBe(100000);expect(groups.find(g=>g.label==='flooring').cost).toBeNull();
+    for(const costAmount of [-1,1.5,NaN,Infinity,'200000',1000000001])expect(()=>normalizeManualWorks([{...row(),costAmount}])).toThrow();
+  });
+  it('staff cannot see or forge cost and public-only saves preserve the private original',async()=>{
+    const first=await appendEstimateItems(base(),[],null,actor('manager'),[{...row(),costAmount:234567}]),original={estimate_data:first};
+    const exposed=publicItemState(first.itemBuilder);expect(exposed.manualWorks).toEqual([row()]);expect(JSON.stringify(exposed)).not.toMatch(/costAmount|234567/);
+    for(const requested of [undefined,exposed.manualWorks]){const saved=await appendEstimateItems(baseEstimate(original).estimate_data,[],original,actor('staff'),requested);expect(saved.itemBuilder.manualWorks[0].costAmount).toBe(234567);expect(saved.costTotal).toBe(314567);}
+    for(const costAmount of [0,null,234567])await expect(appendEstimateItems(baseEstimate(original).estimate_data,[],original,actor('staff'),[{...publicManualWork(row()),costAmount}])).rejects.toMatchObject({status:403});
+  });
 });
 describe('manual work inline entry',()=>{
   let view,changed,role;
@@ -76,7 +102,13 @@ describe('manual work inline entry',()=>{
     click('[data-manual-edit]');set('amount','400000');click('[type=submit]');expect(view.rows()).toHaveLength(1);expect(view.rows()[0].id).toBe(saved[0].id);
   });
   it('staff and confirmed snapshots have no entry, modification or deletion buttons',()=>{
-    role='staff';view.restore({manualWorks:[row()],id,canEdit:true});expect(document.querySelector('button')).toBeNull();
+    role='staff';view.restore({manualWorks:[{...row(),costAmount:234567}],id,canEdit:true});expect(document.querySelector('button')).toBeNull();expect(document.body.textContent).not.toMatch(/234,567|원가|이익/);
     role='manager';view.restore({manualWorks:[row()],id,canEdit:false,confirmation:{state:'confirmed'}});expect(document.querySelector('button')).toBeNull();
+  });
+  it('has a blank optional cost and changes it independently of the selling amount',()=>{
+    click('[data-manual-new]');expect(document.querySelector('[name=costAmount]').value).toBe('');
+    set('name','수기 공사');set('amount','350500');set('costAmount','200123');click('[type=submit]');expect(view.rows()[0]).toMatchObject({costAmount:200123,amount:350500});
+    expect(document.querySelector('[data-manual-cost]').textContent).toContain('200,123원');
+    click('[data-manual-edit]');set('costAmount','');click('[type=submit]');expect(view.rows()[0].costAmount).toBeNull();expect(view.rows()[0].amount).toBe(350500);expect(document.body.textContent).toContain('원가 미확정');
   });
 });

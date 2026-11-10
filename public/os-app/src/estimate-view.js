@@ -179,12 +179,12 @@ function renderAdminEstimateDetailPanel(model, expandedTradeKey) {
     <div class="admin-estimate-detail-panel">
       <div class="admin-estimate-summary-grid">
         <div><span>고객 견적 총액</span><strong>${customerWon(summary.customerTotal)}</strong></div>
-        <div><span>직접원가 합계</span><strong>${won(summary.directCost)}</strong></div>
-        <div><span>예상 이익</span><strong>${won(summary.profit)}</strong></div>
-        <div><span>전체 마진율</span><strong>${percent(summary.marginRate)}</strong></div>
+        <div><span>직접원가 합계</span><strong>${summary.costIncomplete?'원가 미확정':won(summary.directCost)}</strong></div>
+        <div><span>예상 이익</span><strong>${summary.costIncomplete?'산정 보류':won(summary.profit)}</strong></div>
+        <div><span>전체 마진율</span><strong>${summary.costIncomplete?'산정 보류':percent(summary.marginRate)}</strong></div>
         <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
       </div>
-      ${diagnostics}
+      ${summary.costIncomplete?`<p class="status-text">원가 미입력 ${summary.missingCostCount}개 항목이 있어 전체 원가·이익·마진율 산정을 보류합니다. 고객 판매금액에는 반영되어 있습니다.</p>`:''}${diagnostics}
       <div class="admin-trade-accordion">
         ${groups.length ? groups.map((group, index) => renderAdminTradeGroup(group, index, expandedTradeKey)).join("") : `<div class="system-empty-state">표시할 내부견적 상세가 없습니다.</div>`}
       </div>
@@ -201,7 +201,7 @@ function renderAdminTradeGroup(group, index, expandedTradeKey) {
       <button class="admin-trade-header" type="button" data-toggle-internal-trade="${key}">
         <span>
           <strong>${escapeHtml(group.label)}</strong>
-          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${won(group.cost)} · 이익 ${won(group.profit)} · 마진율 ${percent(group.marginRate)}</small>
+          <small>${group.count}개 항목 · 고객가 ${customerWon(group.customer)} · 직접원가 ${group.costIncomplete?'원가 미확정':won(group.cost)} · 이익 ${group.costIncomplete?'산정 보류':won(group.profit)} · 마진율 ${group.costIncomplete?'산정 보류':percent(group.marginRate)}</small>
         </span>
         <span class="system-cost-toggle">${open ? "접기" : "펼치기"}</span>
       </button>

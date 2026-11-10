@@ -15,7 +15,7 @@ export function mountEstimateItemBuilder({document,request,role,changed}) {
   let mode='OFF',catalog=[],selections=[],rows=[],data={items:[],versions:[]},masters=[],host=null,selected=null,config=null,dirty=false,busy=false,preview=null,trial={},notice='',commands=new Map(),generation=0;
   const mayEdit=()=>role()==='admin'&&mode==='ON'&&!busy;
   const mayPrice=()=>['admin','manager'].includes(role())&&mode==='ON'&&!busy;
-  const manual=mountManualWorkView({document,panels:sectionKeys,canEdit:mayPrice,mode:()=>mode,changed});
+  const manual=mountManualWorkView({document,panels:sectionKeys,canEdit:mayPrice,canViewCost:()=>['admin','manager'].includes(role()),mode:()=>mode,changed});
   function directCost(){
     if(config?.pricing?.kind==='direct')return config.pricing.costUnit;
     if(!config?.components.length)return null;

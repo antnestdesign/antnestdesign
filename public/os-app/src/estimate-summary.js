@@ -58,6 +58,7 @@ export function storedEstimateSummary(estimate, options) {
     profit,
     marginRate,
     detailCount: details.length,
+    ...(incomplete?{costIncomplete:true,missingCostCount:details.filter(detail=>detail.cost===null).length}:{}),
     detailCustomerTotal,
     detailCostTotal,
     customerDiff: detailCustomerTotal - customerTotal,
