@@ -105,6 +105,7 @@ export function publicItemState(state) {
   return {
     itemSelections:(state?.selections||[]).map(r=>({...pick(r,['id','versionId']),inputs:safeValues(r.inputs)})),
     itemRows:(state?.publicRows||[]).map(r=>({...pick(r,['id','versionId','templateId','version','name','trade','spec','unit','quantity','saleUnitPrice','amount']),
-      inputs:(Array.isArray(r.inputs)?r.inputs:[]).filter(f=>valueKeys.includes(f.key)).map(f=>pick(f,['key','label','unit']))}))
+      inputs:(Array.isArray(r.inputs)?r.inputs:[]).filter(f=>valueKeys.includes(f.key)).map(f=>pick(f,['key','label','unit']))})),
+    manualWorks:(state?.manualWorks||[]).map(r=>({...pick(r,['id','trade','name']),amount:typeof r.amount==='number'&&Number.isSafeInteger(r.amount)&&r.amount>=0?r.amount:null,note:typeof r.note==='string'?r.note:''}))
   };
 }

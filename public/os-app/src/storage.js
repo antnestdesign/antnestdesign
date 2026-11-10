@@ -193,12 +193,13 @@ function staffEstimateBody(estimate) {
     inputs: staffEstimateInputs(estimate.inputs),
     ...(estimate.address != null ? { address: estimate.address } : {}),
     ...(estimate.itemSelections!==undefined||estimate.itemBuilder?{itemSelections:estimate.itemSelections??estimate.itemBuilder.selections}:{}),
+    ...(estimate.manualWorks!==undefined||estimate.itemBuilder?{manualWorks:estimate.manualWorks??estimate.itemBuilder.manualWorks??[]}:{}),
   };
 }
 
-export async function previewStaffEstimate(inputs, estimateId = null, itemSelections) {
+export async function previewStaffEstimate(inputs, estimateId = null, itemSelections, manualWorks) {
   return requestOsApi("/estimates/preview", {
-    method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId, ...(itemSelections!==undefined?{itemSelections}:{}) }),
+    method: "POST", body: JSON.stringify({ inputs: staffEstimateInputs(inputs), estimateId, ...(itemSelections!==undefined?{itemSelections}:{}), ...(manualWorks!==undefined?{manualWorks}:{}) }),
   });
 }
 export async function previewInternalEstimate(body) {
@@ -452,7 +453,7 @@ async function insertWithFallbacks(payload, fallbacks) {
   throw new Error(errors.filter(Boolean).join("\n") || "견적 저장에 실패했습니다.");
 }
 export async function saveEstimate(estimate) {
-  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined))return normalizeEstimate(await requestOsApi('/estimates',{method:'POST',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder.selections,address:estimate.address||''})}));
+  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined||estimate.manualWorks!==undefined))return normalizeEstimate(await requestOsApi('/estimates',{method:'POST',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder?.selections??[],manualWorks:estimate.manualWorks??estimate.itemBuilder?.manualWorks??[],address:estimate.address||''})}));
   if (usesSafeEstimatesApi()) {
     return requestOsApi("/estimates", { method: "POST", body: JSON.stringify(staffEstimateBody(estimate)) });
   }
@@ -505,7 +506,7 @@ export async function saveEstimate(estimate) {
 }
 
 export async function updateEstimate(id, estimate) {
-  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined))return normalizeEstimate(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder.selections,address:estimate.address||''})}));
+  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined||estimate.manualWorks!==undefined))return normalizeEstimate(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder?.selections??[],manualWorks:estimate.manualWorks??estimate.itemBuilder?.manualWorks??[],address:estimate.address||''})}));
   if (!id) {
     throw new Error("수정할 견적을 찾지 못했습니다.");
   }

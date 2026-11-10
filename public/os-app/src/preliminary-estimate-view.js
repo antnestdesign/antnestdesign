@@ -173,7 +173,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
     for (const entry of entries) {
       const amount = groups.filter((group) => entry.groups.includes(group.label))
         .reduce((sum, group) => sum + (Number(group.total) || 0), 0);
-      const additional = Boolean(entry.panel.querySelector('[data-item-output]'));
+      const additional = Boolean(entry.panel.querySelector('[data-item-output],.manual-work-row'));
       const mismatch = !entry.toggle.checked && amount !== 0 && !additional;
       unselectedWithAmount ||= mismatch;
       setText(entry.summary, entry.toggle.checked ? selectedSummary(entry.panel) : additional ? "추가 공사 선택" : mismatch ? "입력 미선택" : "미선택");

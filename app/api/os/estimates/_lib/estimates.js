@@ -85,7 +85,7 @@ export function safeInputs(raw = {}) {
 
 export function validateStaffBody(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)
-    || Object.keys(body).some((key) => !["inputs", "address", "itemSelections"].includes(key))
+    || Object.keys(body).some((key) => !["inputs", "address", "itemSelections", "manualWorks"].includes(key))
     || !body.inputs || typeof body.inputs !== "object" || Array.isArray(body.inputs)) {
     throw new ApiError(400, "견적 입력값만 전송해 주세요.");
   }
@@ -96,7 +96,7 @@ export function validateStaffBody(body) {
     inputs[id] = inputValue(id, value, true);
   }
   if (body.address !== undefined && (typeof body.address !== "string" || body.address.length > 500)) throw new ApiError(400, "현장 주소가 올바르지 않습니다.");
-  return { inputs, ...(body.address !== undefined ? { address: body.address } : {}), ...(body.itemSelections!==undefined?{itemSelections:body.itemSelections}:{}) };
+  return { inputs, ...(body.address !== undefined ? { address: body.address } : {}), ...(body.itemSelections!==undefined?{itemSelections:body.itemSelections}:{}), ...(body.manualWorks!==undefined?{manualWorks:body.manualWorks}:{}) };
 }
 
 export function projectStaffEstimate(row) {
@@ -175,7 +175,7 @@ export function privateEstimateDefaults() {
 // Same engine and rounding as the former browser runtime; only its execution location changes.
 export async function calculatePrivilegedEstimate(body, context) {
   if(!['admin','manager'].includes(context.profile.role))throw new ApiError(403,'내부 견적 계산 권한이 없습니다.');
-  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address','itemSelections'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address','itemSelections','manualWorks'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
   if(JSON.stringify(body).length>100000)throw new ApiError(413,'견적 입력값이 너무 큽니다.');
   const incoming={};
   for(const [id,value] of Object.entries(body.inputs)){
@@ -221,7 +221,7 @@ export async function calculatePrivilegedEstimate(body, context) {
   Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,inputs:{...snapshot.inputs,...incoming}});
   snapshot.inputs.preliminaryPolicySelection='saved';
   Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
-  snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context);
+  snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context,body.manualWorks);
   if(snapshot.itemBuilder){result.directCost=snapshot.costTotal;result.customerRevenue=snapshot.total;result.profit=snapshot.costIncomplete?null:snapshot.total-snapshot.costTotal;result.details=snapshot.internalDetails;result.actualMargin=snapshot.marginRate===null?null:snapshot.marginRate/100;}
   return {snapshot,result,costRows:snapshot.costBreakdown||costRows};
 }
@@ -282,7 +282,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   if (!existing) snapshot.author = { user_id: context.authUser.id, user_email: context.profile.email, role: context.profile.role };
   Object.assign(snapshot.customerQuote, { projectName: snapshot.projectName, clientName: snapshot.clientName,
     phone: snapshot.phone, areaPyeong: snapshot.areaPyeong, status: snapshot.status, savedAt: snapshot.savedAt });
-  return appendEstimateItems(snapshot,validated.itemSelections,original,context);
+  return appendEstimateItems(snapshot,validated.itemSelections,original,context,validated.manualWorks);
 }
 
 export function estimateRowPayload(snapshot) {

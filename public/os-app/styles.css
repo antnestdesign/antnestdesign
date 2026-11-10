@@ -2460,3 +2460,17 @@ th:last-child {
   .site-cost-scroll td:nth-child(5)::before { content: "원가 "; }
   .site-cost-scroll input { width: 100%; max-width: 100%; }
 }
+.manual-works{margin-top:16px;padding-top:12px;border-top:1px solid #d8dce0;min-width:0;}
+.manual-works>header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.manual-works h4{margin:0;font-size:14px;}
+.manual-work-list{max-height:380px;overflow:auto;}
+.manual-work-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,auto) auto;align-items:center;gap:12px;min-height:76px;box-sizing:border-box;padding:10px 0;border-bottom:1px solid #e8eaed;}
+.manual-work-row strong,.manual-work-row small,.manual-work-row span{display:block;overflow-wrap:anywhere;}
+.manual-work-row small,.manual-work-row span{font-size:12px;color:#5b6470;}
+.manual-work-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.manual-works form{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1.3fr);gap:12px;align-items:end;margin-top:12px;}
+.manual-works label{display:grid;gap:5px;min-width:0;font-size:13px;}
+.manual-works input{width:100%;min-width:0;box-sizing:border-box;}
+.manual-works output,.manual-works [role=status]{grid-column:1/-1;font-size:13px;}
+.manual-works [role=status]:empty{display:none;}
+@media(max-width:600px){.manual-works form{grid-template-columns:minmax(0,1fr);}.manual-work-row{grid-template-columns:minmax(0,1fr) auto;}.manual-work-actions{grid-column:1/-1;}.manual-works>header button{max-width:100%;white-space:normal;}}

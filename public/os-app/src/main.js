@@ -1239,7 +1239,7 @@ function restoreInputValues(inputs = {}) { return estimateRestore.restoreInputVa
 
 let serverCalculation=null, serverCalculationPending=null, calculationGeneration=0;
 function serverCalculationKey(){return JSON.stringify([currentEditingEstimateId,currentInputKey(),COST_ITEM_DEFINITIONS.map(d=>el[d.inputId]?.value)]);}
-function privateCalculationBody(estimateId=currentEditingEstimateId){return {inputs:Object.fromEntries(Object.entries(currentEstimateInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id)||['projectSearch','projectSearchResults'].includes(id))),estimateId,itemSelections:itemBuilderView?.selections()||[],rateValues:Object.fromEntries(COST_ITEM_DEFINITIONS.filter(d=>el[d.inputId]?.value!=="").map(d=>[d.inputId,Number(el[d.inputId]?.value)||0]))};}
+function privateCalculationBody(estimateId=currentEditingEstimateId){return {inputs:Object.fromEntries(Object.entries(currentEstimateInputValues()).filter(([id])=>Object.hasOwn(ESTIMATE_INPUT_SCHEMA,id)||['projectSearch','projectSearchResults'].includes(id))),estimateId,itemSelections:itemBuilderView?.selections()||[],manualWorks:itemBuilderView?.manualWorks?.()||[],rateValues:Object.fromEntries(COST_ITEM_DEFINITIONS.filter(d=>el[d.inputId]?.value!=="").map(d=>[d.inputId,Number(el[d.inputId]?.value)||0]))};}
 async function ensureServerCalculation(){
   const key=serverCalculationKey();if(serverCalculation?.key===key)return serverCalculation;
   if(serverCalculationPending?.key===key)return serverCalculationPending.promise;
@@ -1541,7 +1541,7 @@ function renderStaffEstimate() {
   setSaveStatus("고객 견적을 계산 중입니다.");
   staffPreviewTimer = setTimeout(async () => {
     try {
-      const estimate = await previewStaffEstimate(inputs, estimateId, itemBuilderView?.selections()||[]);
+      const estimate = await previewStaffEstimate(inputs, estimateId, itemBuilderView?.selections()||[],itemBuilderView?.manualWorks?.()||[]);
       if (generation !== staffPreviewGeneration || currentProfile?.role !== "staff" || estimateId !== currentEditingEstimateId) return;
       displayStaffEstimate(estimate);
       setSaveStatus("입력값으로 고객 견적을 계산했습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
@@ -1576,9 +1576,11 @@ function currentEstimateInputValues() {
 }
 
 function currentInputKey() {
-  const base=canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT),items=itemBuilderView?.selections()||[];
-  return items.length?JSON.stringify([base,items]):base;
+  const base=canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT),items=itemBuilderView?.selections()||[],manual=itemBuilderView?.manualWorks?.()||[];
+  return items.length||manual.length?JSON.stringify([base,items,manual]):base;
 }
+
+function manualWorkHasChanges(){return JSON.stringify(itemBuilderView?.manualWorks?.()||[])!==JSON.stringify(loadedEstimateBaseline?.estimate?.manualWorks??loadedEstimateBaseline?.estimate?.itemBuilder?.manualWorks??[]);}
 
 function loadedEstimateMatchesCurrentInputs() {
   return Boolean(loadedEstimateBaseline?.inputs && currentInputKey() === loadedEstimateBaseline.inputs);
@@ -2379,6 +2381,7 @@ function renderProjectSearchResults() {
 }
 
 function loadEstimateIntoUi(estimate) {
+  if((manualWorkHasChanges()||itemBuilderView?.hasPendingManual?.())&&!confirm('저장하지 않은 직접 공사 변경사항이 있습니다. 저장하지 않고 다른 견적을 불러올까요?'))return;
   itemBuilderView?.restore(estimate);
   cancelStaffPreview();
   pipeCleaningAdjustmentDirty = false;
@@ -2456,6 +2459,7 @@ async function handleExistingPipeCleaningChanged() {
 }
 
 async function handleSaveEstimate(mode = "update") {
+  if(itemBuilderView?.hasPendingManual?.()){alert('입력 중인 직접 공사를 추가·적용하거나 취소한 뒤 저장해 주세요.');return;}
   if (saveEstimateInProgress) return;
   saveEstimateInProgress = true;
   const newEstimateButton = document.getElementById("newEstimateButton");
@@ -2468,7 +2472,7 @@ async function handleSaveEstimate(mode = "update") {
       if (isUpdate && !updateId) throw new Error("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       cancelStaffPreview();
       const inputKeyAtSave = currentInputKey();
-      const inputEstimate = { inputs: staffCurrentEstimateInputs(), itemSelections:itemBuilderView?.selections()||[],
+      const inputEstimate = { inputs: staffCurrentEstimateInputs(), itemSelections:itemBuilderView?.selections()||[], manualWorks:itemBuilderView?.manualWorks?.()||[],
         ...(isUpdate && loadedEstimateBaseline?.estimate?.address != null ? { address: loadedEstimateBaseline.estimate.address } : {}) };
       const saved = isUpdate ? await updateEstimate(updateId, inputEstimate) : await saveEstimate(inputEstimate);
       const unchanged = currentInputKey() === inputKeyAtSave
@@ -2576,6 +2580,7 @@ async function onLoginSubmit(event) {
 }
 
 async function onLogoutClick() {
+  if(manualWorkHasChanges()&&!itemBuilderView?.isDirty()&&!confirm('저장하지 않은 직접 공사 변경사항이 있습니다. 로그아웃할까요?'))return;
   if(itemBuilderView&&!itemBuilderView.canClose())return;
   siteCostView?.clear();
   preliminaryPolicyView?.clear();
@@ -2643,7 +2648,7 @@ function onNewEstimateClick() {
   const dirty = loadedEstimateBaseline
     ? !loadedEstimateMatchesCurrentInputs() || pipeCleaningAdjustmentDirty
     : newEstimateInputBaseline !== null && currentInputKey() !== newEstimateInputBaseline;
-  if ((dirty || contractOptionsDirty) && !confirm("저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 견적을 작성할까요?")) return;
+  if ((dirty || itemBuilderView?.hasPendingManual?.() || contractOptionsDirty) && !confirm("저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 견적을 작성할까요?")) return;
   estimateNavigationGeneration++;
   contractContextGeneration++;
   cancelStaffPreview();
@@ -2740,7 +2745,7 @@ async function onContractActionClick(event) {
 }
 
 function onBeforeUnload(event) {
-  if (!contractOptionsDirty&&!preliminaryPolicyView?.isDirty()&&!itemBuilderView?.isDirty()) return;
+  if (!contractOptionsDirty&&!preliminaryPolicyView?.isDirty()&&!itemBuilderView?.isDirty()&&!manualWorkHasChanges()) return;
   event.preventDefault();
   event.returnValue = "";
 }

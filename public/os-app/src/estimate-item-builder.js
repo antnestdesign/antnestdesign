@@ -1,4 +1,5 @@
 import { escapeHtml as esc } from './utils.js';
+import {mountManualWorkView} from './manual-work-view.js';
 
 const trades={demolition:'철거·인허가',electrical:'전기·조명',bathroom:'욕실·타일',wallpaper:'도배',film:'필름',flooring:'바닥',carpentry:'목공',furniture:'가구',finish:'마감·기타'};
 const sectionKeys={demolition:'Demolition',electrical:'Electrical',bathroom:'Bathroom',wallpaper:'Wallpaper',film:'Film',flooring:'Flooring',carpentry:'Carpentry',furniture:'Furniture',finish:'Finish'};
@@ -14,6 +15,7 @@ export function mountEstimateItemBuilder({document,request,role,changed}) {
   let mode='OFF',catalog=[],selections=[],rows=[],data={items:[],versions:[]},masters=[],host=null,selected=null,config=null,dirty=false,busy=false,preview=null,trial={},notice='',commands=new Map(),generation=0;
   const mayEdit=()=>role()==='admin'&&mode==='ON'&&!busy;
   const mayPrice=()=>['admin','manager'].includes(role())&&mode==='ON'&&!busy;
+  const manual=mountManualWorkView({document,panels:sectionKeys,canEdit:mayPrice,mode:()=>mode,changed});
   function directCost(){
     if(config?.pricing?.kind==='direct')return config.pricing.costUnit;
     if(!config?.components.length)return null;
@@ -93,6 +95,7 @@ export function mountEstimateItemBuilder({document,request,role,changed}) {
       node.onchange=e=>{const n=e.target;if(!n.dataset.itemInput||mode!=='ON')return;e.stopPropagation();const s=selections.find(s=>s.id===n.dataset.itemInput);s.inputs[n.dataset.itemKey]=Number(n.value);changed();};
       node.onclick=e=>{const n=e.target.closest('button');if(!n||mode!=='ON')return;e.stopPropagation();if(n.dataset.itemAdd){const id=node.querySelector('[data-item-choose]').value,c=catalog.find(c=>c.id===id);if(!c)return;selections.push({id:crypto.randomUUID(),versionId:id,inputs:Object.fromEntries(c.inputs.map(f=>[f.key,1]))});renderQuotes();changed();}else if(n.dataset.itemRemove){if(!document.defaultView.confirm('이 추가 공사를 삭제할까요?'))return;selections=selections.filter(s=>s.id!==n.dataset.itemRemove);renderQuotes();changed();}};
     }
+    manual.render();
   }
   return {
     async loadCatalog(){
@@ -116,11 +119,13 @@ export function mountEstimateItemBuilder({document,request,role,changed}) {
       }catch(error){if(epoch!==generation)return;if(host){host.hidden=false;host.textContent=error.message;}}
     },
     selections(){return structuredClone(selections);},
-    restore(estimate){selections=structuredClone(estimate?.itemSelections??estimate?.itemBuilder?.selections??[]);rows=structuredClone(estimate?.itemRows??estimate?.itemBuilder?.publicRows??[]);renderQuotes();},
+    manualWorks(){return manual.rows();},
+    hasPendingManual(){return manual.isDirty();},
+    restore(estimate){selections=structuredClone(estimate?.itemSelections??estimate?.itemBuilder?.selections??[]);rows=structuredClone(estimate?.itemRows??estimate?.itemBuilder?.publicRows??[]);manual.restore(estimate);renderQuotes();},
     result(estimate){rows=structuredClone(estimate?.itemRows??estimate?.itemBuilder?.publicRows??[]);for(const row of rows){const n=document.querySelector(`[data-item-output="${row.id}"]`);if(n)n.textContent=quoteAmount(row);}},
-    reset(){selections=[];rows=[];renderQuotes();},
-    canClose(){if(busy){document.defaultView.alert('항목 처리가 끝난 뒤 다시 시도해 주세요.');return false;}return !dirty||document.defaultView.confirm('저장하지 않은 견적 항목 변경사항을 닫을까요?');},
-    clear(){generation++;mode='OFF';catalog=[];masters=[];data={items:[],versions:[]};config=null;selected=null;dirty=false;busy=false;preview=null;selections=[];rows=[];if(host){host.hidden=true;host.replaceChildren();}document.getElementById('openEstimateItemBuilderButton')?.remove();renderQuotes();},
-    isDirty(){return dirty;}
+    reset(){selections=[];rows=[];manual.reset();renderQuotes();},
+    canClose(){if(busy){document.defaultView.alert('항목 처리가 끝난 뒤 다시 시도해 주세요.');return false;}return !dirty&&!manual.isDirty()||document.defaultView.confirm('저장하지 않은 견적 항목 변경사항을 닫을까요?');},
+    clear(){generation++;mode='OFF';catalog=[];masters=[];data={items:[],versions:[]};config=null;selected=null;dirty=false;busy=false;preview=null;selections=[];rows=[];manual.reset();if(host){host.hidden=true;host.replaceChildren();}document.getElementById('openEstimateItemBuilderButton')?.remove();renderQuotes();},
+    isDirty(){return dirty||manual.isDirty();}
   };
 }
