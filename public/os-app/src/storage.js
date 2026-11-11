@@ -76,7 +76,6 @@ async function refreshAuthSession(source) {
       if ([400, 401, 403].includes(response.status)) {
         persistSession(null);
         verifiedEstimateRole = null;
-        verifiedEstimateUserId = null;
         throw new Error("로그인이 필요합니다.");
       }
       throw new Error("로그인 세션을 갱신하지 못했습니다.");
@@ -169,28 +168,27 @@ export function requestProjectFoundation(path, options = {}) {
   if (!/^\/(projects|detailed-estimates)(\/|$|\?)/.test(path)) throw new Error("본견적 요청 경로가 올바르지 않습니다.");
   return requestOsApi(path, options, true);
 }
+export async function loadConfirmedContractPdf(projectId,packageId,type) {
+  const response=await fetchAuthenticated(`/api/os/projects/${encodeURIComponent(projectId)}/contracts/${encodeURIComponent(packageId)}/${encodeURIComponent(type)}`);
+  if(!response.ok)throw new Error('저장된 계약 PDF를 조회하지 못했습니다.');
+  return response.blob();
+}
 export function requestPreliminaryPolicy(body) {
   return requestOsApi('/preliminary-policy',body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
 }
 export function requestEstimateItems(view='state',body) {
   return requestOsApi(`/estimate-items?view=${encodeURIComponent(view)}`,body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
 }
-let verifiedEstimateUserId = null;
 
 export async function loadCurrentOsUser() {
   const profile = await requestOsApi("/me");
   verifiedEstimateRole = profile.role;
-  verifiedEstimateUserId = getAuthSession()?.user?.id || null;
   return profile;
-}
-
-function usesSafeEstimatesApi() {
-  return verifiedEstimateUserId !== getAuthSession()?.user?.id || !["admin", "manager"].includes(verifiedEstimateRole);
 }
 
 function staffEstimateBody(estimate) {
   return {
-    inputs: staffEstimateInputs(estimate.inputs),
+    inputs: ["admin","manager"].includes(verifiedEstimateRole) ? estimate.inputs : staffEstimateInputs(estimate.inputs),
     ...(estimate.address != null ? { address: estimate.address } : {}),
     ...(estimate.itemSelections!==undefined||estimate.itemBuilder?{itemSelections:estimate.itemSelections??estimate.itemBuilder.selections}:{}),
     ...(estimate.manualWorks!==undefined||estimate.itemBuilder?{manualWorks:estimate.manualWorks??estimate.itemBuilder.manualWorks??[]}:{}),
@@ -314,7 +312,6 @@ export async function signIn(email, password) {
   }
   const session = sessionWithExpiry(await response.json());
   verifiedEstimateRole = null;
-  verifiedEstimateUserId = null;
   persistSession(session);
   return session;
 }
@@ -323,7 +320,6 @@ export async function signOut() {
   const session = getAuthSession();
   persistSession(null);
   verifiedEstimateRole = null;
-  verifiedEstimateUserId = null;
   if (session?.access_token) {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
       method: "POST",
@@ -387,6 +383,14 @@ function normalizeEstimate(row) {
   const phone = row.phone || data.phone || data.clientPhone || data.inputs?.clientPhone || "";
   return {
     ...data,
+    authorship: row.authorship,
+    revision: row.revision,
+    canEdit: row.canEdit,
+    canConfirm: row.canConfirm,
+    canCreateRevision: row.canCreateRevision,
+    confirmation: row.confirmation,
+    projectId: row.projectId || row.project_id || row.confirmation?.projectId || null,
+    updatedAt: row.updated_at,
     id: row.id,
     projectName: row.project_name || data.projectName || "",
     clientName,
@@ -405,169 +409,56 @@ function normalizeEstimate(row) {
       : data.customerQuote,
   };
 }
-async function request(path = "", options = {}) {
-  const response = await fetchAuthenticated(`${ESTIMATES_ENDPOINT}${path}`, {
-    ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) },
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    if (options.method === "DELETE") {
-      try {
-        if (JSON.parse(body)?.code === "23503") throw new Error("프로젝트·본견적·계약에서 참조 중인 견적은 삭제할 수 없습니다.");
-      } catch (error) {
-        if (error?.message?.startsWith("프로젝트·")) throw error;
-      }
-    }
-    throw new Error(`데이터 요청에 실패했습니다. (${response.status})`);
-  }
-  if (response.status === 204) return null;
-  return response.json();
-}
 
-async function insertEstimatePayload(payload) {
-  const response = await fetchAuthenticated(ESTIMATES_ENDPOINT, {
-    method: "POST",
-    headers: {
-      ...authHeaders(),
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    await response.text();
-    throw new Error(`데이터 저장에 실패했습니다. (${response.status})`);
-  }
-  return response;
+function estimateRequestBody(estimate) {
+  return staffEstimateBody(estimate);
 }
-
-async function insertWithFallbacks(payload, fallbacks) {
-  const errors = [];
-  for (const candidate of [payload, ...fallbacks]) {
-    try {
-      return await insertEstimatePayload(candidate);
-    } catch (error) {
-      errors.push(error?.message || String(error));
-    }
-  }
-  throw new Error(errors.filter(Boolean).join("\n") || "견적 저장에 실패했습니다.");
+function estimateResponse(row) {
+  if(!row || typeof row.id !== 'string' || !row.id)throw new Error('견적 저장 결과를 확인하지 못했습니다. 목록에서 다시 확인해 주세요.');
+  return row.estimate_data ? normalizeEstimate(row) : row;
 }
 export async function saveEstimate(estimate) {
-  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined||estimate.manualWorks!==undefined))return normalizeEstimate(await requestOsApi('/estimates',{method:'POST',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder?.selections??[],manualWorks:estimate.manualWorks??estimate.itemBuilder?.manualWorks??[],address:estimate.address||''})}));
-  if (usesSafeEstimatesApi()) {
-    return requestOsApi("/estimates", { method: "POST", body: JSON.stringify(staffEstimateBody(estimate)) });
-  }
-  const projectName = estimate.projectName?.trim();
-  if (!projectName) {
-    throw new Error("프로젝트명을 입력해 주세요.");
-  }
-  const clientName = estimate.clientName || estimate.inputs?.clientName || "";
-  const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
-  const status = estimate.status || "견적";
-
-  const payload = {
-    project_name: projectName,
-    client_name: clientName,
-    phone,
-    address: estimate.address || "",
-    area_pyeong: estimate.areaPyeong || 0,
-    total_price: estimate.total || 0,
-    cost_total: estimate.costTotal || 0,
-    margin_rate: estimate.marginRate || 0,
-    estimate_data: {
-      ...estimate,
-      projectName,
-      clientName,
-      phone,
-      clientPhone: phone,
-      status,
-    },
-    status,
-  };
-
-  const response = await insertWithFallbacks(payload, [
-    {
-      project_name: projectName,
-      total_price: estimate.total || 0,
-      estimate_data: payload.estimate_data,
-      status,
-    },
-    {
-      project_name: projectName,
-      estimate_data: payload.estimate_data,
-    },
-  ]);
-  const rows = await response.json();
-  const row = Array.isArray(rows) ? rows[0] : null;
-  if (!row?.id) {
-    throw new Error("견적이 저장됐으나 저장 결과를 확인하지 못했습니다. 프로젝트 목록에서 확인해 주세요.");
-  }
-  return normalizeEstimate(row);
+  const body=estimateRequestBody(estimate);body.inputs={...body.inputs,estimateStatus:'견적'};
+  return estimateResponse(await requestOsApi('/estimates', {
+    method:'POST',body:JSON.stringify(body),
+  },true));
 }
-
 export async function updateEstimate(id, estimate) {
-  if(!usesSafeEstimatesApi()&&(estimate.itemBuilder||estimate.itemSelections!==undefined||estimate.manualWorks!==undefined))return normalizeEstimate(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({inputs:estimate.inputs,itemSelections:estimate.itemSelections??estimate.itemBuilder?.selections??[],manualWorks:estimate.manualWorks??estimate.itemBuilder?.manualWorks??[],address:estimate.address||''})}));
-  if (!id) {
-    throw new Error("수정할 견적을 찾지 못했습니다.");
-  }
-  if (usesSafeEstimatesApi()) {
-    return requestOsApi(`/estimates/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(staffEstimateBody(estimate)) });
-  }
-  const projectName = estimate.projectName?.trim();
-  if (!projectName) {
-    throw new Error("프로젝트명을 입력해 주세요.");
-  }
-  const clientName = estimate.clientName || estimate.inputs?.clientName || "";
-  const phone = estimate.phone || estimate.clientPhone || estimate.inputs?.clientPhone || "";
-  const status = estimate.status || "견적";
-  const payload = {
-    project_name: projectName,
-    client_name: clientName,
-    phone,
-    ...(estimate.address != null ? { address: estimate.address } : {}),
-    area_pyeong: estimate.areaPyeong || 0,
-    total_price: estimate.total || 0,
-    cost_total: estimate.costTotal || 0,
-    margin_rate: estimate.marginRate || 0,
-    estimate_data: {
-      ...estimate,
-      id,
-      projectName,
-      clientName,
-      phone,
-      clientPhone: phone,
-      status,
-    },
-    status,
-  };
-  const rows = await request(`?id=eq.${encodeURIComponent(id)}&select=*`, {
-    method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(payload),
-  });
-  return normalizeEstimate(rows?.[0] || { ...payload, id, created_at: estimate.savedAt || new Date().toISOString() });
+  if(!id)throw new Error('수정할 견적을 찾지 못했습니다.');
+  return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`, {
+    method:'PATCH',body:JSON.stringify({...estimateRequestBody(estimate),expectedRevision:estimate.revision}),
+  },true));
 }
-
+export async function updateEstimateFinancials(id,expectedRevision,financialAdjustment){
+  return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({expectedRevision,financialAdjustment})},true));
+}
 export async function loadEstimates() {
-  if (usesSafeEstimatesApi()) return requestOsApi("/estimates");
-  const rows = await request("?select=*&order=created_at.desc");
-  return rows.map(normalizeEstimate);
+  return (await requestOsApi('/estimates')).map(estimateResponse);
 }
-
 export async function getEstimate(id) {
-  if (usesSafeEstimatesApi()) return requestOsApi(`/estimates/${encodeURIComponent(id)}`);
-  const rows = await request(`?id=eq.${encodeURIComponent(id)}&select=*&limit=1`);
-  return rows[0] ? normalizeEstimate(rows[0]) : null;
+  return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`));
+}
+export async function deleteEstimate(id, expectedRevision) {
+  const profile=await loadCurrentOsUser();
+  if(profile.role!=='admin')throw new Error('관리자만 견적을 삭제할 수 있습니다.');
+  if(typeof expectedRevision!=='string')throw new Error('삭제할 견적을 목록에서 다시 불러와 주세요.');
+  await requestOsApi(`/estimates/${encodeURIComponent(id)}`, {
+    method:'DELETE',body:JSON.stringify({expectedRevision}),
+  },true);
+}
+export async function loadEstimateHistory(id,versionId) {
+  return requestOsApi(`/estimates/${encodeURIComponent(id)}/history${versionId?'?versionId='+encodeURIComponent(versionId):''}`);
 }
 
-export async function deleteEstimate(id) {
-  const profile = await loadCurrentOsUser();
-  if (profile?.role !== "admin" || profile.is_active === false || profile.must_change_password) {
-    throw new Error("관리자만 견적을 삭제할 수 있습니다.");
-  }
-  await request(`?id=eq.${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
+export function loadEstimateConfirmations(id,versionId) {
+  return requestOsApi(`/estimates/${encodeURIComponent(id)}/confirmations${versionId?'/'+encodeURIComponent(versionId):''}`,{},true)
+    .then(row=>versionId?estimateResponse(row):row);
+}
+export function confirmEstimate(id,body) {
+  return requestOsApi(`/estimates/${encodeURIComponent(id)}/confirmations`,{method:'POST',body:JSON.stringify(body)},true);
+}
+export function createEstimateRevision(id,body) {
+  return requestOsApi(`/estimates/${encodeURIComponent(id)}/revision`,{method:'POST',body:JSON.stringify(body)},true);
 }
 
 async function requestCostItems(path = "", options = {}) {

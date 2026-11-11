@@ -454,6 +454,8 @@ function renderContractPrintDocument(snapshot, documents = snapshot.contract_doc
         ${renderContractPaymentTable(schedule)}
       </section>
       <section class="contract-print-section contract-fixed-terms">
+        ${saved?.confirmed_choices?`<h2>현장별 선택사항</h2><p>고객 진행 업무: ${escapeHtml((saved.confirmed_choices.customer_admin_tasks||[]).join(', ')||'없음')}</p><p>시공자 포함 업무: ${escapeHtml((saved.confirmed_choices.contractor_admin_tasks||[]).join(', ')||'없음')}</p>${[saved.confirmed_choices.existing_finish_exclusion,saved.confirmed_choices.existing_pipe_cleaning_exclusion].filter(Boolean).map(line=>`<p>${escapeHtml(line)}</p>`).join('')}`:''}
+        ${saved?.confirmed_notes?`<h2>특약·비고</h2><p style="white-space:pre-wrap">${escapeHtml(saved.confirmed_notes)}</p>`:''}
         ${renderContractFixedTerms(Array.isArray(saved?.fixed_term_lines) ? saved.fixed_term_lines : CONTRACT_FIXED_TERM_LINES)}
       </section>
       <section class="contract-print-section document-signature-intro">

@@ -1,5 +1,5 @@
 import {escapeHtml as esc} from './utils.js';
-import {normalizeManualWorks,manualWorkAmount} from './manual-work.js';
+import {normalizeManualWorks,manualWorkInput,manualWorkAmount} from './manual-work.js';
 
 const won=value=>`${Number(value).toLocaleString('ko-KR')}원`;
 export function mountManualWorkView({document,panels,canEdit,canViewCost=canEdit,mode,changed}) {
@@ -27,7 +27,7 @@ export function mountManualWorkView({document,panels,canEdit,canViewCost=canEdit
     }
   }
   return {render,rows:()=>structuredClone(rows),isDirty:()=>drafts.size>0,
-    restore(estimate){rows=structuredClone(estimate?.manualWorks??estimate?.itemBuilder?.manualWorks??[]);editable=!estimate?.id||estimate.canEdit!==false&&estimate.confirmation?.state!=='confirmed';drafts.clear();render();},
+    restore(estimate){rows=(estimate?.manualWorks??estimate?.itemBuilder?.manualWorks??[]).map(manualWorkInput);editable=!estimate?.id||estimate.canEdit!==false&&estimate.confirmation?.state!=='confirmed';drafts.clear();render();},
     reset(){rows=[];editable=true;drafts.clear();render();},
   };
 }

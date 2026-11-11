@@ -2,6 +2,9 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 import { NextRequest } from "next/server";
 import { ApiError, errorResponse, getUserContext, json, requireServiceRoleKey, supabaseFetch } from "../../_lib/server";
 import { FoundationModeError, requireFoundationAction } from "./feature-state";
+import {rejectLegacyEditorWrite} from './legacy-editor';
+import {estimateActor} from '../../estimates/_lib/ownership';
+import {publicProjectWorkflows} from './project-workflow';
 
 type RecordValue = Record<string, unknown>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -71,8 +74,15 @@ function selection(value: unknown, actor: string) {
 export async function handle(request: NextRequest, action: string, routeId?: string) {
   try {
     const user = await getUserContext(request), actor = user.authUser.id;
+    await estimateActor(user);
+    if(['start','save'].includes(action))rejectLegacyEditorWrite();
     if (!["admin", "manager", "staff"].includes(user.profile.role)) throw new ApiError(403, "접근 권한이 없습니다.");
     const mode = requireFoundationAction(action);
+    if(action==='projects'&&new URL(request.url).searchParams.get('view')==='management'){
+      const filter=user.profile.role==='staff'?'&os_managed_at=not.is.null':'';
+      const rows=await supabaseFetch<RecordValue[]>(`/rest/v1/projects?select=*,customer:customers(name,phone)&order=created_at.desc${filter}`);
+      return json(await publicProjectWorkflows(rows));
+    }
     if (routeId) id(routeId);
     const reads = ["projects", "customers", "project", "get", "events"];
     const body = reads.includes(action) ? {} : object(await request.json(), action === "preview" ? ["estimate_id"]

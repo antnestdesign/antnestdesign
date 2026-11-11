@@ -16,7 +16,7 @@ function ensureContractPackagePanel() {
   if (!canViewContractPackage()) return;
   const adminPanel = document.getElementById("admin");
   const savedList = document.getElementById("savedEstimateRows")?.closest(".internal-card");
-  if (!adminPanel || !savedList || document.getElementById("contractPackagePanel")) return;
+  if (!adminPanel || document.getElementById("contractPackagePanel")) return;
   const section = document.createElement("section");
   section.id = "contractPackagePanel";
   section.className = "internal-card contract-package-card";
@@ -57,6 +57,10 @@ function ensureContractPackagePanel() {
         </div>
         <span id="contractPackageStatus" class="status-text"></span>
       </div>
+      <section class="contract-panel">
+        <h3>선택 견적의 계약</h3>
+        <div class="table-wrap"><table class="contract-package-table"><thead><tr><th>계약번호</th><th>버전</th><th>상태</th><th>저장일</th><th>문서</th><th>작업</th></tr></thead><tbody id="contractPackageRows"></tbody></table></div>
+      </section>
       <form id="contractOptionsForm" class="contract-options-form">
         <section class="contract-panel">
           <div class="contract-panel-heading">
@@ -142,7 +146,8 @@ function ensureContractPackagePanel() {
       </section>
     </div>
   `;
-  savedList.insertAdjacentElement("afterend", section);
+  if (savedList?.parentElement === adminPanel) savedList.insertAdjacentElement("afterend", section);
+  else adminPanel.append(section);
 }
 
 function contractStatus(message, type = "") {

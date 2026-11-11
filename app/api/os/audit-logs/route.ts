@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import {
   errorResponse,
+  ApiError,
   json,
   requireAdmin,
   sanitizeAuditLog,
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const context = await requireAdmin(request);
     const payload = await request.json().catch(() => ({}));
+    if (/^(ESTIMATE_(SAVE|FLOW)|PROJECT_FLOW)_/.test(String(payload.action || ''))) throw new ApiError(400,'견적·프로젝트 이력은 승인된 업무 명령에서 자동 기록됩니다.');
     await writeAuditLog(context, {
       action: String(payload.action || "SYSTEM_OPERATION"),
       target_type: payload.target_type ? String(payload.target_type) : null,

@@ -172,13 +172,13 @@ function limitedJsonObject(value: unknown, label: string, maxBytes = MAX_JSON_BY
 
 function dateMinusDays(dateText: string, days: number) {
   if (!dateText) return "";
-  const date = new Date(`${dateText}T00:00:00+09:00`);
+  const date = new Date(`${dateText}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return "";
-  date.setDate(date.getDate() - days);
+  date.setUTCDate(date.getUTCDate() - days);
   return date.toISOString().slice(0, 10);
 }
 
-function paymentSchedule(totalAmount: number, startDate: string) {
+export function paymentSchedule(totalAmount: number, startDate: string) {
   const raw = [
     { label: "계약금", ratio: 10, due_basis: "계약 시", due_date: "" },
     { label: "착공 전 중도금", ratio: 40, due_basis: "착공 3일 전", due_date: dateMinusDays(startDate, 3) },
@@ -729,7 +729,8 @@ function staffEstimateSnapshot(value: unknown) {
 
 function projectDocument(row: Record<string, unknown>, role: UserRole) {
   if (role === "staff") {
-    const content = objectValue(row.content_json);
+    const scrub=(value:unknown):unknown=>Array.isArray(value)?value.map(scrub):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([key])=>!['amount_reason','amount_approved_by','amount_difference','confirmed_form'].includes(key)).map(([key,v])=>[key,scrub(v)])):value;
+    const content = objectValue(row.pdf_sha256?scrub(row.content_json):row.content_json);
     const projectedContent = row.document_type === "QUOTE" ? {
       document_type: content.document_type, title: content.title, template_version: content.template_version,
       rule_version: content.rule_version, project_name: content.project_name, contract_no: content.contract_no,
@@ -749,7 +750,7 @@ function projectDocument(row: Record<string, unknown>, role: UserRole) {
       created_at: row.created_at,
     };
   }
-  return row;
+  return Object.fromEntries(Object.entries(row).filter(([key])=>key!=='pdf_bytes'));
 }
 
 function projectPackageSnapshotForStaff(row: Record<string, unknown>) {

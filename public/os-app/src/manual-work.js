@@ -13,5 +13,6 @@ export function normalizeManualWorks(value) {
   });
 }
 export const publicManualWork = row => ({id:row.id.toLowerCase(),trade:row.trade,name:row.name.trim(),amount:row.amount,note:row.note.trim()});
+export const manualWorkInput = row => ({...publicManualWork(row),...(Object.hasOwn(row,'costAmount')?{costAmount:row.costAmount}:{})});
 export const manualWorkAmount = amount => Math.floor(amount / 1000) * 1000;
 export const manualWorkName = row => row.note ? `${row.name} (${row.note})` : row.name;

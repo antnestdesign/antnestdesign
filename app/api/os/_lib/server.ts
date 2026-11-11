@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import {assertMaintenanceRequest,assertMaintenanceBackend,MaintenanceError} from './maintenance';
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
@@ -50,6 +51,7 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+function checkMaintenance(check:()=>void){try{check();}catch(error){if(error instanceof MaintenanceError)throw new ApiError(503,error.message);throw error;}}
 
 export function json(data: unknown, init?: ResponseInit) {
   const headers=new Headers(init?.headers);
@@ -58,6 +60,7 @@ export function json(data: unknown, init?: ResponseInit) {
 }
 
 export function errorResponse(error: unknown) {
+  if(error instanceof MaintenanceError)return json({error:error.message,code:'OS_MAINTENANCE'},{status:503});
   if (error instanceof ApiError) {
     return json({ error: error.message }, { status: error.status });
   }
@@ -113,6 +116,7 @@ export function readBearerToken(request: NextRequest) {
 }
 
 export async function supabaseFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  checkMaintenance(()=>assertMaintenanceBackend(path,init));
   const response = await fetch(serviceUrl(path), {
     ...init,
     headers: serviceHeaders(init?.headers),
@@ -132,6 +136,7 @@ export async function supabaseUserFetch<T>(
   accessToken: string,
   init?: RequestInit,
 ): Promise<T> {
+  checkMaintenance(()=>assertMaintenanceBackend(path,init));
   const serviceKey = requireServiceRoleKey();
   const response = await fetch(serviceUrl(path), {
     ...init,
@@ -190,6 +195,7 @@ export async function getProfileById(id: string): Promise<Profile | null> {
 }
 
 export async function getPasswordChangeContext(request: NextRequest): Promise<UserContext> {
+  checkMaintenance(()=>assertMaintenanceRequest(request));
   const accessToken = readBearerToken(request);
   const authUser = await getAuthUser(accessToken);
   const profile = await getProfileById(authUser.id);

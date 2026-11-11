@@ -46,7 +46,8 @@ export function storedEstimateSummary(estimate, options) {
   const customerTotal = moneyAmount(estimate?.customerQuote?.total ?? estimate?.total ?? estimate?.internalSummary?.customerRevenue);
   const incomplete=estimate?.costIncomplete===true;
   const directCost = incomplete?null:moneyAmount(estimate?.costTotal ?? estimate?.internalSummary?.directCost);
-  const profit = incomplete?null:customerTotal - directCost;
+  const managementCost=moneyAmount(estimate?.inputs?.managementCost),discountAmount=moneyAmount(estimate?.inputs?.managementDiscount);
+  const profit = incomplete?null:customerTotal - directCost - managementCost;
   const marginRate = incomplete?null:markupRate(profit, directCost);
   const details = Array.isArray(estimate?.internalDetails) ? estimate.internalDetails : [];
   const groups = buildAdminMarginGroups(estimate, options);
@@ -55,6 +56,7 @@ export function storedEstimateSummary(estimate, options) {
   return {
     customerTotal,
     directCost,
+    ...(managementCost||discountAmount?{managementCost,discountAmount}:{}),
     profit,
     marginRate,
     detailCount: details.length,
@@ -77,7 +79,7 @@ export function hasPipeCleaningLegacyCostGap(estimate, summary, { pipeCleaningIt
 }
 
 export function adjustmentEvidence(estimate) {
-  const adjustment = moneyAmount(estimate?.inputs?.manualAdjustment ?? estimate?.manualAdjustment);
+  const adjustment = moneyAmount(estimate?.inputs?.manualAdjustment ?? estimate?.manualAdjustment)-moneyAmount(estimate?.inputs?.managementDiscount);
   if (adjustment !== 0) {
     return { label: adjustment < 0 ? "할인" : "총액 조정", amount: Math.abs(adjustment) };
   }
@@ -108,7 +110,11 @@ export function buildEstimateDiagnostics(estimate, summary, options) {
     });
   }
 
-  if (summary.customerDiff !== 0) {
+  const discounts=(estimate?.customerQuote?.groups||[]).flatMap(g=>g.items||[]).filter(i=>i.managementDiscount===true);
+  const recordedDiscount=moneyAmount(estimate?.inputs?.managementDiscount);
+  const knownDiscount=recordedDiscount>0&&discounts.length===1&&discounts[0].name==='할인금액'&&discounts[0].amount===-recordedDiscount
+    &&summary.customerDiff===recordedDiscount&&(estimate.customerQuote.groups.reduce((sum,g)=>sum+moneyAmount(g.total),0)===summary.customerTotal);
+  if (summary.customerDiff !== 0&&!knownDiscount) {
     const evidence = adjustmentEvidence(estimate);
     if (evidence) {
       diagnostics.push({

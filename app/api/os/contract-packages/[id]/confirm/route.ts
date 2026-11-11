@@ -9,6 +9,7 @@ import {
 import { assertUuid } from "../../_lib/contracts";
 import { requireFoundationAction } from "../../../projects/_lib/feature-state";
 import { issuedLinks } from "../../_lib/issued-access";
+import {assertLegacyContractWorkflow} from '../../../projects/_lib/contract-workflow-boundary';
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     const context = await requireAdmin(request);
     const { id } = await params;
     const packageId = assertUuid(id, "계약 패키지 ID");
+    const existing=await supabaseFetch<Array<{estimate_id:string;status:string}>>(`/rest/v1/contract_package_snapshots?id=eq.${packageId}&select=estimate_id,status&limit=1`);
+    if(existing[0]&&existing[0].status!=='CONTRACTED')await assertLegacyContractWorkflow(existing[0].estimate_id);
     const links = await issuedLinks(packageId);
     const result = await supabaseFetch<Record<string, unknown>>(
       links.length ? "/rest/v1/rpc/and_os_5b_contract" : "/rest/v1/rpc/confirm_contract_package_snapshot",

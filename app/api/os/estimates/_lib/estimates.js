@@ -5,6 +5,7 @@ import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-p
 import { PreliminaryPolicyError,policyRateValues } from '../../_lib/calculation/preliminary-policy.js';
 import { baseEstimate, appendEstimateItems } from '../../estimate-items/_lib/preliminary';
 import { ItemDefinitionError, publicItemState } from '../../estimate-items/_lib/model.js';
+import {applyManagementFinancials} from './management-financials';
 import {
   COST_ITEM_DEFINITIONS, ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS,
   createEstimateCalculation,
@@ -13,7 +14,7 @@ import {
 const privateInputs = new Set(PRIVATE_ESTIMATE_INPUTS);
 export const staffInputIds = Object.keys(ESTIMATE_INPUT_SCHEMA).filter((id) => !privateInputs.has(id));
 const allowedInputs = new Set(staffInputIds);
-const metadataInputs = new Set(["projectName", "clientName", "clientPhone", "estimateStatus", "projectSearch", "projectSearchResults", "preliminaryPolicySelection"]);
+const metadataInputs = new Set(["managementCost","managementDiscount","projectName", "clientName", "clientPhone", "estimateStatus", "projectSearch", "projectSearchResults", "preliminaryPolicySelection"]);
 const money = (value) => `${(Math.floor(value / 1000) * 1000).toLocaleString("ko-KR")}원`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const text = (value) => typeof value === "string" ? value : "";
@@ -109,6 +110,7 @@ export function projectStaffEstimate(row) {
   const savedAt = text(row.created_at || data.savedAt);
   const inputs = safeInputs({ ...(data.inputs || {}), projectName, clientName, clientPhone: phone,
     areaPyeong: String(row.area_pyeong ?? data.areaPyeong ?? 0), estimateStatus: row.status || data.status || "견적" });
+  inputs.estimateStatus=text(row.status||data.status)||'견적';
   return {
     id: text(row.id), projectName, clientName, phone, clientPhone: phone,
     address: text(row.address || data.address), areaPyeong: amount(row.area_pyeong ?? data.areaPyeong),
@@ -207,6 +209,7 @@ export async function calculatePrivilegedEstimate(body, context) {
   if(!applyCurrent&&old?.costSnapshot?.items?.length&&!old.costSnapshot.preliminaryPolicy&&changed.length&&state.wallpaperMaterialEnabled&&!old.costSnapshot.items.some(i=>i.itemCode==='WALLPAPER_MATERIAL_PER_PYEONG'))throw new ApiError(409,'저장 당시 원가 스냅샷에 도배 자재비가 없어 현재 원가와 섞어 계산하지 않았습니다.');
   const groups=core.groupedCustomerItems(result.details,result.quoteLines),total=groups.reduce((n,g)=>n+amount(g.total),0),savedAt=new Date().toISOString();
   let snapshot=core.applyExistingPipeCleaningAdjustment({
+    ...(old||{}),
     projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,
     address:body.address??existing?.address??old?.address??'',savedAt,total,totalText:money(total),costTotal:result.directCost,
     marginRate:Number((result.actualMargin*100).toFixed(2)),costSnapshot:preliminaryPolicy?{...costs.snapshot,preliminaryPolicy}:costs.snapshot,
@@ -218,11 +221,12 @@ export async function calculatePrivilegedEstimate(body, context) {
   },state.existingPipeCleaningEnabled);
   if(!applyCurrent&&Array.isArray(old?.customerQuote?.groups)&&changed.length===0)snapshot=clone(old);
   else if(!applyCurrent&&Array.isArray(old?.customerQuote?.groups)&&changed.length===1&&changed[0]==='existingPipeCleaningEnabled')snapshot=core.applyExistingPipeCleaningAdjustment(old,inputs.existingPipeCleaningEnabled === true);
-  Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,inputs:{...snapshot.inputs,...incoming}});
+  Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,address:body.address??snapshot.address??'',savedAt,inputs:{...snapshot.inputs,...incoming}});
   snapshot.inputs.preliminaryPolicySelection='saved';
   Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
   snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context,body.manualWorks);
-  if(snapshot.itemBuilder){result.directCost=snapshot.costTotal;result.customerRevenue=snapshot.total;result.profit=snapshot.costIncomplete?null:snapshot.total-snapshot.costTotal;result.details=snapshot.internalDetails;result.actualMargin=snapshot.marginRate===null?null:snapshot.marginRate/100;}
+  snapshot=applyManagementFinancials(snapshot);
+  if(snapshot.itemBuilder||Number(snapshot.inputs.managementCost)||Number(snapshot.inputs.managementDiscount)){result.directCost=snapshot.costTotal;result.customerRevenue=snapshot.total;result.profit=snapshot.internalSummary.profit;result.details=snapshot.internalDetails;result.actualMargin=snapshot.marginRate===null?null:snapshot.marginRate/100;}
   return {snapshot,result,costRows:snapshot.costBreakdown||costRows};
 }
 
@@ -282,7 +286,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   if (!existing) snapshot.author = { user_id: context.authUser.id, user_email: context.profile.email, role: context.profile.role };
   Object.assign(snapshot.customerQuote, { projectName: snapshot.projectName, clientName: snapshot.clientName,
     phone: snapshot.phone, areaPyeong: snapshot.areaPyeong, status: snapshot.status, savedAt: snapshot.savedAt });
-  return appendEstimateItems(snapshot,validated.itemSelections,original,context,validated.manualWorks);
+  return applyManagementFinancials(await appendEstimateItems(snapshot,validated.itemSelections,original,context,validated.manualWorks));
 }
 
 export function estimateRowPayload(snapshot) {

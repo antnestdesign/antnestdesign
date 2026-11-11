@@ -1433,7 +1433,12 @@ th:last-child {
 .admin-estimate-detail-panel {
   display: grid;
   gap: 12px;
+  position:sticky;
+  left:0;
+  width:calc(100cqi - 24px);
+  min-width:0;
 }
+.management-list-scroll{container-type:inline-size;}
 
 .admin-estimate-summary-grid {
   display: grid;
@@ -1461,6 +1466,10 @@ th:last-child {
   font-weight: 900;
   letter-spacing: 0;
 }
+.admin-estimate-summary-grid label{display:grid;gap:5px;color:var(--muted);font-size:12px;font-weight:700;min-width:0;}
+.admin-estimate-summary-grid input{width:100%;min-width:0;box-sizing:border-box;font-size:16px;font-weight:700;}
+.management-financial-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.management-financial-actions [role=status]{font-size:13px;}
 
 .admin-estimate-diagnostics {
   display: grid;
@@ -2460,17 +2469,136 @@ th:last-child {
   .site-cost-scroll td:nth-child(5)::before { content: "원가 "; }
   .site-cost-scroll input { width: 100%; max-width: 100%; }
 }
+/* Saved-estimate metadata and bounded history; does not alter process layout. */
+.estimate-history { margin-top: 12px; font-size: 12px; }
+.estimate-history > p { margin: 4px 0; overflow-wrap: anywhere; }
+.estimate-history [data-estimate-permission]:not(:empty) { color: #a12525; font-weight: 700; }
+.estimate-history-scroll { max-height: 25rem; overflow: auto; margin-top: 8px; }
+.estimate-history-scroll article { min-height: 5rem; border-top: 1px solid #ddd; padding: 8px 0; }
+.estimate-history-scroll time { color: #555; }
+.estimate-history-scroll dl { margin: 5px 0; }
+.estimate-history-scroll dt { font-weight: 600; }
+.estimate-history-scroll dd { margin: 2px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.preliminary-confirmation { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; min-width: 0; }
+.preliminary-confirmation h3 { margin: 0 0 8px; font-size: 16px; }
+.preliminary-confirmation p, .preliminary-confirmation li { font-size: 12px; overflow-wrap: anywhere; }
+.preliminary-confirmation-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.preliminary-version-list { max-height: 25rem; overflow: auto; }
+.preliminary-version-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.preliminary-version-list span { min-width: 0; overflow-wrap: anywhere; }
+.preliminary-version-list small { display: block; }
+.preliminary-version-list button { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .preliminary-workspace #saveStatus { min-height: 3em; line-height: 1.5; }
+}
+/* Phase 3 reuses the consultation form and existing management tools. */
+body[data-workflow-layout="phase3"] [hidden] { display: none !important; }
+body[data-workflow-layout="phase3"] #quote,
+body[data-workflow-layout="phase3"] #admin { min-width: 0; }
+.management-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 16px 0; }
+.management-filters label { display: grid; gap: 6px; min-width: 0; flex: 1 1 180px; }
+.management-filters input,.management-filters select { width: 100%; min-width: 0; }
+.management-list-scroll { max-height: 420px; overflow: auto; }
+.management-list-scroll table { min-width: 1175px; width: 100%; table-layout: fixed; }
+.management-list-scroll th:nth-child(1) { width: 180px; }
+.management-list-scroll th:nth-child(2),.management-list-scroll th:nth-child(3),.management-list-scroll th:nth-child(4) { width: 100px; }
+.management-list-scroll th:nth-child(5) { width: 140px; }
+.management-list-scroll th:nth-child(6) { width: 130px; }
+.management-list-scroll th:nth-child(7) { width: 160px; }
+.management-list-scroll th:nth-child(8) { width: 85px; }
+.management-list-scroll th:nth-child(9) { width: 180px; }
+.management-list-scroll th:nth-child(10) { width: 150px; }
+.management-list-scroll th:nth-child(11) { width: 65px; }
+.management-list-scroll td { overflow-wrap: anywhere; vertical-align: top; }
+.management-list-scroll th { position: sticky; top: 0; z-index: 1; background: #f5f6f7; }
+.management-list-scroll td { min-height: 58px; }
+.management-selected,.contract-project-list,.legacy-issued-archive { margin-top: 24px; padding: 20px 0; border-top: 1px solid #d8dce0; min-width: 0; }
+.management-selected > header { display: flex; flex-wrap: wrap; gap: 12px; align-items: start; justify-content: space-between; }
+.management-selected h2,.contract-project-list h2,.legacy-issued-archive h2 { font-size: 20px; }
+.management-selected p { overflow-wrap: anywhere; }
+.management-quote-preview { margin: 20px 0; min-width: 0; }
+.management-quote-preview > summary { cursor: pointer; padding: 12px 0; font-weight: 700; }
+.project-create-dialog { width: min(480px,calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow: auto; border: 1px solid #d8dce0; border-radius: 8px; padding: 24px; }
+.project-create-dialog form,.project-create-dialog label { display: grid; gap: 10px; }
+.project-create-dialog input { width: 100%; min-width: 0; }
+@media(max-width:600px) {
+  .management-filters label { flex-basis: 100%; }
+  .management-selected > header > div { min-width: 0; width: 100%; }
+  .management-selected,.contract-project-list,.legacy-issued-archive { padding: 16px 0; }
+  body[data-workflow-layout="phase3"] #quote > *,body[data-workflow-layout="phase3"] #admin > * { max-width: 100%; min-width: 0; }
+}
+/* Project milestones share the existing project and estimate workspace. */
+.project-flow-transfer,.project-workflow-panel { margin-top: 20px; padding: 16px 0; border-top: 1px solid var(--line); min-width: 0; }
+.project-workflow-panel > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.project-workflow-panel h2 { font-size: 20px; }
+.project-workflow-panel h3,.project-flow-transfer h3 { font-size: 16px; margin: 8px 0; }
+.project-workflow-panel p,.project-flow-transfer p { overflow-wrap: anywhere; }
+.project-workflow-panel form,.project-flow-transfer form { display: grid; gap: 12px; margin: 16px 0; }
+.project-workflow-panel label,.project-flow-transfer label { display: grid; gap: 6px; min-width: 0; }
+.project-workflow-panel input,.project-workflow-panel select,.project-workflow-panel textarea,.project-flow-transfer input,.project-flow-transfer select { width: 100%; min-width: 0; }
+.project-workflow-panel input[type="checkbox"] { width: 18px; height: 18px; }
+.project-workflow-panel [data-contract-approval] { display: flex; align-items: center; gap: 10px; }
+.project-workflow-panel textarea { min-height: 70px; resize: vertical; }
+.project-workflow-panel form > button,.project-flow-transfer form > button { justify-self: start; }
+.project-flow-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.project-flow-basis,.project-flow-basis-change { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.project-flow-milestones { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.project-flow-milestones dd { margin: 6px 0; }
+.project-flow-milestones small,.project-flow-list-scroll small,.project-flow-history small { display: block; margin-top: 4px; }
+.project-flow-history { max-height: 25rem; overflow: auto; }
+.project-flow-history article { min-height: 5rem; border-top: 1px solid var(--line); padding: 10px 0; }
+.project-flow-history p { margin: 5px 0; }
+.project-flow-list-scroll { max-height: 420px; overflow: auto; }
+.project-flow-list-scroll table { min-width: 1280px; }
+.project-flow-list-scroll th { position: sticky; top: 0; background: #f5f6f7; }
+.project-flow-list-scroll td { vertical-align: top; }
+.project-flow-notice { padding: 12px 0; font-weight: 600; }
+.os-list-viewport {
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: auto;
+  scroll-padding-block: 44px 8px;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+.os-list-viewport:focus-visible { outline: 2px solid #24745b; outline-offset: 2px; }
+.os-list-viewport > table { margin-block: 0; }
+.os-list-viewport thead th { position: sticky; top: 0; z-index: 2; background: #f5f6f7; }
+.os-list-viewport > :is(article,li,button,div) { overflow-wrap: anywhere; flex-shrink: 0; }
+.os-list-viewport td { overflow-wrap: anywhere; }
+.confirmed-contracts { min-width: 0; padding: 20px 0; border-top: 1px solid var(--line); }
+.confirmed-contracts > header,.confirmed-preview-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.confirmed-contract-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.confirmed-contract-fields label,.confirmed-contracts details label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.confirmed-contract-fields input,.confirmed-contract-fields select,.confirmed-contracts textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+.confirmed-contracts details { margin: 16px 0; }
+.confirmed-contract-list article { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 12px 0; }
+.confirmed-contract-list article > div { min-width: 0; }
+.confirmed-contract-list small { display: block; margin: 6px 0; }
+.confirmed-contract-list button { margin: 3px; }
+.confirmed-document-actions { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.confirmed-contracts iframe { width: 100%; height: 70vh; border: 1px solid var(--line); background: white; }
+.confirmed-contracts h2 { font-size: 20px; }
+@media(max-width:600px) { .confirmed-contract-fields { grid-template-columns: minmax(0,1fr); } .confirmed-contract-list article > div:last-child { display: flex; flex-wrap: wrap; } }
+@media print {
+  .os-list-viewport { max-height: none !important; overflow: visible !important; scrollbar-gutter: auto; }
+  .os-list-viewport thead th { position: static; }
+}
+@media(max-width:600px) {
+  .project-flow-fields,.project-flow-milestones { grid-template-columns: minmax(0,1fr); }
+  .project-workflow-panel > header > div { min-width: 0; }
+}
 .manual-works{margin-top:16px;padding-top:12px;border-top:1px solid #d8dce0;min-width:0;}
 .manual-works>header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 .manual-works h4{margin:0;font-size:14px;}
-.manual-work-list{max-height:380px;overflow:auto;}
-.manual-work-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,auto) auto;align-items:center;gap:12px;min-height:76px;box-sizing:border-box;padding:10px 0;border-bottom:1px solid #e8eaed;}
+.manual-work-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,auto) auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e8eaed;}
 .manual-work-row strong,.manual-work-row small,.manual-work-row span{display:block;overflow-wrap:anywhere;}
 .manual-work-row small,.manual-work-row span{font-size:12px;color:#5b6470;}
 .manual-work-row small{white-space:normal;}
 .admin-estimate-detail-panel{white-space:normal;}
 @media(max-width:600px){
-  .admin-estimate-detail-panel{position:sticky;left:0;width:min(100%,calc(100vw - 112px));min-width:0;}
+  .admin-estimate-detail-panel{width:calc(100cqi - 16px);}
   .admin-estimate-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .admin-estimate-summary-grid div{min-width:0;padding:8px;}
   .admin-estimate-summary-grid strong{font-size:14px;overflow-wrap:anywhere;}

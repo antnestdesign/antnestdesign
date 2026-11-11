@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import {assertLegacyContractWorkflow} from '../projects/_lib/contract-workflow-boundary';
 import {
   errorResponse,
   getUserContext,
@@ -40,6 +41,7 @@ export async function PUT(request: NextRequest) {
     assertCanWriteContractOptions(context);
     const body = (await request.json()) as Record<string, unknown>;
     const estimateId = estimateIdFrom(request, body);
+    await assertLegacyContractWorkflow(estimateId);
     await loadEstimateRow(estimateId);
     await assertNoContractedPackage(estimateId);
     const payload = normalizeContractOptions(body);

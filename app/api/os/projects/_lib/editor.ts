@@ -11,6 +11,8 @@ import { frozenWorkSource, normalizeWorkReview } from "./work-review";
 import { normalizeCompletion } from "./completion";
 import { staffStandards, staffEditor, prepareStaffInput, processSaleCommands, applySaleApprovals, saleProjection } from "./sale-access";
 import { extraStandards, prepareTemplateItems, protectTemplateEdits, referenceStandards } from '../../estimate-items/_lib/detailed';
+import {rejectLegacyEditorWrite} from './legacy-editor';
+import {estimateActor} from '../../estimates/_lib/ownership';
 
 async function catalog() {
   return supabaseFetch<Master[]>("/rest/v1/cost_items?select=item_code,item_name,category,unit,cost_price,is_active&is_active=eq.true&order=sort_order.asc,item_code.asc");
@@ -35,6 +37,8 @@ function failure(error: unknown) {
 export async function editorRoute(request: NextRequest, draftId?: string, preview = false) {
   try {
     const user = await getUserContext(request), role = user.profile.role;
+    await estimateActor(user);
+    if(request.method!=='GET')rejectLegacyEditorWrite();
     if (!["admin", "manager", "staff"].includes(role)) throw new ApiError(403, "접근 권한이 없습니다.");
     const write = request.method !== "GET";
     const mode = requireFoundationAction(write ? "save" : "get");

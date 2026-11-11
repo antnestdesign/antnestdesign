@@ -22,7 +22,7 @@ function selectedSummary(panel) {
   const checks = [];
   const choices = [];
   for (const input of panel.querySelectorAll("input, select")) {
-    if (input.disabled) continue;
+    if (input.disabled && input.dataset.estimateReadonly !== 'true') continue;
     const label = input.closest("label");
     if (input.type === "checkbox" && input.checked) {
       const text = label?.querySelector("span")?.textContent.trim();
@@ -158,9 +158,9 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   if (excluded) form.append(excluded);
 
   function update() {
-    const { estimate, editingId, storedSnapshot = false } = getContext();
+    const { estimate, editingId, storedSnapshot = false, confirmation = estimate?.confirmation } = getContext();
     const groups = estimate?.customerQuote?.groups || [];
-    setText(context, editingId ? "저장 견적 수정 중" : "신규 견적 작성 중");
+    setText(context, confirmation?.viewingVersion?`확정 V${confirmation.viewingVersion.versionNo} 조회`:confirmation?.state==='confirmed'?`확정 V${confirmation.draftVersion}`:confirmation?.state==='revising'?`수정본 V${confirmation.draftVersion} 작성 중`:editingId ? "저장 견적 수정 중" : "신규 견적 작성 중");
     const project = document.getElementById("projectName").value.trim() || "새 프로젝트";
     const client = document.getElementById("clientName").value.trim();
     const phone = document.getElementById("clientPhone").value.trim();

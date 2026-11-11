@@ -175,7 +175,11 @@ function restoreEstimateForm(estimate) {
   el.areaPyeong.value = estimate.areaPyeong ?? "";
   el.clientName.value = estimate.clientName || "";
   el.clientPhone.value = estimate.phone || estimate.clientPhone || "";
-  if (el.estimateStatus) el.estimateStatus.value = estimate.status || "견적";
+  if (el.estimateStatus) {
+    const value=estimate.status||'견적';
+    if(![...el.estimateStatus.options].some(option=>option.value===value)){const option=document.createElement('option');option.value=value;option.textContent=value;el.estimateStatus.append(option);}
+    el.estimateStatus.value=value;
+  }
 }
 
 return { ensureEstimateStatusControl, ensureSaveButtons, ensureAdminStandardCheckLists, ensureCostSnapshotPanel, restoreInputValues, syncSectionLocks, syncBlockLocks, guardCheckboxLabelClicks, restoreEstimateForm };

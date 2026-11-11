@@ -4,6 +4,7 @@ import { id, object } from "./foundation";
 import { requireFoundationAction } from "./feature-state";
 import { publicIssuedDocument } from "./versions";
 import { TRADES, calculateEditor } from "./editor-model";
+import {assertLegacyContractWorkflow} from './contract-workflow-boundary';
 import { buildContractPackageSnapshot, buildContractDocuments, normalizeContractOptions, generateNextContractNo,
   projectContractPackage, projectContractPreview, hashJson, EstimateRow } from "../../contract-packages/_lib/contracts";
 
@@ -67,6 +68,7 @@ export async function contractSourceRoute(request: NextRequest, headId?: string)
     if (!["preview", "create"].includes(String(b.action))) throw new ApiError(400, "계약 작업을 확인해 주세요.");
     if (user.profile.role !== "admin" && (b.action === "create" || user.profile.role !== "staff")) throw new ApiError(403, "기존 계약 작성 권한이 없습니다.");
     if (!source.document) throw new ApiError(404, "공식 발행본이 없습니다.");
+    await assertLegacyContractWorkflow(source.estimate_id);
     const snapshot = await buildIssuedContract(source, (b.options || {}) as Obj, b.action === "create" ? await generateNextContractNo() : undefined, b as Selection);
     const documents = buildContractDocuments(snapshot);
     if (b.action === "preview") return json(projectContractPreview(snapshot, documents, user.profile.role));

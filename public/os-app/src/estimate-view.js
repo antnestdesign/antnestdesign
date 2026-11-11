@@ -177,13 +177,18 @@ function renderAdminEstimateDetailPanel(model, expandedTradeKey) {
   const diagnostics = renderEstimateDiagnostics(model.diagnostics);
   return `
     <div class="admin-estimate-detail-panel">
+      <form data-management-financials data-estimate-id="${escapeHtml(model.estimateId||'')}" data-revision="${escapeHtml(model.revision||'')}" data-total="${summary.customerTotal}" data-cost="${summary.directCost??''}" data-management="${summary.managementCost||0}" data-discount="${summary.discountAmount||0}">
       <div class="admin-estimate-summary-grid">
-        <div><span>고객 견적 총액</span><strong>${customerWon(summary.customerTotal)}</strong></div>
+        <div><span>고객 견적 총액</span><strong data-management-total>${customerWon(summary.customerTotal)}</strong></div>
         <div><span>직접원가 합계</span><strong>${summary.costIncomplete?'원가 미확정':won(summary.directCost)}</strong></div>
-        <div><span>예상 이익</span><strong>${summary.costIncomplete?'산정 보류':won(summary.profit)}</strong></div>
-        <div><span>전체 마진율</span><strong>${summary.costIncomplete?'산정 보류':percent(summary.marginRate)}</strong></div>
+        <div><label>관리비용 (원)<input name="managementCost" aria-label="관리비용" type="number" min="0" max="1000000000" step="1" required value="${summary.managementCost||0}" ${model.canAdjust?'':'disabled'}></label></div>
+        <div><label>할인금액 (원)<input name="discountAmount" aria-label="할인금액" type="number" min="0" max="1000000000" step="1000" required value="${summary.discountAmount||0}" ${model.canAdjust?'':'disabled'}></label></div>
+        <div><span>예상 이익</span><strong data-management-profit>${summary.costIncomplete?'산정 보류':won(summary.profit)}</strong></div>
+        <div><span>전체 마진율</span><strong data-management-margin>${summary.costIncomplete?'산정 보류':percent(summary.marginRate)}</strong></div>
         <div><span>상세 항목 수</span><strong>${summary.detailCount}개</strong></div>
       </div>
+      ${model.canAdjust?'<div class="management-financial-actions"><button type="submit">금액 저장</button><span role="status" aria-live="polite"></span></div>':''}
+      </form>
       ${summary.costIncomplete?`<p class="status-text">원가 미입력 ${summary.missingCostCount}개 항목이 있어 전체 원가·이익·마진율 산정을 보류합니다. 고객 판매금액에는 반영되어 있습니다.</p>`:''}${diagnostics}
       <div class="admin-trade-accordion">
         ${groups.length ? groups.map((group, index) => renderAdminTradeGroup(group, index, expandedTradeKey)).join("") : `<div class="system-empty-state">표시할 내부견적 상세가 없습니다.</div>`}

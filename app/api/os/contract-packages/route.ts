@@ -22,6 +22,8 @@ import {
   sanitizePackageList,
 } from "./_lib/contracts";
 import { issuedLinks, readIssuedPackage } from "./_lib/issued-access";
+import {assertLegacyContractWorkflow} from '../projects/_lib/contract-workflow-boundary';
+import {confirmedContractAccess} from './_lib/confirmed-source';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
     const keyword = (url.searchParams.get("q") || "").trim().toLowerCase();
     requireEstimateScopeForStaff(context, estimateId);
     const filters = [
-      "select=*,contract_document_versions(*)",
+      "select=*,contract_document_versions(id,package_id,document_type,package_version,generation_status,content_json,content_hash,file_path,file_url,mime_type,created_by,locked_at,created_at,pdf_sha256)",
       "order=created_at.desc",
     ];
     if (estimateId) filters.push(`estimate_id=eq.${encodeURIComponent(estimateId)}`);
@@ -73,6 +75,10 @@ export async function GET(request: NextRequest) {
     const linked = new Set((await issuedLinks()).map(l => l.package_id));
     const accessible = [];
     for (const row of filteredRows) {
+      if(row.preliminary_project_id){
+        try{await confirmedContractAccess(context,String(row.preliminary_project_id));accessible.push(row);}catch(error){if(![403,409,423,503].includes((error as {status?:number}).status||0))throw error;}
+        continue;
+      }
       if (!linked.has(String(row.id))) { accessible.push(row); continue; }
       try { accessible.push(await readIssuedPackage(context, String(row.id))); } catch (error) {
         const status = (error as { status?: number }).status;
@@ -91,6 +97,7 @@ export async function POST(request: NextRequest) {
     assertCanCreateContractPackage(context);
     const body = (await request.json()) as Record<string, unknown>;
     const estimateId = assertUuid(body.estimate_id, "저장 견적 ID");
+    await assertLegacyContractWorkflow(estimateId);
     await assertNoContractedPackage(estimateId);
     await assertNoSavedContractPackage(estimateId);
     const options = body.options && typeof body.options === "object"

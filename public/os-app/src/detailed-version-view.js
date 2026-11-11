@@ -7,6 +7,7 @@ export function mountDetailedVersions({ host, draftId, revision, canIssue, readO
   const path = `/detailed-estimates/${draftId}/versions`;
   host.innerHTML = `<h3>공식 발행본</h3><div class="detailed-actions">${canIssue ? '<button type="button" data-issue-preview>발행 전 미리보기</button>' : ""}${canIssue && !readOnly ? '<button type="button" data-issue-confirm>공식 발행</button>' : ""}<button type="button" data-version-reload>버전 목록 갱신</button></div><div data-version-list></div><section data-version-preview hidden><div class="detailed-actions"><h3 data-version-title></h3><button type="button" data-version-print>PDF 저장·인쇄</button><button type="button" data-version-close>작성본으로 돌아가기</button></div><div class="detailed-version-preview-body"></div></section>`;
   if (actionsHost) host.querySelectorAll("[data-issue-preview], [data-issue-confirm]").forEach(button => actionsHost.append(button));
+  if(readOnly)host.querySelector('[data-version-close]').textContent='발행본 닫기';
   const show = doc => {
     selected = doc;
     host.querySelector("[data-version-title]").textContent = doc.version ? `${doc.quoteNumber} · V${doc.version}` : "발행 전 검토 · 미발행";

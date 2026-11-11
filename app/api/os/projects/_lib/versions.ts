@@ -8,6 +8,8 @@ import { reviewDetailedItems } from "../../../../../public/os-app/src/detailed-i
 import { validateSaleRequests } from "./sale-access";
 import { frozenWorkSource, validateWorkIssuable } from "./work-review";
 import { validatePricesIssuable } from "./completion";
+import {rejectLegacyEditorWrite} from './legacy-editor';
+import {estimateActor} from '../../estimates/_lib/ownership';
 
 // Same company identity currently printed on customer quotes, captured at issue time.
 export const ISSUE_COMPANY = {
@@ -64,6 +66,8 @@ function failure(error: unknown) {
 export async function versionsRoute(request: NextRequest, headId: string, action: "list" | "get" | "preview" | "issue", versionId?: string) {
   try {
     const user = await getUserContext(request), actor = user.authUser.id, role = user.profile.role;
+    await estimateActor(user);
+    if(action==='issue'||action==='preview')rejectLegacyEditorWrite();
     if (!["admin", "manager", "staff"].includes(role) || (["preview", "issue"].includes(action) && !["admin", "manager"].includes(role))) throw new ApiError(403, "공식 발행 권한이 없습니다.");
     const mode = requireFoundationAction(action === "issue" ? "issue" : "get");
     const args = { p_actor: actor, p_id: id(headId), p_action: action, p_mode: mode, p_company: ISSUE_COMPANY };

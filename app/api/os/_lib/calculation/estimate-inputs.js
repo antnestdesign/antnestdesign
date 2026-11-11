@@ -781,6 +781,8 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "value": "0",
     "min": 0
   },
+  "managementCost": {"type":"number","value":"0","min":0,"max":1000000000},
+  "managementDiscount": {"type":"number","value":"0","min":0,"max":1000000000},
   "manualAdjustment": {
     "type": "number",
     "value": "0"
@@ -822,7 +824,7 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "max": 50
   }
 };
-export const PRIVATE_ESTIMATE_INPUTS = ["carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
+export const PRIVATE_ESTIMATE_INPUTS = ["managementCost","managementDiscount","carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
 
 export function staffEstimateInputs(inputs = {}) {
   return Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA)

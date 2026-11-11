@@ -18,6 +18,7 @@ export function foundationErrorMessage(error) {
 }
 
 export function mountDetailedEstimateView({ document, getContext, request, onContract, loadMode = async () => ({ mode: "OFF" }) }) {
+  if(LEGACY_EDITOR_STATE.retired)return {destroy(){}};
   const host = document.getElementById("appShell"), actions = document.querySelector(".preliminary-actions");
   if (!host || !actions) return null;
   const start = document.createElement("button");
@@ -292,3 +293,4 @@ export function mountDetailedEstimateView({ document, getContext, request, onCon
   authChanged();
   return { open, refreshMode, destroy() { modeRequest++; projectRequest++; editorView?.destroy(); versionsView?.destroy(); closeWorkspace(); authObserver?.disconnect(); start.remove(); dialog.remove(); document.defaultView?.removeEventListener("beforeunload", beforeUnload); } };
 }
+import {LEGACY_EDITOR_STATE} from './legacy-editor-state.js';

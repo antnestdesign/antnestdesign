@@ -3,7 +3,7 @@ import { createEstimateCalculation } from '../../_lib/calculation/calculator/est
 import { evaluateItem, itemCatalog, priceUnits, object } from './model.js';
 import { assertBuilderActor, builderMode, itemId, requireBuilder, versionForAdoption } from './service';
 import { isDeepStrictEqual } from 'node:util';
-import { normalizeManualWorks, publicManualWork, manualWorkAmount, manualWorkName } from '../../../../../public/os-app/src/manual-work.js';
+import { normalizeManualWorks, publicManualWork, manualWorkInput, manualWorkAmount, manualWorkName } from '../../../../../public/os-app/src/manual-work.js';
 
 const labels:Record<string,string>={demolition:'철거',electrical:'전기/조명',bathroom:'욕실',wallpaper:'도배',film:'필름',flooring:'바닥',carpentry:'목공',furniture:'가구',finish:'기타'};
 const groups:Record<string,string>={demolition:'demolition',electrical:'electrical',bathroom:'bathroom',wallpaper:'wallpaper',film:'film',flooring:'flooring',carpentry:'carpentry',furniture:'base',finish:'misc'};
@@ -30,9 +30,10 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
   const selections=requested===undefined?previous?.selections||[]:requested;
   if(!Array.isArray(selections)||selections.length>100)throw new ApiError(400,'추가 항목은 100개까지 사용할 수 있습니다.');
   if(user.profile.role==='staff'&&Array.isArray(manualRequested)&&manualRequested.some(row=>row&&typeof row==='object'&&Object.hasOwn(row,'costAmount')))throw new ApiError(403,'직접 공사 변경은 관리자 또는 매니저가 처리해야 합니다.');
+  const previousRaw=previous?.manualWorks||[];
   let manualWorks:ManualWork[];
-  try{manualWorks=normalizeManualWorks(manualRequested===undefined?previous?.manualWorks||[]:manualRequested);}catch(error){throw new ApiError(400,(error as Error).message);}
-  const previousManual=normalizeManualWorks(previous?.manualWorks||[]);
+  try{manualWorks=normalizeManualWorks(manualRequested===undefined?previousRaw.map(manualWorkInput):manualRequested);}catch(error){throw new ApiError(400,(error as Error).message);}
+  const previousManual=normalizeManualWorks(previousRaw.map(manualWorkInput));
   if(user.profile.role!=='staff')manualWorks=manualWorks.map(row=>{
     const old=previousManual.find(saved=>saved.id===row.id);
     return !Object.hasOwn(row,'costAmount')&&old&&Object.hasOwn(old,'costAmount')?{...row,costAmount:old.costAmount}:row;
@@ -43,12 +44,14 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
     // Staff sends only public fields; retain the trusted private cost from the saved row.
     manualWorks=structuredClone(previousManual);
   }
+  // Preserve opaque saved fields by stable ID; never accept opaque fields from a request.
+  manualWorks=manualWorks.map(row=>({...structuredClone(previousRaw.find(saved=>saved.id.toLowerCase()===row.id)||{}),...row}));
   if(!selections.length&&!previous&&!manualWorks.length)return snapshot;
   await assertBuilderActor(user);
   const ids=new Set();
   const normalized=selections.map(s=>{object(s,['id','versionId','inputs']);const id=itemId(s.id),versionId=itemId(s.versionId);if(ids.has(id))throw new ApiError(400,'추가 항목 식별자가 중복됐습니다.');ids.add(id);return {id,versionId,inputs:s.inputs};});
   if(builderMode()!=='ON'&&!isDeepStrictEqual(normalized,previous?.selections||[]))requireBuilder(true);
-  if(builderMode()!=='ON'&&!isDeepStrictEqual(manualWorks,previousManual))requireBuilder(true);
+  if(builderMode()!=='ON'&&!isDeepStrictEqual(manualWorks.map(manualWorkInput),previousManual))requireBuilder(true);
   if(normalized.length+manualWorks.length>100)throw new ApiError(400,'추가 공사는 합계 100개까지 사용할 수 있습니다.');
   for(const row of manualWorks){if(ids.has(row.id))throw new ApiError(400,'추가 공사 식별자가 중복됐습니다.');ids.add(row.id);}
   const privateRows:Array<Selection&{version:Version}>=[],publicRows:PublicRow[]=[],details:Detail[]=[],core=createEstimateCalculation();
@@ -75,7 +78,7 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
     publicRows.push({id:row.id,kind:'manual',trade:row.trade,name:row.name,spec:row.note,unit:'식',quantity:1,amount:sale,saleUnitPrice:sale,inputs:[]});
   }
   const keys=['total','totalText','costTotal','marginRate','internalDetails','internalSummary','costBreakdown','reviewNotice','customerQuote'] as const;
-  const base=Object.fromEntries(keys.map(k=>[k,structuredClone(snapshot[k]??null)]));
+  const base={...structuredClone(previous?.base||{}),...Object.fromEntries(keys.map(k=>[k,structuredClone(snapshot[k]??null)]))};
   snapshot=structuredClone(snapshot);
   for(const row of publicRows){const label=labels[row.trade];let group=snapshot.customerQuote.groups.find(g=>g.label===label);if(!group){group={label,total:0,totalText:'0원',items:[]};snapshot.customerQuote.groups.push(group);}const manual=manualWorks.find(m=>m.id===row.id);group.items.push({name:manual?manualWorkName(manual):row.name,amount:row.amount,amountText:core.customerWon(row.amount)});group.total=Number(group.total)+row.amount;group.totalText=core.customerWon(group.total);}
   const extraCost=details.reduce((n,d)=>n+(d.cost??0),0),extraSale=publicRows.reduce((n,r)=>n+r.amount,0),unknown=details.some(d=>d.cost===null),knownCost=Number(snapshot.costTotal)+extraCost;
@@ -85,6 +88,6 @@ export async function appendEstimateItems(snapshot:Snapshot,requested:unknown,or
   snapshot.customerQuote.total=snapshot.total;snapshot.customerQuote.totalText=snapshot.totalText;
   snapshot.internalDetails=[...(snapshot.internalDetails||[]),...details];
   snapshot.internalSummary={...snapshot.internalSummary,directCost:snapshot.costTotal,customerRevenue:snapshot.total,profit:unknown?null:snapshot.total-knownCost,marginRate:snapshot.marginRate,...(unknown?{discountRoom:null}:{})};
-  snapshot.itemBuilder={schema:1,actor:user.authUser.id,selections:normalized,...(manualWorks.length||previous?.manualWorks?{manualWorks}:{}),publicRows,privateRows,base};
+  snapshot.itemBuilder={...structuredClone(previous||{}),schema:1,actor:user.authUser.id,selections:normalized,...(manualWorks.length||previous?.manualWorks?{manualWorks}:{}),publicRows,privateRows,base};
   return snapshot;
 }

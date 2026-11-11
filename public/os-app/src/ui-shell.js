@@ -659,6 +659,7 @@ function activateTab(tabId) {
 
 function renderStaffAdminShell(staffAdminShellApplied = false) {
   if (staffAdminShellApplied) return true;
+  if (document.body.dataset.workflowLayout === "phase3") return true;
   const adminPanel = document.getElementById("admin");
   if (!adminPanel) return staffAdminShellApplied;
   adminPanel.innerHTML = `
