@@ -554,12 +554,11 @@ function repairStaticKoreanLabels() {
     actions.id = "adminPrintActions";
     actions.innerHTML = `
       <div class="section-heading compact-heading no-side-padding">
-        <h2>관리용 출력</h2>
-        <p>현재 열려 있는 프로젝트의 관리용 상세견적, 내부견적, 발주내역을 출력합니다.</p>
+        <h2>내부견적</h2>
       </div>
       <div class="admin-action-row">
-        <button id="printAdminDetailButton" type="button">상세견적 출력</button>
-        <button id="printAdminInternalButton" type="button">내부견적 출력</button>
+        <button id="printAdminInternalButton" type="button">내부견적(간이) 출력</button>
+        <button id="printAdminDetailButton" type="button">내부견적(상세) 출력</button>
         <button id="printPurchaseOrderButton" type="button">발주내역 출력</button>
       </div>
     `;

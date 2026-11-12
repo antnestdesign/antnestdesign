@@ -50,17 +50,22 @@ function optionFields(estimate) {
   const setContractField = (id, value) => fields.push({ id, value, type: "value" });
   const setContractChecked = (id, value) => fields.push({ id, value, type: "checked" });
   const issuedContractNo = contractPreviewState?.snapshot?.contract_no || contractOptionValue(["contract_no"]);
+  const savedCustomerAddress=contractOptionValue(["customer_info", "customer_address"]);
+  const customerAddress=savedCustomerAddress || estimate?.address || "";
+  const siteAddress=contractPreviewState?.snapshot?.id
+    ? contractPreviewState.snapshot.contract_info?.site_address ?? estimate?.address ?? ""
+    : customerAddress;
   setContractField("contractNo", issuedContractNo && issuedContractNo !== "미발급" ? issuedContractNo : "자동 생성");
   setContractField("contractDate", contractOptionValue(["contract_info", "contract_date"]));
   setContractField("constructionType", contractOptionValue(["contract_info", "construction_type"]));
-  setContractField("contractSiteAddress", estimate?.address || "");
+  setContractField("contractSiteAddress", siteAddress);
   setContractField("contractAreaPyeong", estimate?.areaPyeong ? `${estimate.areaPyeong}평` : "-");
   setContractField("contractAreaM2", areaM2Text(estimate?.areaPyeong));
   setContractField("contractStartDate", contractOptionValue(["contract_info", "start_date"]));
   setContractField("contractCompletionDate", contractOptionValue(["contract_info", "planned_completion_date"]));
   setContractField("contractCustomerName", estimate?.clientName || "");
   setContractField("contractCustomerPhone", estimate?.phone || estimate?.clientPhone || "");
-  setContractField("customerAddress", contractOptionValue(["customer_info", "customer_address"]));
+  setContractField("customerAddress", contractPreviewState?.snapshot?.id?savedCustomerAddress:customerAddress);
   setContractField("customerEmail", contractOptionValue(["customer_info", "customer_email"]));
   setContractField("siteManagerName", contractOptionValue(["site_manager", "name"]));
   setContractField("siteManagerTitle", contractOptionValue(["site_manager", "title"]));

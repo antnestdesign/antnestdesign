@@ -21,16 +21,43 @@ function freeze(value) {
   return value;
 }
 
-test("management detailed/internal outputs remain exact OLD/NEW HTML", () => {
+test("purchase order output remains exact OLD/NEW HTML", () => {
   const entry = { name: "print context", kind: "print", role: "admin", pipe: true };
   const old = createViewRuntime(entry, true);
   const current = createViewRuntime(entry);
-  for (const method of ["renderAdminDetailPrint", "renderAdminInternalPrint", "renderPurchaseOrderPrint"]) {
+  for (const method of ["renderPurchaseOrderPrint"]) {
     old.runtime[method](old.estimate);
     current.runtime[method](freeze(current.estimate));
     expect(current.document.getElementById("printQuoteSheet").innerHTML).toBe(old.document.getElementById("printQuoteSheet").innerHTML);
   }
   old.dom.window.close(); current.dom.window.close();
+});
+
+test("internal detail preserves simple summary rows and inserts items under their own trade", () => {
+  const { dom, document, print } = printer();
+  const estimate = { projectName: "Synthetic", areaPyeong: 33, savedAt: "2026-01-01" };
+  const model = freeze({
+    groups: [
+      { label: "Flooring", customer: 12000, cost: 8000, profit: 4000, marginRate: .5,
+        details: [{ item: "Synthetic flooring", input: "<tag>", quantity: "2", unitPrice: 4000, view: { customer: 12000, cost: 8000, profit: 4000 } }] },
+      { label: "Paint", customer: 10000, cost: null, profit: null, marginRate: null,
+        details: [{ item: "Synthetic paint", view: { customer: 10000, cost: null, profit: null } }] },
+    ],
+    totals: { totalCustomer: 22000, totalCost: null, totalProfit: null, totalMarginRate: null },
+  });
+  const outerRows = () => [...document.querySelectorAll("#printQuoteSheet > table > tbody > tr")];
+  print.renderAdminInternalPrint(estimate, model);
+  const simple = outerRows().map(row => row.textContent);
+  expect(document.body.textContent).not.toContain("Synthetic flooring");
+  print.renderAdminDetailPrint(estimate, model);
+  const rows = outerRows();
+  expect([rows[0], rows[2], rows[4]].map(row => row.textContent)).toEqual(simple);
+  expect(rows[1].textContent).toContain("Synthetic flooring");
+  expect(rows[1].textContent).toContain("<tag>");
+  expect(rows[1].querySelector("tag")).toBeNull();
+  expect(rows[3].textContent).toContain("Synthetic paint");
+  expect(rows[3].textContent).toContain("—");
+  dom.window.close();
 });
 
 test("default customer detail renderer is unchanged and summary preserves header/footer", () => {
@@ -40,9 +67,9 @@ test("default customer detail renderer is unchanged and summary preserves header
   const detailed = document.getElementById("printQuoteSheet").innerHTML;
   expect(document.querySelectorAll("thead th")).toHaveLength(3);
   for (const item of quote.groups.flatMap(g => g.items)) expect(document.body.textContent).toContain(item.name);
-  const before = [...document.querySelectorAll("header, footer, .and-print-footer")].map(node => node.outerHTML);
+  const before = [...document.querySelectorAll("header h1, header dl, footer, .and-print-footer")].map(node => node.outerHTML);
   print.renderCustomerSummaryPrint(quote);
-  expect([...document.querySelectorAll("header, footer, .and-print-footer")].map(node => node.outerHTML)).toEqual(before);
+  expect([...document.querySelectorAll("header h1, header dl, footer, .and-print-footer")].map(node => node.outerHTML)).toEqual(before);
   expect(document.querySelectorAll("thead th")).toHaveLength(2);
   print.renderPrintQuote(quote);
   expect(document.getElementById("printQuoteSheet").innerHTML).toBe(detailed);

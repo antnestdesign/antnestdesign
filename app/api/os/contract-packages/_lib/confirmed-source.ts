@@ -3,6 +3,7 @@ import {estimateActor} from '../../estimates/_lib/ownership';
 import {assertUuid,buildContractDocuments,buildContractPackageSnapshot,hashJson,normalizeContractOptions,paymentSchedule,EstimateRow} from './contracts';
 import {customerQuoteProjection} from '../../../../../public/os-app/src/customer-quote.js';
 import {requireFoundationAction} from '../../projects/_lib/feature-state';
+import {contractAddress} from './contractor';
 
 export type Row=Record<string,unknown>;
 const obj=(value:unknown):Row=>value&&typeof value==='object'&&!Array.isArray(value)?value as Row:{};
@@ -18,7 +19,10 @@ export async function confirmedContractAccess(context:UserContext,projectId:stri
 }
 const fields=['customerName','customerPhone','siteAddress','customerAddress','customerEmail','contractDate','startDate','completionDate','constructionType','companyName','businessNo','representative','companyAddress','companyPhone','managerName','managerTitle','managerPhone','amount','amountBasis','reason','approveDifference','notes','adminOfficeIncluded','consentIncluded','permitIncluded','protectionIncluded','pipeCleaningIncluded'];
 export function confirmedContractForm(raw:unknown){
- const data=obj(raw);if(Object.keys(data).some(k=>!fields.includes(k)))throw new ApiError(400,'허용되지 않은 계약 정보입니다.');
+ const data={...obj(raw)};if(Object.keys(data).some(k=>!fields.includes(k)))throw new ApiError(400,'허용되지 않은 계약 정보입니다.');
+ if([data.customerAddress,data.siteAddress].every(v=>v==null||typeof v==='string')){
+  data.customerAddress=data.siteAddress=contractAddress(data.customerAddress,data.siteAddress);
+ }
  const text=(key:string,required=false)=>{const v=data[key];if(v!=null&&typeof v!=='string')throw new ApiError(400,'계약 입력 형식을 확인해 주세요.');const s=String(v??'').trim();if(s.length>1000||required&&!s)throw new ApiError(400,`${({customerName:'계약 상대방',customerPhone:'고객 연락처',siteAddress:'현장 주소',contractDate:'계약일',startDate:'착공일',completionDate:'준공예정일',constructionType:'공사유형',companyName:'시공자 상호',businessNo:'사업자등록번호',representative:'대표자',companyAddress:'시공자 주소',companyPhone:'시공자 연락처'} as Row)[key]||key}을 입력해 주세요.`);return s;};
  const result:Row={};for(const key of fields)if(!['amount','approveDifference','adminOfficeIncluded','consentIncluded','permitIncluded','protectionIncluded','pipeCleaningIncluded'].includes(key))result[key]=text(key,['customerName','customerPhone','siteAddress','contractDate','startDate','completionDate','constructionType','companyName','businessNo','representative','companyAddress','companyPhone'].includes(key));
  for(const key of ['contractDate','startDate','completionDate']){const s=String(result[key]),date=new Date(s);if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==s)throw new ApiError(400,'실제 달력 날짜를 확인해 주세요.');}

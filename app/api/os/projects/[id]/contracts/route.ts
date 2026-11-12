@@ -3,6 +3,8 @@ import {ApiError,getUserContext,json,supabaseFetch} from '../../../_lib/server';
 import {assertUuid,DOCUMENT_TYPES,generateNextContractNo,hashJson} from '../../../contract-packages/_lib/contracts';
 import {confirmedContractAccess,confirmedContractForm,buildConfirmedContract,Row} from '../../../contract-packages/_lib/confirmed-source';
 import {contractHtml,contractPdfs} from '../../../contract-packages/_lib/contract-pdf';
+import {contractAddress,contractCompany} from '../../../contract-packages/_lib/contractor';
+import {estimateContractInclusions} from '../../../../../../public/os-app/src/contract-estimate-inclusions.js';
 export const runtime='nodejs';
 export const maxDuration=60;
 type Params={params:Promise<{id:string}>};
@@ -20,7 +22,11 @@ export async function GET(request:NextRequest,{params}:Params){
   const savedInputs=((s.estimate_data as Row)?.inputs||{}) as Row;
   const defaults={customerName:s.client_name||'',customerPhone:s.phone||'',siteAddress:s.address||'',customerAddress:'',customerEmail:'',contractDate:'',startDate:'',completionDate:'',constructionType:'',companyName:prior.companyName||'',businessNo:prior.businessNo||'',representative:prior.representative||'',companyAddress:prior.companyAddress||'',companyPhone:prior.companyPhone||'',managerName:'',managerTitle:'',managerPhone:'',amount:Number(a.version.total_amount),amountBasis:'vat_included',reason:'',approveDifference:false,notes:''};
   Object.assign(defaults,{adminOfficeIncluded:savedInputs.sectionDemolitionEnabled===true&&savedInputs.demolitionConsentEnabled===true,consentIncluded:savedInputs.sectionDemolitionEnabled===true&&savedInputs.demolitionConsentEnabled===true,permitIncluded:savedInputs.sectionDemolitionEnabled===true&&savedInputs.demolitionPermitEnabled===true,protectionIncluded:savedInputs.sectionFinishEnabled===true&&savedInputs.interiorProtectionEnabled===true,pipeCleaningIncluded:savedInputs.sectionFinishEnabled===true&&savedInputs.existingPipeCleaningEnabled===true});
-  return json({projectId:id,revision:String(a.project.flow_revision),version:{id:a.version.id,no:a.version.version_no,supply:a.version.supply_amount,vat:a.version.vat_amount,total:a.version.total_amount},canManage:a.canWrite,canLinkExisting:a.canWrite&&Boolean(a.project.flow_contract_at)&&!a.project.flow_package_id,...(a.canWrite?{defaults:latest?.preliminary_version_id===a.version.id?{...defaults,...prior,approveDifference:false,reason:''}:defaults}:{}),packages:packages.map(p=>({id:p.id,contractId:p.preliminary_series_id,no:p.contract_no,version:p.package_version,status:p.status,quoteVersionId:p.preliminary_version_id,at:p.preliminary_issued_at,actor:p.preliminary_issuer_name,total:(p.contract_info as Row).total_amount,documents:p.contract_document_versions})),types:DOCUMENT_TYPES});
+  const draft={...defaults,...(latest?.preliminary_version_id===a.version.id?{...prior,approveDifference:false,reason:''}:{})};
+  Object.assign(draft,estimateContractInclusions(savedInputs,defaults));
+  const address=contractAddress(draft.customerAddress,draft.siteAddress);
+  Object.assign(draft,{customerAddress:address,siteAddress:address,companyName:contractCompany.company_name,businessNo:contractCompany.business_no,representative:contractCompany.representative,companyAddress:contractCompany.address,companyPhone:contractCompany.phone});
+  return json({projectId:id,revision:String(a.project.flow_revision),version:{id:a.version.id,no:a.version.version_no,supply:a.version.supply_amount,vat:a.version.vat_amount,total:a.version.total_amount},canManage:a.canWrite,canLinkExisting:a.canWrite&&Boolean(a.project.flow_contract_at)&&!a.project.flow_package_id,...(a.canWrite?{defaults:draft}:{}),packages:packages.map(p=>({id:p.id,contractId:p.preliminary_series_id,no:p.contract_no,version:p.package_version,status:p.status,quoteVersionId:p.preliminary_version_id,at:p.preliminary_issued_at,actor:p.preliminary_issuer_name,total:(p.contract_info as Row).total_amount,documents:p.contract_document_versions})),types:DOCUMENT_TYPES});
  }catch(error){return fail(error);}
 }
 export async function POST(request:NextRequest,{params}:Params){
@@ -33,6 +39,7 @@ export async function POST(request:NextRequest,{params}:Params){
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).some(k=>!['action','expectedRevision','versionId','requestId','form','type','previewHash'].includes(k))||!['preview','issue'].includes(raw.action))throw new ApiError(400,'허용된 계약 문서 요청만 전송해 주세요.');
   const versionId=assertUuid(raw.versionId,'확정 견적 버전');if(versionId!==a.version.id)throw new ApiError(409,'계약 기준 확정 버전이 변경됐습니다.');
   const form=confirmedContractForm(raw.form),requestId=raw.action==='issue'?assertUuid(raw.requestId,'발행 요청'):null;
+  Object.assign(form,estimateContractInclusions(((a.version.snapshot as Row).estimate_data as Row)?.inputs,form));
   if(requestId){
    const previous=(await supabaseFetch<Row[]>(`/rest/v1/contract_package_snapshots?preliminary_issued_by=eq.${a.actor.id}&preliminary_request_id=eq.${requestId}&select=id,preliminary_project_id,preliminary_version_id,package_version,preliminary_series_id,document_options_snapshot&limit=1`))[0];
    if(previous){if(previous.preliminary_project_id!==id||previous.preliminary_version_id!==versionId||hashJson((previous.document_options_snapshot as Row).confirmed_form)!==hashJson(form))throw new ApiError(409,'다른 내용에 사용한 발행 요청입니다.');return json({id:previous.id,version:previous.package_version,contractId:previous.preliminary_series_id});}

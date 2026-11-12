@@ -22,8 +22,7 @@ function ensureContractPackagePanel() {
   section.className = "internal-card contract-package-card";
   section.innerHTML = `
     <div class="section-heading compact-heading no-side-padding">
-      <h2>계약 패키지</h2>
-      <p>저장 견적을 기준으로 계약서, 견적서, 공사사양서 미리보기를 생성합니다.</p>
+      <h2>계약 문서</h2>
     </div>
     <div id="contractPackageEmpty" class="contract-empty">
       저장된 견적을 열면 계약 기본정보와 계약 옵션을 입력할 수 있습니다.
@@ -65,7 +64,7 @@ function ensureContractPackagePanel() {
         <section class="contract-panel">
           <div class="contract-panel-heading">
             <h3>기본정보</h3>
-            <p>현장 주소와 평형은 기존 저장 견적에서 읽어옵니다.</p>
+            <p>새 계약의 현장 주소는 고객 주소와 동일합니다. 평형은 저장 견적에서 읽어옵니다.</p>
           </div>
           <div class="contract-form-grid">
             <label>계약번호<input id="contractNo" type="text" readonly placeholder="자동 생성"></label>
@@ -104,7 +103,7 @@ function ensureContractPackagePanel() {
         <section class="contract-panel">
           <div class="contract-panel-heading">
             <h3>계약 옵션</h3>
-            <p>체크 여부는 계약 조건과 제외사항 판단에 사용됩니다.</p>
+            <p>포함 여부는 기준 견적에서 변경합니다.</p>
           </div>
           <div class="contract-check-grid">
             <label><input id="residentConsentIncluded" data-contract-check="resident_consent_included" type="checkbox">관리사무소 신고·입주민 동의 포함</label>
@@ -113,11 +112,9 @@ function ensureContractPackagePanel() {
           </div>
         </section>
         <div id="contractWriteActions" class="admin-action-row contract-actions">
-          <button id="saveContractOptionsButton" type="button">계약 옵션 저장</button>
           <button id="createContractPackageButton" type="button">계약 확정 및 저장</button>
-          <button id="previewContractPackageButton" type="button">3종 문서 미리보기</button>
         </div>
-        <p id="contractReadonlyNote" class="system-readonly-note" hidden><span>매니저는 계약 정보를 조회만 할 수 있습니다.</span></p>
+        <p id="contractReadonlyNote" class="system-readonly-note" hidden><span>계약 정보를 조회할 수 있습니다.</span></p>
       </form>
       <section class="contract-panel">
         <div class="contract-panel-heading">
@@ -129,7 +126,6 @@ function ensureContractPackagePanel() {
       <section class="contract-panel">
         <div class="contract-panel-heading">
           <h3>3종 문서 미리보기</h3>
-          <p>이번 단계에서는 DOCX/PDF 대신 JSON 스냅샷을 읽기 쉬운 형태로 표시합니다.</p>
         </div>
         <div class="contract-document-tabs">
           <button type="button" data-contract-doc="CONTRACT" class="active">계약서</button>
@@ -148,6 +144,22 @@ function ensureContractPackagePanel() {
   `;
   if (savedList?.parentElement === adminPanel) savedList.insertAdjacentElement("afterend", section);
   else adminPanel.append(section);
+  const estimate=adminPanel.querySelector("#adminStandardSelectedItems")?.closest(".internal-card");
+  const order=adminPanel.querySelector("#purchaseOrderRows")?.closest(".internal-card");
+  if(estimate?.parentElement===adminPanel)adminPanel.querySelector(".contract-project-list")?.after(estimate);
+  const spec=section.querySelector("#contractSpecSnapshot").closest(".contract-panel");
+  const preview=section.querySelector("#contractDocumentPreview").closest(".contract-panel");
+  const actions=section.querySelector("#contractWriteActions");
+  actions.querySelector("#createContractPackageButton").textContent="계약서 확정·발행";
+  preview.after(actions);
+  if(order)adminPanel.append(order);
+  adminPanel.append(spec);
+  const archive=document.createElement("details");
+  archive.className="internal-card contract-package-archive";
+  const summary=document.createElement("summary");
+  summary.textContent="저장된 계약 패키지";
+  archive.append(summary,section.querySelector("#contractPackageRows").closest(".contract-panel"),section.querySelector("#contractPackageListPanel"));
+  adminPanel.append(archive);
 }
 
 function contractStatus(message, type = "") {
@@ -175,12 +187,18 @@ function renderContractOptionsForm(estimate) {
   }
   document.querySelectorAll("#contractOptionsForm input, #contractOptionsForm select, #contractOptionsForm textarea").forEach((node) => {
     if (node.readOnly) return;
-    node.disabled = !editable;
+    node.disabled = !editable || node.hasAttribute("data-contract-check") || Boolean(contractPreviewState?.snapshot?.id);
   });
   const actions = document.getElementById("contractWriteActions");
   if (actions) actions.hidden = !editable;
   const createButton = document.getElementById("createContractPackageButton");
-  if (createButton) createButton.hidden = !canCreateContractPackage();
+  if (createButton) {
+    const saved=contractPreviewState?.snapshot;
+    const resumable=saved?.status==="READY"&&!saved.preliminary_project_id;
+    createButton.hidden = !canCreateContractPackage() || Boolean(saved?.id&&!resumable);
+    createButton.textContent=resumable?"저장된 계약 확정":"계약서 확정·발행";
+    createButton.disabled = !contractPreviewState?.documents?.length;
+  }
   const readonly = document.getElementById("contractReadonlyNote");
   if (readonly) readonly.hidden = editable;
 }

@@ -1,3 +1,5 @@
+import { won } from "./utils.js";
+
 const TRADES = [
   ["Demolition", "철거·인허가", ["철거"], ["demolitionSummary"]],
   ["Electrical", "전기·조명", ["전기/조명"], ["electricalSummary"]],
@@ -149,9 +151,14 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   const printButton = document.createElement("button");
   printButton.type = "button";
   printButton.className = "secondary-action";
-  printButton.textContent = "견적서 출력";
+  printButton.textContent = "고객용 요약견적 출력";
   printButton.addEventListener("click", onPrint);
-  actions.append(printButton);
+  const detailPrintButton=document.createElement("button");
+  detailPrintButton.type="button";
+  detailPrintButton.textContent="고객용 상세견적 출력";
+  detailPrintButton.dataset.customerDetailPrint="";
+  detailPrintButton.addEventListener("click",onPrint);
+  actions.append(printButton,detailPrintButton);
   overview.insertBefore(actions, document.getElementById("saveStatus"));
   const excluded = overview.querySelector(".excluded-work");
   form.append(overview, list);
@@ -170,14 +177,22 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
     const totalLabel = document.getElementById("clientTotal")?.previousElementSibling;
     if (totalLabel) setText(totalLabel, storedSnapshot ? "저장 견적 총액" : "현재 견적 총액");
     let unselectedWithAmount = false;
-    for (const entry of entries) {
-      const amount = groups.filter((group) => entry.groups.includes(group.label))
-        .reduce((sum, group) => sum + (Number(group.total) || 0), 0);
+    const amounts=entries.map(entry=>groups.filter(group=>entry.groups.includes(group.label))
+      .reduce((sum,group)=>sum+(Number(group.total)||0),0));
+    const displayAmounts=amounts.map(Math.floor);
+    // Distribute whole won so displayed subtotals add up to the rounded sum of the same groups.
+    const remainder=Math.round(amounts.reduce((sum,amount)=>sum+amount,0))
+      -displayAmounts.reduce((sum,amount)=>sum+amount,0);
+    const order=amounts.map((amount,index)=>({index,fraction:amount-displayAmounts[index]}))
+      .sort((a,b)=>b.fraction-a.fraction);
+    for(const {index} of order.slice(0,remainder))displayAmounts[index]++;
+    for (const [index,entry] of entries.entries()) {
+      const amount=amounts[index];
       const additional = Boolean(entry.panel.querySelector('[data-item-output],.manual-work-row'));
       const mismatch = !entry.toggle.checked && amount !== 0 && !additional;
       unselectedWithAmount ||= mismatch;
       setText(entry.summary, entry.toggle.checked ? selectedSummary(entry.panel) : additional ? "추가 공사 선택" : mismatch ? "입력 미선택" : "미선택");
-      setText(entry.amount, `${amount.toLocaleString("ko-KR")}원`);
+      setText(entry.amount, won(displayAmounts[index]));
       entry.amountSource.hidden = !mismatch;
       setText(entry.amountSource, storedSnapshot ? "저장 금액 포함" : "표시 견적에 포함");
       entry.panel.closest(".preliminary-trade").classList.toggle("is-selected", entry.toggle.checked);

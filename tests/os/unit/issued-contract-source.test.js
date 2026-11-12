@@ -9,7 +9,7 @@ vi.mock("../../../app/api/os/_lib/server", () => ({
   requireServiceRoleKey: () => "synthetic-only-key",
 }));
 import { issuedContractEstimate, buildIssuedContract, contractSourceRoute } from "../../../app/api/os/projects/_lib/contract-source.ts";
-import { buildContractDocuments } from "../../../app/api/os/contract-packages/_lib/contracts.ts";
+import { buildContractDocuments,buildContractPackageSnapshot } from "../../../app/api/os/contract-packages/_lib/contracts.ts";
 import { createContractPrint, CONTRACT_FIXED_TERM_LINES } from "../../../public/os-app/src/contract-print.js";
 import { JSDOM } from "jsdom";
 const head = "90000000-0000-4000-8000-000000000010", version = "90000000-0000-4000-8000-000000000011";
@@ -22,6 +22,16 @@ function fixture() {
 }
 beforeEach(()=>{vi.stubEnv("AND_OS_PROJECT_FOUNDATION_MODE","ON");state.role="admin";state.db.mockReset().mockImplementation(async path=>path.includes("rpc/")?{estimate_id:head,document:fixture(),versions:[]}:[]);});
 afterEach(()=>vi.unstubAllEnvs());
+test("new contract snapshots use the registered contractor and a single customer/site address",async()=>{
+ const snapshot=await buildContractPackageSnapshot(head,{
+  contract_no:null,contract_info:{},customer_info:{customer_address:"Synthetic customer address"},contractor_info:{company_name:"stale"},site_manager:{},admin_tasks:{},protection_options:{},item_options:{},notes:null,
+ },null,{id:head,address:"Old site address",estimate_data:{},total_price:78570000});
+ expect(snapshot.parties.contractor).toMatchObject({business_no:"149-85-03105",phone:"032-321-6722"});
+ expect(snapshot.parties.contractor.company_name).not.toBe("stale");
+ expect(snapshot.parties.customer.address).toBe("Synthetic customer address");
+ expect(snapshot.contract_info.site_address).toBe(snapshot.parties.customer.address);
+ expect(snapshot.contract_info.total_amount).toBe(78570000);
+});
 test("adapter uses only issued amounts and preserves adjustments without recalculation",()=>{
  const d=fixture(), before=JSON.stringify(d),e=issuedContractEstimate(d,head),q=e.estimate_data.customerQuote;
  expect(q.groups.reduce((n,g)=>n+g.total,0)).toBe(275000);expect(e.total_price).toBe(275000);

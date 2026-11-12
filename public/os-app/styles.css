@@ -1132,6 +1132,19 @@ th:last-child {
     margin-top: 24px;
   }
 
+  .print-quote-sheet .internal-print-trade-summary {
+    break-after: avoid;
+  }
+
+  .print-quote-sheet .internal-print-trade-details > td {
+    padding: 0 0 2mm 4mm;
+  }
+
+  .print-quote-sheet .internal-print-trade-details table {
+    margin-top: 0;
+    font-size: 8pt;
+  }
+
   .print-quote-sheet footer {
     margin-top: 28px;
     padding-top: 18px;

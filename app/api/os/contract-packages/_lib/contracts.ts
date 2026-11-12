@@ -2,6 +2,8 @@ import { createHash } from "crypto";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import fixedTermLines from "./contract-fixed-terms.json";
 import { ApiError, UserContext, UserRole, supabaseFetch } from "../../_lib/server";
+import { contractAddress, contractCompany } from "./contractor";
+import { estimateContractInclusions } from "../../../../../public/os-app/src/contract-estimate-inclusions.js";
 
 export const CONTRACT_TEMPLATE_VERSION = "RFC-005-2026.10.12-snapshot";
 export const CONTRACT_RULE_VERSION = "RFC-006-2026.07.20";
@@ -592,13 +594,25 @@ export async function buildContractPackageSnapshot(
     ...optionsFromSaved(savedOptions),
     ...optionsOverride,
   };
+  const inclusions=estimateContractInclusions(objectValue(objectValue(estimate.estimate_data).inputs),{
+    adminOfficeIncluded:options.admin_tasks.admin_office_filing_included,
+    consentIncluded:options.admin_tasks.resident_consent_included,
+    permitIncluded:options.admin_tasks.permit_filing_included,
+    protectionIncluded:options.protection_options.existing_finish_protection_included,
+  });
+  options.admin_tasks={...options.admin_tasks,admin_office_filing_included:inclusions.adminOfficeIncluded,resident_consent_included:inclusions.consentIncluded,permit_filing_included:inclusions.permitIncluded};
+  options.protection_options={...options.protection_options,existing_finish_protection_included:inclusions.protectionIncluded};
   const contractNo = normalizeContractNo(assignedContractNo ?? options.contract_no) || CONTRACT_NO_PLACEHOLDER;
   const estimateSnapshot = limitedEstimateSnapshot(estimate);
+  const address = contractAddress(options.customer_info.customer_address, estimateSnapshot.site_address);
+  estimateSnapshot.site_address = address;
   const specs = await loadActiveSpecs();
   const specSnapshot = buildSpecSnapshot(estimateSnapshot.quote_items, specs);
   const clauseSnapshot = evaluateClauses(options);
   const resolvedOptions: ContractOptionsPayload = {
     ...options,
+    customer_info: { ...options.customer_info, customer_address: address },
+    contractor_info: { ...options.contractor_info, ...contractCompany },
     contract_no: contractNo,
     contract_info: {
       ...options.contract_info,

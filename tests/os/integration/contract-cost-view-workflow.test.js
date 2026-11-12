@@ -6,10 +6,10 @@ import { createEstimateDatabase, mountOs, flushAsyncWork } from "../helpers/os-h
 import { jsonResponse, requestLog } from "../helpers/network.js";
 
 let addedListeners = [];
+const eventTargets=[document,window].map(target=>[target,target.addEventListener.bind(target)]);
 beforeEach(() => {
   addedListeners = [];
-  for (const target of [document, window]) {
-    const add = target.addEventListener.bind(target);
+  for (const [target,add] of eventTargets) {
     vi.spyOn(target, "addEventListener").mockImplementation((type, listener, options) => {
       addedListeners.push({ target, type, listener, options });
       add(type, listener, options);
@@ -27,7 +27,13 @@ describe("Phase 3E real contract/cost view and main action boundary", () => {
     const before = structuredClone(database.row);
     const handler = database.handle;
     const preview = contractFixture({ role }, CONTRACT_FIXED_TERM_LINES).preview;
-    database.handle = (request) => request.url.pathname === "/api/os/contract-packages/preview" && request.method === "POST" ? jsonResponse(preview) : handler(request);
+    database.handle = (request) => {
+      if (request.url.pathname === "/api/os/contract-packages/preview" && request.method === "POST") return jsonResponse(preview);
+      if (request.url.pathname === "/api/os/estimate-items") return jsonResponse({mode:"OFF"});
+      if (request.url.pathname === "/api/os/projects") return jsonResponse([]);
+      if (request.url.pathname.endsWith("/confirmations")) return jsonResponse({versions:[],canConfirm:false});
+      return handler(request);
+    };
     const { main, storage } = await mountOs(database, testProfile(role));
     main.loadEstimateIntoUi(await storage.getEstimate(estimate.id));
     await flushAsyncWork();
@@ -35,8 +41,10 @@ describe("Phase 3E real contract/cost view and main action boundary", () => {
     expect(document.getElementById("siteManagerName").disabled).toBe(role === "manager");
     expect(document.getElementById("createContractPackageButton").hidden).toBe(role !== "admin");
     if (role !== "manager") {
-      document.getElementById("previewContractPackageButton").click();
+      document.querySelector('[data-tab="admin"]').click();
       await flushAsyncWork();
+      document.getElementById("siteManagerName").dispatchEvent(new Event("input",{bubbles:true}));
+      await vi.waitFor(()=>expect(document.getElementById("contractDocumentPreview").textContent).toContain("합성 공개 정보"),{timeout:2000});
       expect(document.getElementById("contractDocumentPreview").textContent).toContain("합성 공개 정보");
       const request = requestLog.requests.find((request) => request.url.pathname === "/api/os/contract-packages/preview");
       expect(request).toBeDefined();
@@ -56,15 +64,15 @@ describe("Phase 3E real contract/cost view and main action boundary", () => {
       expect(tab).not.toBeNull();
       tab.click();
       await flushAsyncWork();
-      const group = document.querySelector("[data-system-cost-category]");
-      group.click();
+      const group = document.querySelector('.cost-trade-navigation [data-system-cost-category="철거"]');
+      if(group.getAttribute("aria-expanded")!=="true")group.click();
       await flushAsyncWork();
-      expect(document.querySelector(".system-cost-table")).not.toBeNull();
+      expect(document.querySelector(".cost-standard-record")).not.toBeNull();
       expect(document.querySelectorAll('[data-system-action="save-draft"]').length > 0).toBe(role === "admin");
       expect(document.getElementById("system").classList.contains("system-readonly")).toBe(role === "manager");
     }
     expect(database.mutations).toEqual([]);
     expect(database.row).toStrictEqual(before);
     expect(requestLog.requests.filter((request) => !["GET", "HEAD"].includes(request.method)).every((request) => request.url.pathname.endsWith("/preview") || request.url.pathname === "/api/os/estimates/calculate")).toBe(true);
-  });
+  },15000);
 });

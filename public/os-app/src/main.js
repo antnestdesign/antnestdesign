@@ -19,6 +19,7 @@ import { mountPreliminaryEstimateView } from "./preliminary-estimate-view.js";
 import { mountWorkspaceView, matchesEstimateSearch, estimateStage } from "./workspace-view.js";
 import { createWorkspaceNavigation } from "./workspace-navigation.js";
 import { mountLegacyIssuedArchive } from "./legacy-issued-archive.js";
+import { estimateContractInclusions } from "./contract-estimate-inclusions.js";
 import {mountProjectWorkflow} from './project-workflow-view.js';
 import { createContractSourceView } from "./contract-source-view.js";
 import { createEstimatePrint } from "./estimate-print.js";
@@ -62,7 +63,6 @@ import {
   loadOsAuditLogs,
   createOsAuditLog,
   loadContractOptions,
-  saveContractOptions,
   loadContractPackages,
   loadContractPackage,
   previewContractPackage,
@@ -439,22 +439,30 @@ function canLeaveWorkspace(){
   if(!confirm('저장하지 않은 변경사항이 있습니다. 저장하지 않고 이동할까요?'))return false;
   managementFinancialsView?.reset();return true;
 }
-async function openProjectWorkflow(projectId,approved=false){
+async function openProjectWorkflow(projectId,approved=false,loadContract=false){
   if(!approved&&!canLeaveWorkspace())return;
-  if(await projectWorkflowView?.open(projectId)){activeWorkflowProjectId=projectId;activateTab('admin');document.getElementById('projectWorkflowPanel')?.scrollIntoView?.({block:'start'});}
+  if(await projectWorkflowView?.open(projectId,loadContract)){activeWorkflowProjectId=projectId;activateTab('admin');if(!loadContract)document.getElementById('projectWorkflowPanel')?.scrollIntoView?.({block:'start'});}
 }
-async function openWorkspaceEstimate(id,tab='quote',version=null,approved=false){
+async function openWorkspaceEstimate(id,tab='quote',version=null,approved=false,loadContract=false){
   if(!approved&&!canLeaveWorkspace())return;
   const generation=++estimateNavigationGeneration;
   try{
     const estimate=version?await loadEstimateConfirmations(id,version):await getEstimate(id);
     if(!estimate||generation!==estimateNavigationGeneration)return;
-    loadEstimateIntoUi(estimate);
+    const contractReady=loadEstimateIntoUi(estimate);
     if(tab==='admin'){
       const projectId=estimate.projectId||estimate.confirmation?.projectId;activeWorkflowProjectId=projectId||null;
       if(projectId)await projectWorkflowView?.open(projectId);else projectWorkflowView?.hide();
     }
     activateTab(tab==='client'&&!estimate.canEdit?'quote':tab,version);
+    if(loadContract){
+      const ready=await contractReady;
+      if(!ready||generation!==estimateNavigationGeneration)return;
+      const saved=contractPackagesState.find(item=>item.status==='CONTRACTED')||contractPackagesState.find(item=>item.contract_document_versions?.length);
+      if(saved)await loadContractPackageToPreview(saved.id,estimate.id);
+      else if(canPreviewContractPackage())await previewContractPackageFromForm();
+      document.getElementById('contractDocumentPreview')?.scrollIntoView?.({block:'start'});
+    }
   }catch(error){workspaceView?.showStatus(error.message);alert(error.message||'견적을 불러오지 못했습니다.');}
 }
 let siteCostView = null;
@@ -478,6 +486,9 @@ let expandedAdminTradeKey = null;
 const adminEstimateDetailCache = new Map();
 let contractPreviewState = null;
 let contractOptionsDirty = false;
+let contractPreviewTimer;
+let contractPreviewInputKey=null;
+let modernContractDraft=false;
 let contractSelectedDocumentType = "CONTRACT";
 let contractBusy = false;
 let issuedContractEstimate = null;
@@ -560,8 +571,14 @@ function defaultContractOptionsFromEstimate(estimate, options = {}) {
 }
 
 function resolveContractOptionsForEstimate(options, estimate) {
-  if (options?.id) return options;
-  return defaultContractOptionsFromEstimate(estimate, options || {});
+  const resolved=defaultContractOptionsFromEstimate(estimate,options||{});
+  const flags=estimateContractInclusions(estimateOptionState(estimate),{
+    adminOfficeIncluded:resolved.admin_tasks.admin_office_filing_included,
+    consentIncluded:resolved.admin_tasks.resident_consent_included,
+    permitIncluded:resolved.admin_tasks.permit_filing_included,
+    protectionIncluded:resolved.protection_options.existing_finish_protection_included,
+  });
+  return {...resolved,admin_tasks:{...resolved.admin_tasks,admin_office_filing_included:flags.adminOfficeIncluded,resident_consent_included:flags.consentIncluded,permit_filing_included:flags.permitIncluded},protection_options:{...resolved.protection_options,existing_finish_protection_included:flags.protectionIncluded}};
 }
 
 function collectContractOptionsPayload() {
@@ -686,20 +703,22 @@ function renderContractPrintSheet(type = "ALL") {
 function renderContractPreview() { return currentContractView().renderContractPreview(); }
 
 function renderContractPackagePanel(estimate = selectedContractEstimate()) {
+  if(modernContractDraft&&!contractPreviewState?.snapshot?.id)estimate=null;
   currentContractView().renderContractPackagePanel(estimate);
-  const save = document.getElementById("saveContractOptionsButton"); if (save) save.hidden = Boolean(issuedContractEstimate);
-  const create = document.getElementById("createContractPackageButton"); if (create) create.disabled = Boolean(issuedContractEstimate && issuedContractMode !== "ON");
+  const create = document.getElementById("createContractPackageButton"); if (create) create.disabled ||= Boolean(issuedContractEstimate && issuedContractMode !== "ON");
   const project=workspaceView?.projectFor(cachedEstimates.find(e=>e.id===estimate?.id)||estimate||{});
   if(project?.workflow){
     const actions=document.getElementById('contractWriteActions');if(actions)actions.hidden=true;
     document.querySelectorAll('#contractOptionsForm input,#contractOptionsForm select,#contractOptionsForm textarea').forEach(n=>{n.disabled=true;});
     const source=document.getElementById('contractSourcePanel');if(source)source.hidden=true;
-    const note=document.getElementById('contractReadonlyNote');if(note){note.hidden=false;note.textContent='계약 기준 확정 견적이 고정된 프로젝트입니다. 진행 정보에서 체결 사실을 기록하고 기존 문서를 조회할 수 있습니다. 새 확정 견적용 계약서 생성은 아직 제공하지 않습니다.';}
+    const note=document.getElementById('contractReadonlyNote');if(note){note.hidden=false;note.textContent='계약 기준 확정 견적이 고정된 프로젝트입니다. 발행과 체결 기록은 각각 별도로 처리합니다.';}
   }
 }
 
 async function refreshContractPackagePanel(estimate = selectedContractEstimate()) {
+  modernContractDraft=false;
   const generation = ++contractContextGeneration;
+  clearTimeout(contractPreviewTimer);
   ensureContractPackagePanel();
   if (!estimate?.id || !canViewContractPackage()) {
     renderContractPackagePanel(null);
@@ -715,11 +734,13 @@ async function refreshContractPackagePanel(estimate = selectedContractEstimate()
     contractOptionsState = resolveContractOptionsForEstimate(options, estimate);
     contractPackagesState = Array.isArray(packages) ? packages : [];
     contractPreviewState = null;
+    contractPreviewInputKey = null;
     contractOptionsDirty = false;
     renderContractPackagePanel(estimate);
     await contractSourceView.load(estimate.id);
     if (generation !== contractContextGeneration) return;
     contractStatus("계약 정보를 불러왔습니다.", "success");
+    return true;
   } catch (error) {
     if (generation !== contractContextGeneration) return;
     console.error("계약 패키지 조회 실패", error);
@@ -745,28 +766,6 @@ async function refreshAllContractPackages() {
   }
 }
 
-async function saveContractOptionsFromForm() {
-  if (contractSourceView.pending) { contractStatus("기준 견적을 확인 중입니다. 잠시 기다려 주세요."); return; }
-  if (contractSourceView.source) { contractStatus("발행본 계약 옵션은 계약 패키지 저장 시 함께 보관됩니다."); return; }
-  const estimate = selectedContractEstimate();
-  if (!estimate?.id || !canEditContractPackageOptions()) return;
-  if (contractBusy) return;
-  try {
-    contractBusy = true;
-    const payload = collectContractOptionsPayload();
-    contractStatus("계약 옵션을 저장하는 중입니다.");
-    contractOptionsState = await saveContractOptions(estimate.id, payload);
-    contractOptionsDirty = false;
-    renderContractPackagePanel(estimate);
-    contractStatus("계약 옵션을 저장했습니다.", "success");
-  } catch (error) {
-    console.error("계약 옵션 저장 실패", error);
-    contractStatus(error.message || "계약 옵션 저장에 실패했습니다.", "error");
-  } finally {
-    contractBusy = false;
-  }
-}
-
 async function previewContractPackageFromForm() {
   if (contractSourceView.pending) { contractStatus("기준 견적을 확인 중입니다. 잠시 기다려 주세요."); return; }
   const estimate = selectedContractEstimate();
@@ -779,12 +778,16 @@ async function previewContractPackageFromForm() {
   try {
     contractBusy = true;
     const payload = collectContractOptionsPayload();
+    const key=JSON.stringify(payload),generation=contractContextGeneration;
     validateContractOptionsForPreview(payload);
     contractStatus("3종 문서 미리보기를 생성하는 중입니다.");
     const issued = contractSourceView.source;
-    contractPreviewState = issued
+    const next = issued
       ? await requestProjectFoundation(`/detailed-estimates/${issued.head_id}/contracts`, { method: "POST", body: JSON.stringify({ ...contractSourceView.payload(), action: "preview", options: payload }) })
       : await previewContractPackage(estimate.id, payload);
+    if(generation!==contractContextGeneration||key!==JSON.stringify(collectContractOptionsPayload()))return;
+    contractPreviewState=next;
+    contractPreviewInputKey=key;
     contractSelectedDocumentType = "CONTRACT";
     renderContractPackagePanel(estimate);
     contractStatus("미리보기를 생성했습니다. 데이터는 저장되지 않았습니다.", "success");
@@ -824,6 +827,16 @@ async function createContractPackageFromForm() {
   const estimate = selectedContractEstimate();
   if (!estimate?.id || !canCreateContractPackage()) return;
   if (contractBusy) return;
+  const saved=contractPreviewState?.snapshot;
+  const resumable=saved?.id&&saved.status==="READY"&&!saved.preliminary_project_id;
+  if(!saved?.id&&contractSourceView.source?.linked_package_id){
+    await loadContractPackageToPreview(contractSourceView.source.linked_package_id);
+    return;
+  }
+  if (!contractPreviewState?.documents?.length || (saved?.id
+    ? !resumable
+    : contractPreviewInputKey!==JSON.stringify(collectContractOptionsPayload()))) return;
+  if(!window.confirm("미리보기 내용으로 계약서를 확정·발행할까요?"))return;
   if (!contractSourceView.source && currentPipeCleaningDerivedEstimate()) {
     contractStatus("기존 배관 청소 변경사항을 수정 저장한 뒤 계약 패키지를 확정 저장해 주세요.", "error");
     return;
@@ -839,7 +852,6 @@ async function createContractPackageFromForm() {
     validateContractOptionsForPreview(payload);
     contractStatus("계약 패키지를 확정 저장하는 중입니다.");
     const issued = contractSourceView.source;
-    if (issued?.linked_package_id) { await loadContractPackageToPreview(issued.linked_package_id); return; }
     const draftPackage = currentPackage || (issued
       ? await requestProjectFoundation(`/detailed-estimates/${issued.head_id}/contracts`, { method: "POST", body: JSON.stringify({ ...contractSourceView.payload(), action: "create", options: payload }) })
       : await createContractPackage(estimate.id, payload));
@@ -874,13 +886,15 @@ async function createContractPackageFromForm() {
   }
 }
 
-async function loadContractPackageToPreview(packageId) {
+async function loadContractPackageToPreview(packageId,estimateId) {
   if (!packageId || contractBusy) return;
   if(contractOptionsDirty&&!canLeaveWorkspace())return;
   try {
     contractBusy = true;
     contractStatus("저장된 계약 패키지를 불러오는 중입니다.");
-    const contractPackage = await loadContractPackage(packageId,isStaff()?selectedContractEstimate()?.id:undefined);
+    const contractPackage = await loadContractPackage(packageId,isStaff()?(estimateId||selectedContractEstimate()?.id):undefined);
+    ++contractContextGeneration;
+    clearTimeout(contractPreviewTimer);
     if (!contractPackage.contract_info?.issued_version_id || contractSourceView.source?.document.id !== contractPackage.contract_info.issued_version_id) {
       issuedContractEstimate = null;
       preliminaryContractEstimate = null;
@@ -1383,7 +1397,10 @@ function currentEstimateForPrint() {
   return activeQuoteEstimate || lastRenderedEstimateSnapshot || buildEstimateSnapshot(calculateForCurrentEstimate());
 }
 
-function renderAdminDetailPrint(estimate) { return estimatePrint.renderAdminDetailPrint(estimate); }
+function renderAdminDetailPrint(estimate) {
+  if (!estimatePrint.hasPrintTarget() || !estimate) return;
+  estimatePrint.renderAdminDetailPrint(estimate, estimateInternalViewModel(estimate));
+}
 
 function renderAdminInternalPrint(estimate) {
   if (!estimatePrint.hasPrintTarget() || !estimate) return;
@@ -2468,7 +2485,7 @@ function renderProjectSearchResults() {
   if(matches.some(estimate=>estimate.id===selectedId))select.value=selectedId;
 }
 
-function loadEstimateIntoUi(estimate) {
+function loadEstimateIntoUi(estimate,{refreshContract=true}={}) {
   confirmedEstimateView=estimate.confirmation?.state==='confirmed';
   calculationGeneration++;
   itemBuilderView?.restore(estimate);
@@ -2507,7 +2524,20 @@ function loadEstimateIntoUi(estimate) {
   }
   setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
   updateEstimateContext(estimate);
-  refreshContractPackagePanel(displayEstimate).catch((error) => console.error("계약 패키지 갱신 실패", error));
+  if(!refreshContract){
+    modernContractDraft=true;
+    issuedContractEstimate=null;
+    preliminaryContractEstimate=null;
+    contractSourceView.reset();
+    ++contractContextGeneration;
+    clearTimeout(contractPreviewTimer);
+    contractPreviewState=null;
+    contractOptionsDirty=false;
+    contractPackagesState=[];
+    renderContractPackagePanel(null);
+    return;
+  }
+  return refreshContractPackagePanel(displayEstimate).catch((error) => console.error("계약 패키지 갱신 실패", error));
 }
 
 let saveEstimateInProgress = false;
@@ -2722,6 +2752,7 @@ async function onLogoutClick() {
   contractOptionsState = null;
   contractPackagesState = [];
   contractPreviewState = null;
+  modernContractDraft=false;
   contractOptionsDirty = false;
   if (staffAdminShellApplied) {
     window.location.reload();
@@ -2819,18 +2850,32 @@ function onDelegatedSaveClick(event) {
 
 function onContractOptionsInput(event) {
   if (!event.target?.closest?.("#contractOptionsForm")) return;
+  if(event.target.id==="customerAddress"){
+    const site=document.getElementById("contractSiteAddress");
+    if(site)site.value=event.target.value.trim()||selectedContractEstimate()?.address||"";
+  }
   contractOptionsDirty = true;
+  contractPreviewState=null;
+  contractPreviewInputKey=null;
+  renderContractPreview();
+  const create=document.getElementById("createContractPackageButton");if(create)create.disabled=true;
+  clearTimeout(contractPreviewTimer);
+  const generation=contractContextGeneration;
+  const refreshPreview=()=>{
+    if(generation!==contractContextGeneration||!document.getElementById('admin')?.classList.contains('active'))return;
+    if(contractBusy){contractPreviewTimer=setTimeout(refreshPreview,250);return;}
+    void previewContractPackageFromForm();
+  };
+  contractPreviewTimer=setTimeout(refreshPreview,450);
   contractStatus("저장되지 않은 계약 옵션 변경사항이 있습니다.");
 }
 
 function onContractOptionsChange(event) {
-  if (!event.target?.closest?.("#contractOptionsForm")) return;
-  contractOptionsDirty = true;
-  contractStatus("저장되지 않은 계약 옵션 변경사항이 있습니다.");
+  onContractOptionsInput(event);
 }
 
 async function onContractActionClick(event) {
-  const button = event.target?.closest?.("#saveContractOptionsButton, #createContractPackageButton, #previewContractPackageButton, #contractPackageSearchButton, [data-contract-package-load], [data-contract-doc], [data-contract-print]");
+  const button = event.target?.closest?.("#createContractPackageButton, #contractPackageSearchButton, [data-contract-package-load], [data-contract-doc], [data-contract-print]");
   if (!button) return;
   event.preventDefault();
   if (button.dataset.contractPrint) {
@@ -2842,14 +2887,8 @@ async function onContractActionClick(event) {
     renderContractPreview();
     return;
   }
-  if (button.id === "saveContractOptionsButton") {
-    await saveContractOptionsFromForm();
-  }
   if (button.id === "createContractPackageButton") {
     await createContractPackageFromForm();
-  }
-  if (button.id === "previewContractPackageButton") {
-    await previewContractPackageFromForm();
   }
   if (button.id === "contractPackageSearchButton") {
     contractPackageSearchKeyword = document.getElementById("contractPackageSearchInput")?.value?.trim() || "";
@@ -2867,7 +2906,8 @@ function onBeforeUnload(event) {
   event.returnValue = "";
 }
 
-async function onPrintQuoteClick() {
+async function onPrintQuoteClick(event) {
+  const detailed=event?.currentTarget?.hasAttribute("data-customer-detail-print");
   if(managementFinancialsView?.isDirty()||managementFinancialsView?.isBusy()){workspaceView?.showStatus('관리비용과 할인금액을 먼저 저장해 주세요.');return;}
   if(document.getElementById('quote')?.classList.contains('active')&&preliminaryIsDirty()){workspaceView?.showStatus('변경사항을 저장한 뒤 견적서를 출력해 주세요.');return;}
   if(canViewSystem()&&!confirmedEstimateView){try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){setSaveStatus(error.message);return;}}
@@ -2875,13 +2915,15 @@ async function onPrintQuoteClick() {
     setSaveStatus("고객 견적 계산이 완료된 후 출력해 주세요.");
     return;
   }
-  renderCustomerSummaryPrint(activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote);
+  const quote=activeQuoteEstimate?.customerQuote || buildEstimateSnapshot(calculate()).customerQuote;
+  if(detailed)renderPrintQuote(quote);
+  else renderCustomerSummaryPrint(quote);
   window.print();
 }
 
 async function onInternalPrintClick(event) {
   const button = event.target?.closest?.("#printAdminDetailButton, #printAdminInternalButton, #printPurchaseOrderButton");
-  if (!button) return;
+  if (!button || !canViewSystem()) return;
   if(managementFinancialsView?.isDirty()||managementFinancialsView?.isBusy()){workspaceView?.showStatus('관리비용과 할인금액을 먼저 저장해 주세요.');return;}
   if(canViewSystem()&&!confirmedEstimateView){try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){setSaveStatus(error.message);return;}}
   const estimate = currentEstimateForPrint();
@@ -3139,9 +3181,14 @@ function bootstrap() {
   removeLegacyAdminEstimatePanels();
   workspaceView=mountWorkspaceView({document,request:requestProjectFoundation,
     onFilter:()=>renderSavedEstimateTableRows(document.getElementById('savedEstimateRows'),cachedEstimates,{admin:isAdmin(),canViewInternal:canViewSystem(),colspan:9+(canViewSystem()?1:0)+(isAdmin()?1:0)}),
-    onOpen:(id,mode)=>mode==='refresh'?renderSavedEstimateRows():openWorkspaceEstimate(id,mode==='contract'?'admin':'quote'),
+    onOpen:(id,mode)=>mode==='refresh'?renderSavedEstimateRows():mode==='project-contract'?openProjectWorkflow(id,false,true):openWorkspaceEstimate(id,mode==='contract'?'admin':'quote',null,false,mode==='contract'),
     onEdit:id=>openWorkspaceEstimate(id,'client'),onCreateProject:()=>workspaceView.createProject(loadedEstimateBaseline?.estimate||{}),onProjectWorkflow:openProjectWorkflow});
   projectWorkflowView=mountProjectWorkflow({document,request:requestProjectFoundation,getPdf:loadConfirmedContractPdf,role:()=>currentProfile?.role,
+    onLoadBasis:async(estimateId,versionId,isCurrent)=>{
+      const estimate=await loadEstimateConfirmations(estimateId,versionId);
+      if(isCurrent())loadEstimateIntoUi(estimate,{refreshContract:false});
+    },
+    onLoadContract:async(id,estimateId)=>{await loadContractPackageToPreview(id,estimateId);document.getElementById('contractDocumentPreview')?.scrollIntoView?.({block:'start'});},
     isEstimateDirty:()=>saveEstimateInProgress||estimateWorkflowBusy||preliminaryIsDirty()||contractOptionsDirty,isBusy:()=>saveEstimateInProgress||estimateWorkflowBusy,
     onBusy:value=>{projectWorkflowBusy=value;syncWorkflowBusyControls();},
     onTransferred:async id=>{await renderSavedEstimateRows();await openProjectWorkflow(id,true);},onChanged:()=>renderSavedEstimateRows(),
@@ -3210,7 +3257,6 @@ const contractSourceView = createContractSourceView({ document, request: request
       address: c.address, phone: c.phone, areaPyeong: c.area_pyeong, total: d.editor.summary.total, totalText: won(d.editor.summary.total) } : null;
     contractPreviewState = null;
     renderContractPackagePanel();
-    const save = document.getElementById("saveContractOptionsButton"); if (save) save.hidden = Boolean(d);
   },
 });
 

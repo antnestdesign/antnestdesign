@@ -2,7 +2,7 @@ import {escapeHtml as esc} from './utils.js';
 const labels={CONTRACT:'계약서',QUOTE:'견적서',SPEC:'공사사양서'};
 export function mountConfirmedContracts({document,request,getPdf,role,onBusy,onIssued}){
  const host=document.createElement('section');host.className='confirmed-contracts';host.hidden=true;document.getElementById('projectWorkflowPanel').after(host);
- let project=null,data=null,baseline='',preview=null,pending=null,generation=0,busy=false;
+ let project=null,data=null,baseline='',preview=null,pending=null,generation=0,busy=false,timer;
  const field=(name,label,type='text',required=false,value='')=>`<label>${label}<input name="${name}" type="${type}" ${required?'required':''} value="${esc(value)}" ${type==='number'?'min="1" step="1"':''}></label>`;
  const form=()=>host.querySelector('[data-confirmed-form]');
  function values(){const f=form();if(!f)return null;const result=Object.fromEntries([...f.elements].filter(n=>n.name).map(n=>[n.name,n.type==='checkbox'?n.checked:n.value]));result.amount=Number(result.amount);for(const key of ['approveDifference','adminOfficeIncluded','consentIncluded','permitIncluded','protectionIncluded','pipeCleaningIncluded'])result[key]=f.elements[key]?.checked===true;return result;}
@@ -15,23 +15,49 @@ export function mountConfirmedContracts({document,request,getPdf,role,onBusy,onI
  }
  function edit(){
   const v=data.defaults,target=host.querySelector('[data-confirmed-editor]');
+  host.querySelector('[data-confirmed-type]')?.closest('label').remove();
+  host.querySelector('[data-confirmed-issue]')?.remove();
   target.innerHTML=`<form data-confirmed-form><h3>계약정보</h3><div class="confirmed-contract-fields">${field('customerName','계약 상대방','text',true,v.customerName)}${field('customerPhone','고객 연락처','tel',true,v.customerPhone)}${field('siteAddress','공사현장 주소','text',true,v.siteAddress)}${field('customerAddress','고객 주소','text',false,v.customerAddress)}${field('customerEmail','고객 이메일','email',false,v.customerEmail)}${field('constructionType','공사유형','text',true,v.constructionType)}${field('contractDate','계약서 계약일','date',true,v.contractDate)}${field('startDate','착공 예정일','date',true,v.startDate)}${field('completionDate','준공 예정일','date',true,v.completionDate)}<label>금액 구분<select name="amountBasis"><option value="vat_included">부가세 포함</option><option value="supply">공급가액 · 부가세 별도</option></select></label>${field('amount','계약금액(원)','number',true,v.amount)}</div><p data-document-difference role="status"></p><label data-document-reason hidden>금액 차이 사유<textarea name="reason" maxlength="1000"></textarea></label>${role()==='admin'?'<label data-document-approval hidden><input name="approveDifference" type="checkbox">확정 견적과 다른 계약금액 승인</label>':''}<details open><summary>시공자·공사담당자</summary><div class="confirmed-contract-fields">${field('companyName','시공자 상호','text',true,v.companyName)}${field('businessNo','사업자등록번호','text',true,v.businessNo)}${field('representative','대표자','text',true,v.representative)}${field('companyAddress','시공자 주소','text',true,v.companyAddress)}${field('companyPhone','시공자 연락처','tel',true,v.companyPhone)}${field('managerName','공사담당자','text',false,v.managerName)}${field('managerTitle','직책','text',false,v.managerTitle)}${field('managerPhone','담당자 연락처','tel',false,v.managerPhone)}</div></details><details><summary>공사 포함사항·비고</summary>${[['adminOfficeIncluded','관리사무소 공사신고'],['consentIncluded','입주민 동의'],['permitIncluded','행위허가·신고'],['protectionIncluded','기존 마감재 보양'],['pipeCleaningIncluded','기존 배관 청소']].map(([key,label])=>`<label><input name="${key}" type="checkbox" ${v[key]?'checked':''}>${label} 포함</label>`).join('')}<label>비고<textarea name="notes" maxlength="1000">${esc(v.notes||'')}</textarea></label></details><div class="confirmed-document-actions"><label>미리보기 문서<select data-confirmed-type>${Object.entries(labels).map(([type,label])=>`<option value="${type}">${label}</option>`).join('')}</select></label><button type="submit">미리보기</button><button type="button" data-confirmed-issue disabled>계약서 확정·발행</button><button type="button" data-contract-cancel>작성 닫기</button></div></form>`;
-  target.hidden=false;form().elements.amountBasis.value=v.amountBasis;preview=null;pending=null;difference();baseline=current();
+  const fields=form().elements;
+  fields.siteAddress.closest('label').remove();
+  fields.customerAddress.value=v.customerAddress||v.siteAddress||'';
+  fields.customerAddress.required=true;
+  for(const key of ['adminOfficeIncluded','consentIncluded','permitIncluded','protectionIncluded'])fields[key].disabled=true;
+  for(const key of ['companyName','businessNo','representative','companyAddress','companyPhone'])fields[key].readOnly=true;
+  target.hidden=false;fields.amountBasis.value=v.amountBasis;preview=null;pending=null;difference();baseline=current();
+  const previewPanel=host.querySelector('[data-confirmed-preview]');
+  previewPanel.hidden=true;
+  const type=form().querySelector('[data-confirmed-type]').closest('label');
+  const issue=form().querySelector('[data-confirmed-issue]');
+  form().querySelector('[type=submit]').remove();
+  previewPanel.querySelector('iframe').before(type);
+  previewPanel.append(issue);
+  schedulePreview();
  }
  function difference(reset=false){const f=form();if(!f)return;const expected=Number(f.elements.amountBasis.value==='supply'?data.version.supply:data.version.total);if(reset)f.elements.amount.value=expected;const diff=Number(f.elements.amount.value)-expected;host.querySelector('[data-document-difference]').textContent=diff?`확정 견적과 ${diff.toLocaleString('ko-KR')}원 차이`:'확정 견적금액과 일치';host.querySelector('[data-document-reason]').hidden=!diff;f.elements.reason.required=Boolean(diff);const approval=host.querySelector('[data-document-approval]');if(approval){approval.hidden=!diff;f.elements.approveDifference.required=Boolean(diff);}}
- function mark(){preview=null;pending=null;host.querySelector('[data-confirmed-issue]').disabled=true;host.querySelector('[data-confirmed-preview]').hidden=true;difference();}
+ function mark(){preview=null;pending=null;host.querySelector('[data-confirmed-issue]').disabled=true;host.querySelector('[data-confirmed-preview]').hidden=true;difference();schedulePreview();}
  function status(message){host.querySelector('[data-confirmed-status]').textContent=message;}
- function lock(value){busy=value;host.querySelectorAll('input,select,textarea,button').forEach(n=>{n.disabled=value;});if(!value&&form())host.querySelector('[data-confirmed-issue]').disabled=!preview;onBusy(value);}
- async function open(id){const token=++generation;project=id;preview=null;baseline='';host.hidden=true;
-  try{const next=await request(`/projects/${id}/contracts`);if(token!==generation)return;data=next;render();}catch{if(token===generation){host.hidden=true;data=null;}}
+ function lock(value){busy=value;host.querySelectorAll('input,select,textarea,button').forEach(n=>{n.disabled=value||['adminOfficeIncluded','consentIncluded','permitIncluded','protectionIncluded'].includes(n.name);});if(!value&&form())host.querySelector('[data-confirmed-issue]').disabled=!preview;onBusy(value);}
+ async function open(id,auto){const token=++generation;clearTimeout(timer);project=id;preview=null;baseline='';host.hidden=true;
+  try{const next=await request(`/projects/${id}/contracts`);if(token!==generation)return;data=next;render();
+   if(auto){
+    const saved=data.packages.find(p=>p.id===auto.linkedId)||data.packages.find(p=>p.quoteVersionId===data.version.id);
+    await auto.loadBasis?.(saved?.quoteVersionId||data.version.id);
+    if(token!==generation)return;
+    if(saved)await auto.loadSaved(saved.id);else if(data.canManage){edit();host.scrollIntoView?.({block:'start'});}
+   }
+  }catch{if(token===generation){host.hidden=true;data=null;}}
  }
- host.addEventListener('input',()=>{if(form())mark();});host.addEventListener('change',e=>{if(form()){if(e.target.name==='amountBasis')difference(true);mark();}});
- host.addEventListener('submit',async e=>{if(!e.target.matches('[data-confirmed-form]'))return;e.preventDefault();if(busy)return;const id=project,token=generation;lock(true);
+ function schedulePreview(){clearTimeout(timer);if(!form()?.checkValidity()){status('미리보기에 필요한 계약정보를 입력해 주세요.');return;}timer=setTimeout(()=>void previewDraft(),450);}
+ async function previewDraft(){if(busy||!form()?.checkValidity())return;const id=project,token=generation;lock(true);
   try{const result=await request(`/projects/${id}/contracts`,{method:'POST',body:JSON.stringify({action:'preview',expectedRevision:data.revision,versionId:data.version.id,form:values(),type:host.querySelector('[data-confirmed-type]').value})});if(token!==generation)return;preview={hash:result.fingerprint,form:current()};host.querySelector('iframe').srcdoc=result.html;host.querySelector('[data-preview-title]').textContent=`미리보기 · ${labels[result.type]}`;host.querySelector('[data-confirmed-preview]').hidden=false;status('미리보기 · 미발행'+(result.notices?.length?' · '+result.notices.join(' / '):''));}catch(error){status(error.message);}finally{lock(false);}
- });
+ }
+ host.addEventListener('input',e=>{if(form()&&!e.target.matches('[data-confirmed-type]'))mark();});
+ host.addEventListener('change',e=>{if(form()){if(e.target.name==='amountBasis')difference(true);mark();}});
+ host.addEventListener('submit',e=>{if(e.target.matches('[data-confirmed-form]'))e.preventDefault();});
  host.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||busy)return;
   if(b.hasAttribute('data-contract-write')){if(form()&&current()!==baseline&&!document.defaultView.confirm('작성 중인 계약 정보를 버리고 다시 열까요?'))return;edit();return;}
-  if(b.hasAttribute('data-contract-cancel')){if(current()!==baseline&&!document.defaultView.confirm('저장하지 않은 계약 작성을 닫을까요?'))return;host.querySelector('[data-confirmed-editor]').replaceChildren();host.querySelector('[data-confirmed-preview]').hidden=true;preview=null;baseline='';return;}
+  if(b.hasAttribute('data-contract-cancel')){if(current()!==baseline&&!document.defaultView.confirm('저장하지 않은 계약 작성을 닫을까요?'))return;clearTimeout(timer);host.querySelector('[data-confirmed-editor]').replaceChildren();host.querySelector('[data-confirmed-preview]').hidden=true;preview=null;baseline='';return;}
   if(b.hasAttribute('data-preview-close')){host.querySelector('[data-confirmed-preview]').hidden=true;return;}
   if(b.dataset.confirmedLink){if(!document.defaultView.confirm('이 발행본으로 서명·체결한 사실을 확인하고 기존 체결 기록에 연결할까요? 계약일·금액·진행 상태는 유지됩니다.'))return;const body={action:'link',expectedRevision:data.revision,versionId:data.version.id,requestId:crypto.randomUUID(),packageId:b.dataset.confirmedLink,signedAcknowledged:true};lock(true);try{await request(`/projects/${project}/contracts`,{method:'POST',body:JSON.stringify(body)});await onIssued(project);status('기존 체결 기록에 발행본 연결 완료');}catch(error){status(error.message);}finally{lock(false);}return;}
   if(b.dataset.confirmedPdf){lock(true);try{const blob=await getPdf(project,b.dataset.confirmedPdf,b.dataset.type),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`${data.packages.find(p=>p.id===b.dataset.confirmedPdf).no}-${labels[b.dataset.type]}.pdf`;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(error){status(error.message);}finally{lock(false);}return;}
@@ -42,5 +68,5 @@ export function mountConfirmedContracts({document,request,getPdf,role,onBusy,onI
    try{await request(`/projects/${project}/contracts`,{method:'POST',body:JSON.stringify(body)});baseline=current();preview=null;pending=null;await onIssued(project);status('계약 문서 발행 완료 · 체결 기록은 변경하지 않았습니다.');}catch(error){status(error.message);}finally{lock(false);}
   }
  });
- return {open,isDirty:()=>Boolean(!busy&&form()&&current()!==baseline),clear(){generation++;project=null;data=null;baseline='';preview=null;host.hidden=true;host.replaceChildren();}};
+ return {open,isDirty:()=>Boolean(!busy&&form()&&current()!==baseline),clear(){generation++;clearTimeout(timer);project=null;data=null;baseline='';preview=null;host.hidden=true;host.replaceChildren();}};
 }

@@ -63,6 +63,17 @@ for (const role of ["admin", "manager", "staff"]) test(`${role}: customer docume
   dom.window.close();
 });
 
+test("customer detail print shows sales rows, never private costs or margin",()=>{
+  const dom=new JSDOM('<section id="printQuoteSheet"></section>');
+  const print=createEstimatePrint({document:dom.window.document,customerWon:won,formatDateTime:()=>"",printGroupLabels:{}});
+  print.renderPrintQuote({projectName:"Synthetic",total:12000,groups:[{label:"Flooring",total:12000,items:[{name:"Public sale item",amount:12000,cost:"PRIVATE_COST",margin:"PRIVATE_MARGIN"}]}],internalDetails:[{item:"PRIVATE_DETAIL"}]});
+  const text=dom.window.document.body.textContent;
+  expect(text).toContain("Public sale item");
+  expect(text).toContain("12,000원");
+  expect(text).not.toMatch(/PRIVATE_|직접원가|마진/);
+  dom.window.close();
+});
+
 test("48 fixed clauses and saved payment/contractor source of truth remain unchanged", () => {
   expect(CONTRACT_FIXED_TERM_LINES).toStrictEqual(contractCostGolden.configs.CONTRACT_FIXED_TERM_LINES);
   const fixture = documentFixture({ count: 3 });

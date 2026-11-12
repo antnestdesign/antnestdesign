@@ -1,5 +1,6 @@
 import { won as formatWon, escapeHtml } from "./utils.js";
 import { renderCustomerQuoteRows } from "./document-print.js";
+import { customerQuoteProjection } from "./customer-quote.js";
 const won=value=>value==null?'—':formatWon(value);
 const percent=value=>value==null?'—':`${(value*100).toFixed(1)}%`;
 
@@ -7,12 +8,13 @@ export function createEstimatePrint({ document, customerWon, formatDateTime, pri
 function renderPrintQuote(quote, { mode = "detail" } = {}) {
   const sheet = document.getElementById("printQuoteSheet");
   if (!sheet || !quote) return;
+  quote=customerQuoteProjection(quote);
   const summary = mode === "customer-summary";
   sheet.innerHTML = `
     <article class="contract-print-page customer-quote-document">
     <header class="contract-print-header">
       <p class="document-brand">AND / ANTNEST DESIGN</p>
-      <p>공사 견적서</p>
+      <p>${summary?"공사 견적서":"고객용 상세견적서"}</p>
       <h1>${escapeHtml(quote.projectName)}</h1>
       <dl>
         <div><dt>평형</dt><dd>${quote.areaPyeong}평</dd></div>
@@ -27,7 +29,7 @@ function renderPrintQuote(quote, { mode = "detail" } = {}) {
         : renderCustomerQuoteRows(quote.groups, customerWon, label => printGroupLabels[label] || `${label}공사`)}
     </table>
     <footer>
-      <div><span>총 공사금액</span><strong>${quote.totalText}</strong></div>
+      <div><span>총 공사금액</span><strong>${escapeHtml(quote.totalText || customerWon(quote.total))}</strong></div>
       <p>※ 부가세 별도 금액입니다.</p>
       <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
     </footer>
@@ -81,52 +83,36 @@ function renderCustomerSummaryPrint(quote) {
   return renderPrintQuote(quote, { mode: "customer-summary" });
 }
 
-function renderAdminDetailPrint(estimate) {
-  const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !estimate) return;
-  const details = estimate.internalDetails || [];
-  sheet.innerHTML = `
-    <header>
-      <p>상세견적</p>
-      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
-      <dl>
-        <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
-        <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
-      </dl>
-    </header>
-    <table>
-      <thead>
-        <tr><th>항목</th><th>입력</th><th>산출</th><th>단가</th><th>직접원가</th><th>고객가</th><th>마진</th></tr>
-      </thead>
-      <tbody>
-        ${details.map((item) => `
-          <tr>
-            <td>${item.item}</td>
-            <td>${item.input}</td>
-            <td>${item.quantity}</td>
-            <td>${won(item.unitPrice)}</td>
-            <td>${won(item.cost)}</td>
-            <td>${customerWon(item.revenue)}</td>
-            <td>${item.cost===null?'—':won(item.customerRevenue - item.cost)}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-    <footer>
-      <div><span>고객용 총액</span><strong>${customerWon(estimate.total || 0)}</strong></div>
-      <div><span>내부 원가</span><strong>${estimate.costIncomplete?'—':won(estimate.costTotal || 0)}</strong></div>
-    </footer>
-  `;
+function renderAdminDetailPrint(estimate, model) {
+  return renderAdminInternalPrint(estimate, model, { detailed: true });
 }
 
-function renderAdminInternalPrint(estimate, model) {
+function renderInternalTradeDetails(group) {
+  if (!group.details?.length) return "";
+  return `<tr class="internal-print-trade-details"><td colspan="5">
+    <table aria-label="${escapeHtml(group.label)} 상세 내역">
+      <thead><tr><th>항목</th><th>입력</th><th>산출</th><th>단가</th><th>직접원가</th><th>고객가</th><th>마진</th></tr></thead>
+      <tbody>${group.details.map(item => `<tr>
+        <td>${escapeHtml(item.item ?? "")}</td>
+        <td>${escapeHtml(item.input ?? "")}</td>
+        <td>${escapeHtml(item.quantity ?? "")}</td>
+        <td>${won(item.unitPrice)}</td>
+        <td>${won(item.view.cost)}</td>
+        <td>${customerWon(item.view.customer)}</td>
+        <td>${won(item.view.profit)}</td>
+      </tr>`).join("")}</tbody>
+    </table>
+  </td></tr>`;
+}
+
+function renderAdminInternalPrint(estimate, model, { detailed = false } = {}) {
   const sheet = document.getElementById("printQuoteSheet");
-  if (!sheet || !estimate) return;
+  if (!sheet || !estimate || !model) return;
   const { groups, totals: { totalCustomer, totalCost, totalProfit, totalMarginRate } } = model;
   sheet.innerHTML = `
     <header>
-      <p>내부견적</p>
-      <h1>${estimate.projectName || "상담 프로젝트"}</h1>
+      <p>내부견적(${detailed ? "상세" : "간이"})</p>
+      <h1>${escapeHtml(estimate.projectName || "상담 프로젝트")}</h1>
       <dl>
         <div><dt>평형</dt><dd>${estimate.areaPyeong || "-"}평</dd></div>
         <div><dt>작성일</dt><dd>${formatDateTime(estimate.savedAt || new Date().toISOString())}</dd></div>
@@ -138,13 +124,14 @@ function renderAdminInternalPrint(estimate, model) {
       </thead>
       <tbody>
         ${groups.map((group) => `
-          <tr>
-            <td>${group.label}</td>
+          <tr class="internal-print-trade-summary">
+            <td>${escapeHtml(group.label)}</td>
             <td>${customerWon(group.customer)}</td>
             <td>${won(group.cost)}</td>
             <td>${won(group.profit)}</td>
             <td>${percent(group.marginRate)}</td>
           </tr>
+          ${detailed ? renderInternalTradeDetails(group) : ""}
         `).join("")}
         <tr>
           <td>총계</td>

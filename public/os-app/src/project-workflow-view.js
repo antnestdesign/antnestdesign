@@ -7,7 +7,7 @@ const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'num
 export function contractProposal(basis,amountBasis){return amountBasis==='supply'?basis.supply:basis.total;}
 export function contractPriceDifference(basis,amountBasis,value){return Number(value)-Number(contractProposal(basis,amountBasis));}
 
-export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDirty,isBusy,onBusy,onTransferred,onChanged,onOpen,onViewVersion}){
+export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDirty,isBusy,onBusy,onTransferred,onChanged,onOpen,onViewVersion,onLoadContract,onLoadBasis}){
   const quote=document.createElement('section');quote.className='project-flow-transfer';quote.hidden=true;
   document.getElementById('estimateManagementControls').append(quote);
   const panel=document.createElement('section');panel.id='projectWorkflowPanel';panel.className='project-workflow-panel';panel.hidden=true;
@@ -80,9 +80,11 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
     const reason=panel.querySelector('[data-contract-reason]');reason.hidden=!hasDifference;reason.querySelector('textarea').required=hasDifference;
     const approval=panel.querySelector('[data-contract-approval]');if(approval){approval.hidden=!hasDifference;approval.querySelector('input').required=hasDifference;}
   }
-  async function open(projectId){
+  async function open(projectId,loadContract=false){
     const token=++generation;loading=true;syncBusy();
-    try{const next=await request(projectPath(projectId));if(token!==generation)return false;flow=next;render();if(next.basis)await contractDocuments?.open(projectId);else contractDocuments?.clear();return token===generation;}
+    try{const next=await request(projectPath(projectId));if(token!==generation)return false;flow=next;render();
+      if(next.basis)await contractDocuments?.open(projectId,loadContract?{linkedId:next.packageId,loadSaved:id=>onLoadContract?.(id,next.estimateId),loadBasis:id=>onLoadBasis?.(next.estimateId,id,()=>token===generation)}:null);
+      else contractDocuments?.clear();return token===generation;}
     catch(error){if(token===generation){flow=null;baseline='';panel.hidden=false;panel.innerHTML='<p role="status" data-flow-status></p>';status(panel,error.message);}return false;}
     finally{if(token===generation){loading=false;syncBusy();}}
   }

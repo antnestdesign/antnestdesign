@@ -24,6 +24,7 @@ document.addEventListener("click", actions.onContractActionClick);
 window.addEventListener("beforeunload", actions.onBeforeUnload);
 
 document.getElementById("printQuoteButton")?.addEventListener("click", actions.onPrintQuoteClick);
+document.getElementById("printCustomerDetailButton")?.addEventListener("click", actions.onPrintQuoteClick);
 
 document.addEventListener("click", actions.onInternalPrintClick);
 

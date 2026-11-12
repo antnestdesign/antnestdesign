@@ -27,6 +27,17 @@ function mount(estimate = latestEstimate()) {
 function inputs() { return [...document.querySelectorAll("#client input, #client select, #client textarea")]; }
 function values() { return inputs().map(node => ({ id: node.id, attributes: node.getAttributeNames().map(name => [name, node.getAttribute(name)]), value: node.value, checked: node.checked, disabled: node.disabled })); }
 
+test("fractional stored trade amounts display as whole won without changing the stored total", () => {
+  const values=[6314285.714,6071428.571,14114285.714,3685714.286,4457142.857,7714285.714,6470000,25457142.857,4285714.286];
+  const groups=PRELIMINARY_TRADES.map((trade,i)=>({label:trade.groups[0],total:values[i]}));
+  const estimate={...latestEstimate(),total:78570000,customerQuote:{groups}};
+  mount(estimate).update();
+  const displayed=[...document.querySelectorAll(".preliminary-trade-amount")].map(node=>node.textContent);
+  expect(displayed.every(value=>/^[\d,]+원$/.test(value))).toBe(true);
+  expect(displayed.reduce((sum,value)=>sum+Number(value.replace(/\D/g,"")),0)).toBe(78570000);
+  expect(groups.map(group=>group.total)).toEqual(values);
+});
+
 test("all 145 original controls retain identity, attributes, values, disabled state and unique IDs", () => {
   const original = inputs();
   const before = values().sort((a, b) => a.id.localeCompare(b.id));
