@@ -1312,8 +1312,8 @@ th:last-child {
   .preliminary-shell .project-info-grid input,
   .preliminary-shell .project-info-grid select { min-height: 38px; }
   .preliminary-shell .option-panel > .section-heading { padding: 12px 14px; }
-  .preliminary-shell .preliminary-actions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; }
-  .preliminary-shell .preliminary-actions button { min-height: 40px; font-size: 12px; padding: 0 8px; white-space: nowrap; }
+  .preliminary-shell .preliminary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .preliminary-shell .preliminary-actions button { min-height: 40px; font-size: 12px; padding: 0 8px; white-space: normal; }
 
   .app-shell {
     padding: 10px;

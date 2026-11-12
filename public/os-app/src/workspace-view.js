@@ -15,7 +15,7 @@ export function projectStage(value) {
 }
 export function estimateStage(row) {
   const c=row.confirmation||{};
-  return c.state==='confirmed'?`확정 V${c.draftVersion||1}`:c.state==='revising'?`수정본 V${c.draftVersion} 작성 중 · 확정 V${Number(c.draftVersion)-1}`:'작성 중';
+  return c.state==='confirmed'?`확정 V${c.draftVersion||1}`:c.state==='revising'?`수정본 V${c.draftVersion} 작성 중 · 확정 V${Number(c.draftVersion)-1}`:'미확정';
 }
 
 export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCreateProject,onProjectWorkflow}) {
@@ -25,14 +25,14 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
   const list=document.getElementById('savedEstimateRows').closest('.internal-card');list.id='estimateManagementList';
   const heading=list.querySelector('h2');if(heading)heading.textContent='견적 목록';list.querySelector('.section-heading p')?.remove();
   const filters=document.createElement('div');filters.className='management-filters';
-  filters.innerHTML='<label>견적 검색<input id="estimateManagementSearch" type="search" placeholder="현장, 고객, 작성자 검색"></label><label>견적 상태<select id="estimateManagementFilter"><option value="all">전체</option><option value="draft">작성 중</option><option value="confirmed">확정</option><option value="revising">수정본 작성 중</option></select></label><button type="button" data-refresh-estimates>새로고침</button><button type="button" data-new-project>새 프로젝트</button>';
+  filters.innerHTML='<label>견적 검색<input id="estimateManagementSearch" type="search" placeholder="현장, 고객, 작성자 검색"></label><label>견적 상태<select id="estimateManagementFilter"><option value="all">전체</option><option value="draft">미확정</option><option value="confirmed">확정</option><option value="revising">수정본 작성 중</option></select></label><button type="button" data-refresh-estimates>새로고침</button><button type="button" data-new-project>새 프로젝트</button>';
   list.querySelector('.table-wrap').before(filters);list.querySelector('.table-wrap').classList.add('management-list-scroll');
   const scope=document.createElement('label');scope.innerHTML='조회 범위<select id="estimateManagementScope"><option value="active">진행 중 견적</option><option value="all">전체·과거 견적</option></select>';filters.prepend(scope);
   const oldQuote=document.createElement('details');oldQuote.className='management-quote-preview';oldQuote.innerHTML='<summary>고객용 견적서</summary>';
   oldQuote.append(...quote.children);
   const selected=document.createElement('section');selected.className='management-selected';selected.id='estimateManagementSelected';
   selected.innerHTML='<header><div><h2 data-management-title>견적을 선택해 주세요.</h2><p data-management-meta></p></div><button type="button" data-management-edit hidden>견적 수정</button></header><p role="status" id="estimateManagementStatus"></p><div id="estimateManagementControls"></div>';
-  selected.querySelector('#estimateManagementControls').append(document.querySelector('.estimate-history'),document.querySelector('.preliminary-confirmation'));
+  selected.querySelector('#estimateManagementControls').append(document.querySelector('.preliminary-confirmation'),document.querySelector('.estimate-history'));
   selected.append(oldQuote);quote.append(list,selected);
   const printActions=document.getElementById('adminPrintActions');if(printActions)selected.append(printActions);
   const contractList=document.createElement('section');contractList.className='contract-project-list';contractList.innerHTML='<h2>계약·공사 프로젝트</h2><div class="management-filters"><label>프로젝트 검색<input id="contractProjectSearch" type="search" placeholder="현장, 고객 검색"></label><label>진행 상태<select id="contractProjectFilter"><option value="all">계약·착공·준공</option><option value="계약">계약</option><option value="착공">착공</option><option value="준공">준공</option><option value="unclassified">미분류</option><option value="everything">전체 프로젝트</option></select></label></div><div class="table-wrap"><table class="saved-table"><thead><tr><th>현장명</th><th>고객명</th><th>프로젝트 진행</th><th>견적금액</th><th>작업</th></tr></thead><tbody id="contractProjectRows"></tbody></table></div>';
@@ -111,7 +111,7 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
       for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
       const select=legacy.querySelector('[data-archive-project]'),value=select.value;select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;},
     permissions(value){role=value;for(const {panel} of archivePanels){panel.hidden=role!=='admin';if(panel.hidden){panel.open=false;panel.querySelector('ul').textContent='';}}contractRows();const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},
-    updateSelection(estimate){current=estimate;selected.querySelector('[data-management-title]').textContent=estimate?.projectName||'견적을 선택해 주세요.';
+    updateSelection(estimate){if(current?.id!==estimate?.id)oldQuote.open=Boolean(estimate?.id);current=estimate;selected.querySelector('[data-management-title]').textContent=estimate?.projectName||'견적을 선택해 주세요.';
       const a=estimate?.authorship;selected.querySelector('[data-management-meta]').textContent=estimate?`${estimate.clientName||'고객명 없음'} · ${money(estimate.total)} · ${estimateStage(estimate)} · 프로젝트 ${projectFor(estimate)?.status||estimate.status||'미분류'} · 최초 작성 ${a?.creatorName||'작성자 미확인'} · 최종 수정 ${a?.editorName||'수정자 미확인'}`:'';
       selected.querySelector('[data-management-edit]').hidden=!estimate?.canEdit;
       selected.querySelector('[data-management-edit]').disabled=busy;
@@ -119,13 +119,13 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
       notice.textContent=estimate?.id&&!estimate.canEdit?(estimate.confirmation?.state==='confirmed'?'확정된 견적입니다. 수정본은 견적관리에서 만들 수 있습니다.':'이 견적은 수정 권한이 없습니다.'):'';},
     showStatus(message){document.getElementById('estimateManagementStatus').textContent=message||'';},
     setBusy(value){busy=value;selected.querySelector('[data-management-edit]').disabled=busy;},
-    async createProject(seed={}){
+    async createProject(seed={},onCreated){
       const dialog=document.createElement('dialog');dialog.className='project-create-dialog';dialog.innerHTML=`<form><h2>새 프로젝트</h2><label>현장명<input name="project_name" maxlength="200" required value="${esc(seed.projectName||'')}"></label><label>주소<input name="address" maxlength="500" value="${esc(seed.address||'')}"></label><label>평형<input name="area_pyeong" type="number" min="0" step="0.1" value="${Number(seed.areaPyeong)||0}"></label><label>고객명<input name="client_name" maxlength="200" value="${esc(seed.clientName||'')}"></label><label>연락처<input name="phone" maxlength="100" value="${esc(seed.phone||'')}"></label><p role="status"></p><div><button type="submit">프로젝트 생성</button><button type="button" data-project-cancel>취소</button></div></form>`;document.body.append(dialog);dialog.showModal();dialog.querySelector('[data-project-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());
       let pending=null;
       dialog.querySelector('form').onsubmit=async event=>{event.preventDefault();const button=dialog.querySelector('[type="submit"]');button.disabled=true;const values=Object.fromEntries(new FormData(event.target)),hasCustomer=String(values.client_name).trim();
         const selection={mode:'new',project_name:values.project_name,address:values.address,area_pyeong:Number(values.area_pyeong),customer_mode:hasCustomer?'new':'undecided',...(hasCustomer?{client_name:values.client_name,phone:values.phone}:{})};
         const key=JSON.stringify(selection);if(pending?.key!==key)pending={key,id:crypto.randomUUID()};
-        try{const result=await request('/projects',{method:'POST',body:JSON.stringify({request_id:pending.id,selection})});dialog.close();await onOpen(null,'refresh');return result;}
+        try{const result=await request('/projects',{method:'POST',body:JSON.stringify({request_id:pending.id,selection})});dialog.close();await onCreated?.(result);await onOpen(null,'refresh');return result;}
         catch(error){dialog.querySelector('[role="status"]').textContent=error.message;button.disabled=false;}
       };
     },

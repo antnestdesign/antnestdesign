@@ -155,6 +155,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   printButton.addEventListener("click", onPrint);
   const detailPrintButton=document.createElement("button");
   detailPrintButton.type="button";
+  detailPrintButton.className=printButton.className;
   detailPrintButton.textContent="고객용 상세견적 출력";
   detailPrintButton.dataset.customerDetailPrint="";
   detailPrintButton.addEventListener("click",onPrint);

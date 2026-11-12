@@ -420,6 +420,7 @@ const estimateHistoryView = createEstimateHistoryView({document,loadHistory:load
 let estimateWorkflowBusy=false;
 const estimateConfirmationView=createEstimateConfirmationView({document,load:loadEstimateConfirmations,confirm:confirmEstimate,revise:createEstimateRevision,
   projects:()=>requestProjectFoundation('/projects'),
+  createProject:(estimate,onCreated)=>workspaceView?.createProject(estimate,onCreated),
   isDirty:()=>saveEstimateInProgress||projectWorkflowBusy||Boolean(loadedEstimateBaseline&&(!loadedEstimateMatchesCurrentInputs()||pipeCleaningAdjustmentDirty)),
   onBusy:value=>{estimateWorkflowBusy=value;syncWorkflowBusyControls();},
   onLoad:async(id,version)=>{await openWorkspaceEstimate(id,'quote',version,true);void renderSavedEstimateRows();},
@@ -463,6 +464,7 @@ async function openWorkspaceEstimate(id,tab='quote',version=null,approved=false,
       else if(canPreviewContractPackage())await previewContractPackageFromForm();
       document.getElementById('contractDocumentPreview')?.scrollIntoView?.({block:'start'});
     }
+    return estimate;
   }catch(error){workspaceView?.showStatus(error.message);alert(error.message||'견적을 불러오지 못했습니다.');}
 }
 let siteCostView = null;
@@ -1451,7 +1453,7 @@ function renderSavedEstimateRow(estimate, options = {}) {
     <td>${won(estimate.total)}</td>
     <td>${escapeHtml(estimateStage(estimate))}</td>
     <td>${escapeHtml(workspaceView?.projectFor(estimate)?.status || estimate.status || '미분류')}</td>
-    <td><button type="button" data-open-estimate="${estimateId}">관리</button>${estimate.canEdit?`<button type="button" data-edit-estimate="${estimateId}">수정</button>`:''}<button type="button" data-open-history="${estimateId}">이력</button></td>
+    <td><button type="button" data-open-estimate="${estimateId}">견적 불러오기</button></td>
     ${canViewInternal ? `<td><button type="button" data-toggle-internal-estimate="${estimateId}">${expandedAdminEstimateId === estimate.id ? "내부견적 닫기" : "내부견적 상세 보기"}</button></td>` : ""}
     ${admin ? `<td><button type="button" data-delete-estimate="${estimateId}">삭제</button></td>` : ""}
   `;
@@ -3126,14 +3128,12 @@ function onInternalTradeToggle(event) {
 
 async function onSavedEstimateAction(event) {
   const button=event.target?.closest?.('button');
-  const editId=button?.dataset.editEstimate;
-  const historyId=button?.dataset.openHistory;
-  const openId = button?.dataset.openEstimate||editId||historyId;
+  const openId=button?.dataset.openEstimate;
   const deleteId = button?.dataset.deleteEstimate;
   if (!openId && !deleteId) return;
   if (openId) {
-    await openWorkspaceEstimate(openId,editId?'client':'quote');
-    if(historyId){const details=document.querySelector('.estimate-history details');if(details)details.open=true;}
+    const estimate=await openWorkspaceEstimate(openId,'quote');
+    if(estimate)document.getElementById('estimateManagementSelected')?.scrollIntoView?.({block:'start'});
   }
   if (deleteId) {
     if (!isAdmin()) return;

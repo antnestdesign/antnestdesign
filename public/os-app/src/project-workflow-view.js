@@ -9,7 +9,8 @@ export function contractPriceDifference(basis,amountBasis,value){return Number(v
 
 export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDirty,isBusy,onBusy,onTransferred,onChanged,onOpen,onViewVersion,onLoadContract,onLoadBasis}){
   const quote=document.createElement('section');quote.className='project-flow-transfer';quote.hidden=true;
-  document.getElementById('estimateManagementControls').append(quote);
+  const controls=document.getElementById('estimateManagementControls');
+  controls.insertBefore(quote,controls.querySelector('.estimate-history'));
   const panel=document.createElement('section');panel.id='projectWorkflowPanel';panel.className='project-workflow-panel';panel.hidden=true;
   document.querySelector('.contract-project-list').after(panel);
   let selected=null,quoteData=null,flow=null,quoteGeneration=0,generation=0,busy=false,loading=false,pending=null,baseline='';
