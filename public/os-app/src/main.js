@@ -415,6 +415,7 @@ let projectWorkflowView=null;
 let projectWorkflowBusy=false;
 let activeWorkflowProjectId=null;
 let managementGeneration=0;
+let managementRequest=null;
 const estimateHistoryView = createEstimateHistoryView({document,loadHistory:loadEstimateHistory,inputIds:Object.keys(ESTIMATE_INPUT_SCHEMA)});
 let estimateWorkflowBusy=false;
 const estimateConfirmationView=createEstimateConfirmationView({document,load:loadEstimateConfirmations,confirm:confirmEstimate,revise:createEstimateRevision,
@@ -1456,7 +1457,17 @@ function renderSavedEstimateTableRows(tbody, estimates, options = {}) {
     : `<tr><td colspan="${colspan}">저장된 프로젝트가 없습니다.</td></tr>`;
 }
 
-async function renderSavedEstimateRows() {
+function loadWorkspaceLists(includeContracts=false) {
+  if (!managementRequest || includeContracts&&!managementRequest.includeContracts) {
+    const request={includeContracts,promise:renderSavedEstimateRows({includeContracts})};
+    managementRequest=request;
+    const clear=()=>{if(managementRequest===request)managementRequest=null;};
+    request.promise.then(clear,clear);
+  }
+  return managementRequest.promise;
+}
+
+async function renderSavedEstimateRows({includeContracts=true}={}) {
   const generation=++managementGeneration;
   const tbody = document.getElementById("savedEstimateRows");
   if (!tbody) return;
@@ -1482,30 +1493,39 @@ async function renderSavedEstimateRows() {
   if (description) description.textContent = "저장된 견적과 연결된 계약 상태를 함께 확인합니다.";
   tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록을 불러오는 중입니다.</td></tr>`;
   try {
-    const estimates = await loadEstimates();
+    const contractLists=includeContracts?Promise.all([
+      requestProjectFoundation('/projects?view=contracts'),
+      loadEstimates({contracts:true}),
+    ]).catch(error=>{
+      if(generation===managementGeneration)workspaceView?.showStatus(error.message);
+      return null;
+    }):null;
+    const [estimates,packages,projects] = await Promise.all([
+      loadEstimates(),
+      canMergeContracts ? loadContractPackages(null).catch(error=>{
+        console.warn("프로젝트 계약 상태 조회 실패", error);
+        return null;
+      }) : null,
+      requestProjectFoundation('/projects?view=management').catch(error=>{
+        if(generation===managementGeneration)workspaceView?.showStatus(error.message);
+        return [];
+      }),
+    ]);
+    const contracts=await contractLists;
     if(generation!==managementGeneration)return;
     cachedEstimates = estimates;
-    projectContractPackageMap = new Map();
-    projectContractPackageMapLoaded = false;
-    if (canMergeContracts) {
-      try {
-        const packages = await loadContractPackages(null);
-        projectContractPackageMap = buildLatestContractPackageMap(Array.isArray(packages) ? packages : []);
-        projectContractPackageMapLoaded = true;
-      } catch (error) {
-        console.warn("프로젝트 계약 상태 조회 실패", error);
-        projectContractPackageMap = new Map();
-        projectContractPackageMapLoaded = false;
-      }
+    projectContractPackageMap = buildLatestContractPackageMap(Array.isArray(packages) ? packages : []);
+    projectContractPackageMapLoaded = Array.isArray(packages);
+    if(!contractPackageSearchKeyword&&Array.isArray(packages)){
+      allContractPackagesState=packages;
+      renderAllContractPackages();
     }
-    let projects=[],contractProjects=[],contractEstimates=[];
-    try{[projects,contractProjects,contractEstimates]=await Promise.all([requestProjectFoundation('/projects?view=management'),requestProjectFoundation('/projects?view=contracts'),loadEstimates({contracts:true})]);}catch(error){workspaceView?.showStatus(error.message);}
-    if(generation!==managementGeneration)return;
-    workspaceView?.updateData(cachedEstimates,projects,allContractPackagesState,contractProjects,contractEstimates);
+    workspaceView?.updateData(cachedEstimates,projects,packages??allContractPackagesState,...(contracts||[]));
     if(workspaceView?.projectFor(cachedEstimates.find(e=>e.id===selectedContractEstimate()?.id)||selectedContractEstimate()||{})?.workflow)renderContractPackagePanel();
     renderProjectSearchResults();
     renderSavedEstimateTableRows(tbody, cachedEstimates, { admin, canViewInternal, colspan });
   } catch (error) {
+    if(generation!==managementGeneration)return;
     console.error("견적 조회 실패", error);
     tbody.innerHTML = `<tr><td colspan="${colspan}">프로젝트 목록 조회에 실패했습니다.</td></tr>`;
     alert("프로젝트 목록 조회에 실패했습니다.");
@@ -1621,6 +1641,7 @@ function staffCurrentEstimateInputs() {
 function activateTab(tabId,version=loadedEstimateBaseline?.estimate?.confirmation?.viewingVersion?.id||null) {
   if(tabId==='system'&&!canViewSystem())tabId='client';
   uiShell.activateTab(tabId);workspaceNavigation?.write(tabId,currentEditingEstimateId,version,false,tabId==='admin'?contractPreviewState?.snapshot?.id:null,tabId==='admin'?activeWorkflowProjectId:null);
+  if(tabId==='admin'||tabId==='quote')void loadWorkspaceLists(tabId==='admin');
 }
 
 let staffAdminShellApplied = false;
@@ -2389,25 +2410,25 @@ async function enterAuthenticatedApp(profile) {
     window.location.reload();
     return;
   }
-  await loadRateSettings();
+  const [,config]=await Promise.all([
+    loadRateSettings(),
+    canViewSystem()?loadPrivateEstimateDefaults():null,
+    itemBuilderView?.loadCatalog(),
+  ]);
   costManagementDefaults=null;
   newEstimatePrivateDefaults = {};
-  if(canViewSystem()){const config=await loadPrivateEstimateDefaults();newEstimatePrivateDefaults={...config.defaults};costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
-  await itemBuilderView?.loadCatalog();
+  if(config){newEstimatePrivateDefaults={...config.defaults};costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
   newEstimateInputBaseline = currentInputKey();
   applyAccessControl();
   refresh();
-  await renderSavedEstimateRows();
   renderContractPackagePanel();
-  await refreshAllContractPackages();
-  await refreshSystemManagement();
-  await itemBuilderView?.load();
   const route=workspaceNavigation?.initial;
+  setAuthenticated(true);
   if(route?.estimateId)await openWorkspaceEstimate(route.estimateId,route.tab,route.versionId,true);
   else if(route)activateTab(route.tab);
+  loadTabData(route?.tab);
   if(route?.tab==='admin'&&route.contractId)await loadContractPackageToPreview(route.contractId);
   if(route?.tab==='admin'&&route.projectId)await openProjectWorkflow(route.projectId,true);
-  setAuthenticated(true);
 }
 
 async function completeLogin() {
@@ -2634,8 +2655,11 @@ async function handleSaveEstimate(mode = "update") {
 function handleTabNavigation(tabId) {
   if(!canLeaveWorkspace())return;
   activateTab(tabId);
-  if (tabId === "admin"||tabId==='quote') renderSavedEstimateRows();
-  if (tabId === "system") refreshSystemManagement().catch((error) => console.error("시스템 관리 갱신 실패", error));
+  loadTabData(tabId);
+}
+
+function loadTabData(tabId) {
+  if (tabId === "system"&&canViewSystem()) void Promise.all([refreshSystemManagement(),itemBuilderView?.load()]);
 }
 
 function handlePasswordChangeLogout() {
@@ -2686,6 +2710,13 @@ async function onLogoutClick() {
   lastRenderedEstimateSnapshot = null;
   currentEditingEstimateId = null;
   cachedEstimates = [];
+  managementGeneration++;
+  managementRequest=null;
+  projectContractPackageMap=new Map();
+  projectContractPackageMapLoaded=false;
+  allContractPackagesState=[];
+  workspaceView?.updateData([],[],[],[],[]);
+  renderProjectSearchResults();
   currentProfile = null;
   serverCalculation=null;serverCalculationPending=null;calculationGeneration++;
   contractOptionsState = null;
@@ -3118,10 +3149,13 @@ function bootstrap() {
   workspaceNavigation=createWorkspaceNavigation({window,canLeave:canLeaveWorkspace,onRestore:async route=>{
     if(route.estimateId)await openWorkspaceEstimate(route.estimateId,route.tab,route.versionId,true);
     else {if(currentEditingEstimateId)onNewEstimateClick(true);activateTab(route.tab);}
+    loadTabData(route.tab);
     if(route.tab==='admin'&&route.contractId)await loadContractPackageToPreview(route.contractId);
     if(route.tab==='admin'&&route.projectId)await openProjectWorkflow(route.projectId,true);
   }});
   bindPasswordChangeShell();
+  el.projectSearch.addEventListener('focus',()=>{if(!cachedEstimates.length)void loadWorkspaceLists();});
+  el.projectSearchResults.addEventListener('focus',()=>{if(!cachedEstimates.length)void loadWorkspaceLists();});
   bindApplicationEvents({ document, window, elements: el, actions: {
     onLoginSubmit, onLogoutClick, onProjectSearchInput, onLoadProjectClick, onNewEstimateClick, onSaveEstimateClick, onSaveAsNewEstimateClick, onDelegatedSaveClick, onContractOptionsInput, onContractOptionsChange, onContractActionClick, onBeforeUnload, onPrintQuoteClick, onInternalPrintClick, onSystemActionClick, onCostCategoryClick, onUserActionClick, onReloadAuditClick, onCostItemSubmitClick, onManagementSubmit, onCostSearchInput, onCostFilterChange, onSaveRateDbClick, onCompareCostSnapshotClick, onInternalEstimateToggle, onInternalTradeToggle, onSavedEstimateAction, onStaffQuoteAction,
     onPipeCleaningChanged: handleExistingPipeCleaningChanged,

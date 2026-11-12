@@ -36,27 +36,33 @@ export function canEditEstimate(actor: Actor, row: Row, creator?: Actor) {
 }
 
 export async function estimateViews(rows: Row[], actor: Actor) {
-  const ids = [...new Set(rows.map(row=>row.creator_id).filter(Boolean))];
-  const creators:Actor[]=[];
-  for(let start=0;start<ids.length;start+=50)creators.push(...await supabaseFetch<Actor[]>(`/rest/v1/profiles?id=in.(${ids.slice(start,start+50).join(',')})&select=id,role,is_active,must_change_password`));
-  const versionIds=[...new Set(rows.map(row=>row.latest_confirmation_id).filter(Boolean))];
-  const versions:Row[]=[];
-  for(let start=0;start<versionIds.length;start+=50)versions.push(...await supabaseFetch<Row[]>(`/rest/v1/preliminary_estimate_versions?id=in.(${versionIds.slice(start,start+50).join(',')})&select=id,version_no,confirmed_at,confirmer_name,supply_amount`));
-  const estimateIds=rows.map(row=>row.id);
-  const associations:Row[]=[];
-  for(let start=0;start<estimateIds.length;start+=50){
-    associations.push(...await supabaseFetch<Row[]>(`/rest/v1/project_preliminary_estimates?estimate_id=in.(${estimateIds.slice(start,start+50).join(',')})&select=estimate_id,project_id`));
+  async function fetchGroups<T>(ids: unknown[], path: (ids: string) => string) {
+    const unique=[...new Set(ids.filter(Boolean))], result:T[]=[];
+    for(let start=0;start<unique.length;start+=50) {
+      result.push(...await supabaseFetch<T[]>(path(unique.slice(start,start+50).join(','))));
+    }
+    return result;
   }
+  const [creators,versions,associations]=await Promise.all([
+    fetchGroups<Actor>(actor.role==='admin'?[]:rows.map(row=>row.creator_id),ids=>`/rest/v1/profiles?id=in.(${ids})&select=id,role,is_active,must_change_password`),
+    fetchGroups<Row>(rows.map(row=>row.latest_confirmation_id),ids=>`/rest/v1/preliminary_estimate_versions?id=in.(${ids})&select=id,version_no,confirmed_at,confirmer_name,supply_amount`),
+    fetchGroups<Row>(rows.filter(row=>!row.confirmation_project_id&&!row.project_id).map(row=>row.id),ids=>`/rest/v1/project_preliminary_estimates?estimate_id=in.(${ids})&select=estimate_id,project_id`),
+  ]);
+  const creatorById=new Map(creators.map(row=>[row.id,row]));
+  const versionById=new Map(versions.map(row=>[row.id,row]));
+  const projectByEstimate=new Map();
+  for(const row of associations)if(!projectByEstimate.has(row.estimate_id))projectByEstimate.set(row.estimate_id,row.project_id);
+  const editable=(row:Row)=>canEditEstimate(actor,row,creatorById.get(row.creator_id as string));
   return rows.map(row=>({ ...(actor.role === 'staff' ? projectStaffEstimate(row) : row),
-    projectId:row.confirmation_project_id||row.project_id||associations.find(a=>a.estimate_id===row.id)?.project_id||null,
+    projectId:row.confirmation_project_id||row.project_id||projectByEstimate.get(row.id)||null,
     authorship: { creatorId:row.creator_id ?? null, creatorName:row.creator_name ?? '작성자 미확인',
       createdAt:row.creator_recorded_at ?? row.created_at, editorId:row.last_editor_id ?? null,
       editorName:row.last_editor_name ?? '수정자 미확인', editedAt:row.last_edited_at ?? null },
-    revision:String(row.revision), canEdit:row.confirmation_state!=='confirmed'&&canEditEstimate(actor,row,creators.find(c=>c.id===row.creator_id)),
-    canConfirm:row.confirmation_state!=='confirmed'&&actor.role!=='staff'&&canEditEstimate(actor,row,creators.find(c=>c.id===row.creator_id)),
-    canCreateRevision:row.confirmation_state==='confirmed'&&actor.role!=='staff'&&canEditEstimate(actor,row,creators.find(c=>c.id===row.creator_id)),
+    revision:String(row.revision), canEdit:row.confirmation_state!=='confirmed'&&editable(row),
+    canConfirm:row.confirmation_state!=='confirmed'&&actor.role!=='staff'&&editable(row),
+    canCreateRevision:row.confirmation_state==='confirmed'&&actor.role!=='staff'&&editable(row),
     confirmation:{state:row.confirmation_state||'draft',draftVersion:row.draft_version||1,projectId:row.confirmation_project_id||row.project_id||null,
-      latestId:row.latest_confirmation_id||null,latest:versions.find(v=>v.id===row.latest_confirmation_id)||null},
+      latestId:row.latest_confirmation_id||null,latest:versionById.get(row.latest_confirmation_id)||null},
   }));
 }
 

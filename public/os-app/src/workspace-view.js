@@ -106,7 +106,8 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
     catch(error){document.defaultView.alert(error.message);}
     finally{button.disabled=false;}
   });
-  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects=projectRows,visibleContractEstimates=estimates){projects=projectRows;contractProjects=visibleContractProjects;contractEstimates=visibleContractEstimates;packages=contractPackages;contractRows();
+  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects,visibleContractEstimates){projects=projectRows;packages=contractPackages;
+      if(visibleContractProjects&&visibleContractEstimates){contractProjects=visibleContractProjects;contractEstimates=visibleContractEstimates;contractRows();}
       for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
       const select=legacy.querySelector('[data-archive-project]'),value=select.value;select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;},
     permissions(value){role=value;for(const {panel} of archivePanels){panel.hidden=role!=='admin';if(panel.hidden){panel.open=false;panel.querySelector('ul').textContent='';}}contractRows();const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},

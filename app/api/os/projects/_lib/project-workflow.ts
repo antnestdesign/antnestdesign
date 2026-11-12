@@ -17,13 +17,21 @@ export function workflowStage(value:unknown) {
 const versionColumns='id,estimate_id,project_id,version_no,supply_amount,vat_amount,total_amount,confirmed_at,confirmer_name';
 function version(v:Row|undefined){return v?{id:v.id,estimateId:v.estimate_id,versionNo:v.version_no,supply:v.supply_amount,vat:v.vat_amount,total:v.total_amount,at:v.confirmed_at,actor:v.confirmer_name}:null;}
 export async function publicProjectWorkflows(rows:Row[]) {
-  const ids=[...new Set(rows.map(p=>p.flow_version_id).filter(Boolean))],versions:Row[]=[];
-  for(let i=0;i<ids.length;i+=50)versions.push(...await supabaseFetch<Row[]>(`/rest/v1/preliminary_estimate_versions?id=in.(${ids.slice(i,i+50).join(',')})&select=${versionColumns}`));
-  const estimateIds=[...new Set(rows.map(p=>p.flow_estimate_id).filter(Boolean))],creators:Row[]=[];
-  for(let i=0;i<estimateIds.length;i+=50)creators.push(...await supabaseFetch<Row[]>(`/rest/v1/estimates?id=in.(${estimateIds.slice(i,i+50).join(',')})&select=id,creator_name`));
+  async function loadById(field:string,table:string,columns:string) {
+    const ids=[...new Set(rows.map(row=>row[field]).filter(Boolean))],result=new Map();
+    for(let i=0;i<ids.length;i+=50) {
+      const batch=await supabaseFetch<Row[]>(`/rest/v1/${table}?id=in.(${ids.slice(i,i+50).join(',')})&select=${columns}`);
+      for(const row of batch)result.set(row.id,row);
+    }
+    return result;
+  }
+  const [versions,creators]=await Promise.all([
+    loadById('flow_version_id','preliminary_estimate_versions',versionColumns),
+    loadById('flow_estimate_id','estimates','id,creator_name'),
+  ]);
   return rows.map(p=>({id:p.id,project_name:p.project_name,address:p.address,area_pyeong:p.area_pyeong,status:p.status,
     customer_id:p.customer_id,managed:p.os_managed_at!=null,customer:p.customer,
-    workflow:p.flow_version_id?{estimateId:p.flow_estimate_id,versionId:p.flow_version_id,creatorName:creators.find(e=>e.id===p.flow_estimate_id)?.creator_name,basis:version(versions.find(v=>v.id===p.flow_version_id)),
+    workflow:p.flow_version_id?{estimateId:p.flow_estimate_id,versionId:p.flow_version_id,creatorName:creators.get(p.flow_estimate_id)?.creator_name,basis:version(versions.get(p.flow_version_id)),
       revision:String(p.flow_revision),contractDate:p.flow_contract_date,contractAmount:p.flow_contract_amount,amountBasis:p.flow_amount_basis,
       startDate:p.flow_start_date,completionDate:p.flow_completion_date}:null}));
 }
