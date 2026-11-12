@@ -47,7 +47,31 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
   admin.append(legacy);
   const notice=document.createElement('p');notice.id='consultationAccessNotice';notice.className='status-text';notice.setAttribute('role','status');document.getElementById('saveStatus')?.after(notice);
   const status=document.getElementById('estimateStatus');if(status){status.closest('label').hidden=true;status.disabled=true;}
-  let rows=[],projects=[],packages=[],role='staff',current=null,busy=false;
+  let projects=[],contractProjects=[],contractEstimates=[],packages=[],role='staff',current=null,busy=false;
+  const archivePanels=[['estimate',list],['contract',contractList]].map(([kind,host])=>{
+    const panel=document.createElement('details');panel.hidden=true;
+    panel.innerHTML='<summary>삭제한 항목</summary><p role="status"></p><ul></ul>';
+    host.append(panel);
+    async function refresh(){
+      const items=await request('/projects/list-archive');
+      panel.querySelector('ul').innerHTML=items.filter(x=>kind==='estimate'?x.kind===kind:x.kind!=='estimate').map(x=>
+        `<li>${esc(x.estimate?.project_name||x.project?.project_name||x.target_id)} · ${esc(new Date(x.deleted_at).toLocaleString('ko-KR'))} <button type="button" data-restore-list="${esc(x.target_id)}" data-kind="${esc(x.kind)}">복구</button></li>`).join('')||'<li>삭제한 항목이 없습니다.</li>';
+    }
+    panel.addEventListener('toggle',()=>{if(panel.open&&role==='admin')refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);});
+    panel.addEventListener('click',async event=>{
+      const button=event.target.closest('[data-restore-list]');
+      if(!button||role!=='admin'||busy)return;
+      button.disabled=true;
+      try{await changeArchive(button.dataset.kind,button.dataset.restoreList,'restore');}
+      catch(error){panel.querySelector('[role="status"]').textContent=error.message;}
+      finally{button.disabled=false;}
+    });
+    return {panel,refresh};
+  });
+  async function changeArchive(kind,id,action){
+    await request('/projects/list-archive',{method:'POST',body:JSON.stringify({kind,id,action})});
+    await onOpen(null,'refresh');
+  }
   const money=v=>Number(v||0).toLocaleString('ko-KR')+'원';
   const projectFor=row=>projects.find(p=>p.id===(row.projectId||row.confirmation?.projectId));
   function filtered(estimates){const term=document.getElementById('estimateManagementSearch').value,mode=document.getElementById('estimateManagementFilter').value;
@@ -58,25 +82,34 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onCr
     });}
   function contractRows(){
     const term=document.getElementById('contractProjectSearch').value.trim().toLowerCase(),mode=document.getElementById('contractProjectFilter').value;
-    const data=projects.map(p=>({project:p,estimates:rows.filter(e=>(e.projectId||e.confirmation?.projectId)===p.id)}));
-    for(const e of rows)if(!projectFor(e)&&(projectStage(e.status)!=='견적'||packages.some(p=>p.estimate_id===e.id)))data.push({project:{id:e.projectId||e.id,project_name:e.projectName,status:e.status,customer:{name:e.clientName}},estimates:[e]});
+    const data=contractProjects.map(p=>({kind:'contract',targetId:p.id,project:p,estimates:contractEstimates.filter(e=>(e.projectId||e.confirmation?.projectId)===p.id)}));
+    for(const e of contractEstimates)if(!e.projectId&&!e.confirmation?.projectId&&(projectStage(e.status)!=='견적'||packages.some(p=>p.estimate_id===e.id)))data.push({kind:'legacy_contract',targetId:e.id,project:{id:e.id,project_name:e.projectName,status:e.status,customer:{name:e.clientName}},estimates:[e]});
     const visible=data.filter(({project:p,estimates})=>{
       const stage=projectStage(p.status||estimates[0]?.status),contracted=packages.some(pack=>estimates.some(e=>e.id===pack.estimate_id));
       const status=mode==='everything'?true:mode==='unclassified'?stage==='미분류':mode==='all'?['계약 준비','계약 체결','계약','착공','준공'].includes(stage)||contracted:stage===mode;
       return status&&`${p.project_name} ${p.customer?.name||''} ${p.address||''}`.toLowerCase().includes(term);
     });
-    document.getElementById('contractProjectRows').innerHTML=visible.map(({project:p,estimates})=>{
+    document.getElementById('contractProjectRows').innerHTML=visible.map(({project:p,estimates,kind,targetId})=>{
       const flow=p.workflow,e=estimates.find(e=>e.id===flow?.estimateId)||estimates[0];
-      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${projects.some(project=>project.id===p.id)?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 자료</button>`:`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`}</td></tr>`;
+      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${projects.some(project=>project.id===p.id)?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 자료</button>`:`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`}${role==='admin'?`<button type="button" data-contract-archive="${esc(targetId)}" data-kind="${esc(kind)}">삭제</button>`:''}</td></tr>`;
     }).join('')||'<tr><td colspan="10">해당 프로젝트가 없습니다.</td></tr>';
   }
   for(const id of ['estimateManagementSearch','estimateManagementFilter','estimateManagementScope'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',onFilter);
   for(const id of ['contractProjectSearch','contractProjectFilter'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',contractRows);
   quote.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-management-edit'))onEdit(current?.id);if(b.hasAttribute('data-refresh-estimates'))onOpen(null,'refresh');if(b.hasAttribute('data-new-project'))onCreateProject();});
   admin.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.dataset.projectWorkflow)onProjectWorkflow?.(b.dataset.projectWorkflow);if(b.dataset.contractEstimate)onOpen(b.dataset.contractEstimate,'contract');if(b.dataset.archiveProjectOpen){const select=legacy.querySelector('[data-archive-project]');select.value=b.dataset.archiveProjectOpen;select.dispatchEvent(new Event('change',{bubbles:true}));legacy.scrollIntoView?.({block:'start'});}});
-  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages){rows=estimates;projects=projectRows;packages=contractPackages;contractRows();
+  contractList.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-contract-archive]');
+    if(!button||role!=='admin'||busy||!document.defaultView.confirm('계약 전체를 목록에서 삭제할까요? 연결된 프로젝트·견적과 발행 자료는 보존됩니다.'))return;
+    button.disabled=true;
+    try{await changeArchive(button.dataset.kind,button.dataset.contractArchive,'archive');}
+    catch(error){document.defaultView.alert(error.message);}
+    finally{button.disabled=false;}
+  });
+  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects=projectRows,visibleContractEstimates=estimates){projects=projectRows;contractProjects=visibleContractProjects;contractEstimates=visibleContractEstimates;packages=contractPackages;contractRows();
+      for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
       const select=legacy.querySelector('[data-archive-project]'),value=select.value;select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;},
-    permissions(value){role=value;const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},
+    permissions(value){role=value;for(const {panel} of archivePanels){panel.hidden=role!=='admin';if(panel.hidden){panel.open=false;panel.querySelector('ul').textContent='';}}contractRows();const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},
     updateSelection(estimate){current=estimate;selected.querySelector('[data-management-title]').textContent=estimate?.projectName||'견적을 선택해 주세요.';
       const a=estimate?.authorship;selected.querySelector('[data-management-meta]').textContent=estimate?`${estimate.clientName||'고객명 없음'} · ${money(estimate.total)} · ${estimateStage(estimate)} · 프로젝트 ${projectFor(estimate)?.status||estimate.status||'미분류'} · 최초 작성 ${a?.creatorName||'작성자 미확인'} · 최종 수정 ${a?.editorName||'수정자 미확인'}`:'';
       selected.querySelector('[data-management-edit]').hidden=!estimate?.canEdit;

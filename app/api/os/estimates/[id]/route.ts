@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ApiError, getUserContext, json } from "../../_lib/server";
+import { ApiError, getUserContext, json, supabaseFetch } from "../../_lib/server";
 import { assertBuilderActor } from '../../estimate-items/_lib/service';
 import { estimateActor, estimateViews, requireEstimateEdit, saveBody, saveEstimateCommand,protectEstimateProjectStatus,preserveEstimateProjectStatus } from '../_lib/ownership';
 import { calculatePrivilegedEstimate, calculateStaffEstimate, estimateErrorResponse, estimateRowPayload, readEstimate, validateStaffBody } from "../_lib/estimates";
@@ -46,7 +46,9 @@ export async function DELETE(request: NextRequest, route: RouteContext) {
     if (actor.role !== 'admin') throw new ApiError(403,'관리자만 견적을 삭제할 수 있습니다.');
     const row = await readEstimate((await route.params).id);
     const {revision} = saveBody(await request.json(),true);
-    await saveEstimateCommand(actor,row.id,revision,null,true);
+    await supabaseFetch('/rest/v1/rpc/and_os_archive_list_item',{method:'POST',body:JSON.stringify({
+      p_actor:actor.id,p_kind:'estimate',p_id:row.id,p_restore:false,p_revision:revision,
+    })});
     return json({deleted:true});
   } catch(error) { return estimateErrorResponse(error); }
 }

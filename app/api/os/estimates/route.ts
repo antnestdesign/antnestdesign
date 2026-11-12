@@ -8,9 +8,16 @@ export async function GET(request: NextRequest) {
   try {
     const context = await getUserContext(request);
     const actor = await estimateActor(context);
-    const rows = await supabaseFetch<Record<string, unknown>[]>("/rest/v1/estimates?select=*&order=created_at.desc");
+    const contracts=new URL(request.url).searchParams.get('view')==='contracts';
+    const filter=contracts?'':'&archive.kind=eq.estimate&archive=is.null';
+    const archive=contracts?'legacy_archive:os_list_archive(kind)':'archive:os_list_archive()';
+    const rows = await supabaseFetch<Record<string, unknown>[]>(`/rest/v1/estimates?select=*,${archive}&order=created_at.desc${filter}${contracts?'&legacy_archive.kind=eq.legacy_contract':''}`);
     if(rows.some(row=>(row.estimate_data as {itemBuilder?:unknown})?.itemBuilder))await assertBuilderActor(context);
-    return json(await estimateViews(rows,actor));
+    const views=await estimateViews(rows.map(({legacy_archive,...row})=>row),actor);
+    return json(views.map((row,index)=>{
+      const archive=rows[index].legacy_archive;
+      return {...row,legacyContractArchived:Array.isArray(archive)&&archive.length>0};
+    }).filter(row=>!contracts||row.projectId||!row.legacyContractArchived));
   } catch (error) { return estimateErrorResponse(error); }
 }
 

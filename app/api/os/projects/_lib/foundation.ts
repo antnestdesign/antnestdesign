@@ -78,9 +78,12 @@ export async function handle(request: NextRequest, action: string, routeId?: str
     if(['start','save'].includes(action))rejectLegacyEditorWrite();
     if (!["admin", "manager", "staff"].includes(user.profile.role)) throw new ApiError(403, "접근 권한이 없습니다.");
     const mode = requireFoundationAction(action);
-    if(action==='projects'&&new URL(request.url).searchParams.get('view')==='management'){
+    const view=new URL(request.url).searchParams.get('view');
+    if(action==='projects'&&(view==='management'||view==='contracts')){
       const filter=user.profile.role==='staff'?'&os_managed_at=not.is.null':'';
-      const rows=await supabaseFetch<RecordValue[]>(`/rest/v1/projects?select=*,customer:customers(name,phone)&order=created_at.desc${filter}`);
+      const archive=view==='contracts'?',archive:os_list_archive()':'';
+      const visible=view==='contracts'?'&archive=is.null':'';
+      const rows=await supabaseFetch<RecordValue[]>(`/rest/v1/projects?select=*,customer:customers(name,phone)${archive}&order=created_at.desc${filter}${visible}`);
       return json(await publicProjectWorkflows(rows));
     }
     if (routeId) id(routeId);

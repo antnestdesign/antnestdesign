@@ -432,8 +432,8 @@ export async function updateEstimate(id, estimate) {
 export async function updateEstimateFinancials(id,expectedRevision,financialAdjustment){
   return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({expectedRevision,financialAdjustment})},true));
 }
-export async function loadEstimates() {
-  return (await requestOsApi('/estimates')).map(estimateResponse);
+export async function loadEstimates({contracts=false}={}) {
+  return (await requestOsApi(contracts?'/estimates?view=contracts':'/estimates')).map(estimateResponse);
 }
 export async function getEstimate(id) {
   return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`));

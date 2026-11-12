@@ -1498,10 +1498,10 @@ async function renderSavedEstimateRows() {
         projectContractPackageMapLoaded = false;
       }
     }
-    let projects=[];
-    try{const data=await requestProjectFoundation('/projects?view=management');projects=Array.isArray(data)?data:[];}catch(error){workspaceView?.showStatus(error.message);}
+    let projects=[],contractProjects=[],contractEstimates=[];
+    try{[projects,contractProjects,contractEstimates]=await Promise.all([requestProjectFoundation('/projects?view=management'),requestProjectFoundation('/projects?view=contracts'),loadEstimates({contracts:true})]);}catch(error){workspaceView?.showStatus(error.message);}
     if(generation!==managementGeneration)return;
-    workspaceView?.updateData(cachedEstimates,projects,allContractPackagesState);
+    workspaceView?.updateData(cachedEstimates,projects,allContractPackagesState,contractProjects,contractEstimates);
     if(workspaceView?.projectFor(cachedEstimates.find(e=>e.id===selectedContractEstimate()?.id)||selectedContractEstimate()||{})?.workflow)renderContractPackagePanel();
     renderProjectSearchResults();
     renderSavedEstimateTableRows(tbody, cachedEstimates, { admin, canViewInternal, colspan });
@@ -3056,7 +3056,7 @@ async function onSavedEstimateAction(event) {
   const editId=button?.dataset.editEstimate;
   const historyId=button?.dataset.openHistory;
   const openId = button?.dataset.openEstimate||editId||historyId;
-  const deleteId = event.target?.dataset?.deleteEstimate;
+  const deleteId = button?.dataset.deleteEstimate;
   if (!openId && !deleteId) return;
   if (openId) {
     await openWorkspaceEstimate(openId,editId?'client':'quote');
@@ -3064,7 +3064,7 @@ async function onSavedEstimateAction(event) {
   }
   if (deleteId) {
     if (!isAdmin()) return;
-    if (!confirm("저장된 견적을 삭제할까요?")) return;
+    if (!confirm("견적 전체를 목록에서 삭제할까요? 확정본과 이력은 보존되며 관리자가 복구할 수 있습니다.")) return;
     try {
       await deleteEstimate(deleteId,cachedEstimates.find(estimate=>estimate.id===deleteId)?.revision);
       if (activeQuoteEstimate?.id === deleteId) {
