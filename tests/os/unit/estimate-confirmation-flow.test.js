@@ -6,45 +6,46 @@ function mount(overrides={}) {
   document.body.innerHTML='<div id="estimateManagementControls"><section class="estimate-history"></section></div><section class="contract-project-list"></section>';
   const estimate={id:"estimate",revision:"7",total:10000,canConfirm:true};
   const confirm=vi.fn(async()=>{});
-  const projects=vi.fn(async()=>[{id:"existing",project_name:"Existing site"}]);
   const onLoad=vi.fn(async()=>{});
   vi.spyOn(window,"confirm").mockReturnValue(true);
   const view=createEstimateConfirmationView({document,load:async()=>({projectId:"existing",fingerprint:"saved",issues:[]}),
-    confirm,revise:vi.fn(),projects,isDirty:()=>false,onLoad,onBusy:vi.fn(),...overrides});
+    confirm,revise:vi.fn(),isDirty:()=>false,onLoad,onBusy:vi.fn(),...overrides});
   view.update(estimate);
-  return {estimate,confirm,projects,onLoad};
+  return {estimate,confirm,onLoad};
 }
 
 const confirmButton=()=>document.querySelector("[data-estimate-confirm]");
 
 test("a connected estimate confirms immediately without fetching or showing a project picker",async()=>{
-  const {confirm,projects,onLoad}=mount();
+  const {confirm,onLoad}=mount();
   await vi.waitFor(()=>expect(confirmButton().disabled).toBe(false));
   expect(document.querySelector("[data-confirmation-project]")).toBeNull();
-  expect(projects).not.toHaveBeenCalled();
   confirmButton().click();
   await vi.waitFor(()=>expect(onLoad).toHaveBeenCalledWith("estimate"));
   expect(confirm).toHaveBeenCalledWith("estimate",expect.objectContaining({projectId:"existing",expectedRevision:"7",fingerprint:"saved"}));
 });
 
-test("an unlinked estimate requires selection and explicitly created projects are selected without confirming",async()=>{
-  let rows=[{id:"existing",project_name:"Existing site"}];
-  const createProject=vi.fn(async(_estimate,onCreated)=>{
-    rows=[...rows,{id:"new",project_name:"New site"}];
-    await onCreated({project_id:"new",id:null});
-  });
-  const {confirm}=mount({load:async()=>({projectId:null,fingerprint:"saved",issues:[]}),projects:async()=>rows,createProject});
+test("an unlinked estimate with no matching site confirms without a picker",async()=>{
+  const {confirm}=mount({load:async()=>({projectId:null,projectCandidates:[],fingerprint:"saved",issues:[]})});
+  await vi.waitFor(()=>expect(confirmButton().disabled).toBe(false));
+  expect(document.querySelector("[data-confirmation-project]")).toBeNull();
+  confirmButton().click();
+  await vi.waitFor(()=>expect(confirm).toHaveBeenCalledWith("estimate",expect.objectContaining({projectId:null})));
+});
+
+test("only matching sites can be selected and archived sites are not selectable",async()=>{
+  const rows=[{id:"existing",project_name:"Existing site"},{id:"archived",project_name:"Archived",archived:true}];
+  const {confirm}=mount({load:async()=>({projectId:null,projectCandidates:rows,fingerprint:"saved",issues:[]})});
   await vi.waitFor(()=>expect(document.querySelector("[data-confirmation-project]")).not.toBeNull());
   const picker=()=>document.querySelector("[data-confirmation-project]");
   expect(confirmButton().disabled).toBe(true);
   picker().value="existing";
   picker().dispatchEvent(new Event("change",{bubbles:true}));
   expect(confirmButton().disabled).toBe(false);
-  document.querySelector("[data-confirmation-new-project]").click();
-  await vi.waitFor(()=>expect(picker().value).toBe("new"));
+  expect(picker().querySelector('[value="archived"]').disabled).toBe(true);
   expect(confirm).not.toHaveBeenCalled();
   confirmButton().click();
-  await vi.waitFor(()=>expect(confirm).toHaveBeenCalledWith("estimate",expect.objectContaining({projectId:"new"})));
+  await vi.waitFor(()=>expect(confirm).toHaveBeenCalledWith("estimate",expect.objectContaining({projectId:"existing"})));
 });
 
 test("a confirmed estimate presents explicit contract transfer ahead of history",async()=>{

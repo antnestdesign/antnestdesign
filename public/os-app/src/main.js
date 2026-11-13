@@ -419,8 +419,6 @@ let managementRequest=null;
 const estimateHistoryView = createEstimateHistoryView({document,loadHistory:loadEstimateHistory,inputIds:Object.keys(ESTIMATE_INPUT_SCHEMA)});
 let estimateWorkflowBusy=false;
 const estimateConfirmationView=createEstimateConfirmationView({document,load:loadEstimateConfirmations,confirm:confirmEstimate,revise:createEstimateRevision,
-  projects:()=>requestProjectFoundation('/projects'),
-  createProject:(estimate,onCreated)=>workspaceView?.createProject(estimate,onCreated),
   isDirty:()=>saveEstimateInProgress||projectWorkflowBusy||Boolean(loadedEstimateBaseline&&(!loadedEstimateMatchesCurrentInputs()||pipeCleaningAdjustmentDirty)),
   onBusy:value=>{estimateWorkflowBusy=value;syncWorkflowBusyControls();},
   onLoad:async(id,version)=>{await openWorkspaceEstimate(id,'quote',version,true);void renderSavedEstimateRows();},
@@ -3182,7 +3180,7 @@ function bootstrap() {
   workspaceView=mountWorkspaceView({document,request:requestProjectFoundation,
     onFilter:()=>renderSavedEstimateTableRows(document.getElementById('savedEstimateRows'),cachedEstimates,{admin:isAdmin(),canViewInternal:canViewSystem(),colspan:9+(canViewSystem()?1:0)+(isAdmin()?1:0)}),
     onOpen:(id,mode)=>mode==='refresh'?renderSavedEstimateRows():mode==='project-contract'?openProjectWorkflow(id,false,true):openWorkspaceEstimate(id,mode==='contract'?'admin':'quote',null,false,mode==='contract'),
-    onEdit:id=>openWorkspaceEstimate(id,'client'),onCreateProject:()=>workspaceView.createProject(loadedEstimateBaseline?.estimate||{}),onProjectWorkflow:openProjectWorkflow});
+    onEdit:id=>openWorkspaceEstimate(id,'client'),onProjectWorkflow:openProjectWorkflow});
   projectWorkflowView=mountProjectWorkflow({document,request:requestProjectFoundation,getPdf:loadConfirmedContractPdf,role:()=>currentProfile?.role,
     onLoadBasis:async(estimateId,versionId,isCurrent)=>{
       const estimate=await loadEstimateConfirmations(estimateId,versionId);

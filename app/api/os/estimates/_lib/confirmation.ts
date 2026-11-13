@@ -2,6 +2,7 @@ import {NextRequest} from 'next/server';
 import {ApiError,getUserContext,json,supabaseFetch} from '../../_lib/server';
 import {assertEstimateId,estimateErrorResponse,readEstimate} from './estimates';
 import {estimateActor,estimateViews,saveBody} from './ownership';
+import {foundationMode} from '../../projects/_lib/feature-state';
 
 type Row=Record<string,unknown>;
 type Version=Row&{id:string;estimate_id:string;project_id:string;version_no:number;source_revision:number;confirmed_at:string;confirmer_name:string;snapshot:Row};
@@ -15,6 +16,9 @@ function commandError(error:unknown):never {
     ['estimate_locked',423,'확정된 견적은 직접 수정할 수 없습니다. 수정본을 만들어 주세요.'],
     ['estimate_revision_conflict',409,'저장본이 변경됐습니다. 견적을 다시 불러온 후 확인해 주세요.'],
     ['preliminary_project_required',409,'확정할 견적의 프로젝트를 명시적으로 선택해 주세요.'],
+    ['preliminary_project_read_only',423,'현재 새 현장 연결이 중지되어 있습니다.'],
+    ['preliminary_project_match_required',409,'같은 현장 후보가 있습니다. 표시된 후보를 확인해 주세요.'],
+    ['preliminary_project_candidate_changed',409,'현장 후보가 변경되었거나 보관 처리됐습니다. 다시 확인해 주세요.'],
     ['preliminary_project_conflict',409,'기존 프로젝트 연결과 다릅니다. 연결 상태를 확인해 주세요.'],
     ['preliminary_validation_failed',409,'확정 전 확인사항을 해결하고 저장해 주세요.'],
     ['preliminary_revision_exists',409,'이미 작성 중인 수정본이 있습니다. 현재 견적을 다시 불러와 주세요.'],
@@ -46,7 +50,9 @@ export async function confirmationGet(request:NextRequest,id:string,versionId?:s
     if(actor.role!=='staff') {
       fingerprint=await supabaseFetch<string>('/rest/v1/rpc/and_os_preliminary_fingerprint',{method:'POST',body:JSON.stringify({p_id:row.id})});
     }
-    return json({versions:versions.map(metadata),projectId,issues,revision:String(row.revision),fingerprint});
+    const projectCandidates=projectId||actor.role==='staff'||row.confirmation_state==='confirmed'?[]:
+      await supabaseFetch<Row[]>('/rest/v1/rpc/and_os_estimate_project_matches',{method:'POST',body:JSON.stringify({p_actor:actor.id,p_id:row.id})});
+    return json({versions:versions.map(metadata),projectId,projectCandidates,issues,revision:String(row.revision),fingerprint});
   }catch(error){return estimateErrorResponse(error);}
 }
 
@@ -61,7 +67,9 @@ export async function confirmationPost(request:NextRequest,id:string,action:'con
     if(action==='confirm'&&(typeof raw.fingerprint!=='string'||!/^[a-f0-9]{64}$/.test(raw.fingerprint)))throw new ApiError(400,'저장 견적을 확인한 뒤 다시 확정해 주세요.');
     let result:Row;
     try{
-      result=await supabaseFetch<Row>('/rest/v1/rpc/and_os_preliminary_command',{method:'POST',body:JSON.stringify({p_actor:actor.id,p_id:id,p_action:action,p_revision:revision,p_request_id:requestId,p_fingerprint:raw.fingerprint??null,p_project:projectId})});
+      const common={p_actor:actor.id,p_id:id,p_revision:revision,p_request_id:requestId,p_fingerprint:raw.fingerprint??null,p_project:projectId};
+      const rpc=action==='confirm'?'and_os_confirm_estimate_with_project':'and_os_preliminary_command';
+      result=await supabaseFetch<Row>('/rest/v1/rpc/'+rpc,{method:'POST',body:JSON.stringify(action==='confirm'?{...common,p_feature_mode:foundationMode()}:{...common,p_action:action})});
     }catch(error){commandError(error);}
     if(result.blocked)throw new ApiError(403,'이 견적을 확정하거나 수정본을 만들 권한이 없습니다.');
     return json(result);
