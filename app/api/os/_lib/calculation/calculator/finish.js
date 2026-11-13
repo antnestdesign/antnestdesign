@@ -4,7 +4,7 @@ export function wallpaperMaterialDetail(state, rates) {
   return wallpaperMaterialDetails(state, rates)[0] || null;
 }
 
-function wallpaperGradeOption(grade, rates, prefix = "") {
+export function wallpaperGradeOption(grade, rates, prefix = "") {
   return {
     besti: { item: `${prefix}도배지(베스띠급)`, unitPrice: rates.wallpaperBesti },
     diamant: { item: `${prefix}도배지(디아망급)`, unitPrice: rates.wallpaperDiamant },

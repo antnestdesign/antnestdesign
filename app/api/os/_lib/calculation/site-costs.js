@@ -80,7 +80,7 @@ export function applySiteCostOverrides(details, state, makeDetail) {
       continue;
     }
     if (!Number.isFinite(quantity*price) || quantity*price>1e12) throw new SiteCostValidationError("현장 원가가 허용 범위를 벗어났습니다.");
-    const result = makeDetail({ ...d, unitPrice: price, quantity: `${quantity}${row.unit}`, margin: state.targetMargin, cost: quantity * price,
+    const result = makeDetail({ ...d, unitPrice: price, quantity: `${quantity}${row.unit}`, margin: d.fixedMarkup ?? state.targetMargin, cost: quantity * price,
       ...(d.item === "기존 배관 청소" ? { customerRevenue: d.customerRevenue } : {}) });
     details[index] = { ...d, ...result, siteBaseQuantity: row.baseQuantity, siteBasePrice: row.basePrice, ...(override.quantity !== undefined ? { siteQuantity: quantity, siteStale: override.basis !== row.basis } : {}), ...(override.price !== undefined ? { sitePrice: price } : {}) };
   }

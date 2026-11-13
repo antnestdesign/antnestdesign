@@ -1,3 +1,4 @@
+import {TRADE_REVISION_INPUTS} from "./trade-revision-inputs.js";
 export const CARPENTRY_INPUT_SCHEMA = {
   carpentryCostMode: { type: "select-one", value: "assembly-v1", choices: ["legacy", "assembly-v1"] },
   carpentryCofferUnits: { type: "number", value: "1", min: 0, max: 1000 },
@@ -7,6 +8,7 @@ export const CARPENTRY_INPUT_SCHEMA = {
 };
 
 export const PRELIMINARY_WORK_INPUT_SCHEMA = {
+  ...TRADE_REVISION_INPUTS,
   demolitionBasicEnabled: { type: "checkbox", value: false },
   demolitionBasicType: { type: "select-one", value: "normal", choices: ["normal", "special"] },
   demolitionBasicArea: { type: "number", value: "0", min: 0 },

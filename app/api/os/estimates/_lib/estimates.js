@@ -80,6 +80,7 @@ function legacyInputs(raw = {}) {
 
 export function safeInputs(raw = {}) {
   const inputs = legacyInputs(raw);
+  if(!Object.hasOwn(inputs,"tradeFormulaVersion"))inputs.tradeFormulaVersion="legacy";
   return Object.fromEntries(staffInputIds.map((id) => [id,
     inputValue(id, Object.hasOwn(inputs, id) ? inputs[id] : ESTIMATE_INPUT_SCHEMA[id].value)]));
 }
@@ -134,9 +135,27 @@ export async function readEstimate(id) {
 
 function normalizedInputs(raw, existing = false) {
   const values = legacyInputs(raw);
+  if(existing&&!Object.hasOwn(values,"tradeFormulaVersion"))values.tradeFormulaVersion="legacy";
   if (existing && !Object.hasOwn(values, "carpentryCostMode")) values.carpentryCostMode = "legacy";
   return Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, schema]) => [id,
     Object.hasOwn(values, id) ? inputValue(id, values[id]) : schema.value]));
+}
+
+function validateTradeRevision(inputs, previous) {
+  if(previous&&inputs.tradeFormulaVersion!==(previous.inputs?.tradeFormulaVersion||"legacy"))
+    throw new ApiError(409,"저장 견적의 산식 버전은 변경할 수 없습니다.");
+  if(inputs.tradeFormulaVersion!=="v2")return;
+  if(inputs.sectionWallpaperEnabled&&Number(inputs.wallpaperRoomPyeong)>Number(inputs.areaPyeong))
+    throw new ApiError(400,"별도 벽지 시공 방 면적은 전체 분양평수 이하여야 합니다.");
+  if(inputs.sectionDemolitionEnabled&&["demoBathTub","demoBathOverlay"].some(id=>Number(inputs[id])>Number(inputs.demoBathFull)))
+    throw new ApiError(400,"욕조·덧방 철거 개소는 화장실 전체철거 개소 이하여야 합니다.");
+  const areaTop=material=>["himacs","khanstone","ceramic"].includes(material);
+  if(inputs.sectionFurnitureEnabled&&(
+    (inputs.baseEnabled&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!(Number(inputs.baseCounterWidthMm)>0&&Number(inputs.baseCounterDepthMm)>0))||
+    (inputs.homebarEnabled&&areaTop(inputs.homebarCountertop)&&!(Number(inputs.homebarCounterWidthMm)>0&&Number(inputs.homebarCounterDepthMm)>0))||
+    (inputs.islandEnabled&&Number(inputs.islandM)>0&&areaTop(inputs.islandCountertop)&&!(Number(inputs.islandDepthMm)>0))||
+    (Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
+    throw new ApiError(400,"선택한 상판의 가로·세로 규격을 입력해 주세요.");
 }
 
 async function trustedCostContext(existing,applyCurrent=false) {
@@ -187,6 +206,7 @@ export async function calculatePrivilegedEstimate(body, context) {
   }
   const original=body.estimateId?await readEstimate(body.estimateId):null,existing=baseEstimate(original);
   const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(old)),inputs={...baseline,...incoming};
+  validateTradeRevision(inputs,existing?(old||{}):null);
   const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
   delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
   const changed=Object.keys(ESTIMATE_INPUT_SCHEMA).filter(id=>!metadataInputs.has(id)&&inputValue(id,inputs[id])!==inputValue(id,baseline[id]));
@@ -243,6 +263,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   delete effectiveBaseline.existingPipeCleaningEnabled;
   Object.assign(baseline, effectiveBaseline);
   const inputs = { ...baseline, ...validated.inputs };
+  validateTradeRevision(inputs,existing?(oldData||{}):null);
   const changed = staffInputIds.filter((id) => inputValue(id, inputs[id]) !== inputValue(id, baseline[id]));
   const calculating = changed.filter((id) => !metadataInputs.has(id));
   const hasStoredQuote = Array.isArray(oldData?.customerQuote?.groups);

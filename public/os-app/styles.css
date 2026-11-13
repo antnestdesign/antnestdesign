@@ -2506,6 +2506,9 @@ th:last-child {
 }
 /* Phase 3 reuses the consultation form and existing management tools. */
 body[data-workflow-layout="phase3"] [hidden] { display: none !important; }
+.trade-revision-inputs fieldset { min-inline-size: 0; border: 1px solid var(--line); padding: 12px; margin: 0 0 10px; }
+.trade-revision-inputs legend { font-weight: 700; }
+.trade-revision-inputs [hidden], .trade-revision-inputs[hidden] { display: none !important; }
 body[data-workflow-layout="phase3"] #quote,
 body[data-workflow-layout="phase3"] #admin { min-width: 0; }
 .management-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 16px 0; }

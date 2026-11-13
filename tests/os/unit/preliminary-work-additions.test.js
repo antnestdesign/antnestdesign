@@ -7,6 +7,7 @@ import { buildEstimateState } from "../../../public/os-app/src/estimate-state.js
 import { readEstimateForm } from "../../../public/os-app/src/estimate-form.js";
 import { buildPreliminaryPlan } from "../../../public/os-app/src/detailed-preliminary.js";
 import { workDefinitions, newWorkState } from "../../../public/os-app/src/detailed-work-review.js";
+import {mountTradeRevisionInputs} from "../../../public/os-app/src/trade-revision-view.js";
 
 const mock = vi.hoisted(() => ({ fetch: vi.fn() }));
 vi.mock("../../../app/api/os/_lib/server", () => ({
@@ -73,6 +74,8 @@ test("section gates and invalid counts cannot generate unwanted work", () => {
 });
 test("new public fields match server schema and existing form event identity", () => {
   document.body.innerHTML = readFileSync("public/os-app/index.html", "utf8");
+  const sync=mountTradeRevisionInputs(document);
+  sync();
   const el = Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA).map(id => [id, document.getElementById(id)]));
   for (const [id, schema] of Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA)) {
     expect(serverSchema[id]).toEqual(schema); expect(document.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
@@ -84,6 +87,27 @@ test("new public fields match server schema and existing form event identity", (
   expect(el.demolitionBasicEnabled.checked).toBe(false); expect(el.demolitionBasicArea.value).toBe("0");
   restore.restoreInputValues({ ...demo, demolitionBasicType: "special", ...elec, ...wood, carpentryMoldingLengthM: "20" });
   expect(el.demolitionBasicType.value).toBe("special"); expect(el.carpentryMoldingLengthM.value).toBe("20000");
+});
+
+test("revised saved inputs and discounts survive reload; legacy version cannot be changed",async()=>{
+  const inputs={projectName:"Synthetic trade revision",tradeFormulaVersion:"v2",sectionWallpaperEnabled:true,areaPyeong:"34",wallpaperRoomPyeong:"15",sectionFinishEnabled:true,carrySelected:true,carryFloor:"2",carryNoElevator:true,managementCost:"100000",managementDiscount:"50000"};
+  const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));
+  const raw=JSON.parse(JSON.stringify({...estimateRowPayload(snapshot),id:"20000000-0000-4000-8000-000000000001"}));
+  const reopened=projectStaffEstimate(raw);
+  expect(reopened.inputs).toMatchObject({tradeFormulaVersion:"v2",wallpaperRoomPyeong:"15",carrySelected:true});
+  expect(reopened.total).toBe(snapshot.total);
+  expect(reopened).not.toHaveProperty("internalDetails");
+  const again=await calculateStaffEstimate(validateStaffBody({inputs:{projectName:inputs.projectName}}),actor("staff"),raw);
+  expect(again.total).toBe(snapshot.total);
+  expect(again.internalDetails).toEqual(snapshot.internalDetails);
+  expect(Number(again.inputs.managementDiscount)).toBe(50000);
+  expect(Number(again.inputs.managementCost)).toBe(100000);
+  const legacy=structuredClone(raw);
+  delete legacy.estimate_data.inputs.tradeFormulaVersion;
+  expect(projectStaffEstimate(legacy).inputs.tradeFormulaVersion).toBe("legacy");
+  await expect(calculateStaffEstimate(validateStaffBody({inputs:{tradeFormulaVersion:"v2"}}),actor("staff"),legacy)).rejects.toThrow(/산식 버전/);
+  await expect(calculatePrivilegedEstimate({inputs:{...inputs,wallpaperRoomPyeong:"35"}},actor("admin"))).rejects.toThrow(/전체 분양평수/);
+  expect(()=>validateStaffBody({inputs:{wallpaperRoomPyeong:"-1"}})).toThrow();
 });
 test("missing-master work remains explicit review evidence, no false standard or sale copy", () => {
   const reference = { inputs: { ...demo, ...wood, ...elec, carpentryMoldingLengthM: "20", carpentryBaseboardLengthM: "30", demolitionFurnitureEnabled: true, demolitionFurnitureM: "3100", demolitionFloorEnabled: true, demolitionFloorMaterial: "wood", demolitionCeilingEnabled: true, areaPyeong: "30" } };

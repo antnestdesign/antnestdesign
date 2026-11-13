@@ -8,6 +8,8 @@ import { bathroomDetails } from "./bathroom.js";
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
+import { revisedTradeDetails, counterRates } from "./trade-revision.js";
+import { tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
 export { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS };
@@ -163,7 +165,7 @@ function countertopQuantity(material, billingM) {
   return mText(billingM);
 }
 
-function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue }) {
+function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue, fixedMarkup = undefined }) {
   if(policy&&(!Number.isFinite(cost)||cost<0||cost>1e12))throw new PreliminaryPolicyError('산식으로 계산한 원가가 허용 범위를 벗어났습니다.');
   const hasFixedCustomerRevenue = Number.isFinite(Number(fixedCustomerRevenue));
   const revenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : sellPrice(cost, margin, correction);
@@ -180,6 +182,7 @@ function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, cor
     revenue,
     customerRevenue,
     profit: customerRevenue - cost,
+    ...(fixedMarkup===undefined?{}:{fixedMarkup}),
   };
 }
 
@@ -508,6 +511,12 @@ function hasCarpentryWork(state, laborDays, materials) {
 }
 
 function calculate(state) {
+  const v=state.tradeRevision;
+  const revised=v?.tradeFormulaVersion==="v2";
+  if(revised){
+    state={...state};
+    if(v.electricalMode==="partial")for(const key of ["electricalEnabled","electricalOutletMoveEnabled","electricalSwitchMoveEnabled","standardLightingEnabled","standardSwitchEnabled","standardBedWallLightEnabled"])state[key]=false;
+  }
   const margin = state.targetMargin;
   const details = [];
 
@@ -587,7 +596,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.option,
     });
-    if (state.baseCountertopEnabled && state.lowerCabinetM > 0) {
+    if (state.baseCountertopEnabled && state.lowerCabinetM > 0 && !(revised&&counterRates[state.baseCountertop])) {
       addDetail(details, {
         group: "base",
         item: `상하부장 상판(${baseCounter.label})`,
@@ -631,7 +640,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.island,
     });
-    addDetail(details, {
+    if(!(revised&&counterRates[state.islandCountertop]))addDetail(details, {
       group: "island",
       item: `아일랜드 상판(${islandCounter.label})`,
       input: `${mmText(state.islandM)} x ${mmText(state.islandDepthMm)}`,
@@ -727,7 +736,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.homebar,
     });
-    addDetail(details, {
+    if(!(revised&&counterRates[state.homebarCountertop]))addDetail(details, {
       group: "homebar",
       item: `홈바장 상판(${homebarCounter.label})`,
       input: `상하부장 ${mmText(homebarCounterActualMm)}`,
@@ -868,7 +877,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "demolition",
     item: `기본철거(${state.demolitionBasicType === "special" ? "특수" : "일반"})`,
-    enabled: state.demolitionBasicEnabled && Number.isFinite(state.demolitionBasicArea),
+    enabled: state.demolitionBasicEnabled && Number.isFinite(state.demolitionBasicArea) && (!revised||v.demolitionMode==="full"),
     input: `${state.demolitionBasicArea}평`,
     quantity: `${state.demolitionBasicArea}평`,
     unitPrice: state.demolitionBasicType === "special" ? workRates.basicSpecial : workRates.basicNormal,
@@ -890,7 +899,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "demolition",
     item: "가구 철거(폐기물 포함)",
-    enabled: state.demolitionFurnitureEnabled,
+    enabled: !revised&&state.demolitionFurnitureEnabled,
     input: mmText(state.demolitionFurnitureM),
     quantity: `${jaRounded(state.demolitionFurnitureM)}자`,
     unitPrice: rates.demolition.furniturePerJa,
@@ -901,7 +910,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "demolition",
     item: "화장실 철거 방수",
-    enabled: state.demolitionBathroomEnabled,
+    enabled: !revised&&state.demolitionBathroomEnabled,
     input: `${state.demolitionBathroomUnits}개소`,
     quantity: `${state.demolitionBathroomUnits}개소`,
     unitPrice: rates.demolition.bathroomWaterproof,
@@ -1121,7 +1130,7 @@ function calculate(state) {
     correction: state.corrections.option,
   });
   addModuleDetails(details, [
-    ...wallpaperMaterialDetails(state, rates.finishMaterial, policy),
+    ...(revised?[]:wallpaperMaterialDetails(state, rates.finishMaterial, policy)),
     wallpaperSupplyDetail(state, rates.finishMaterial),
   ], margin, state.corrections.option);
 
@@ -1129,7 +1138,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "film",
     item: "필름 인건비",
-    enabled: state.filmEnabled,
+    enabled: !revised&&state.filmEnabled,
     input: filmLabel(state.filmPreset),
     quantity: `${filmUnitDays}품`,
     unitPrice: rates.finish.filmWorkerDay,
@@ -1301,6 +1310,7 @@ function calculate(state) {
   for (const part of carpentryAssemblies(state, options.carpentryPrices, policy)) {
     details.push({ ...makeDetail({ group: "carpentry", item: `${part.workLabel} · ${part.name}`, input: part.formula, quantity: `${part.quantity}${part.unit}`, unitPrice: part.price ?? 0, cost: part.quantity * (part.price ?? 0), margin, correction: state.corrections.option }), assembly: part });
   }
+  addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
   applySiteCostOverrides(details, state, makeDetail);
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
@@ -1359,7 +1369,7 @@ function calculate(state) {
       revenue: state.adjustment,
     });
   }
-  if (usesStoneSlab) {
+  if (usesStoneSlab&&!revised) {
     quoteLines.push({
       process: "양중비",
       description: "칸스톤/세라믹 양중비",
@@ -1646,6 +1656,7 @@ function readState(inputs = {}) {
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    tradeRevision:{...tradeRevisionValues(id=>el[id]?.value,checkedValue),tradeFormulaVersion:inputs.tradeFormulaVersion||"legacy",demolition:demolitionSection,electrical:electricalSection,wallpaper:wallpaperSection,film:filmSection,furniture:furnitureSection,finish:finishSection},
     carpentryCostMode: el.carpentryCostMode.value === "assembly-v1" ? "assembly-v1" : "legacy",
     carpentryCofferUnits: integerValue("carpentryCofferUnits"),
     carpentryIndirectT3Mm: carpentrySection ? numberValue("carpentryIndirectT3Mm") : 0,

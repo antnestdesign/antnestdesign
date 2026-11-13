@@ -1,3 +1,4 @@
+import {tradeRevisionValues} from "./trade-revision-inputs.js";
 // Raw values are not authorization input; server validation remains independent.
 export function buildEstimateState(raw, privateDefaultMarkup = 0) {
   const numberValue = (id) => Number(raw.values[id]) || 0;
@@ -16,6 +17,7 @@ export function buildEstimateState(raw, privateDefaultMarkup = 0) {
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
+    tradeRevision:{...tradeRevisionValues(id=>raw.values[id],checkedValue),demolition:demolitionSection,electrical:electricalSection,wallpaper:wallpaperSection,film:filmSection,furniture:furnitureSection,finish:finishSection},
     carpentryCostMode: raw.values.carpentryCostMode === "assembly-v1" ? "assembly-v1" : "legacy",
     carpentryCofferUnits: integerValue("carpentryCofferUnits"),
     carpentryIndirectT3Mm: carpentrySection ? nonnegative("carpentryIndirectT3Mm") : 0,
