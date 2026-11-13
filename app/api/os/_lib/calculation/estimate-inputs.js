@@ -1,4 +1,4 @@
-import { CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "../../../../../public/os-app/src/estimate-inputs.js";
+import { CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS as privateFields } from "../../../../../public/os-app/src/estimate-inputs.js";
 
 export const ESTIMATE_INPUT_SCHEMA = {
   ...CARPENTRY_INPUT_SCHEMA,
@@ -824,7 +824,7 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "max": 50
   }
 };
-export const PRIVATE_ESTIMATE_INPUTS = ["managementCost","managementDiscount","carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
+export const PRIVATE_ESTIMATE_INPUTS = ["managementCost","managementDiscount",...privateFields];
 
 export function staffEstimateInputs(inputs = {}) {
   return Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA)

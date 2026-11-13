@@ -1185,7 +1185,7 @@ let costManagementDefaults=null;
 function updateRatesFromAdmin() {}
 
 function readState() {
-  syncTradeRevision();
+  syncTradeRevision(canViewSystem());
   updateRatesFromAdmin();
   return buildEstimateState(readEstimateForm(el),privateDefaultMarkup);
 }

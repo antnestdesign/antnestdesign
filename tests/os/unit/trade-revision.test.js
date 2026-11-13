@@ -31,6 +31,19 @@ test("wallpaper rolls are rounded after aggregating each paper group",()=>{
   expect(rolls({...scope,wallpaperRoomPyeong:"15"})).toEqual(["10롤","8롤"]);
   expect(rolls(scope)).toEqual(["17롤"]);
 });
+test("partial electrical includes only enabled manual fixture costs and no standard lighting",()=>{
+  const inputs={sectionElectricalEnabled:true,electricalMode:"partial",standardLightingEnabled:true,standardSwitchEnabled:true,electricLightCost:"100000",electricSwitchCost:"20000",electricOutletCost:"30000"};
+  expect(run(inputs).directCost).toBe(0);
+  const result=run({...inputs,electricFixtureEnabled:true});
+  expect(result.directCost).toBe(150000);
+  expect(result.customerRevenue).toBe(195000);
+  expect(result.details.every(row=>row.group==="electrical")).toBe(true);
+});
+test("unchecking vanity keeps dimensions without billing its cabinet, drawers or countertop",()=>{
+  const inputs={sectionFurnitureEnabled:true,vanityMm:"3000",vanityDrawers:"2",vanityTop:"ceramic",countertopTransport:true};
+  expect(run(inputs).directCost).toBeGreaterThan(0);
+  expect(run({...inputs,vanityEnabled:"off"}).directCost).toBe(0);
+});
 test("film rounds once after combining fractional labor",()=>{
   const base={filmWindow:true,filmWindowArea:"20",filmDoorCount:2,filmOneSideMm:0,filmBothSidesMm:0,filmWallMm:0};
   for(const mm of [400,2000,3600,4000])expect(filmLabor({...base,filmWallMm:mm})).toBe(6);

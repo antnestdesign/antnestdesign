@@ -154,7 +154,7 @@ function validateTradeRevision(inputs, previous) {
     (inputs.baseEnabled&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!(Number(inputs.baseCounterWidthMm)>0&&Number(inputs.baseCounterDepthMm)>0))||
     (inputs.homebarEnabled&&areaTop(inputs.homebarCountertop)&&!(Number(inputs.homebarCounterWidthMm)>0&&Number(inputs.homebarCounterDepthMm)>0))||
     (inputs.islandEnabled&&Number(inputs.islandM)>0&&areaTop(inputs.islandCountertop)&&!(Number(inputs.islandDepthMm)>0))||
-    (Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
+    (inputs.vanityEnabled!=="off"&&Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
     throw new ApiError(400,"선택한 상판의 가로·세로 규격을 입력해 주세요.");
 }
 

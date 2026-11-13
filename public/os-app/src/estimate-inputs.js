@@ -1,4 +1,4 @@
-import {TRADE_REVISION_INPUTS} from "./trade-revision-inputs.js";
+import {TRADE_REVISION_INPUTS,TRADE_PRIVATE_INPUTS} from "./trade-revision-inputs.js";
 export const CARPENTRY_INPUT_SCHEMA = {
   carpentryCostMode: { type: "select-one", value: "assembly-v1", choices: ["legacy", "assembly-v1"] },
   carpentryCofferUnits: { type: "number", value: "1", min: 0, max: 1000 },
@@ -842,7 +842,7 @@ export const ESTIMATE_INPUT_SCHEMA = {
     "max": 50
   }
 };
-export const PRIVATE_ESTIMATE_INPUTS = ["carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection"];
+export const PRIVATE_ESTIMATE_INPUTS = ["carpentryCostMode","siteCostConfig","preliminaryPolicySelection","targetMargin","manualAdjustment","baseCorrection","islandCorrection","homebarCorrection","countertopCorrection","optionCorrection",...TRADE_PRIVATE_INPUTS,"electricFixtureEnabled"];
 
 export function staffEstimateInputs(inputs = {}) {
   return Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA)

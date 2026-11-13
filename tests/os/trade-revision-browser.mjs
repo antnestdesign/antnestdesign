@@ -100,6 +100,7 @@ try{
   await trade("Film");await check("filmWindow");await select("filmWindowArea","20");await fill("filmDoorCount",2);
   rows=await calc(()=>fill("filmWallMm",400));assert.equal(row(rows,/필름 인건비/).quantity,"6품");
   await trade("Furniture");await fill("furnitureTallDoors",1);await fill("furnitureMoldingMm",1000);
+  await check("vanityToggle");
   rows=await calc(()=>fill("vanityMm",900));cost(rows,/키큰장 문짝/,70000);cost(rows,/가구 몰딩/,20000);assert(row(rows,/화장대 하부장/));
   await fill("vanityMm",3000);
   for(const [material,amount] of [["ceramic",1714285],["khanstone",1371428],["himacs",857142]]){

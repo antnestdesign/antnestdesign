@@ -13,7 +13,10 @@ export const TRADE_REVISION_INPUTS={
   vanityMm:number(),vanityDrawers:number(),vanityTop:select("none",["none","himacs","khanstone","ceramic"]),vanityDepthMm:number("700"),
   baseCounterWidthMm:number(),baseCounterDepthMm:number("700"),homebarCounterWidthMm:number(),homebarCounterDepthMm:number("700"),
   countertopTransport:toggle,countertopLadder:toggle,carrySelected:toggle,carryFloor:number("1",200),carryNoElevator:toggle,
+  vanityEnabled:select("auto",["auto","on","off"]),
+  electricFixtureEnabled:toggle,electricLightCost:number("0",1000000000),electricSwitchCost:number("0",1000000000),electricOutletCost:number("0",1000000000),
 };
+export const TRADE_PRIVATE_INPUTS=["electricLightCost","electricSwitchCost","electricOutletCost"];
 
 export function tradeRevisionValues(values,checked){
   return Object.fromEntries(Object.entries(TRADE_REVISION_INPUTS).map(([id,s])=>[id,s.type==="checkbox"?checked(id):s.type==="number"?Math.max(0,Number(values(id))||0):values(id)]));
