@@ -53,6 +53,12 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
     for(const [group,label,,width,material,depth] of tops){
       add(group,`${label}(${rates.countertop[material].label}, 12T)`,width*depth/700000,"장 환산",counterRates[material],countertopAreaCost(width,depth,material),`${mmText(width)} × ${mmText(depth)}`);
     }
+    const side=state.islandSideFinish, count=state.islandSideFinishCount, depth=state.islandDepthMm, height=900;
+    if(state.islandEnabled&&state.islandM>0&&depth>0&&count>0&&Object.hasOwn(counterRates,side)){
+      add("island",`아일랜드 좌우마감재(${rates.countertop[side].label})`,
+        depth*height*count/700000,"장 환산",counterRates[side],countertopAreaCost(depth*count,height,side),
+        `${mmText(depth)} × ${mmText(height)} × ${count}개`);
+    }
     if(v.countertopTransport&&tops.some(([, , ,width])=>width>2000))add("base","상판 운반비",1,"회",300000);
     if(v.countertopLadder&&tops.length)add("base","상판 사다리차",1,"회",120000);
   }

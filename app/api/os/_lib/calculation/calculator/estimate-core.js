@@ -650,7 +650,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.countertop,
     });
-    addDetail(details, {
+    if(!(revised&&Object.hasOwn(counterRates,state.islandSideFinish)))addDetail(details, {
       group: "island",
       item: `아일랜드 좌우마감재(${islandSideFinish.label})`,
       input: state.islandSideFinish === "epPanel" ? `각 ${mmText(islandSideLengthM * 1000)}` : "900mm 기준",

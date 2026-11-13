@@ -69,3 +69,17 @@ test("transport is one opt-in charge; ladder and carry are independent and gated
   expect(detail(r,"소운반비").revenue).toBe(2340000);
   expect(detail(run({...scope,carrySelected:true,carryFloor:"1"}),"소운반비")).toBeUndefined();
 });
+
+test("island stone sides use depth, fixed 900 mm height and count without duplicate charges",()=>{
+  const input={sectionFurnitureEnabled:true,islandEnabled:true,islandM:"3000",islandDepthMm:"700",islandSideFinishCount:"2"};
+  const sides=r=>r.details.filter(d=>d.item.startsWith("아일랜드 좌우마감재"));
+  for(const [material,cost] of [["ceramic",720000],["khanstone",576000],["himacs",360000]]){
+    const rows=sides(run({...input,islandSideFinish:material}));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({cost,input:"700mm × 900mm × 2개",quantity:"1.8장 환산"});
+    expect(rows[0].revenue).toBeCloseTo(cost*1.3);
+  }
+  expect(sides(run({...input,islandSideFinish:"ceramic",islandSideFinishCount:"0"}))).toHaveLength(0);
+  const ep={...input,islandSideFinish:"epPanel"};
+  expect(sides(run(ep))).toEqual(sides(run({...ep,tradeFormulaVersion:"legacy"})));
+});
