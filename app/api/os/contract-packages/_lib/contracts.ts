@@ -4,6 +4,7 @@ import fixedTermLines from "./contract-fixed-terms.json";
 import { ApiError, UserContext, UserRole, supabaseFetch } from "../../_lib/server";
 import { contractAddress, contractCompany } from "./contractor";
 import { estimateContractInclusions } from "../../../../../public/os-app/src/contract-estimate-inclusions.js";
+import { createEstimateCalculation } from "../../_lib/calculation/calculator/estimate-core.js";
 
 export const CONTRACT_TEMPLATE_VERSION = "RFC-005-2026.10.12-snapshot";
 export const CONTRACT_RULE_VERSION = "RFC-006-2026.07.20";
@@ -23,15 +24,6 @@ export type EstimateRow = {
   status: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-};
-
-type SpecRow = {
-  spec_code: string;
-  work_category?: string | null;
-  item_name: string;
-  default_grade?: string | null;
-  spec_text?: string | null;
-  version?: string | null;
 };
 
 export type ContractOptionsPayload = {
@@ -449,12 +441,6 @@ export async function issueContractNoForEstimate(
   throw new ApiError(409, "계약번호를 자동 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 }
 
-async function loadActiveSpecs() {
-  return supabaseFetch<SpecRow[]>(
-    "/rest/v1/standard_spec_catalog?is_active=eq.true&select=*&order=sort_order.asc,item_name.asc",
-  );
-}
-
 function customerQuoteItems(estimateData: Record<string, unknown>) {
   const quote = objectValue(estimateData.customerQuote);
   const groups = Array.isArray(quote.groups) ? quote.groups : [];
@@ -493,50 +479,35 @@ function limitedEstimateSnapshot(estimate: EstimateRow) {
   };
 }
 
-function specMatchesItem(spec: SpecRow, itemName: string, category: string) {
-  const source = `${itemName} ${category}`;
-  const specName = spec.item_name || "";
-  if (specName && source.includes(specName)) return true;
-  const aliases: Record<string, string[]> = {
-    KITCHEN_FAUCET: ["싱크수전", "주방수전"],
-    KITCHEN_SINK: ["싱크볼"],
-    KITCHEN_HOOD: ["후드"],
-    KITCHEN_COUNTERTOP: ["상판", "칸스톤", "세라믹"],
-    FURNITURE_DOOR: ["도어", "문짝", "가구문"],
-    FURNITURE_HARDWARE: ["하드웨어", "힌지", "레일", "서랍"],
-    BATH_FIXTURE: ["욕실 기본기기", "도기", "수전", "샤워기"],
-    BATH_CABINET: ["욕실장", "장식장"],
-    BATH_FAN: ["환풍기", "휴젠트"],
-    TILE_WALL: ["타일"],
-    TILE_ENTRY: ["현관", "타일"],
-    FLOORING: ["바닥", "마루"],
-    FILM: ["필름"],
-    SILICONE: ["실리콘"],
-    SWITCH_OUTLET: ["콘센트", "스위치"],
-    DOWNLIGHT: ["다운라이트"],
-    SQUARE_LIGHT: ["사각", "매입등"],
-    INDIRECT_LIGHT: ["간접조명", "T3"],
-    DOOR: ["일반도어", "방문", "문틀", "목재문"],
-    MIDDLE_DOOR: ["중문"],
-    BUILT_IN_STORAGE: ["붙박이장", "수납장", "제작"],
-  };
-  return (aliases[spec.spec_code] || []).some((alias) => source.includes(alias));
-}
+const { customerDetailIdentity, floorThousand } = createEstimateCalculation();
 
-function buildSpecSnapshot(items: ReturnType<typeof customerQuoteItems>, specs: SpecRow[]) {
-  return items.flatMap((item) => {
-    const matches = specs.filter((spec) => specMatchesItem(spec, item.item_name, item.work_category));
-    return matches.map((spec) => ({
-      spec_code: spec.spec_code,
-      work_category: item.work_category,
-      item_name: item.item_name,
-      sales_amount: item.sales_amount,
-      sales_amount_text: item.sales_amount_text,
-      standard_item_name: spec.item_name,
-      selected_grade: spec.default_grade || "",
-      specification: spec.spec_text || "",
-      spec_version: spec.version || "",
-    }));
+export function buildSpecSnapshot(items: ReturnType<typeof customerQuoteItems>, rawDetails: unknown) {
+  const details = (Array.isArray(rawDetails) ? rawDetails : []).map(objectValue)
+    .filter(d => typeof d.item === "string" && typeof d.group === "string" && Number(d.revenue) > 0);
+  return items.map(item => {
+    const category = item.work_category;
+    const name = item.item_name;
+    const door = /^(도어[/·]창호|도어|창호)$/.test(category) && /일반도어|방문|문틀|목재문/.test(name) && !/철거|보양|필름 시공/.test(name);
+    const furniture = category === "가구" && /제작|붙박이장|수납장/.test(name) && !/철거|상판|서랍|하드웨어|몰딩/.test(name);
+    const appliedName = category === "가구" ? name.replace(/자체\s*공장\s*(맞춤\s*제작)?/g, "맞춤제작")
+      : door ? name.replace(/아무스/g, "도무스") : name;
+    const choice = appliedName.match(/\(([^()]*)\)\s*$/)?.[1] || "";
+    const matches = details.filter(d => {
+      const identity = customerDetailIdentity(d);
+      return identity.category === category && identity.name === name;
+    });
+    // A merged or ambiguous quote line must not inherit another item's quantity.
+    const detail = matches.length === 1 && floorThousand(Number(matches[0].customerRevenue ?? matches[0].revenue)) === item.sales_amount
+      ? matches[0] : undefined;
+    const parsed = String(detail?.quantity ?? "").trim().match(/^([\d,.]+)\s*(평|㎡|m²|mm|m|자|개|개소|식|품|일|칸|통|세트|롤|장(?: 환산)?|판|라인|조|회|EA|SET)$/i);
+    const input = String(detail?.input ?? "");
+    const dimension = /^(?:[\d,.]+\s*mm\s*×\s*)[\d,.]+\s*mm(?:\s*×\s*\d+개)?$/.test(input) ? input : "";
+    const wallpaper = category === "도배" && /^\d+평대\s*\/\s*초배 포함$/.test(input) ? input : "";
+    const grade = choice || (door ? "도무스" : furniture ? "맞춤제작" : "");
+    return {...item,item_name:appliedName,spec_code:"",standard_item_name:"",spec_version:"",
+      selected_grade:grade,
+      specification:[dimension,wallpaper,(!grade && item.sales_amount === 0 ? item.sales_amount_text : "")].filter(Boolean).join(" · "),
+      quantity:parsed?.[1] || "",unit:parsed?.[2] || ""};
   });
 }
 
@@ -606,8 +577,7 @@ export async function buildContractPackageSnapshot(
   const estimateSnapshot = limitedEstimateSnapshot(estimate);
   const address = contractAddress(options.customer_info.customer_address, estimateSnapshot.site_address);
   estimateSnapshot.site_address = address;
-  const specs = await loadActiveSpecs();
-  const specSnapshot = buildSpecSnapshot(estimateSnapshot.quote_items, specs);
+  const specSnapshot = buildSpecSnapshot(estimateSnapshot.quote_items, objectValue(estimate.estimate_data).internalDetails);
   const clauseSnapshot = evaluateClauses(options);
   const resolvedOptions: ContractOptionsPayload = {
     ...options,

@@ -9,7 +9,7 @@ vi.mock("../../../app/api/os/_lib/server", () => ({
   requireServiceRoleKey: () => "synthetic-only-key",
 }));
 import { issuedContractEstimate, buildIssuedContract, contractSourceRoute } from "../../../app/api/os/projects/_lib/contract-source.ts";
-import { buildContractDocuments,buildContractPackageSnapshot } from "../../../app/api/os/contract-packages/_lib/contracts.ts";
+import { buildContractDocuments,buildContractPackageSnapshot,buildSpecSnapshot } from "../../../app/api/os/contract-packages/_lib/contracts.ts";
 import { createContractPrint, CONTRACT_FIXED_TERM_LINES } from "../../../public/os-app/src/contract-print.js";
 import { JSDOM } from "jsdom";
 const head = "90000000-0000-4000-8000-000000000010", version = "90000000-0000-4000-8000-000000000011";
@@ -22,6 +22,34 @@ function fixture() {
 }
 beforeEach(()=>{vi.stubEnv("AND_OS_PROJECT_FOUNDATION_MODE","ON");state.role="admin";state.db.mockReset().mockImplementation(async path=>path.includes("rpc/")?{estimate_id:head,document:fixture(),versions:[]}:[]);});
 afterEach(()=>vi.unstubAllEnvs());
+test("specification follows each frozen quote line across trades without catalog guesses",()=>{
+ const quoted=[
+  ["철거","방문 및 문틀 철거","demolition","방문 및 문틀 철거","2조",""],
+  ["전기/조명","콘센트(수기 지정 제품)","electrical","콘센트(수기 지정 제품)","3개","수기 지정 제품"],
+  ["욕실","도기 기본세트(AND 실속)","bathroom","도기 기본세트(AND 실속)","1세트","AND 실속"],
+  ["도배","공용부 벽지(디아망급)","wallpaper","공용부 도배지(디아망급)","10롤","디아망급"],
+  ["필름","필름(AND표준 우드)","film","필름 자재(우드 무늬)","2롤","AND표준 우드"],
+  ["바닥","장판(2.2T)","flooring","바닥 시공(장판 2.2T)","12.7평","2.2T"],
+  ["목공","간접조명(T3)","carpentry","간접조명(T3)","2m","T3"],
+  ["가구","홈바장 상판(인조대리석, 12T)","homebar","홈바장 상판(인조대리석, 12T)","1장 환산","인조대리석, 12T"],
+  ["가구","아일랜드 상판(세라믹)","island","아일랜드 상판(세라믹)","2장","세라믹"],
+  ["가구","붙박이장 자체공장 맞춤 제작","builtIn","붙박이장 자체공장 맞춤 제작","5자","맞춤제작"],
+  ["도어/창호","일반도어(아무스급)","door","일반도어(아무스급)","2EA","도무스급"],
+  ["마감","현장 지정 실리콘","silicone","현장 지정 실리콘","1식",""],
+ ];
+ const items=quoted.map(([work_category,item_name])=>({work_category,item_name,sales_amount:1000,sales_amount_text:"1,000원"}));
+ const details=quoted.map(([, ,group,item,quantity])=>({group,item,quantity,revenue:1300,customerRevenue:1000,input:"PRIVATE COST 500"}));
+ details[7].input="1,000mm × 700mm";
+ const specs=buildSpecSnapshot(items,details);
+ expect(specs.map(s=>s.work_category)).toEqual(items.map(s=>s.work_category));
+ expect(specs.map(s=>s.selected_grade)).toEqual(quoted.map(row=>row[5]));
+ expect(specs[7]).toMatchObject({item_name:items[7].item_name,quantity:"1",unit:"장 환산",specification:"1,000mm × 700mm"});
+ expect(specs[10]).toMatchObject({item_name:"일반도어(도무스급)",quantity:"2",unit:"EA"});
+ expect(specs[9].item_name).toBe("붙박이장 맞춤제작");
+ expect(JSON.stringify(specs)).not.toMatch(/칸스톤|아무스|자체공장|PRIVATE COST|1300/);
+ expect(items[10].item_name).toBe("일반도어(아무스급)");
+ expect(buildSpecSnapshot([items[7]],[details[7],details[7]])[0].quantity).toBe("");
+});
 test("new contract snapshots use the registered contractor and a single customer/site address",async()=>{
  const snapshot=await buildContractPackageSnapshot(head,{
   contract_no:null,contract_info:{},customer_info:{customer_address:"Synthetic customer address"},contractor_info:{company_name:"stale"},site_manager:{},admin_tasks:{},protection_options:{},item_options:{},notes:null,

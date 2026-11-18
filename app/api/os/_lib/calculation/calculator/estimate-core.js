@@ -390,6 +390,11 @@ function customerItemName(item) {
     .replace(/\bEP(?!판)\b/g, "EP판");
 }
 
+function customerDetailIdentity(detail) {
+  return { category: quoteGroupLabels[detail.group] || detail.group,
+    name: detail.assembly?.workLabel || customerItemName(detail.item) };
+}
+
 const groupTotalFromDetails = (details, group) =>
   details.filter((item) => item.group === group).reduce((sum, item) => sum + item.revenue, 0);
 
@@ -1418,8 +1423,8 @@ function groupedCustomerItems(details, lines) {
   };
 
   for (const detail of details.filter((item) => item.revenue > 0)) {
-    const group = ensureGroup(quoteGroupLabels[detail.group] || detail.group);
-    addCustomerItem(group, detail.assembly?.workLabel || customerItemName(detail.item), detail.customerRevenue ?? detail.revenue);
+    const { category, name } = customerDetailIdentity(detail);
+    addCustomerItem(ensureGroup(category), name, detail.customerRevenue ?? detail.revenue);
   }
 
   for (const line of lines.filter((item) => item.amountText)) {
@@ -1858,5 +1863,5 @@ function effectiveEstimateInputOverrides(state) {
     elasticEnabled: state.elasticEnabled,
   };
 }
-return { policyDefaults, calculate, floorThousand, mmToM, mmText, quantityText, mText, jaRounded, markupRate, epUnitPrice, epDepthLabel, isSlabMaterial, slabBaseCost, countertopCost, countertopQuantity, addDetail, makeDetail, sellPrice, addModuleDetails, addT3Detail, addStorageDetails, addUnitDetail, islandSideFinishCalc, groupTotalFromDetails, floorDemolitionLabel, floorDemolitionUnitPrice, wallpaperDays, wallpaperLabel, filmDays, filmLabel, carpentryLaborDays, carpentryCofferDays, carpentryMaterialCounts, boardArea, boardCountWithWaste, hasCarpentryWork, groupedCustomerItems, customerWon, customerItemName, applyExistingPipeCleaningAdjustment, cloneJson, applyPipeCleaningToCustomerQuote, pipeCleaningInternalDetail, readState, effectiveEstimateInputOverrides };
+return { policyDefaults, calculate, floorThousand, mmToM, mmText, quantityText, mText, jaRounded, markupRate, epUnitPrice, epDepthLabel, isSlabMaterial, slabBaseCost, countertopCost, countertopQuantity, addDetail, makeDetail, sellPrice, addModuleDetails, addT3Detail, addStorageDetails, addUnitDetail, islandSideFinishCalc, groupTotalFromDetails, floorDemolitionLabel, floorDemolitionUnitPrice, wallpaperDays, wallpaperLabel, filmDays, filmLabel, carpentryLaborDays, carpentryCofferDays, carpentryMaterialCounts, boardArea, boardCountWithWaste, hasCarpentryWork, groupedCustomerItems, customerDetailIdentity, customerWon, customerItemName, applyExistingPipeCleaningAdjustment, cloneJson, applyPipeCleaningToCustomerQuote, pipeCleaningInternalDetail, readState, effectiveEstimateInputOverrides };
 }

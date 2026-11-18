@@ -119,7 +119,7 @@ function ensureContractPackagePanel() {
       <section class="contract-panel">
         <div class="contract-panel-heading">
           <h3>품목별 공사사양</h3>
-          <p>견적 포함 품목에 연결된 표준사양만 미리보기에 표시됩니다.</p>
+          <p>견적에 포함된 품목과 선택 사양을 표시합니다.</p>
         </div>
         <div id="contractSpecSnapshot" class="contract-spec-list">미리보기를 생성하면 품목별 공사사양이 표시됩니다.</div>
       </section>
@@ -287,7 +287,7 @@ function renderContractSpecSnapshot() {
       <tr>
         <td>${escapeHtml(spec.work_category || "-")}</td>
         <td>${escapeHtml(spec.item_name || "-")}</td>
-        <td>${escapeHtml(spec.standard_item_name || "-")}</td>
+        <td>${escapeHtml(spec.specification || spec.standard_item_name || "-")}</td>
         <td>${escapeHtml(spec.selected_grade || "-")}</td>
         <td>${escapeHtml(spec.spec_version || "-")}</td>
       </tr>

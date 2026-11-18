@@ -44,10 +44,8 @@ export async function buildConfirmedContract(access:Awaited<ReturnType<typeof co
  snapshot.estimate_snapshot={...snapshot.estimate_snapshot,total_price:Number(v.total_amount),customer_quote:customerQuoteProjection(obj(obj(original.estimate_data).customerQuote))};
  snapshot.contract_info=Object.assign(snapshot.contract_info,{issued_version_id:v.id,issued_quote_number:'확정 견적',issued_version:v.version_no,preliminary_version_id:v.id,project_id:p.id,supply_amount:supply,vat_amount:vat,total_amount:total,quote_supply_amount:v.supply_amount,quote_vat_amount:v.vat_amount,quote_total_amount:v.total_amount,amount_basis:form.amountBasis,amount_difference:difference,amount_reason:difference?form.reason:null,amount_approved_by:difference?actor.id:null,document_generated_at:stamp});
  snapshot.payment_schedule=paymentSchedule(total,String(form.startDate));
- // Existing spec mapping supplies standards; retain every public item even when no standard matches.
- const quoteItems=snapshot.estimate_snapshot.quote_items;
- const details=obj(original.estimate_data).internalDetails,notices:string[]=[];
- snapshot.spec_snapshot=quoteItems.flatMap(item=>{const matches=snapshot.spec_snapshot.filter(s=>s.item_name===item.item_name&&s.work_category===item.work_category);const source=Array.isArray(details)?details.map(obj).filter(d=>d.item===item.item_name&&Number(d.customerRevenue)===item.sales_amount):[];const raw=source.length===1?String(source[0].quantity??''):'';const parsed=raw.match(/^([\d,.]+)\s*(평|㎡|m²|mm|m|자|개|식|품|일|칸|통|세트|롤|장|판|라인)$/);const quantity=parsed?parsed[1]:'',unit=parsed?parsed[2]:'';if(!parsed)notices.push(`${item.item_name}: 확정 견적의 수량·단위 확인 필요`);return (matches.length?matches:[{...item,spec_code:'',standard_item_name:'',selected_grade:'',specification:'',spec_version:''}]).map(s=>Object.assign(s,{quantity,unit}));});
+ const notices=snapshot.spec_snapshot.filter(item=>item.sales_amount>0&&!item.quantity)
+  .map(item=>`${item.item_name}: 확정 견적의 수량·단위 확인 필요`);
  snapshot.source_hash=hashJson({...snapshot,source_hash:undefined});
  const documents=buildContractDocuments(snapshot).map(d=>{
   if(d.document_type==='CONTRACT'){const content={...d.content_json,generated_sections:{...obj(d.content_json.generated_sections),confirmed_notes:String(form.notes||''),confirmed_choices:snapshot.clause_snapshot}};return {...d,content_json:content,content_hash:hashJson(content)};}
