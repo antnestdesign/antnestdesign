@@ -68,3 +68,20 @@ test('contract writing confirms the saved estimate before continuing and is neve
   expect(confirm.mock.invocationCallOrder[0]).toBeLessThan(onLoad.mock.invocationCallOrder[0]);
   expect(onLoad.mock.invocationCallOrder[0]).toBeLessThan(onContract.mock.invocationCallOrder[0]);
 });
+
+test('opening a contract is clean; actual edits are dirty until reverted',async()=>{
+  mount();
+  const basis={id:'v1',versionNo:1,supply:100,vat:10,total:110};
+  const request=vi.fn(async()=>({project:{id:'existing'},basis,versions:[basis],stage:'preparation',
+    canManage:true,documents:[],history:[],milestones:[],revision:'1'}));
+  const workflow=mountProjectWorkflow({document,request,role:()=>'admin',onBusy:vi.fn()});
+  await workflow.open('existing');
+  expect(workflow.isDirty()).toBe(false);
+  const amount=document.querySelector('[data-flow-action="contract"] [name="amount"]');
+  amount.value='111';
+  amount.dispatchEvent(new Event('input',{bubbles:true}));
+  expect(workflow.isDirty()).toBe(true);
+  amount.value='110';
+  amount.dispatchEvent(new Event('input',{bubbles:true}));
+  expect(workflow.isDirty()).toBe(false);
+});

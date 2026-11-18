@@ -1682,7 +1682,10 @@ function currentEstimateInputValues() {
 }
 
 function currentInputKey() {
-  const base=canonicalInputValues(currentEstimateInputValues(), COST_ITEM_BY_INPUT),items=itemBuilderView?.selections()||[],manual=itemBuilderView?.manualWorks?.()||[];
+  const inputs=currentEstimateInputValues();
+  delete inputs.projectSearch;
+  delete inputs.projectSearchResults;
+  const base=canonicalInputValues(inputs, COST_ITEM_BY_INPUT),items=itemBuilderView?.selections()||[],manual=itemBuilderView?.manualWorks?.()||[];
   return items.length||manual.length?JSON.stringify([base,items,manual]):base;
 }
 

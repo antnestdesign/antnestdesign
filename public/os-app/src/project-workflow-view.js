@@ -16,7 +16,9 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
   let selected=null,quoteData=null,flow=null,quoteGeneration=0,generation=0,busy=false,loading=false,pending=null,baseline='';
   const contractDocuments=getPdf?mountConfirmedContracts({document,request,getPdf,role,onBusy:value=>{busy=value;syncBusy();onBusy(value);},onIssued:async id=>{await open(id);await onChanged();await updateEstimate(selected);}}):null;
   const syncBusy=()=>{for(const host of [quote,panel])host.querySelectorAll('form input,form select,form textarea,form button').forEach(n=>{n.disabled=busy||loading;});};
-  const formState=()=>JSON.stringify([...panel.querySelectorAll('form')].map(f=>[...new FormData(f)]));
+  // Loading and submitting disable fields without changing the draft.
+  const formState=()=>JSON.stringify([...panel.querySelectorAll('form')].map(f=>
+    [...f.querySelectorAll('input[name],select[name],textarea[name]')].map(n=>[n.name,n.type==='checkbox'||n.type==='radio'?n.checked:n.value])));
   const status=(host,text)=>{host.querySelector('[data-flow-status]').textContent=text||'';};
   const projectPath=id=>`/projects/${id}/workflow`;
   const versionOptions=(rows,current)=>rows.map(v=>`<option value="${esc(v.id)}" ${v.id===current?'selected':''}>확정 V${v.versionNo} · 공급가액 ${money(v.supply)}</option>`).join('');
