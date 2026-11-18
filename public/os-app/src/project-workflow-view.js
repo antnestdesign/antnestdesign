@@ -23,12 +23,12 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
   const amountText=v=>`공급가액 ${money(v.supply)} · 부가세 ${money(v.vat)} · 공급대가 ${money(v.total)}`;
   function renderQuote(){
     if(!selected?.id||!selected.confirmation?.latestId){quote.hidden=true;return;}quote.hidden=false;
-    quote.innerHTML='<h3>계약관리 전환</h3><p role="status" data-flow-status></p>';
+    quote.innerHTML='<h3>계약서 작성</h3><p role="status" data-flow-status></p>';
     if(!quoteData){status(quote,'계약 전환 정보를 불러오는 중입니다.');return;}
-    if(quoteData.basis){quote.insertAdjacentHTML('beforeend',`<p>계약 기준 확정 V${quoteData.basis.versionNo} · ${esc(quoteData.status)}</p><button type="button" data-flow-open="${esc(quoteData.project.id)}">계약 진행 보기</button>`);return;}
+    if(quoteData.basis){quote.insertAdjacentHTML('beforeend',`<p>계약 기준 확정 V${quoteData.basis.versionNo} · ${esc(quoteData.status)}</p><button type="button" data-flow-open="${esc(quoteData.project.id)}">계약서 열기</button>`);return;}
     if(!quoteData.canTransfer){status(quote,quoteData.legacy?'기존 계약·공사 프로젝트입니다. 과거 자료를 계약관리에서 조회할 수 있습니다.':'계약관리 전환 권한이 없거나 현재 단계에서 전환할 수 없습니다.');return;}
     const picked=selected.confirmation.viewingVersion?.id||quoteData.versions[0]?.id;
-    quote.insertAdjacentHTML('beforeend',`<form data-flow-action="transfer"><label>계약 기준 확정 견적<select name="versionId">${versionOptions(quoteData.versions,picked)}</select></label><p data-transfer-amount></p><p data-transfer-warning role="status"></p><label>계약 예정일(선택)<input type="date" name="plannedContractDate"></label><button type="submit">계약관리로 전환</button></form>`);
+    quote.insertAdjacentHTML('beforeend',`<form data-flow-action="transfer"><label>계약 기준 확정 견적<select name="versionId">${versionOptions(quoteData.versions,picked)}</select></label><p data-transfer-amount></p><p data-transfer-warning role="status"></p><label>계약 예정일(선택)<input type="date" name="plannedContractDate"></label><button type="submit">계약서 작성</button></form>`);
     transferSummary();
     syncBusy();
   }
@@ -44,6 +44,14 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
     if(!project||!estimate?.confirmation?.latestId)return;
     try{const data=await request(`${projectPath(project)}?estimateId=${estimate.id}`);if(token!==quoteGeneration)return;quoteData=data;renderQuote();}
     catch(error){if(token===quoteGeneration)status(quote,error.message);}
+  }
+  async function startContract(estimate){
+    await updateEstimate(estimate);
+    if(!quoteData)throw new Error('계약 기준 확정 견적을 불러오지 못했습니다.');
+    if(quoteData.basis){await onTransferred(quoteData.project.id);return;}
+    const form=quote.querySelector('[data-flow-action="transfer"]');
+    if(!form)throw new Error('계약서 작성 권한이나 확정 상태를 확인해 주세요.');
+    await submit({target:form,preventDefault(){}},quote,true);
   }
   function historyHtml(data){
     const labels={status:'진행 상태',flow_version_id:'계약 기준 견적',flow_contract_date:'계약일',flow_contract_amount:'계약금액',flow_amount_basis:'금액 구분',flow_start_date:'착공일',flow_planned_completion_date:'예정 준공일',flow_completion_date:'준공일'};
@@ -89,16 +97,16 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
     catch(error){if(token===generation){flow=null;baseline='';panel.hidden=false;panel.innerHTML='<p role="status" data-flow-status></p>';status(panel,error.message);}return false;}
     finally{if(token===generation){loading=false;syncBusy();}}
   }
-  async function submit(event,host){
-    const form=event.target.closest('form[data-flow-action]');if(!form)return;event.preventDefault();if(busy||loading||isBusy?.())return;
+  async function submit(event,host,approved=false){
+    const form=event.target.closest('form[data-flow-action]');if(!form)return;event.preventDefault();if(busy||loading||(!approved&&isBusy?.()))return;
     const action=form.dataset.flowAction,source=action==='transfer'?quoteData:flow;
-    if(action==='transfer'&&isEstimateDirty()){status(host,'저장하지 않은 견적 변경사항이 있습니다. 먼저 저장해 주세요.');return;}
+    if(action==='transfer'&&!approved&&isEstimateDirty()){status(host,'저장하지 않은 견적 변경사항이 있습니다. 먼저 저장해 주세요.');return;}
     const values=Object.fromEntries(new FormData(form));let data={...values};
     if(action==='transfer')data.estimateId=selected.id;
     if(action==='contract'){data.amount=Number(values.amount);data.approveDifference=form.elements.approveDifference?.checked===true;if(form.elements.signedAcknowledged)data.signedAcknowledged=form.elements.signedAcknowledged.checked;}
     if(action==='correct')data.status=flow.correctionTarget;
     const message=action==='transfer'?`확정 V${source.versions.find(v=>v.id===data.versionId)?.versionNo}을 기준으로 계약 준비 단계로 전환할까요? 작성 중인 수정본이나 확정 견적은 변경하지 않습니다.`:action==='contract'?`${money(data.amount)} 계약 체결 사실을 기록할까요? 계약서 생성·서명·발행과는 별개입니다.`:action==='basis'?'계약 기준 확정 버전을 변경할까요?':action==='start'?'입력한 실제 착공일로 착공 처리할까요?':action==='complete'?'입력한 실제 준공일로 준공 처리할까요?':'기록된 사실에 맞춰 상태 표시를 정정할까요?';
-    if(!document.defaultView.confirm(message))return;
+    if(!approved&&!document.defaultView.confirm(message))return;
     const key=JSON.stringify([source.project.id,action,source.revision,data]);if(pending?.key!==key)pending={key,id:crypto.randomUUID()};
     busy=true;onBusy(true);form.querySelectorAll('input,select,textarea,button').forEach(n=>{n.disabled=true;});status(host,'처리 중입니다.');
     try{
@@ -106,7 +114,7 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
       pending=null;baseline=formState();
       if(action==='transfer'){await onTransferred(source.project.id);await updateEstimate(selected);}
       else {await open(source.project.id);await onChanged();await updateEstimate(selected);}
-    }catch(error){status(host,error.message);form.querySelectorAll('input,select,textarea,button').forEach(n=>{n.disabled=false;});}
+    }catch(error){status(host,error.message);form.querySelectorAll('input,select,textarea,button').forEach(n=>{n.disabled=false;});if(approved)throw error;}
     finally{busy=false;syncBusy();onBusy(false);}
   }
   quote.addEventListener('submit',e=>submit(e,quote));panel.addEventListener('submit',e=>submit(e,panel));
@@ -116,8 +124,8 @@ export function mountProjectWorkflow({document,request,getPdf,role,isEstimateDir
     if(signed){signed.hidden=!doc?.issued;form.elements.signedAcknowledged.required=Boolean(doc?.issued);if(e.target.name==='packageId')form.elements.signedAcknowledged.checked=false;}
     if(doc?.issued&&['packageId','amountBasis'].includes(e.target.name)){form.elements.amount.value=form.elements.amountBasis.value==='supply'?doc.supply:doc.total;priceSummary();}else priceSummary(e.target.name==='amountBasis');
   });
-  quote.addEventListener('click',e=>{const b=e.target.closest('[data-flow-open]');if(b)onOpen(b.dataset.flowOpen);});
+  quote.addEventListener('click',e=>{const b=e.target.closest('[data-flow-open]');if(b)onOpen(b.dataset.flowOpen,false,true);});
   panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||busy)return;if(b.hasAttribute('data-flow-reload')){if(!isDirty()||document.defaultView.confirm('저장하지 않은 진행 입력을 버리고 새로고침할까요?'))open(flow.project.id);}if(b.hasAttribute('data-flow-version'))onViewVersion(flow.estimateId,flow.basis.id);});
   function isDirty(){return Boolean(contractDocuments?.isDirty()||flow&&!busy&&!loading&&formState()!==baseline);}
-  return {updateEstimate,open,isDirty,hide(){generation++;loading=false;flow=null;baseline='';panel.hidden=true;contractDocuments?.clear();syncBusy();},clear(){quoteGeneration++;generation++;loading=false;flow=null;selected=null;quoteData=null;baseline='';quote.hidden=true;panel.hidden=true;contractDocuments?.clear();syncBusy();},projectId:()=>flow?.project.id};
+  return {updateEstimate,startContract,open,isDirty,hide(){generation++;loading=false;flow=null;baseline='';panel.hidden=true;contractDocuments?.clear();syncBusy();},clear(){quoteGeneration++;generation++;loading=false;flow=null;selected=null;quoteData=null;baseline='';quote.hidden=true;panel.hidden=true;contractDocuments?.clear();syncBusy();},projectId:()=>flow?.project.id};
 }

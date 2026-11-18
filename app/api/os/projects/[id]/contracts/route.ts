@@ -55,7 +55,7 @@ export async function POST(request:NextRequest,{params}:Params){
   if(raw.action==='preview'){
    const type=DOCUMENT_TYPES.find(t=>t===raw.type)||'CONTRACT';return json({fingerprint,html:contractHtml(type,snapshot,documents,stamp),total:snapshot.contract_info.total_amount,paymentSchedule:snapshot.payment_schedule,notices,type});
   }
-  if(raw.previewHash!==fingerprint)throw new ApiError(409,'계약 정보가 미리보기 이후 변경됐습니다. 미리보기를 다시 확인해 주세요.');
+  if(raw.previewHash!==undefined&&raw.previewHash!==fingerprint)throw new ApiError(409,'계약 정보가 미리보기 이후 변경됐습니다. 미리보기를 다시 확인해 주세요.');
   const html=Object.fromEntries(DOCUMENT_TYPES.map(t=>[t,contractHtml(t,snapshot,documents,stamp)])) as Record<(typeof DOCUMENT_TYPES)[number],string>;
   const pdfs=await contractPdfs(html);
   const result=await supabaseFetch('/rest/v1/rpc/and_os_issue_confirmed_contract',{method:'POST',body:JSON.stringify({p_actor:a.actor.id,p_project:id,p_version:versionId,p_revision:Number(raw.expectedRevision),p_request:requestId,p_fingerprint:fingerprint,p_snapshot:snapshot,p_documents:documents.map(d=>({...d,...pdfs.find(p=>p.document_type===d.document_type)})),p_mode:'ON'})});

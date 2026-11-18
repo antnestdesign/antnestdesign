@@ -1,6 +1,6 @@
 import {escapeHtml as esc} from './utils.js';
 
-export function createEstimateConfirmationView({document,load,confirm,revise,isDirty,onLoad,onBusy}) {
+export function createEstimateConfirmationView({document,load,confirm,revise,isDirty,onLoad,onBusy,onContract}) {
   const host=document.createElement('section');host.className='preliminary-confirmation';
   document.querySelector('.estimate-history')?.after(host);
   let current=null,data=null,generation=0,busy=false,notice='',selectedProject='',pending=null;
@@ -20,6 +20,7 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
       ${canConfirm&&data?.issues?.length?`<ul>${data.issues.map(issue=>`<li>${esc(issue)}</li>`).join('')}</ul>`:''}
       <div class="preliminary-confirmation-actions">
         ${canConfirm?`<button type="button" data-estimate-confirm ${busy||!data||(needsProject&&!selectedProject)?'disabled':''}>견적 확정</button>`:''}
+        ${canConfirm&&onContract?`<button type="button" data-estimate-contract ${busy||!data||(needsProject&&!selectedProject)?'disabled':''}>계약서 작성</button>`:''}
         ${canRevise?`<button type="button" data-estimate-revise ${busy?'disabled':''}>수정본 만들기</button>`:''}
         ${frozen?'<button type="button" data-estimate-current>현재 견적 보기</button>':''}
       </div>
@@ -33,7 +34,7 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
       render();
     }catch(error){if(token===generation){notice=error.message||'확정 상태를 불러오지 못했습니다.';render();}}
   }
-  async function command(action){
+  async function command(action,writeContract=false){
     if(busy||!current)return;
     if(isDirty()){notice='저장하지 않은 변경사항이 있습니다. 먼저 견적을 저장해 주세요.';render();return;}
     if(action==='confirm'&&data?.issues?.length){notice='확정 전 확인사항을 해결하고 저장해 주세요.';render();return;}
@@ -42,24 +43,25 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
     const candidate=candidates.find(p=>!p.archived&&p.id===selectedProject);
     if(action==='confirm'&&candidates.length&&!candidate){notice='같은 현장 후보를 확인해 주세요.';render();return;}
     const id=current.id,token=generation;
-    const message=action==='confirm'?`${candidate?candidate.project_name+' 현장에 연결하고 ':''}${money(current.total)} 견적을 확정할까요? 확정 후에는 직접 수정할 수 없으며 수정본을 만들어야 합니다.`:'직전 확정본을 기준으로 수정본을 만들까요? 기존 확정본은 변경되지 않습니다.';
+    const message=action==='confirm'?`${candidate?candidate.project_name+' 현장에 연결하고 ':''}${money(current.total)} 견적을 확정${writeContract?'하고 계약서 작성을 시작':'할'}까요? 확정 후에는 직접 수정할 수 없으며 수정본을 만들어야 합니다.`:'직전 확정본을 기준으로 수정본을 만들까요? 기존 확정본은 변경되지 않습니다.';
     if(!document.defaultView.confirm(message))return;
     const body={expectedRevision:current.revision,requestId:pending?.action===action?pending.id:crypto.randomUUID(),
       ...(action==='confirm'?{fingerprint:data.fingerprint,projectId:data.projectId||candidate?.id||null}:{})};
     pending={action,id:body.requestId};busy=true;onBusy(true);notice='처리 중입니다.';render();
     try{
       await (action==='confirm'?confirm:revise)(id,body);
-      pending=null;if(token===generation)await onLoad(id);
-    }catch(error){if(token===generation){notice=error.message||'요청을 완료하지 못했습니다.';if(error.status===409)await refresh(token,id);else render();}}
+      pending=null;if(token===generation){await onLoad(id);if(writeContract)await onContract(id);}
+    }catch(error){if(current?.id===id){notice=error.message||'요청을 완료하지 못했습니다.';if(error.status===409)await refresh(generation,id);else render();}}
     finally{busy=false;onBusy(false);render();}
   }
   host.addEventListener('change',event=>{if(event.target.matches('[data-confirmation-project]')){
     selectedProject=event.target.value;pending=null;
-    const button=host.querySelector('[data-estimate-confirm]');if(button)button.disabled=!selectedProject||busy;
+    host.querySelectorAll('[data-estimate-confirm],[data-estimate-contract]').forEach(button=>{button.disabled=!selectedProject||busy;});
   }});
   host.addEventListener('click',async event=>{
     const button=event.target.closest('button');if(!button||busy)return;
     if(button.hasAttribute('data-estimate-confirm'))return command('confirm');
+    if(button.hasAttribute('data-estimate-contract'))return command('confirm',true);
     if(button.hasAttribute('data-estimate-revise'))return command('revise');
     const version=button.dataset.estimateVersion;
     if(version||button.hasAttribute('data-estimate-current')){

@@ -2550,7 +2550,7 @@ body[data-workflow-layout="phase3"] #admin { min-width: 0; }
 /* Project milestones share the existing project and estimate workspace. */
 .project-flow-transfer,.project-workflow-panel { margin-top: 20px; padding: 16px 0; border-top: 1px solid var(--line); min-width: 0; }
 .project-workflow-panel > header { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.project-workflow-panel h2 { font-size: 20px; }
+.project-workflow-panel h2 { font-size: 20px; overflow-wrap: anywhere; }
 .project-workflow-panel h3,.project-flow-transfer h3 { font-size: 16px; margin: 8px 0; }
 .project-workflow-panel p,.project-flow-transfer p { overflow-wrap: anywhere; }
 .project-workflow-panel form,.project-flow-transfer form { display: grid; gap: 12px; margin: 16px 0; }
@@ -2593,6 +2593,8 @@ body[data-workflow-layout="phase3"] #admin { min-width: 0; }
 .confirmed-contract-fields label,.confirmed-contracts details label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .confirmed-contract-fields input,.confirmed-contract-fields select,.confirmed-contracts textarea { width: 100%; min-width: 0; box-sizing: border-box; }
 .confirmed-contracts details { margin: 16px 0; }
+.confirmed-contracts details label:has(input[type="checkbox"]) { flex-direction: row; align-items: center; gap: 8px; }
+.confirmed-contracts input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; flex: 0 0 16px; margin: 0; }
 .confirmed-contract-list article { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 12px 0; }
 .confirmed-contract-list article > div { min-width: 0; }
 .confirmed-contract-list small { display: block; margin: 6px 0; }

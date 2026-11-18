@@ -27,11 +27,11 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
   const filters=document.createElement('div');filters.className='management-filters';
   filters.innerHTML='<label>견적 검색<input id="estimateManagementSearch" type="search" placeholder="현장, 고객, 작성자 검색"></label><label>견적 상태<select id="estimateManagementFilter"><option value="all">전체</option><option value="draft">미확정</option><option value="confirmed">확정</option><option value="revising">수정본 작성 중</option></select></label><button type="button" data-refresh-estimates>새로고침</button>';
   list.querySelector('.table-wrap').before(filters);list.querySelector('.table-wrap').classList.add('management-list-scroll');
-  const scope=document.createElement('label');scope.innerHTML='조회 범위<select id="estimateManagementScope"><option value="active">진행 중 견적</option><option value="all">전체·과거 견적</option></select>';filters.prepend(scope);
+  const scope=document.createElement('label');scope.innerHTML='조회 범위<select id="estimateManagementScope"><option value="all">전체 견적 · 계약 전환 포함</option><option value="active">계약 전환 전 견적</option></select>';filters.prepend(scope);
   const oldQuote=document.createElement('details');oldQuote.className='management-quote-preview';oldQuote.innerHTML='<summary>고객용 견적서</summary>';
   oldQuote.append(...quote.children);
   const selected=document.createElement('section');selected.className='management-selected';selected.id='estimateManagementSelected';
-  selected.innerHTML='<header><div><h2 data-management-title>견적을 선택해 주세요.</h2><p data-management-meta></p></div><button type="button" data-management-edit hidden>견적 수정</button></header><p role="status" id="estimateManagementStatus"></p><div id="estimateManagementControls"></div>';
+  selected.innerHTML='<header><div><h2 data-management-title>견적을 선택해 주세요.</h2><p data-management-meta></p></div><button type="button" data-management-quote hidden>견적서 조회</button><button type="button" data-management-edit hidden>견적 수정</button></header><p role="status" id="estimateManagementStatus"></p><div id="estimateManagementControls"></div>';
   selected.querySelector('#estimateManagementControls').append(document.querySelector('.preliminary-confirmation'),document.querySelector('.estimate-history'));
   selected.append(oldQuote);quote.append(list,selected);
   const printActions=document.getElementById('adminPrintActions');if(printActions)selected.append(printActions);
@@ -96,7 +96,7 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
   }
   for(const id of ['estimateManagementSearch','estimateManagementFilter','estimateManagementScope'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',onFilter);
   for(const id of ['contractProjectSearch','contractProjectFilter'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',contractRows);
-  quote.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-management-edit'))onEdit(current?.id);if(b.hasAttribute('data-refresh-estimates'))onOpen(null,'refresh');});
+  quote.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.hasAttribute('data-management-quote')){oldQuote.open=true;oldQuote.scrollIntoView?.({block:'start'});}if(b.hasAttribute('data-management-edit'))onEdit(current?.id);if(b.hasAttribute('data-refresh-estimates'))onOpen(null,'refresh');});
   admin.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(b.dataset.projectWorkflow)onProjectWorkflow?.(b.dataset.projectWorkflow);if(b.dataset.projectContractOpen)onOpen(b.dataset.projectContractOpen,'project-contract');if(b.dataset.contractEstimate)onOpen(b.dataset.contractEstimate,'contract');if(b.dataset.archiveProjectOpen){const select=legacy.querySelector('[data-archive-project]');select.value=b.dataset.archiveProjectOpen;select.dispatchEvent(new Event('change',{bubbles:true}));legacy.scrollIntoView?.({block:'start'});}});
   contractList.addEventListener('click',async event=>{
     const button=event.target.closest('[data-contract-archive]');
@@ -114,6 +114,7 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     updateSelection(estimate){if(current?.id!==estimate?.id)oldQuote.open=Boolean(estimate?.id);current=estimate;selected.querySelector('[data-management-title]').textContent=estimate?.projectName||'견적을 선택해 주세요.';
       const a=estimate?.authorship;selected.querySelector('[data-management-meta]').textContent=estimate?`${estimate.clientName||'고객명 없음'} · ${money(estimate.total)} · ${estimateStage(estimate)} · 프로젝트 ${projectFor(estimate)?.status||estimate.status||'미분류'} · 최초 작성 ${a?.creatorName||'작성자 미확인'} · 최종 수정 ${a?.editorName||'수정자 미확인'}`:'';
       selected.querySelector('[data-management-edit]').hidden=!estimate?.canEdit;
+      selected.querySelector('[data-management-quote]').hidden=!estimate?.id;
       selected.querySelector('[data-management-edit]').disabled=busy;
       oldQuote.hidden=!estimate?.id;
       notice.textContent=estimate?.id&&!estimate.canEdit?(estimate.confirmation?.state==='confirmed'?'확정된 견적입니다. 수정본은 견적관리에서 만들 수 있습니다.':'이 견적은 수정 권한이 없습니다.'):'';},

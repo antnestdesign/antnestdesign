@@ -424,6 +424,7 @@ const estimateConfirmationView=createEstimateConfirmationView({document,load:loa
   isDirty:()=>saveEstimateInProgress||projectWorkflowBusy||Boolean(loadedEstimateBaseline&&(!loadedEstimateMatchesCurrentInputs()||pipeCleaningAdjustmentDirty)),
   onBusy:value=>{estimateWorkflowBusy=value;syncWorkflowBusyControls();},
   onLoad:async(id,version)=>{await openWorkspaceEstimate(id,'quote',version,true);void renderSavedEstimateRows();},
+  onContract:async()=>{await projectWorkflowView.startContract(loadedEstimateBaseline.estimate);},
 });
 function updateEstimateContext(estimate){estimateHistoryView.update(estimate);estimateConfirmationView.update(estimate);workspaceView?.updateSelection(estimate);void projectWorkflowView?.updateEstimate(estimate);}
 
@@ -3192,7 +3193,7 @@ function bootstrap() {
     onLoadContract:async(id,estimateId)=>{await loadContractPackageToPreview(id,estimateId);document.getElementById('contractDocumentPreview')?.scrollIntoView?.({block:'start'});},
     isEstimateDirty:()=>saveEstimateInProgress||estimateWorkflowBusy||preliminaryIsDirty()||contractOptionsDirty,isBusy:()=>saveEstimateInProgress||estimateWorkflowBusy,
     onBusy:value=>{projectWorkflowBusy=value;syncWorkflowBusyControls();},
-    onTransferred:async id=>{await renderSavedEstimateRows();await openProjectWorkflow(id,true);},onChanged:()=>renderSavedEstimateRows(),
+    onTransferred:async id=>{await renderSavedEstimateRows();await openProjectWorkflow(id,true,true);},onChanged:()=>renderSavedEstimateRows(),
     onOpen:openProjectWorkflow,onViewVersion:(id,version)=>openWorkspaceEstimate(id,'quote',version)});
   workspaceNavigation=createWorkspaceNavigation({window,canLeave:canLeaveWorkspace,onRestore:async route=>{
     if(route.estimateId)await openWorkspaceEstimate(route.estimateId,route.tab,route.versionId,true);

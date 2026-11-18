@@ -54,7 +54,17 @@ test("a confirmed estimate presents explicit contract transfer ahead of history"
   const workflow=mountProjectWorkflow({document,request,role:()=>"admin",isEstimateDirty:()=>false,isBusy:()=>false,onBusy:vi.fn()});
   await workflow.updateEstimate({...estimate,projectId:"existing",confirmation:{latestId:"v1"}});
   const transfer=document.querySelector('[data-flow-action="transfer"]');
-  expect(transfer.querySelector("button").textContent).toBe("계약관리로 전환");
+  expect(transfer.querySelector("button").textContent).toBe("계약서 작성");
   expect(transfer.closest("section").nextElementSibling.matches(".estimate-history")).toBe(true);
   expect(request.mock.calls).toEqual([["/projects/existing/workflow?estimateId=estimate"]]);
+});
+
+test('contract writing confirms the saved estimate before continuing and is never automatic',async()=>{
+  const onContract=vi.fn();const {confirm,onLoad}=mount({onContract});
+  await vi.waitFor(()=>expect(document.querySelector('[data-estimate-contract]').disabled).toBe(false));
+  expect(onContract).not.toHaveBeenCalled();expect(confirm).not.toHaveBeenCalled();
+  document.querySelector('[data-estimate-contract]').click();
+  await vi.waitFor(()=>expect(onContract).toHaveBeenCalledWith('estimate'));
+  expect(confirm.mock.invocationCallOrder[0]).toBeLessThan(onLoad.mock.invocationCallOrder[0]);
+  expect(onLoad.mock.invocationCallOrder[0]).toBeLessThan(onContract.mock.invocationCallOrder[0]);
 });
