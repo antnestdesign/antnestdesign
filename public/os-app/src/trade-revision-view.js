@@ -5,6 +5,7 @@ const groups={
     ["철거 방식",[["demolitionMode","범위",{full:"전체철거",partial:"부분철거"}]]],
     ["부분철거",[["demoKitchenMm","주방 가구 길이 (mm)"],["demoCounterMm","싱크대 상판 길이 (mm)"],["demoCabinetJa","일반 가구장 (자)"],["demoEntryUnits","중문 및 중문틀 (개소)"],["demoDoorUnits","방문만 (개)"],["demoDoorSetUnits","방문 및 문틀 (조)"],["demoLights","조명철거"],["demoPartitionMm","가벽 길이 (mm)"]]],
     ["화장실 철거",[["demoBathFull","전체철거 (개소)"],["demoBathFixtures","집기만 철거 (개소)"],["demoBathTub","전체철거 중 욕조 (개소)"],["demoBathOverlay","전체철거 중 덧방 타일 (개소)"]]],
+    ["확장 공사",[["expansionLiving","거실 확장"],["expansionRooms","각방 확장 (개소)"],["expansionKitchen","주방 확장 (개소)"]]],
   ],
   Electrical:[
     ["전기공사 방식",[["electricalMode","범위",{full:"전체 전기공사",partial:"부분 전기공사"}]]],
@@ -62,6 +63,10 @@ export function mountTradeRevisionInputs(document){
         continue;
       }
       if(trade==="Wallpaper"){wallpaperRow=fieldset.querySelector("label");continue;}
+      if(name==="확장 공사"){
+        const block=document.createElement("div");block.className="furniture-block trade-revision-inputs";
+        block.append(fieldset);heading.after(block);continue;
+      }
       if(trade==="Film"){
         const pair=document.createElement("div");pair.className="trade-toggle-pair";
         pair.append(...[...fieldset.querySelectorAll("label")].slice(0,2));fieldset.querySelector("legend").after(pair);

@@ -4,6 +4,17 @@ import {countertopAreaCost,filmLabor} from "../../../app/api/os/_lib/calculation
 
 const run=(inputs,options)=>{const core=createEstimateCalculation(options);return core.calculate(core.readState({tradeFormulaVersion:"v2",...inputs}));};
 const detail=(result,item)=>result.details.find(row=>row.item===item);
+test.each(["full","partial","legacy"])("expansion keeps fixed costs and customer prices in %s",mode=>{
+  const inputs={sectionDemolitionEnabled:true,demolitionMode:mode==="partial"?"partial":"full",
+    tradeFormulaVersion:mode==="legacy"?"legacy":"v2",expansionLiving:true,expansionRooms:"2",expansionKitchen:"1",targetMargin:"55"};
+  const result=run(inputs);
+  expect(detail(result,"거실 확장")).toMatchObject({unitPrice:4600000,cost:4600000,customerRevenue:6000000,revenue:6000000});
+  expect(detail(result,"각방 확장")).toMatchObject({quantity:"2개소",unitPrice:3000000,cost:6000000,customerRevenue:8000000});
+  expect(detail(result,"주방 확장")).toMatchObject({unitPrice:3000000,cost:3000000,customerRevenue:4000000});
+  expect(result.directCost).toBe(13600000);
+  expect(result.customerRevenue).toBe(18000000);
+  expect(run({...inputs,sectionDemolitionEnabled:false}).details).toEqual([]);
+});
 test("full demolition and electrical retain legacy prices",()=>{
   const input={sectionDemolitionEnabled:true,demolitionBasicEnabled:true,demolitionBasicArea:"10",demolitionFloorEnabled:true,sectionElectricalEnabled:true,electricalEnabled:true};
   expect(run(input).details).toEqual(run({...input,tradeFormulaVersion:"legacy"}).details);

@@ -8,7 +8,7 @@ import { bathroomDetails } from "./bathroom.js";
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
-import { revisedTradeDetails, counterRates } from "./trade-revision.js";
+import { expansionDetails, revisedTradeDetails, counterRates } from "./trade-revision.js";
 import { tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
@@ -1316,6 +1316,7 @@ function calculate(state) {
     details.push({ ...makeDetail({ group: "carpentry", item: `${part.workLabel} · ${part.name}`, input: part.formula, quantity: `${part.quantity}${part.unit}`, unitPrice: part.price ?? 0, cost: part.quantity * (part.price ?? 0), margin, correction: state.corrections.option }), assembly: part });
   }
   addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
+  addModuleDetails(details,expansionDetails(v),0.30,0);
   applySiteCostOverrides(details, state, makeDetail);
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;

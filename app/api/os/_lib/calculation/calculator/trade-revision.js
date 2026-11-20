@@ -6,6 +6,18 @@ export const wallpaperRolls=area=>Math.ceil(area*2.5/5);
 export const filmLabor=v=>Math.ceil(((v.filmWindow?({20:4,30:6,40:8,50:10}[v.filmWindowArea]||0):0)*4000
   +v.filmDoorCount*2000+v.filmOneSideMm*2+v.filmBothSidesMm*4+v.filmWallMm)/4000);
 
+export function expansionDetails(v){
+  if(!v?.demolition)return [];
+  return [
+    ["거실 확장",v.expansionLiving?1:0,4600000,6000000],
+    ["각방 확장",Math.trunc(v.expansionRooms||0),3000000,4000000],
+    ["주방 확장",Math.trunc(v.expansionKitchen||0),3000000,4000000],
+  ].filter(([,count])=>count>0).map(([item,count,unitCost,unitSale])=>({
+    group:"demolition",item,input:`${count}개소`,quantity:`${count}개소`,
+    unitPrice:unitCost,cost:count*unitCost,customerRevenue:count*unitSale,
+  }));
+}
+
 export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
   const v=state.tradeRevision;
   if(v?.tradeFormulaVersion!=="v2")return [];

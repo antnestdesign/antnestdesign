@@ -6,6 +6,7 @@ export const TRADE_REVISION_INPUTS={
   demolitionMode:select("full",["full","partial"]),
   demoKitchenMm:number(),demoCounterMm:number(),demoCabinetJa:number(),demoEntryUnits:number(),demoDoorUnits:number(),demoDoorSetUnits:number(),demoLights:toggle,demoPartitionMm:number(),
   demoBathFull:number(),demoBathFixtures:number(),demoBathTub:number(),demoBathOverlay:number(),
+  expansionLiving:toggle,expansionRooms:number("0",80),expansionKitchen:number("0",80),
   electricalMode:select("full",["full","partial"]),electricBasic:toggle,electricArea:select("30",["20","30","40","50"]),electricRecessed:number(),electricSwitch:number(),
   wallpaperRoomPyeong:number("0",80),
   filmWindow:toggle,filmWindowArea:select("30",["20","30","40","50"]),filmDoorCount:number(),filmOneSideMm:number(),filmBothSidesMm:number(),filmWallMm:number(),
