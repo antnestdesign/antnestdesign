@@ -59,7 +59,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
     caption.textContent = text.textContent.trim();
     text.replaceWith(caption);
   }
-  form.querySelector("h2").textContent = "가견적";
+  form.querySelector("h2").textContent = "견적";
   form.querySelector(":scope > .section-heading > p")?.remove();
 
   const list = document.createElement("div");
