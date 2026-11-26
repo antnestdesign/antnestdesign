@@ -32,7 +32,7 @@ export function bathroomTileAmounts(room, laborEnabled, material = bathroomTileM
 }
 
 export function bathroomTileDetails(state, policy) {
-  if (!state.bathroomEnabled || state.bathroomTileRooms === null) return [];
+  if (!state.bathroomEnabled || state.bathroomTileRooms == null) return [];
   const material = bathroomTileMaterialPolicy(policy);
   return Array.from({ length: Math.min(state.bathroomUnits, BATHROOM_TILE_LIMIT) }, (_, i) => i).flatMap(i => {
     const room = state.bathroomTileRooms[i] || EMPTY_BATHROOM_TILE_ROOM;

@@ -11,7 +11,7 @@ import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
 import { expansionDetails, revisedTradeDetails, revisedCountertops, counterRates } from "./trade-revision.js";
-import { COUNTERTOP_LIFTING_NOTICE, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
+import { COUNTERTOP_LIFTING_NOTICE, expansionPartitionInput, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
 export { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS };
@@ -1321,8 +1321,8 @@ function calculate(state) {
   for (const part of carpentryAssemblies(state, options.carpentryPrices, policy)) {
     details.push({ ...makeDetail({ group: "carpentry", item: `${part.workLabel} · ${part.name}`, input: part.formula, quantity: `${part.quantity}${part.unit}`, unitPrice: part.price ?? 0, cost: part.quantity * (part.price ?? 0), margin, correction: state.corrections.option }), assembly: part });
   }
-  addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
-  addModuleDetails(details,expansionDetails(v),0.30,0);
+  addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM:parameter('counterMinimumM',1)}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
+  addModuleDetails(details,expansionDetails(v,mmText),0.30,0);
   applySiteCostOverrides(details, state, makeDetail);
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
   const rawRevenue = details.reduce((sum, item) => sum + item.revenue, 0) + state.adjustment;
@@ -1671,7 +1671,7 @@ function readState(inputs = {}) {
   const kitchenCustomAppliancePrice = numberValue("kitchenCustomAppliancePrice");
   const nonnegative = id => Number.isFinite(numberValue(id)) ? Math.max(0, numberValue(id)) : 0;
   return {
-    tradeRevision:{...tradeRevisionValues(id=>el[id]?.value,checkedValue),tradeFormulaVersion:inputs.tradeFormulaVersion||"legacy",demolition:demolitionSection,electrical:electricalSection,wallpaper:wallpaperSection,film:filmSection,furniture:furnitureSection,finish:finishSection},
+    tradeRevision:{...tradeRevisionValues(id=>id==="expansionPartitionMm"?expansionPartitionInput(inputs):el[id]?.value,checkedValue),tradeFormulaVersion:inputs.tradeFormulaVersion||"legacy",demolition:demolitionSection,electrical:electricalSection,wallpaper:wallpaperSection,film:filmSection,furniture:furnitureSection,finish:finishSection},
     carpentryCostMode: el.carpentryCostMode.value === "assembly-v1" ? "assembly-v1" : "legacy",
     carpentryCofferUnits: integerValue("carpentryCofferUnits"),
     carpentryIndirectT3Mm: carpentrySection ? numberValue("carpentryIndirectT3Mm") : 0,

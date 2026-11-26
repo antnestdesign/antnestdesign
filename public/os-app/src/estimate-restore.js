@@ -1,6 +1,7 @@
 import { isEstimateInputExcluded } from "./estimate-input.js";
 import { PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { displayEstimateInputValue } from "./estimate-length.js";
+import { expansionPartitionInput } from "./trade-revision-inputs.js";
 
 export function createEstimateRestore({ document, elements: el, excludedInputById }) {
 function ensureEstimateStatusControl() {
@@ -93,6 +94,8 @@ function restoreInputValues(inputs = {}) {
   nextInputs.countertopLayoutMode=inputs.countertopLayoutMode??"legacy";
   nextInputs.baseCounterCustomSize=inputs.baseCounterCustomSize??(nextInputs.countertopLayoutMode==="legacy");
   nextInputs.bathroomTileRooms=inputs.bathroomTileRooms ?? "";
+  nextInputs.dryVanityCountertop=inputs.dryVanityCountertop ?? "none";
+  nextInputs.expansionPartitionMm=expansionPartitionInput(inputs);
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
     nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
   }
@@ -162,6 +165,20 @@ function syncBlockLocks() {
       control.disabled = disabled;
     });
   });
+  for(const [toggleId,lengthId] of [
+    ["carpentryMoldingEnabled","carpentryMoldingLengthM"],
+    ["carpentryBaseboardEnabled","carpentryBaseboardLengthM"],
+  ]){
+    const toggle=el[toggleId],length=el[lengthId];
+    if(toggle&&length)length.disabled=toggle.disabled||!toggle.checked;
+  }
+  for(const [gradeId,material] of [["flooringSheetGrade","sheet"],["flooringWoodGrade","wood"]]){
+    const grade=el[gradeId],choice=el.flooringMaterialType;
+    if(!grade||!choice)continue;
+    const inactive=choice.value!==material;
+    grade.closest("label").hidden=inactive;
+    grade.disabled=choice.disabled||inactive;
+  }
 }
 
 function guardCheckboxLabelClicks() {

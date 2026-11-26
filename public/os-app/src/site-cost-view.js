@@ -10,7 +10,8 @@ export function mountSiteCostView({ document, canView, canStandardEdit, readConf
     if (!panel) continue;
     const node = document.createElement("details"); node.className = "site-cost-composition"; node.hidden = true;
     node.dataset.siteCostTrade = trade;
-    panel.insertBefore(node, panel.querySelector(":scope > [data-last-trade-input]"));
+    const lastTradeInput = panel.querySelector(":scope > [data-last-trade-input]");
+    panel.insertBefore(node, lastTradeInput?.nextElementSibling ?? null);
     hosts.set(trade, node);
   }
   const config = () => { try { return JSON.parse(readConfig() || '{"version":1,"rows":{}}'); } catch { return { version: 1, rows: {} }; } };

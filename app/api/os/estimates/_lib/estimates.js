@@ -1,7 +1,7 @@
 import { ApiError, errorResponse, supabaseFetch } from "../../_lib/server";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
-import { cabinetCountertopDimensions, dryVanityCountertopDimensions } from "../../../../../public/os-app/src/trade-revision-inputs.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput } from "../../../../../public/os-app/src/trade-revision-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
 import { withBathroomTileMaterialPolicy } from '../../_lib/calculation/bathroom-tile-materials.js';
@@ -79,6 +79,7 @@ function inputValue(id, value, strict = false) {
 
 function legacyInputs(raw = {}) {
   const inputs = { ...raw };
+  inputs.expansionPartitionMm = expansionPartitionInput(inputs);
   if (inputs.wallpaperPublicMaterialGrade == null && inputs.wallpaperMaterialGrade != null) inputs.wallpaperPublicMaterialGrade = inputs.wallpaperMaterialGrade;
   if (inputs.wallpaperPublicWallLengthM == null && inputs.wallpaperWallLengthM != null) inputs.wallpaperPublicWallLengthM = inputs.wallpaperWallLengthM;
   if (inputs.wallpaperRoomMaterialGrade == null) inputs.wallpaperRoomMaterialGrade = "besti";
@@ -96,6 +97,7 @@ export function safeInputs(raw = {}) {
   if(!Object.hasOwn(inputs,"tradeFormulaVersion"))inputs.tradeFormulaVersion="legacy";
   if(!Object.hasOwn(inputs,"countertopLayoutMode"))inputs.countertopLayoutMode="legacy";
   if(!Object.hasOwn(inputs,"baseCounterCustomSize"))inputs.baseCounterCustomSize=inputs.countertopLayoutMode==="legacy";
+  if(inputs.dryVanityCountertop==null)inputs.dryVanityCountertop="none";
   return Object.fromEntries(staffInputIds.map((id) => [id,
     inputValue(id, Object.hasOwn(inputs, id) ? inputs[id] : ESTIMATE_INPUT_SCHEMA[id].value)]));
 }
@@ -154,9 +156,19 @@ function normalizedInputs(raw, existing = false) {
   if(existing&&!Object.hasOwn(values,"tradeFormulaVersion"))values.tradeFormulaVersion="legacy";
   if(existing&&!Object.hasOwn(values,"countertopLayoutMode"))values.countertopLayoutMode="legacy";
   if(existing&&!Object.hasOwn(values,"baseCounterCustomSize"))values.baseCounterCustomSize=values.countertopLayoutMode==="legacy";
+  if(existing&&values.dryVanityCountertop==null)values.dryVanityCountertop="none";
   if (existing && !Object.hasOwn(values, "carpentryCostMode")) values.carpentryCostMode = "legacy";
   return Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, schema]) => [id,
     Object.hasOwn(values, id) ? inputValue(id, values[id]) : schema.value]));
+}
+
+function mergeEstimateInputs(baseline, incoming, stored) {
+  const inputs = { ...baseline, ...incoming };
+  if (Object.hasOwn(incoming, "demoPartitionMm") && !Object.hasOwn(incoming, "expansionPartitionMm")
+      && !Object.hasOwn(stored || {}, "expansionPartitionMm")) {
+    inputs.expansionPartitionMm = expansionPartitionInput({ ...inputs, expansionPartitionMm: undefined });
+  }
+  return inputs;
 }
 
 function validateTradeRevision(inputs, previous) {
@@ -245,7 +257,7 @@ export async function calculatePrivilegedEstimate(body, context) {
     incoming[id]=inputValue(id,value,true);
   }
   const original=body.estimateId?await readEstimate(body.estimateId):null,existing=baseEstimate(original);
-  const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(old)),inputs={...baseline,...incoming};
+  const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(old)),inputs=mergeEstimateInputs(baseline,incoming,old?.inputs);
   validateTradeRevision(inputs,existing?(old||{}):null);
   const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
   delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
@@ -302,7 +314,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   const effectiveBaseline = comparisonCore.effectiveEstimateInputOverrides(comparisonCore.readState(baseline));
   delete effectiveBaseline.existingPipeCleaningEnabled;
   Object.assign(baseline, effectiveBaseline);
-  const inputs = { ...baseline, ...validated.inputs };
+  const inputs = mergeEstimateInputs(baseline, validated.inputs, oldData?.inputs);
   validateTradeRevision(inputs,existing?(oldData||{}):null);
   const changed = staffInputIds.filter((id) => inputValue(id, inputs[id]) !== inputValue(id, baseline[id]));
   const calculating = changed.filter((id) => !metadataInputs.has(id));

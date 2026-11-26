@@ -135,6 +135,7 @@ test("room controls preserve per-room entries on count changes and after reloadi
   input.value = payload([room, { ...room, wallTile: "lt-1200" }]);
   sync();
   expect(field(1, "wallTile").selectedOptions[0].textContent).toBe("고급형 600×1200");
+  expect(field(1, "labor")).toBeNull();
   field(1, "jolly").checked = true;
   field(1, "jolly").dispatchEvent(new Event("input", { bubbles: true }));
   expect(parseBathroomTileRooms(input.value)[1].jolly).toBe(true);
@@ -164,7 +165,7 @@ test("two bathrooms calculate from the actual form event payload and price all w
   for (const id of ["sectionBathroomEnabled","tileEnabled","tileGroutEnabled","bathroomPlumbingRelocationEnabled"]) elements[id].checked = true;
   sync();
   for (const index of [0, 1]) {
-    for (const [key, value] of Object.entries({ wallLengthMm: "8000", wallTile: "ara-1200", floorArea: "3.84", floorTile: "ara-600", labor: true, jolly: true })) {
+    for (const [key, value] of Object.entries({ wallLengthMm: "8000", wallTile: "ara-1200", floorArea: "3.84", floorTile: "ara-600", jolly: true })) {
       const field = document.querySelector(`[data-tile-room="${index}"][data-tile-field="${key}"]`);
       if (typeof value === "boolean") field.checked = value;
       else field.value = value;
@@ -192,8 +193,31 @@ test("two bathrooms calculate from the actual form event payload and price all w
     field.checked = false;
     field.dispatchEvent(new Event("input", { bubbles: true }));
   };
-  setUnchecked(0, "labor");
-  expect(run(last).directCost).toBe(7516080);
+  elements.tileEnabled.click();
+  expect(run(last).directCost).toBe(6466080);
   setUnchecked(1, "jolly");
-  expect(run(last).directCost).toBe(7116080);
+  expect(run(last).directCost).toBe(6066080);
+});
+
+test("saved room labor preferences are preserved until the user explicitly enables the master checkbox", () => {
+  document.body.innerHTML = readFileSync("public/os-app/index.html", "utf8");
+  const sync = mountBathroomTileInputs(document);
+  const get = id => document.getElementById(id);
+  get("sectionBathroomEnabled").checked = true;
+  get("bathroomUnits").value = "2";
+  const legacy = payload([{ ...oldRoom, labor: false }, { ...oldRoom, jolly: true }]);
+  const input = get("bathroomTileRooms");
+  const toggle = get("tileEnabled");
+  input.value = legacy;
+  toggle.checked = true;
+  sync();
+  expect(input.value).toBe(legacy);
+  expect(document.querySelectorAll('[data-tile-field="labor"]')).toHaveLength(0);
+  toggle.click();
+  expect(input.value).toBe(legacy);
+  toggle.click();
+  const updated = parseBathroomTileRooms(input.value);
+  expect(updated.map(r => r.labor)).toEqual([true, true]);
+  expect(updated.map(r => [r.wallLengthMm, r.jolly])).toEqual([[8000, false], [8000, true]]);
+  expect(calculate({ bathroomUnits: "2", bathroomTileRooms: input.value }).details.filter(d => d.item.includes("타일 시공 인건비"))).toHaveLength(2);
 });

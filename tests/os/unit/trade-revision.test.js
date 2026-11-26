@@ -26,6 +26,24 @@ test("partial demolition uses the 40-pyeong boundary and cannot stack the full r
   expect(detail(r,"조명철거").revenue).toBe(65000);
   expect(detail(run({...inputs,areaPyeong:"41"}),"조명철거").cost).toBe(100000);
 });
+test.each(["full","partial"])("partition removal is billed once on top of %s demolitions",mode=>{
+  const inputs={sectionDemolitionEnabled:true,demolitionMode:mode,demolitionBasicEnabled:true,demolitionBasicArea:"20",
+    expansionLiving:true,expansionPartitionMm:"2500",demoPartitionMm:"9000"};
+  const result=run(inputs);
+  expect(result.details.filter(row=>row.item==="가벽철거")).toEqual([expect.objectContaining({
+    quantity:"2.5m",unitPrice:100000,cost:250000,customerRevenue:325000
+  })]);
+  expect(detail(result,"거실 확장").customerRevenue).toBe(6000000);
+  expect(result.directCost-run({...inputs,expansionPartitionMm:"0"}).directCost).toBe(250000);
+  expect(detail(run({...inputs,expansionPartitionMm:"2300"}),"가벽철거").customerRevenue).toBe(299000);
+  expect(detail(run({...inputs,expansionPartitionMm:""}),"가벽철거")).toBeUndefined();
+  expect(run({...inputs,sectionDemolitionEnabled:false}).details).toEqual([]);
+});
+test("old hidden lengths do not appear in full demolition but previously priced lengths carry forward",()=>{
+  const inputs={sectionDemolitionEnabled:true,demoPartitionMm:"2000"};
+  expect(detail(run({...inputs,demolitionMode:"full"}),"가벽철거")).toBeUndefined();
+  expect(detail(run({...inputs,demolitionMode:"partial"}),"가벽철거").cost).toBe(200000);
+});
 test("bathroom full and fixtures-only scopes have independent rates",()=>{
   const scope={sectionDemolitionEnabled:true};
   expect(run({...scope,demoBathFull:"2",demoBathTub:"1",demoBathOverlay:"2"}).directCost).toBe(1700000);
@@ -54,6 +72,16 @@ test("unchecking vanity keeps dimensions without billing its cabinet, drawers or
   const inputs={sectionFurnitureEnabled:true,vanityMm:"3000",vanityDrawers:"2",vanityTop:"ceramic",countertopTransport:true};
   expect(run(inputs).directCost).toBeGreaterThan(0);
   expect(run({...inputs,vanityEnabled:"off"}).directCost).toBe(0);
+});
+
+test("door replacement toggle gates molding and preserves earlier molding-only quotes",()=>{
+  const inputs={sectionFurnitureEnabled:true,furnitureTallDoors:"2",furnitureSinkSmallDoors:"3",furnitureMoldingMm:"1000"};
+  expect(run(inputs).directCost).toBe(265000);
+  expect(run({...inputs,furnitureDoorsEnabled:"on"}).directCost).toBe(265000);
+  const off=run({...inputs,furnitureDoorsEnabled:"off"});
+  expect(off.details).toEqual([]);
+  expect(off.directCost).toBe(0);
+  expect(run({sectionFurnitureEnabled:true,furnitureMoldingMm:"1000"}).directCost).toBe(20000);
 });
 test("film rounds once after combining fractional labor",()=>{
   const base={filmWindow:true,filmWindowArea:"20",filmDoorCount:2,filmOneSideMm:0,filmBothSidesMm:0,filmWallMm:0};
@@ -132,4 +160,13 @@ test("bathroom dry vanity uses kitchen cabinet rates or the independent foam pri
   expect(foam.details.find(d=>d.item.startsWith("건식세면대 상판"))).toMatchObject({cost:450000,item:expect.stringContaining("20T")});
   expect(run({...inputs,dryVanityEnabled:false}).details).toEqual([]);
   expect(run({...inputs,sectionBathroomEnabled:false}).details).toEqual([]);
+});
+
+test("dry vanity EP panel uses the existing linear EP rate and lower-cabinet length",()=>{
+  const inputs={sectionBathroomEnabled:true,dryVanityEnabled:true,dryVanityLengthMm:"1200",dryVanityCounterCustomSize:true,
+    dryVanityCounterWidthMm:"2500",dryVanityCounterDepthMm:"900"};
+  const ep=run(inputs,{rateValues:{rateEpPanelPerM:140000}});
+  expect(detail(ep,"건식세면대 상판(EP판)")).toMatchObject({quantity:"1.2m",unitPrice:140000,cost:168000,customerRevenue:218000});
+  expect(detail(run({...inputs,dryVanityLengthMm:"900"}),"건식세면대 상판(EP판)").quantity).toBe("1m");
+  expect(detail(run({...inputs,dryVanityCountertop:"none"}),"건식세면대 상판(EP판)")).toBeUndefined();
 });

@@ -337,7 +337,7 @@ select:focus {
 }
 
 @media (max-width: 400px) {
-  .preliminary-workspace .control-grid:not(.project-info-grid) { grid-template-columns: minmax(0, 1fr); }
+  .preliminary-workspace .control-grid:not(.project-info-grid, .bathroom-tile-grid) { grid-template-columns: minmax(0, 1fr); }
   .preliminary-workspace .project-info-grid > label:first-child { grid-column: 1 / -1; }
   .preliminary-actions button { flex: 1 1 auto; }
 }
@@ -2356,7 +2356,9 @@ th:last-child {
 [data-batch-quantities] { padding: 12px 0; border-bottom: 1px solid #d8d2ce; }
 @media (max-width: 600px) { .quantity-comparison { grid-template-columns: minmax(0, 1fr); } }
 
-.carpentry-policy { padding: 12px 20px; max-width: 360px; }
+.carpentry-trim-fields { display: grid; gap: 12px; max-width: 540px; padding: 20px; }
+.carpentry-trim-row { display: grid; grid-template-columns: minmax(85px, 1fr) minmax(0, 2fr); align-items: center; gap: 12px; }
+.carpentry-trim-row label { min-width: 0; }
 [data-site-policy][hidden], [data-coffer-count][hidden], [data-legacy-indirect-input][hidden], [data-legacy-indirect-note][hidden], .site-cost-composition[hidden], #estimateReviewNotice[hidden] { display: none !important; }
 .carpentry-work-sales { display: grid; gap: 6px; padding: 0 20px; }
 .carpentry-work-sales > div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
@@ -2507,14 +2509,17 @@ th:last-child {
 /* Phase 3 reuses the consultation form and existing management tools. */
 body[data-workflow-layout="phase3"] [hidden] { display: none !important; }
 .trade-revision-inputs fieldset { min-inline-size: 0; border: 1px solid var(--line); padding: 12px; margin: 0 0 10px; }
+.trade-revision-inputs > .check-title + fieldset { border: 0; margin: 0; padding: 20px; }
 .trade-revision-inputs legend { font-weight: 700; }
 .bathroom-tile-rooms fieldset { min-inline-size: 0; border: 1px solid var(--line); padding: 12px; margin: 0; }
 .bathroom-tile-rooms fieldset + fieldset { margin-top: 10px; }
 .bathroom-tile-rooms legend { font-weight: 700; }
 .bathroom-tile-rooms label { min-width: 0; }
 .bathroom-tile-rooms select { width: 100%; min-width: 0; }
+.preliminary-workspace .bathroom-tile-grid { grid-template-columns: repeat(2, minmax(0, 220px)); }
 .trade-toggle-pair { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .trade-toggle-pair input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; }
+.trade-field-pair { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 220px)); gap: inherit; }
 .trade-wallpaper-grid { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .trade-wallpaper-grid[hidden] { display: none; }
 .trade-revision-inputs [hidden], .trade-revision-inputs[hidden] { display: none !important; }

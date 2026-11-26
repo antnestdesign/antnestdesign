@@ -293,8 +293,9 @@
 <label class="section-toggle"><input id="sectionFilmEnabled" type="checkbox"/><span>필름</span></label>
 <p>필름 기준과 시공 범위를 선택합니다.</p>
 </div>
-<div class="furniture-block">
-<div class="control-grid compact-row-grid">
+<div class="furniture-block trade-revision-inputs">
+<fieldset class="control-grid compact-row-grid">
+<legend>필름 자재</legend>
 <label>
                   기준
                   <select id="filmPreset">
@@ -305,14 +306,14 @@
 </select>
 </label>
 <label>
-                  벽 길이(mm)
+                  필름 길이 (mm)
                   <input id="filmMaterialLengthM" min="0" step="100" type="number" value="0"/>
 </label>
-</div>
+</fieldset>
 </div>
 <div class="section-heading sub-heading">
 <label class="section-toggle"><input id="sectionFlooringEnabled" type="checkbox"/><span>바닥</span></label>
-<p>바닥 마루 등급과 시공 면적을 입력합니다.</p>
+<p>바닥 종류와 등급, 시공 면적을 입력합니다.</p>
 </div>
 <div class="furniture-block">
 <div class="control-grid compact-row-grid">
@@ -327,7 +328,7 @@
                     <option value="sheet">장판</option>
                   </select>
 </label>
-<label>
+<label hidden>
                   장판 등급
                   <select id="flooringSheetGrade">
                     <option value="t18">1.8T</option>
@@ -353,7 +354,7 @@
 </div>
 <input id="siteCostConfig" type="hidden" value=""/>
 <select id="preliminaryPolicySelection" hidden aria-label="산정 기준 적용"><option value="saved">저장 기준</option><option value="current">최신 기준</option></select>
-<label class="carpentry-policy" data-site-policy>목공 산정 기준<select id="carpentryCostMode"><option value="assembly-v1" selected>공사별 물량 산출</option><option value="legacy">기존 견적 기준 유지</option></select></label>
+<input id="carpentryCostMode" type="hidden" value="assembly-v1"/>
 <div data-site-policy><button id="applyLatestPreliminaryPolicyButton" type="button" disabled>최신 회사 산정 기준 적용</button></div>
 <div id="carpentryWorkSales" class="carpentry-work-sales"></div>
 <p id="estimateReviewNotice" class="site-cost-warning" hidden role="status"></p>
@@ -437,16 +438,20 @@
 </div>
 </div>
 <div class="furniture-block">
-<div class="control-grid compact-row-grid">
+<div class="carpentry-trim-fields">
+<div class="carpentry-trim-row">
 <label class="inline-check">
 <input id="carpentryMoldingEnabled" type="checkbox"/>
 <span>천장몰딩</span></label>
 <label>천장몰딩 시공 길이(mm)<input id="carpentryMoldingLengthM" data-length-unit="mm" min="0" step="100" type="number" value="0"/></label>
+</div>
+<div class="carpentry-trim-row">
 <label class="inline-check">
 <input id="carpentryBaseboardEnabled" type="checkbox"/>
 <span>걸레받이</span>
 </label>
 <label>걸레받이 시공 길이(mm)<input id="carpentryBaseboardLengthM" data-length-unit="mm" min="0" step="100" type="number" value="0"/></label>
+</div>
 </div>
 </div>
 <div class="section-heading sub-heading">

@@ -1,5 +1,5 @@
 import { wallpaperGradeOption } from "./finish.js";
-import { cabinetCountertopDimensions, dryVanityCountertopDimensions } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions, furnitureDoorsSelected } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 
 export const counterRates={ceramic:500000,khanstone:400000,himacs:210000};
 const previousCounterRates={ceramic:400000,khanstone:320000,himacs:200000};
@@ -11,9 +11,9 @@ export const wallpaperRolls=area=>Math.ceil(area*2.5/5);
 export const filmLabor=v=>Math.ceil(((v.filmWindow?({20:4,30:6,40:8,50:10}[v.filmWindowArea]||0):0)*4000
   +v.filmDoorCount*2000+v.filmOneSideMm*2+v.filmBothSidesMm*4+v.filmWallMm)/4000);
 
-export function expansionDetails(v){
+export function expansionDetails(v,mmText){
   if(!v?.demolition)return [];
-  return [
+  const rows=[
     ["거실 확장",v.expansionLiving?1:0,4600000,6000000],
     ["각방 확장",Math.trunc(v.expansionRooms||0),3000000,4000000],
     ["주방 확장",Math.trunc(v.expansionKitchen||0),3000000,4000000],
@@ -21,6 +21,12 @@ export function expansionDetails(v){
     group:"demolition",item,input:`${count}개소`,quantity:`${count}개소`,
     unitPrice:unitCost,cost:count*unitCost,customerRevenue:count*unitSale,
   }));
+  if(v.expansionPartitionMm>0){
+    const meters=v.expansionPartitionMm/1000,unitPrice=100000;
+    rows.push({group:"demolition",item:"가벽철거",input:mmText(v.expansionPartitionMm),
+      quantity:`${meters}m`,unitPrice,cost:v.expansionPartitionMm*unitPrice/1000,fixedMarkup:0.30});
+  }
+  return rows;
 }
 
 export function revisedCountertops(state) {
@@ -39,7 +45,7 @@ export function revisedCountertops(state) {
   ].filter(([, ,enabled,width,material,depth])=>enabled&&width>0&&depth>0&&Object.hasOwn(counterRates,material));
 }
 
-export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
+export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM}){
   const v=state.tradeRevision;
   if(v?.tradeFormulaVersion!=="v2")return [];
   const rows=[];
@@ -49,7 +55,7 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
   const meters=(group,item,mm,price)=>add(group,item,mm/1000,"m",price,mm*price/1000,mmText(mm));
   if(v.demolition){
     if(v.demolitionMode==="partial"){
-      for(const [item,key,price] of [["주방 가구철거","demoKitchenMm",10000],["싱크대 상판 철거","demoCounterMm",10000],["가벽철거","demoPartitionMm",100000]])meters("demolition",item,v[key],price);
+      for(const [item,key,price] of [["주방 가구철거","demoKitchenMm",10000],["싱크대 상판 철거","demoCounterMm",10000]])meters("demolition",item,v[key],price);
       for(const [item,key,unit,price] of [["일반 가구장 철거","demoCabinetJa","자",10000],["중문 및 중문틀 철거","demoEntryUnits","개소",100000],["방문만 철거","demoDoorUnits","개",10000],["방문 및 문틀 철거","demoDoorSetUnits","조",30000]])add("demolition",item,v[key],unit,price);
       if(v.demoLights)add("demolition","조명철거",1,"식",state.areaPyeong<=40?50000:100000);
     }
@@ -80,11 +86,17 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
     const foam=v.dryVanityCabinetType==="foam";
     add("bathroom",foam?"건식세면대 발포 하부장":"건식세면대 일반 가구장",jaRounded(v.dryVanityLengthMm),"자",foam?310000:rates.lowerPerJa,
       undefined,mmText(v.dryVanityLengthMm));
+    if(v.dryVanityCountertop==="epPanel"){
+      add("bathroom","건식세면대 상판(EP판)",Math.max(counterMinimumM,v.dryVanityLengthMm/1000),"m",
+        rates.countertop.epPanel.costPerM,undefined,mmText(v.dryVanityLengthMm));
+    }
     tops.filter(([group])=>group==="bathroom").forEach(addTop);
   }
   if(v.furniture){
-    for(const [item,key,price] of [["키큰장 문짝 교체","furnitureTallDoors",70000],["싱크대 문짝 교체 (400mm 이하)","furnitureSinkSmallDoors",35000],["싱크대 문짝 교체 (400mm 초과~600mm 이하)","furnitureSinkMediumDoors",45000]])add("base",item,v[key],"개",price);
-    meters("base","가구 몰딩",v.furnitureMoldingMm,20000);
+    if(furnitureDoorsSelected(v)){
+      for(const [item,key,price] of [["키큰장 문짝 교체","furnitureTallDoors",70000],["싱크대 문짝 교체 (400mm 이하)","furnitureSinkSmallDoors",35000],["싱크대 문짝 교체 (400mm 초과~600mm 이하)","furnitureSinkMediumDoors",45000]])add("base",item,v[key],"개",price);
+      meters("base","가구 몰딩",v.furnitureMoldingMm,20000);
+    }
     const vanity=v.vanityEnabled!=="off"&&v.vanityMm>0;
     if(vanity){
       add("base","화장대 하부장",jaRounded(v.vanityMm),"자",rates.lowerPerJa,undefined,mmText(v.vanityMm));

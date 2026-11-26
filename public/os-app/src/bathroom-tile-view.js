@@ -21,12 +21,12 @@ export function mountBathroomTileInputs(document) {
   const fields = [
     ["wallLengthMm", "벽체 총길이 (mm)", "number"], ["wallTile", "벽체 타일", "select"],
     ["floorArea", "바닥 면적 (㎡)", "number"], ["floorTile", "바닥 타일", "select"],
-    ["labor", "타일 시공 인건비", "checkbox"], ["jolly", "졸리컷", "checkbox"],
+    ["jolly", "졸리컷", "checkbox"],
   ];
 
   function roomFields(index) {
     const fieldset = document.createElement("fieldset");
-    fieldset.className = "control-grid compact-row-grid";
+    fieldset.className = "control-grid compact-row-grid bathroom-tile-grid";
     const legend = document.createElement("legend");
     legend.textContent = `욕실 ${index + 1} 타일`;
     fieldset.append(legend);
@@ -80,6 +80,17 @@ export function mountBathroomTileInputs(document) {
     renderedValue = value.value = JSON.stringify(rooms);
     value.dispatchEvent(new document.defaultView.Event("change", { bubbles: true }));
   });
+
+  function applyLaborToAllRooms() {
+    if (!toggle.checked || toggle.disabled || !section.checked || value.value === "") return;
+    const savedRooms = renderedValue === value.value ? rooms : parseBathroomTileRooms(value.value);
+    if (!savedRooms.some(room => !room.labor)) return;
+    // An explicit enable replaces older per-room exceptions; opening a quote does not.
+    rooms = savedRooms.map(room => ({ ...room, labor: true }));
+    renderedValue = value.value = JSON.stringify(rooms);
+  }
+  toggle.addEventListener("input", applyLaborToAllRooms);
+  toggle.addEventListener("change", applyLaborToAllRooms);
 
   return () => {
     const legacy = value.value === "";
