@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {ApiError,errorResponse,getUserContext,json,readBearerToken,requireAdmin,requireServiceRoleKey,supabaseUserFetch,supabaseFetch} from '../_lib/server';
 import {defaultPolicy,policyCatalog,policyRateValues,policyScenario,PreliminaryPolicyError,validatePolicy} from '../_lib/calculation/preliminary-policy.js';
+import {withBathroomTileMaterialPolicy} from '../_lib/calculation/bathroom-tile-materials.js';
 import {createEstimateCalculation} from '../_lib/calculation/calculator/estimate-core.js';
 import {PRELIMINARY_POLICY_EXAMPLES} from '../_lib/calculation/preliminary-policy-examples.js';
 type PolicyState={version:number;revision:number;draft:unknown;draft_master_hash:string|null;master_hash:string;masters:Array<{id:string;item_code:string;item_name:string;unit:string;cost_price:number;is_active:boolean}>;current:unknown;history:Array<{version:number;reason:string;published_at:string;published_by:string}>};
@@ -14,7 +15,7 @@ async function state(request:NextRequest) {
   const config=structuredClone(data.current||defaultPolicy(core.policyDefaults(),data.masters));
   const policy=config as {prices:Record<string,number>};
   for(const row of data.masters as Array<{item_code:string,cost_price:number}>)if(Object.hasOwn(policy.prices,row.item_code))policy.prices[row.item_code]=Number(row.cost_price);
-  return {...data,current:validatePolicy(config),catalog:policyCatalog(),can_edit:context.profile.role==='admin'};
+  return {...data,current:validatePolicy(config),draft:data.draft?withBathroomTileMaterialPolicy(data.draft):null,catalog:policyCatalog(),can_edit:context.profile.role==='admin'};
 }
 function safeError(error:unknown) {
   if(error instanceof PreliminaryPolicyError)return json({error:error.message},{status:400});
@@ -44,7 +45,7 @@ export async function POST(request:NextRequest) {
         const rows=await supabaseFetch<Array<{config:unknown}>>(`/rest/v1/preliminary_policy_versions?version=eq.${body.version}&select=config`);
         if(!rows[0])throw new ApiError(404,'산정 기준 버전을 찾지 못했습니다.');config=rows[0].config;
       }
-      validatePolicy(config);
+      config=validatePolicy(config);
       await supabaseUserFetch('/rest/v1/rpc/save_preliminary_policy_draft',token,{method:'POST',body:JSON.stringify({p_config:config,p_expected_revision:body.revision,p_master_hash:body.master_hash})});
     }else if(action==='publish'){
       const data=await state(request);if(!data.draft)throw new ApiError(400,'임시저장된 산정 기준이 없습니다.');validatePolicy(data.draft);
@@ -60,5 +61,5 @@ export async function POST(request:NextRequest) {
 function canonical(value:unknown):unknown {if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical((value as Record<string,unknown>)[k])]));return value;}
 function previewToken(actor:string,config:unknown,hash:unknown,revision:unknown,time:number) {return `${time}.${createHmac('sha256',requireServiceRoleKey()).update(JSON.stringify([actor,canonical(config),hash,revision,time])).digest('base64url')}`;}
 function changes(before:ReturnType<typeof validatePolicy>,after:ReturnType<typeof validatePolicy>) {
-  const out=[];for(const area of ['prices','parameters','rules'] as const)for(const key of Object.keys(before[area]))if(JSON.stringify(before[area][key])!==JSON.stringify(after[area][key]))out.push({area,key,before:before[area][key],after:after[area][key]});return out;
+  const out=[];for(const area of ['prices','parameters','rules'] as const)for(const key of Object.keys(before[area]))if(JSON.stringify(canonical(before[area][key]))!==JSON.stringify(canonical(after[area][key])))out.push({area,key,before:before[area][key],after:after[area][key]});return out;
 }

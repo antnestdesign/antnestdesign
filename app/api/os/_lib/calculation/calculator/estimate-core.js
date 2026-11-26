@@ -5,6 +5,8 @@ import { finishMaterialRates } from "../rates/finish.js";
 import { miscRates } from "../rates/misc.js";
 import { carpentryAssemblies, applySiteCostOverrides } from "../site-costs.js";
 import { bathroomDetails } from "./bathroom.js";
+import { bathroomTileDetails } from "./bathroom-tile.js";
+import { parseBathroomTileRooms } from "../../../../../../public/os-app/src/bathroom-tile-inputs.js";
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
@@ -1078,7 +1080,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "tile",
     item: "타일 기공",
-    enabled: state.tileEnabled,
+    enabled: state.tileEnabled && state.bathroomTileRooms == null,
     input: policyRuleChanged(policy,'tile.worker')?`${state.tileBathroomUnits}칸 · 게시된 산정 기준`:`${state.tileBathroomUnits}칸 x 3품`,
     quantity: `${rule('tile.worker',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits*3)}품`,
     unitPrice: rates.finish.tileWorkerDay,
@@ -1089,7 +1091,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "tile",
     item: "타일 조공",
-    enabled: state.tileEnabled,
+    enabled: state.tileEnabled && state.bathroomTileRooms == null,
     input: policyRuleChanged(policy,'tile.helper')?`${state.tileBathroomUnits}칸 · 게시된 산정 기준`:`${state.tileBathroomUnits}칸 x 1품`,
     quantity: `${rule('tile.helper',{count:state.tileBathroomUnits},()=>state.tileBathroomUnits)}품`,
     unitPrice: rates.finish.tileHelperDay,
@@ -1121,6 +1123,7 @@ function calculate(state) {
   });
 
   addModuleDetails(details, bathroomDetails(state, rates.bathroom, policy), margin, state.corrections.option);
+  addModuleDetails(details, bathroomTileDetails(state, policy), 0.30, 0);
 
   const wallpaperUnitDays = wallpaperDays(state.wallpaperPreset, state.wallpaperBaseCoatEnabled);
   addUnitDetail(details, {
@@ -1776,6 +1779,7 @@ function readState(inputs = {}) {
     flooringSheetGrade: el.flooringSheetGrade?.value || "t20",
     flooringWoodGrade: el.flooringWoodGrade?.value || "editone",
     bathroomEnabled: bathroomSection,
+    bathroomTileRooms: parseBathroomTileRooms(inputs.bathroomTileRooms ?? ""),
     bathroomUnits: integerValue("bathroomUnits"),
     bathroomFixtureGrade: el.bathroomFixtureGrade?.value || "standard",
     bathroomFanType: el.bathroomFanType.value,

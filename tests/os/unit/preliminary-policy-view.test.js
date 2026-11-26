@@ -28,7 +28,7 @@ function trade(name,tab='rules'){click(`[data-policy-trade="${name}"]`);click(`[
 async function saved(context){click('[data-policy-action="save"]');await tick();return context.calls.at(-1).config;}
 beforeEach(()=>{document.body.innerHTML='<section class="system-cost-card"><div class="section-heading"></div><div id="systemCostItemTools"></div><div id="systemCostAccordion"></div></section>';vi.stubGlobal('confirm',vi.fn(()=>true));});
 
-test('all nine trades preserve 109 prices, 29 parameters and 39 rules without editing any setting',async()=>{
+test('all nine trades preserve 112 prices, 31 parameters and 39 rules without editing any setting',async()=>{
   const c=await mount(),prices=new Set(),parameters=new Set(),rules=new Set();
   for(const name of['철거','전기·조명','욕실·타일','도배','필름','바닥','목공','가구','마감·기타'])for(const tab of['prices','rules']){
     trade(name,tab);
@@ -37,7 +37,20 @@ test('all nine trades preserve 109 prices, 29 parameters and 39 rules without ed
     document.querySelectorAll('[data-policy-basic-rule]').forEach(n=>rules.add(n.dataset.policyBasicRule));
     expect(document.querySelectorAll('[data-expression-kind]')).toHaveLength(0);
   }
-  expect([prices.size,parameters.size,rules.size]).toEqual([109,29,39]);expect(c.view.isDirty()).toBe(false);expect(c.calls).toEqual([]);
+  expect([prices.size,parameters.size,rules.size]).toEqual([112,31,39]);expect(c.view.isDirty()).toBe(false);expect(c.calls).toEqual([]);
+});
+
+test('bathroom supply prices and wall/floor coverage are saved through the existing policy controls',async()=>{
+  const c=await mount();trade('욕실·타일','prices');
+  change('[data-policy-price="BATH_TILE_CERAFIX"]',20000);
+  change('[data-policy-price="BATH_TILE_DRYFIX"]',7000);
+  change('[data-policy-price="BATH_TILE_GROUT_MATERIAL"]',6000);
+  trade('욕실·타일');
+  change('[data-policy-parameter="bathTileCerafixCoverage"]',2);
+  change('[data-policy-parameter="bathTileDryfixCoverage"]',0.5);
+  const config=await saved(c);
+  expect(config.prices).toMatchObject({BATH_TILE_CERAFIX:20000,BATH_TILE_DRYFIX:7000,BATH_TILE_GROUT_MATERIAL:6000});
+  expect(config.parameters).toMatchObject({bathTileCerafixCoverage:2,bathTileDryfixCoverage:0.5});
 });
 
 test('wallpaper labor is directly editable without opening any formula editor',async()=>{

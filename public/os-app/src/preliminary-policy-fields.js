@@ -26,7 +26,7 @@ export function parameterField(parameter, config) {
   const value = config.parameters[parameter.key];
   let shown = transform === 'percent' ? precise(value * 100) : transform === 'allowance' ? precise((value - 1) * 100) : transform === 'millimetres' ? precise(value * 1000) : value;
   if (Object.is(shown, -0)) shown = 0;
-  return { label, unit, transform, value: shown, min: transform === 'allowance' ? -100 : 0 };
+  return { label, unit, transform, value: shown, min: transform === 'allowance' ? -100 : /^bathTile.*Coverage$/.test(parameter.key) ? 0.001 : 0 };
 }
 
 export function parameterStoredValue(transform, value) {
@@ -39,6 +39,8 @@ export function parameterBasis(key, config) {
     const base = config.prices.BATH_FIXTURE_SET;
     return `기본형 1칸 ${numberText(base)}원 × ${numberText(precise(value * 100))}% = 실속형 1칸 ${numberText(base * value)}원`;
   }
+  if (key === 'bathTileCerafixCoverage') return '실제 벽체 면적 ÷ 1개당 시공면적, 올림';
+  if (key === 'bathTileDryfixCoverage') return '실제 바닥 면적 ÷ 1포당 시공면적, 올림';
   if (key === 'finishWaste' || key === 'woodWaste') return `필요 자재량의 ${numberText(precise(value * 100))}% 반영`;
   if (key === 'islandWideMultiplier') return `상판 폭 ${numberText(config.parameters.islandWideThreshold)}mm 초과 시 적용`;
   if (/Legacy/.test(key)) return '기존 견적 기준 유지 항목';

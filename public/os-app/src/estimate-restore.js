@@ -90,6 +90,7 @@ function restoreInputValues(inputs = {}) {
   const nextInputs = { ...Object.fromEntries(Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), carpentryCostMode: "legacy", carpentryCofferUnits: "1", carpentryIndirectT3Mm: "0", siteCostConfig: "", ...inputs };
   nextInputs.preliminaryPolicySelection="saved";
   nextInputs.tradeFormulaVersion=inputs.tradeFormulaVersion==="v2"?"v2":"legacy";
+  nextInputs.bathroomTileRooms=inputs.bathroomTileRooms ?? "";
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
     nextInputs.wallpaperPublicMaterialGrade = nextInputs.wallpaperMaterialGrade;
   }

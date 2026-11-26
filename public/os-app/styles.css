@@ -2508,6 +2508,11 @@ th:last-child {
 body[data-workflow-layout="phase3"] [hidden] { display: none !important; }
 .trade-revision-inputs fieldset { min-inline-size: 0; border: 1px solid var(--line); padding: 12px; margin: 0 0 10px; }
 .trade-revision-inputs legend { font-weight: 700; }
+.bathroom-tile-rooms fieldset { min-inline-size: 0; border: 1px solid var(--line); padding: 12px; margin: 0; }
+.bathroom-tile-rooms fieldset + fieldset { margin-top: 10px; }
+.bathroom-tile-rooms legend { font-weight: 700; }
+.bathroom-tile-rooms label { min-width: 0; }
+.bathroom-tile-rooms select { width: 100%; min-width: 0; }
 .trade-toggle-pair { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .trade-toggle-pair input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; }
 .trade-wallpaper-grid { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

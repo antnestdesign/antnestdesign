@@ -1,5 +1,6 @@
 import { COST_ITEM_DEFINITIONS } from '../../../../../public/os-app/src/cost-item-definitions.js';
 import { ESTIMATE_INPUT_SCHEMA } from './estimate-inputs.js';
+import { BATHROOM_TILE_MATERIAL_PRICES, BATHROOM_TILE_COVERAGES, withBathroomTileMaterialPolicy } from './bathroom-tile-materials.js';
 
 export class PreliminaryPolicyError extends Error {}
 const number = value => ({ value });
@@ -24,6 +25,7 @@ export const EXTRA_PRICES = [
   ['DRYWALL_FALLBACK','목공','석고보드 DB 미등록 시 기본값','장',3500,''],
   ['BATH_PREMIUM_EXTRA','욕실·타일','고급 도기·수전 세트 추가금','칸',700000,''],
   ['BATH_MASONRY_LABOR','욕실·타일','조적칸막이 타일 기공 추가','품',350000,''],
+  ...BATHROOM_TILE_MATERIAL_PRICES,
   ['DEMO_VINYL','철거','장판 철거','평',0,''],
 ].map(([key,trade,label,unit,value,path])=>({key,trade,label,unit,value,path}));
 
@@ -50,6 +52,7 @@ export const PARAMETERS = [
   ['studBundleCount','목공','다루끼 1단 구성 개수','개',12,'rates.carpentry.studPiecesPerBundle'],
   ['woodWaste','목공','목공 자재 소요 배수','배',1.15,'rates.carpentry.wasteFactor'],
   ['fixtureValueMultiplier','욕실·타일','실속 도기·수전 기본세트 배수','배',.75,''],
+  ...BATHROOM_TILE_COVERAGES,
   ['counterMinimumM','가구','하이막스 최소 청구 길이','m',1,''],
   ['islandWideThreshold','가구','아일랜드 상판 폭 추가 기준','mm',720,''],
   ['islandWideMultiplier','가구','넓은 하이막스 상판 배수','배',2,''],
@@ -91,6 +94,7 @@ export const OPERATORS={add:'더하기',subtract:'빼기',multiply:'곱하기',d
 const unary=new Set(['ceil','floor','round']);
 const fields=new Map([...COST_ITEM_DEFINITIONS.map(d=>[d.itemCode,{key:d.itemCode,label:d.itemName,trade:trade(d.category),unit:d.unit,inputId:d.inputId,source:'기존 원가 DB'}]),...EXTRA_PRICES.map(p=>[p.key,{...p,source:'가견적 추가 기준'}])]);
 const positiveParameters=new Set(['wallpaperRollArea','filmRollArea','boardWidth','boardHeight','studSpacing','studLength','studBundleCount']);
+const tileCoverages=new Set(BATHROOM_TILE_COVERAGES.map(([key])=>key));
 export function policyCatalog() { return {prices:[...fields.values()].map(f=>({...f,...(f.key==='LIGHT_T3_CABINET'?{alsoTrades:['목공']}: {})})),parameters:PARAMETERS.map(p=>({...p,...(['finishHeight','finishWaste'].includes(p.key)?{alsoTrades:['필름']}: {})})),rules:RULES,operators:OPERATORS}; }
 export function defaultPolicy(rateDefaults={},masters=[]) {
   const byCode=new Map(masters.map(m=>[m.item_code,m]));
@@ -118,11 +122,13 @@ export function evaluateExpression(node,vars) {
 }
 export function validatePolicy(config) {
   if(!config||config.schema!==1||Object.keys(config).sort().join(',')!=='parameters,prices,rules,schema'||JSON.stringify(config).length>150000)fail('산정 기준 형식을 확인해 주세요.');
+  for(const area of ['prices','parameters'])if(!config[area]||typeof config[area]!=='object'||Array.isArray(config[area]))fail('산정 기준 형식을 확인해 주세요.');
+  config=withBathroomTileMaterialPolicy(config);
   for(const[key,list]of[['prices',[...fields.keys()]],['parameters',PARAMETERS.map(p=>p.key)],['rules',RULES.map(r=>r.key)]]){
     const value=config[key];if(!value||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...list].sort().join(','))fail('산정 기준 항목이 누락되었거나 추가되었습니다.');
   }
   for(const value of Object.values(config.prices))if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>1e9)fail('게시 기준의 단가를 입력해 주세요. 0원과 미등록은 구분합니다.');
-  for(const p of PARAMETERS){const v=config.parameters[p.key];if(typeof v!=='number'||!Number.isFinite(v)||v<0||v>1e7||(positiveParameters.has(p.key)&&v<=0))fail(`${p.label}의 허용 범위를 확인해 주세요.`);}
+  for(const p of PARAMETERS){const v=config.parameters[p.key];if(typeof v!=='number'||!Number.isFinite(v)||v<0||v>1e7||(positiveParameters.has(p.key)&&v<=0)||(tileCoverages.has(p.key)&&(v<0.001||v>1000||Number(v.toFixed(3))!==v)))fail(`${p.label}의 허용 범위를 확인해 주세요.`);}
   for(const r of RULES){validateExpression(config.rules[r.key],new Set(Object.keys(r.variables)));for(const sample of[0,1,30,10000]){const v=evaluateExpression(config.rules[r.key],Object.fromEntries(Object.keys(r.variables).map(k=>[k,/Area|Length|spacing|Height|height|roll/.test(k)?Math.max(1,sample):sample])));if(v<0)fail(`${r.label}의 수량은 음수일 수 없습니다.`);}}
   // Equipment and worker quantities must have the same rule, not just the same sample result.
   for(const work of['coffer','curtain','drop'])if(JSON.stringify(config.rules[`bom.${work}.WOOD_LABOR_WORKER`])!==JSON.stringify(config.rules[`bom.${work}.WOOD_MACHINE_DAY`]))fail('목수 인건비와 장비비는 동일한 품수 산식을 적용해야 합니다.');

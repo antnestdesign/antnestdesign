@@ -8,6 +8,7 @@ import { bindApplicationEvents } from "./application-events.js";
 import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
 import { ESTIMATE_INPUT_SCHEMA, CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { mountTradeRevisionInputs } from "./trade-revision-view.js";
+import { mountBathroomTileInputs } from "./bathroom-tile-view.js";
 import { mountSiteCostView } from "./site-cost-view.js";
 import { mountPreliminaryPolicyView } from "./preliminary-policy-view.js";
 import { mountEstimateItemBuilder } from "./estimate-item-builder.js";
@@ -388,6 +389,7 @@ const integerIds = [
 ];
 
 const syncTradeRevision=mountTradeRevisionInputs(document);
+const syncBathroomTiles=mountBathroomTileInputs(document);
 const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
 let activeQuoteEstimate = null;
 let currentEditingEstimateId = null;
@@ -1598,6 +1600,7 @@ function renderCalculatedEstimate(result){
 }
 
 function refresh() {
+  syncBathroomTiles();
   syncSectionLocks();
   syncBlockLocks();
   syncCarpentryMode(activeQuoteEstimate || lastRenderedEstimateSnapshot);
@@ -2500,6 +2503,7 @@ function loadEstimateIntoUi(estimate,{refreshContract=true}={}) {
   pipeCleaningAdjustmentDirty = false;
   lastRenderedEstimateSnapshot = null;
   estimateRestore.restoreEstimateForm(estimate);
+  syncBathroomTiles();
   currentEditingEstimateId = estimate.id || null;
   activeQuoteEstimate = null;
   loadedContractEstimateState = null;

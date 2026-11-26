@@ -1,7 +1,9 @@
 import { ApiError, errorResponse, supabaseFetch } from "../../_lib/server";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
+import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
+import { withBathroomTileMaterialPolicy } from '../../_lib/calculation/bathroom-tile-materials.js';
 import { PreliminaryPolicyError,policyRateValues } from '../../_lib/calculation/preliminary-policy.js';
 import { baseEstimate, appendEstimateItems } from '../../estimate-items/_lib/preliminary';
 import { ItemDefinitionError, publicItemState } from '../../estimate-items/_lib/model.js';
@@ -50,6 +52,15 @@ function inputValue(id, value, strict = false) {
   }
   const result = String(value);
   if (strict && result.length > (schema.maxLength ?? 500)) throw new ApiError(400, "견적 입력값이 너무 깁니다.");
+  if (id === "bathroomTileRooms") {
+    try {
+      const rooms = parseBathroomTileRooms(result);
+      return rooms === null ? "" : JSON.stringify(rooms);
+    } catch {
+      if (strict) throw new ApiError(400, "욕실별 타일 제품, 치수 또는 시공 선택을 확인해 주세요.");
+      return "";
+    }
+  }
   if (id === "siteCostConfig") { try { parseSiteCostConfig(result); } catch (error) { throw new ApiError(400, error.message); } }
   if (schema.choices && !schema.choices.includes(result)) {
     if (strict) throw new ApiError(400, "견적 선택값이 올바르지 않습니다.");
@@ -80,6 +91,7 @@ function legacyInputs(raw = {}) {
 
 export function safeInputs(raw = {}) {
   const inputs = legacyInputs(raw);
+  if (!Object.hasOwn(inputs, "bathroomTileRooms")) inputs.bathroomTileRooms = "";
   if(!Object.hasOwn(inputs,"tradeFormulaVersion"))inputs.tradeFormulaVersion="legacy";
   return Object.fromEntries(staffInputIds.map((id) => [id,
     inputValue(id, Object.hasOwn(inputs, id) ? inputs[id] : ESTIMATE_INPUT_SCHEMA[id].value)]));
@@ -135,6 +147,7 @@ export async function readEstimate(id) {
 
 function normalizedInputs(raw, existing = false) {
   const values = legacyInputs(raw);
+  if (existing && !Object.hasOwn(values, "bathroomTileRooms")) values.bathroomTileRooms = "";
   if(existing&&!Object.hasOwn(values,"tradeFormulaVersion"))values.tradeFormulaVersion="legacy";
   if (existing && !Object.hasOwn(values, "carpentryCostMode")) values.carpentryCostMode = "legacy";
   return Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, schema]) => [id,
@@ -142,6 +155,17 @@ function normalizedInputs(raw, existing = false) {
 }
 
 function validateTradeRevision(inputs, previous) {
+  const rooms = parseBathroomTileRooms(inputs.bathroomTileRooms);
+  const hasPreviousTileRooms = inputValue("bathroomTileRooms", previous?.inputs?.bathroomTileRooms ?? "") !== "";
+  if (previous && (rooms !== null) !== hasPreviousTileRooms)
+    throw new ApiError(409, "저장 견적의 욕실 타일 산식은 변경할 수 없습니다.");
+  if (rooms !== null && inputs.sectionBathroomEnabled) {
+    if (Number(inputs.bathroomUnits) > BATHROOM_TILE_LIMIT) throw new ApiError(400, "욕실은 최대 80칸까지 입력할 수 있습니다.");
+    for (const [i, room] of rooms.slice(0, Number(inputs.bathroomUnits)).entries()) {
+      if (room.wallLength > 0 && !room.wallTile) throw new ApiError(400, `욕실 ${i + 1}의 벽체 타일을 선택해 주세요.`);
+      if (room.floorArea > 0 && !room.floorTile) throw new ApiError(400, `욕실 ${i + 1}의 바닥 타일을 선택해 주세요.`);
+    }
+  }
   if(previous&&inputs.tradeFormulaVersion!==(previous.inputs?.tradeFormulaVersion||"legacy"))
     throw new ApiError(409,"저장 견적의 산식 버전은 변경할 수 없습니다.");
   if(inputs.tradeFormulaVersion!=="v2")return;
@@ -163,7 +187,10 @@ async function trustedCostContext(existing,applyCurrent=false) {
   if (!rows.length) throw new ApiError(409, "운영 원가를 불러올 수 없어 견적을 계산하지 않았습니다.");
   const published = new Map(rows.map((row) => [row.item_code, row]));
   const oldSnapshot = applyCurrent?null:existing?.estimate_data?.costSnapshot;
-  const preliminaryPolicy=oldSnapshot?.preliminaryPolicy || (!existing||applyCurrent?await publishedPreliminaryPolicy(createEstimateCalculation().policyDefaults(),rows):null);
+  let preliminaryPolicy=oldSnapshot?.preliminaryPolicy || (!existing||applyCurrent?await publishedPreliminaryPolicy(createEstimateCalculation().policyDefaults(),rows):null);
+  if(applyCurrent&&preliminaryPolicy&&existing?.estimate_data?.inputs?.bathroomTileRooms){
+    preliminaryPolicy={...preliminaryPolicy,config:withBathroomTileMaterialPolicy(preliminaryPolicy.config,existing.estimate_data.costSnapshot?.preliminaryPolicy?.config??null)};
+  }
   const saved = new Map((oldSnapshot?.items || []).map((item) => [item.itemCode, item]));
   const rateValues = {};
   for (const definition of COST_ITEM_DEFINITIONS) {

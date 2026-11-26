@@ -5,8 +5,8 @@ import {defaultPolicy,validatePolicy,evaluateExpression,policyCatalog} from '../
 import {PRELIMINARY_POLICY_EXAMPLES} from '../../../app/api/os/_lib/calculation/preliminary-policy-examples.js';
 const base=()=>defaultPolicy(createEstimateCalculation().policyDefaults());
 const run=(inputs,policy)=>{const c=createEstimateCalculation({preliminaryPolicy:policy});const r=c.calculate(c.readState(inputs));return {r,groups:c.groupedCustomerItems(r.details,r.quoteLines)};};
-test('all 91 master bindings plus missing prices and rule entries have concrete baseline values',()=>{
- const p=base();expect(()=>validatePolicy(p)).not.toThrow();expect(Object.values(p.prices).every(v=>Number.isFinite(v))).toBe(true);expect(policyCatalog().prices).toHaveLength(109);
+test('all master bindings plus supplemental prices and rule entries have concrete baseline values',()=>{
+ const p=base();expect(()=>validatePolicy(p)).not.toThrow();expect(Object.values(p.prices).every(v=>Number.isFinite(v))).toBe(true);expect(policyCatalog().prices).toHaveLength(112);
 });
 test.each([
  {sectionDemolitionEnabled:true,demolitionBasicEnabled:true,demolitionBasicArea:'34',demolitionFloorEnabled:true,areaPyeong:'34'},
@@ -38,4 +38,11 @@ test.each(PRELIMINARY_POLICY_EXAMPLES)('standard comparison preserves original a
 });
 test('an unregistered price cannot silently become zero or the old default',()=>{const p=base();p.prices.FILM_WOOD=null;expect(()=>validatePolicy(p)).toThrow(/미등록/);});
 test('large but finite formula output cannot create an unsafe currency amount',()=>{const p=base();p.rules['wallpaper.p20.basic']={value:1000000000};expect(()=>run({sectionWallpaperEnabled:true},p)).toThrow(/허용 범위/);});
-test('the database validation manifest matches the server catalog exactly',()=>{const sql=readFileSync('supabase/migrations/20261105000000_preliminary_policy.sql','utf8'),manifest=JSON.parse(sql.match(/SELECT '([^']+)'::jsonb \$manifest\$/)[1]),catalog=policyCatalog();expect(manifest).toEqual({prices:catalog.prices.map(f=>f.key).sort(),parameters:catalog.parameters.map(f=>f.key).sort(),rules:Object.fromEntries(catalog.rules.map(r=>[r.key,Object.keys(r.variables)]))});});
+test('the database manifest and its bathroom extension match the server catalog exactly',()=>{
+ const sql=readFileSync('supabase/migrations/20261105000000_preliminary_policy.sql','utf8');
+ const manifest=JSON.parse(sql.match(/SELECT '([^']+)'::jsonb \$manifest\$/)[1]),catalog=policyCatalog();
+ const extension=readFileSync('supabase/migrations/20261126122300_bathroom_tile_v21_material_policy.sql','utf8');
+ const keys=area=>Array.from(extension.match(new RegExp(`v_${area}_keys constant text\\[\\] := ARRAY\\[([^\\]]+)\\]`))[1].matchAll(/'([^']+)'/g),entry=>entry[1]);
+ expect({prices:[...manifest.prices,...keys('price')].sort(),parameters:[...manifest.parameters,...keys('coverage')].sort(),rules:manifest.rules})
+   .toEqual({prices:catalog.prices.map(f=>f.key).sort(),parameters:catalog.parameters.map(f=>f.key).sort(),rules:Object.fromEntries(catalog.rules.map(r=>[r.key,Object.keys(r.variables)]))});
+});

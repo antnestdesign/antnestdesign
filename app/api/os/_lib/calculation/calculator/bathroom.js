@@ -23,7 +23,7 @@ export function bathroomDetails(state, rates, policy=null) {
   };
 
   return [
-    ["욕실 포세린 타일 자재+잡자재", rates.porcelainTileMaterial, units, `${units}칸`],
+    ...(state.bathroomTileRooms == null ? [["욕실 포세린 타일 자재+잡자재", rates.porcelainTileMaterial, units, `${units}칸`]] : []),
     ["욕실 설비 위치조정", rates.plumbingRelocation, state.bathroomPlumbingRelocationEnabled ? units : 0, `${units}칸`],
     [fixtureSet.item, fixtureSet.unitPrice, units, `${units}칸`],
     ["도기·수전·장식장·악세사리 설치비", rates.fixtureInstall, units, `${units}칸`],
