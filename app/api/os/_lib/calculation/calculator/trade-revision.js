@@ -1,7 +1,12 @@
 import { wallpaperGradeOption } from "./finish.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 
-export const counterRates={ceramic:400000,khanstone:320000,himacs:200000};
-export const countertopAreaCost=(width,depth,material)=>Math.floor(width*depth*(counterRates[material]||0)/700000);
+export const counterRates={ceramic:500000,khanstone:400000,himacs:210000};
+const previousCounterRates={ceramic:400000,khanstone:320000,himacs:200000};
+const slabThickness=(material,thickness,legacy)=>!legacy&&material==="khanstone"&&thickness==="20"?"20":"12";
+const countertopRate=(material,thickness,legacy)=>legacy?previousCounterRates[material]||0:
+  slabThickness(material,thickness,legacy)==="20"?450000:counterRates[material]||0;
+export const countertopAreaCost=(width,depth,material,thickness,legacy=false)=>Math.floor(width*depth*countertopRate(material,thickness,legacy)/700000);
 export const wallpaperRolls=area=>Math.ceil(area*2.5/5);
 export const filmLabor=v=>Math.ceil(((v.filmWindow?({20:4,30:6,40:8,50:10}[v.filmWindowArea]||0):0)*4000
   +v.filmDoorCount*2000+v.filmOneSideMm*2+v.filmBothSidesMm*4+v.filmWallMm)/4000);
@@ -16,6 +21,22 @@ export function expansionDetails(v){
     group:"demolition",item,input:`${count}개소`,quantity:`${count}개소`,
     unitPrice:unitCost,cost:count*unitCost,customerRevenue:count*unitSale,
   }));
+}
+
+export function revisedCountertops(state) {
+  const v = state.tradeRevision;
+  if (!v) return [];
+  const { base, homebar } = cabinetCountertopDimensions(v, state.lowerCabinetM, state.homebarM);
+  const dry = dryVanityCountertopDimensions(v);
+  const vanity = v.vanityEnabled !== "off" && v.vanityMm > 0;
+  const dryVanity = v.countertopLayoutMode !== "legacy" && state.bathroomEnabled && v.dryVanityEnabled && v.dryVanityLengthMm>0;
+  return [
+    ["base","상하부장 상판",v.furniture&&state.baseEnabled&&state.baseCountertopEnabled,base[0],state.baseCountertop,base[1],v.baseCounterThickness],
+    ["island","아일랜드 상판",v.furniture&&state.islandEnabled,state.islandM,state.islandCountertop,state.islandDepthMm,v.islandCounterThickness],
+    ["homebar","홈바장 상판",v.furniture&&state.homebarEnabled,homebar[0],state.homebarCountertop,homebar[1],v.homebarCounterThickness],
+    ["base","화장대 상판",v.furniture&&vanity,v.vanityMm,v.vanityTop,v.vanityDepthMm,v.vanityCounterThickness],
+    ["bathroom","건식세면대 상판",dryVanity,dry[0],v.dryVanityCountertop,dry[1],v.dryVanityCounterThickness],
+  ].filter(([, ,enabled,width,material,depth])=>enabled&&width>0&&depth>0&&Object.hasOwn(counterRates,material));
 }
 
 export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
@@ -48,6 +69,19 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
     }
   }
   if(v.film&&state.filmEnabled)add("film","필름 인건비",filmLabor(v),"품",rates.finish.filmWorkerDay);
+  const legacy=v.countertopLayoutMode==="legacy";
+  const tops=revisedCountertops(state);
+  const addTop=([group,label,,width,material,depth,thickness])=>{
+    const t=slabThickness(material,thickness,legacy);
+    add(group,`${label}(${rates.countertop[material].label}, ${t}T)`,width*depth/700000,"장 환산",
+      countertopRate(material,t,legacy),countertopAreaCost(width,depth,material,t,legacy),`${mmText(width)} × ${mmText(depth)}`);
+  };
+  if(!legacy&&state.bathroomEnabled&&v.dryVanityEnabled&&v.dryVanityLengthMm>0){
+    const foam=v.dryVanityCabinetType==="foam";
+    add("bathroom",foam?"건식세면대 발포 하부장":"건식세면대 일반 가구장",jaRounded(v.dryVanityLengthMm),"자",foam?310000:rates.lowerPerJa,
+      undefined,mmText(v.dryVanityLengthMm));
+    tops.filter(([group])=>group==="bathroom").forEach(addTop);
+  }
   if(v.furniture){
     for(const [item,key,price] of [["키큰장 문짝 교체","furnitureTallDoors",70000],["싱크대 문짝 교체 (400mm 이하)","furnitureSinkSmallDoors",35000],["싱크대 문짝 교체 (400mm 초과~600mm 이하)","furnitureSinkMediumDoors",45000]])add("base",item,v[key],"개",price);
     meters("base","가구 몰딩",v.furnitureMoldingMm,20000);
@@ -56,23 +90,19 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText}){
       add("base","화장대 하부장",jaRounded(v.vanityMm),"자",rates.lowerPerJa,undefined,mmText(v.vanityMm));
       add("base","화장대 서랍",v.vanityDrawers,"개",rates.drawer);
     }
-    const tops=[
-      ["base","상하부장 상판",state.baseEnabled&&state.baseCountertopEnabled,v.baseCounterWidthMm,state.baseCountertop,v.baseCounterDepthMm],
-      ["island","아일랜드 상판",state.islandEnabled,state.islandM,state.islandCountertop,state.islandDepthMm],
-      ["homebar","홈바장 상판",state.homebarEnabled,v.homebarCounterWidthMm,state.homebarCountertop,v.homebarCounterDepthMm],
-      ["base","화장대 상판",vanity,v.vanityMm,v.vanityTop,v.vanityDepthMm],
-    ].filter(([, ,enabled,width,material,depth])=>enabled&&width>0&&depth>0&&counterRates[material]);
-    for(const [group,label,,width,material,depth] of tops){
-      add(group,`${label}(${rates.countertop[material].label}, 12T)`,width*depth/700000,"장 환산",counterRates[material],countertopAreaCost(width,depth,material),`${mmText(width)} × ${mmText(depth)}`);
-    }
+    tops.filter(([group])=>group!=="bathroom").forEach(addTop);
     const side=state.islandSideFinish, count=state.islandSideFinishCount, depth=state.islandDepthMm, height=900;
     if(state.islandEnabled&&state.islandM>0&&depth>0&&count>0&&Object.hasOwn(counterRates,side)){
-      add("island",`아일랜드 좌우마감재(${rates.countertop[side].label})`,
-        depth*height*count/700000,"장 환산",counterRates[side],countertopAreaCost(depth*count,height,side),
+      const t=slabThickness(side,v.islandCounterThickness,legacy);
+      const name=legacy?`아일랜드 좌우마감재(${rates.countertop[side].label})`:`아일랜드 좌우마감재(${rates.countertop[side].label}, ${t}T)`;
+      add("island",name,
+        depth*height*count/700000,"장 환산",countertopRate(side,t,legacy),countertopAreaCost(depth*count,height,side,t,legacy),
         `${mmText(depth)} × ${mmText(height)} × ${count}개`);
     }
-    if(v.countertopTransport&&tops.some(([, , ,width])=>width>2000))add("base","상판 운반비",1,"회",300000);
-    if(v.countertopLadder&&tops.length)add("base","상판 사다리차",1,"회",120000);
+    if(legacy){
+      if(v.countertopTransport&&tops.some(([, , ,width])=>width>2000))add("base","상판 운반비",1,"회",300000);
+      if(v.countertopLadder&&tops.length)add("base","상판 사다리차",1,"회",120000);
+    }
   }
   if(v.finish&&v.carrySelected&&v.carryNoElevator&&v.carryFloor>=2)add("misc","소운반비",1,"식",1800000);
   return rows;

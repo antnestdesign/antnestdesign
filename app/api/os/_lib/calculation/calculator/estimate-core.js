@@ -10,8 +10,8 @@ import { parseBathroomTileRooms } from "../../../../../../public/os-app/src/bath
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
-import { expansionDetails, revisedTradeDetails, counterRates } from "./trade-revision.js";
-import { tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
+import { expansionDetails, revisedTradeDetails, revisedCountertops, counterRates } from "./trade-revision.js";
+import { COUNTERTOP_LIFTING_NOTICE, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
 export { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS };
@@ -531,7 +531,10 @@ function calculate(state) {
   const upperJa = state.baseEnabled ? jaRounded(state.upperCabinetM) : 0;
   const tallJa = state.baseEnabled ? jaRounded(state.tallCabinetM) : 0;
   const islandJa = state.islandEnabled ? jaRounded(state.islandM) : 0;
-  const homebarJa = state.homebarEnabled ? jaRounded(state.homebarM) : 0;
+  const splitHomebar = revised && v.countertopLayoutMode !== "legacy";
+  const homebarTallMm = splitHomebar ? v.homebarTallLengthMm : 0;
+  const homebarTotalMm = state.homebarM + homebarTallMm;
+  const homebarJa = state.homebarEnabled ? jaRounded(state.homebarM) + jaRounded(homebarTallMm) : 0;
   const shoeJa = state.shoeEnabled ? jaRounded(state.shoeM) : 0;
   const fridgeLaundryJa = state.fridgeLaundryEnabled ? jaRounded(state.fridgeLaundryM) : 0;
   const pantryJa = state.pantryEnabled ? jaRounded(state.pantryM) : 0;
@@ -543,9 +546,9 @@ function calculate(state) {
   const homebarCounter = rates.countertop[state.homebarCountertop];
   const homebarMidway = rates.countertop[state.homebarMidway];
   const baseCounterBillingM = state.lowerCabinetM > 0 ? Math.max(parameter('counterMinimumM',1), mmToM(state.lowerCabinetM)) : 0;
-  const homebarStorageJa = rates.homebarStorageBaseJa;
-  const homebarExtraJa = Math.max(0, homebarJa - homebarStorageJa);
-  const homebarCounterActualMm = homebarExtraJa * 300;
+  const homebarStorageJa = splitHomebar ? jaRounded(homebarTallMm) : rates.homebarStorageBaseJa;
+  const homebarExtraJa = splitHomebar ? jaRounded(state.homebarM) : Math.max(0, homebarJa - homebarStorageJa);
+  const homebarCounterActualMm = splitHomebar ? state.homebarM : homebarExtraJa * 300;
   const homebarCounterBillingM = homebarCounterActualMm > 0 ? Math.max(parameter('counterMinimumM',1), mmToM(homebarCounterActualMm)) : 0;
   const islandCounterMultiplier = state.islandCountertop === "himacs" && state.islandDepthMm > parameter('islandWideThreshold',720) ? parameter('islandWideMultiplier',2) : 1;
   const islandCounterBillingM = mmToM(state.islandM) * islandCounterMultiplier;
@@ -722,11 +725,11 @@ function calculate(state) {
     });
   }
 
-  if (state.homebarEnabled && state.homebarM > 0) {
+  if (state.homebarEnabled && homebarTotalMm > 0) {
     addDetail(details, {
       group: "homebar",
       item: "홈바장 키큰수납장",
-      input: mmText(state.homebarM),
+      input: mmText(splitHomebar ? homebarTallMm : state.homebarM),
       quantity: `${homebarStorageJa}자`,
       unitPrice: rates.homebarBuildPerJa,
       cost: homebarStorageJa * rates.homebarBuildPerJa,
@@ -753,7 +756,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.countertop,
     });
-    addDetail(details, {
+    if(!splitHomebar||state.homebarM>0)addDetail(details, {
       group: "homebar",
       item: `홈바장 미드웨이(${homebarMidway.label})`,
       input: `상하부장 ${mmText(homebarCounterActualMm)}`,
@@ -1343,7 +1346,7 @@ function calculate(state) {
   const quoteLines = [
     { process: "상하부장", description: state.baseEnabled ? "상하부장 선택" : "미선택", revenue: groupTotal("base") },
     { process: "아일랜드", description: state.islandEnabled && state.islandM > 0 ? "아일랜드 선택" : "미선택", revenue: groupTotal("island") },
-    { process: "홈바장", description: state.homebarEnabled && state.homebarM > 0 ? "홈바장 선택" : "미선택", revenue: groupTotal("homebar") },
+    { process: "홈바장", description: state.homebarEnabled && homebarTotalMm > 0 ? "홈바장 선택" : "미선택", revenue: groupTotal("homebar") },
     { process: "신발장", description: state.shoeEnabled && state.shoeM > 0 ? "신발장 선택" : "미선택", revenue: groupTotal("shoe") },
     { process: "냉장고장", description: state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? "냉장고 및 세탁기장 선택" : "미선택", revenue: groupTotal("fridgeLaundry") },
     { process: "팬트리장", description: state.pantryEnabled && state.pantryM > 0 ? "팬트리장 선택" : "미선택", revenue: groupTotal("pantry") },
@@ -1385,6 +1388,9 @@ function calculate(state) {
       amountText: "현장별 별도",
       revenue: 0,
     });
+  }
+  if (revised && v.countertopLayoutMode !== "legacy" && (usesStoneSlab || revisedCountertops(state).length)) {
+    quoteLines.push({process:"양중비",description:COUNTERTOP_LIFTING_NOTICE,amountText:"현장별 별도",revenue:0});
   }
 
   const warnings = [];

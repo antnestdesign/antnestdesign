@@ -8,6 +8,8 @@ import { readEstimateForm } from "../../../public/os-app/src/estimate-form.js";
 import { buildPreliminaryPlan } from "../../../public/os-app/src/detailed-preliminary.js";
 import { workDefinitions, newWorkState } from "../../../public/os-app/src/detailed-work-review.js";
 import {mountTradeRevisionInputs} from "../../../public/os-app/src/trade-revision-view.js";
+import {mountBathroomTileInputs} from "../../../public/os-app/src/bathroom-tile-view.js";
+import {createEstimatePrint} from "../../../public/os-app/src/estimate-print.js";
 
 const mock = vi.hoisted(() => ({ fetch: vi.fn() }));
 vi.mock("../../../app/api/os/_lib/server", () => ({
@@ -75,10 +77,11 @@ test("section gates and invalid counts cannot generate unwanted work", () => {
 test("new public fields match server schema and existing form event identity", () => {
   document.body.innerHTML = readFileSync("public/os-app/index.html", "utf8");
   const sync=mountTradeRevisionInputs(document);
+  mountBathroomTileInputs(document);
   sync();
   const el = Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA).map(id => [id, document.getElementById(id)]));
   for (const [id, schema] of Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA)) {
-    expect(serverSchema[id]).toEqual(schema); expect(document.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
+    expect(serverSchema[id]).toEqual(schema); expect(document.querySelectorAll(`[id="${id}"]`), id).toHaveLength(1);
   }
   el.sectionDemolitionEnabled.checked = true; el.demolitionBasicEnabled.checked = true; el.demolitionBasicArea.value = "10";
   expect(buildEstimateState(readEstimateForm(el), .3).demolitionBasicArea).toBe(10);
@@ -87,6 +90,74 @@ test("new public fields match server schema and existing form event identity", (
   expect(el.demolitionBasicEnabled.checked).toBe(false); expect(el.demolitionBasicArea.value).toBe("0");
   restore.restoreInputValues({ ...demo, demolitionBasicType: "special", ...elec, ...wood, carpentryMoldingLengthM: "20" });
   expect(el.demolitionBasicType.value).toBe("special"); expect(el.carpentryMoldingLengthM.value).toBe("20000");
+});
+
+test("countertop fields sit under their own cabinet; only applicable dimensions and thickness are shown", () => {
+  document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
+  const sync=mountTradeRevisionInputs(document), get=id=>document.getElementById(id);
+  const hidden=id=>Boolean(get(id).closest("[hidden]"));
+  for(const id of ["sectionFurnitureEnabled","baseEnabled","baseCountertopEnabled","homebarEnabled","sectionBathroomEnabled"])get(id).checked=true;
+  get("lowerCabinetM").value="3200";
+  sync();
+  expect(document.body.textContent).not.toContain("상판 규격·운반");
+  expect(hidden("countertopTransport")).toBe(true);
+  expect(hidden("baseCounterWidthMm")).toBe(true);
+  expect(get("homebarM").closest("label").textContent).toContain("상하부장 길이");
+  expect(hidden("homebarTallLengthMm")).toBe(false);
+  expect(hidden("dryVanityLengthMm")).toBe(true);
+  get("baseCounterCustomSize").click();
+  get("baseCountertop").value="khanstone";
+  get("dryVanityEnabled").checked=true;
+  get("dryVanityLengthMm").value="900";
+  get("dryVanityCountertop").value="ceramic";
+  sync();
+  expect(hidden("baseCounterWidthMm")).toBe(false);
+  expect(get("baseCounterWidthMm").value).toBe("3200");
+  expect(get("baseCounterWidthMm").closest(".furniture-block")).toBe(get("baseEnabled").closest(".furniture-block"));
+  expect(hidden("baseCounterThickness")).toBe(false);
+  expect(hidden("dryVanityLengthMm")).toBe(false);
+  expect(hidden("dryVanityCounterThickness")).toBe(true);
+  get("dryVanityCountertop").value="khanstone";
+  sync();
+  expect(hidden("dryVanityCounterThickness")).toBe(false);
+});
+
+test("cabinet and dry vanity choices survive save projection and appear in both customer prints", async()=>{
+  const inputs={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"khanstone",
+    lowerCabinetM:"2200",baseCounterThickness:"20",homebarEnabled:true,homebarM:"1400",homebarTallLengthMm:"900",
+    sectionBathroomEnabled:true,dryVanityEnabled:true,dryVanityCabinetType:"foam",dryVanityLengthMm:"900",dryVanityCountertop:"himacs"};
+  const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));
+  const row=JSON.parse(JSON.stringify({...estimateRowPayload(snapshot),id:"20000000-0000-4000-8000-000000000004"}));
+  const restored=projectStaffEstimate(row);
+  expect(restored.inputs).toMatchObject(inputs);
+  expect(restored.total).toBe(snapshot.total);
+  expect(restored.customerQuote.groups.flatMap(g=>g.items).filter(i=>i.name==="양중비용 별도"))
+    .toEqual([{name:"양중비용 별도",amount:0,amountText:"현장별 별도"}]);
+  const reread=await calculateStaffEstimate(validateStaffBody({inputs:{projectName:"입력 검증"}}),actor("staff"),row);
+  expect(reread.total).toBe(snapshot.total);
+  document.body.innerHTML='<div id="printQuoteSheet"></div>';
+  const print=createEstimatePrint({document,customerWon:String,formatDateTime:String,printGroupLabels:{}});
+  for(const action of [print.renderPrintQuote,print.renderCustomerSummaryPrint]){
+    action(restored.customerQuote);
+    expect(document.getElementById("printQuoteSheet").textContent).toContain("양중비용 별도");
+  }
+});
+
+test("previous V2 cabinet quotes stay on their original rate and explicit dimensions after an edit",async()=>{
+  const inputs={tradeFormulaVersion:"v2",countertopLayoutMode:"legacy",baseCounterCustomSize:true,
+    sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"khanstone",
+    lowerCabinetM:"2500",baseCounterWidthMm:"3000",baseCounterDepthMm:"700",countertopTransport:true,countertopLadder:true};
+  const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));
+  const row=JSON.parse(JSON.stringify({...estimateRowPayload(snapshot),id:"20000000-0000-4000-8000-000000000005"}));
+  delete row.estimate_data.inputs.countertopLayoutMode;
+  delete row.estimate_data.inputs.baseCounterCustomSize;
+  const reopened=projectStaffEstimate(row);
+  expect(reopened.inputs).toMatchObject({countertopLayoutMode:"legacy",baseCounterCustomSize:true,baseCounterWidthMm:"3000"});
+  const next=await calculateStaffEstimate(validateStaffBody({inputs:{lowerCabinetM:"2700"}}),actor("staff"),row);
+  const lines=next.internalDetails;
+  expect(lines.find(d=>d.item.startsWith("상하부장 상판"))).toMatchObject({cost:960000,unitPrice:320000});
+  expect(lines.find(d=>d.item==="상판 운반비").cost).toBe(300000);
+  expect(lines.find(d=>d.item==="상판 사다리차").cost).toBe(120000);
 });
 
 test("revised saved inputs and discounts survive reload; legacy version cannot be changed",async()=>{

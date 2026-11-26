@@ -1,6 +1,7 @@
 import { ApiError, errorResponse, supabaseFetch } from "../../_lib/server";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions } from "../../../../../public/os-app/src/trade-revision-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
 import { withBathroomTileMaterialPolicy } from '../../_lib/calculation/bathroom-tile-materials.js';
@@ -93,6 +94,8 @@ export function safeInputs(raw = {}) {
   const inputs = legacyInputs(raw);
   if (!Object.hasOwn(inputs, "bathroomTileRooms")) inputs.bathroomTileRooms = "";
   if(!Object.hasOwn(inputs,"tradeFormulaVersion"))inputs.tradeFormulaVersion="legacy";
+  if(!Object.hasOwn(inputs,"countertopLayoutMode"))inputs.countertopLayoutMode="legacy";
+  if(!Object.hasOwn(inputs,"baseCounterCustomSize"))inputs.baseCounterCustomSize=inputs.countertopLayoutMode==="legacy";
   return Object.fromEntries(staffInputIds.map((id) => [id,
     inputValue(id, Object.hasOwn(inputs, id) ? inputs[id] : ESTIMATE_INPUT_SCHEMA[id].value)]));
 }
@@ -149,6 +152,8 @@ function normalizedInputs(raw, existing = false) {
   const values = legacyInputs(raw);
   if (existing && !Object.hasOwn(values, "bathroomTileRooms")) values.bathroomTileRooms = "";
   if(existing&&!Object.hasOwn(values,"tradeFormulaVersion"))values.tradeFormulaVersion="legacy";
+  if(existing&&!Object.hasOwn(values,"countertopLayoutMode"))values.countertopLayoutMode="legacy";
+  if(existing&&!Object.hasOwn(values,"baseCounterCustomSize"))values.baseCounterCustomSize=values.countertopLayoutMode==="legacy";
   if (existing && !Object.hasOwn(values, "carpentryCostMode")) values.carpentryCostMode = "legacy";
   return Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, schema]) => [id,
     Object.hasOwn(values, id) ? inputValue(id, values[id]) : schema.value]));
@@ -168,18 +173,26 @@ function validateTradeRevision(inputs, previous) {
   }
   if(previous&&inputs.tradeFormulaVersion!==(previous.inputs?.tradeFormulaVersion||"legacy"))
     throw new ApiError(409,"저장 견적의 산식 버전은 변경할 수 없습니다.");
+  if(previous&&inputs.countertopLayoutMode!==(previous.inputs?.countertopLayoutMode??"legacy"))
+    throw new ApiError(409,"저장 견적의 상판 산정 기준은 변경할 수 없습니다.");
   if(inputs.tradeFormulaVersion!=="v2")return;
   if(inputs.sectionWallpaperEnabled&&Number(inputs.wallpaperRoomPyeong)>Number(inputs.areaPyeong))
     throw new ApiError(400,"별도 벽지 시공 방 면적은 전체 분양평수 이하여야 합니다.");
   if(inputs.sectionDemolitionEnabled&&["demoBathTub","demoBathOverlay"].some(id=>Number(inputs[id])>Number(inputs.demoBathFull)))
     throw new ApiError(400,"욕조·덧방 철거 개소는 화장실 전체철거 개소 이하여야 합니다.");
   const areaTop=material=>["himacs","khanstone","ceramic"].includes(material);
+  const dimensions=cabinetCountertopDimensions(inputs,inputs.lowerCabinetM,inputs.homebarM);
   if(inputs.sectionFurnitureEnabled&&(
-    (inputs.baseEnabled&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!(Number(inputs.baseCounterWidthMm)>0&&Number(inputs.baseCounterDepthMm)>0))||
-    (inputs.homebarEnabled&&areaTop(inputs.homebarCountertop)&&!(Number(inputs.homebarCounterWidthMm)>0&&Number(inputs.homebarCounterDepthMm)>0))||
+    (inputs.baseEnabled&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!dimensions.base.every(n=>n>0))||
+    (inputs.homebarEnabled&&areaTop(inputs.homebarCountertop)&&(inputs.countertopLayoutMode==="legacy"||Number(inputs.homebarM)>0)&&!dimensions.homebar.every(n=>n>0))||
     (inputs.islandEnabled&&Number(inputs.islandM)>0&&areaTop(inputs.islandCountertop)&&!(Number(inputs.islandDepthMm)>0))||
     (inputs.vanityEnabled!=="off"&&Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
     throw new ApiError(400,"선택한 상판의 가로·세로 규격을 입력해 주세요.");
+  if(inputs.sectionBathroomEnabled&&inputs.countertopLayoutMode!=="legacy"&&inputs.dryVanityEnabled){
+    if(!(Number(inputs.dryVanityLengthMm)>0))throw new ApiError(400,"건식세면대 하부장 길이를 입력해 주세요.");
+    if(areaTop(inputs.dryVanityCountertop)&&!dryVanityCountertopDimensions(inputs).every(n=>n>0))
+      throw new ApiError(400,"건식세면대 상판 길이와 깊이를 입력해 주세요.");
+  }
 }
 
 async function trustedCostContext(existing,applyCurrent=false) {

@@ -1,6 +1,7 @@
 import { won as formatWon, escapeHtml } from "./utils.js";
 import { renderCustomerQuoteRows } from "./document-print.js";
 import { customerQuoteProjection } from "./customer-quote.js";
+import { COUNTERTOP_LIFTING_NOTICE } from "./trade-revision-inputs.js";
 const won=value=>value==null?'—':formatWon(value);
 const percent=value=>value==null?'—':`${(value*100).toFixed(1)}%`;
 
@@ -10,6 +11,10 @@ function renderPrintQuote(quote, { mode = "detail" } = {}) {
   if (!sheet || !quote) return;
   quote=customerQuoteProjection(quote);
   const summary = mode === "customer-summary";
+  const separateLifting = summary && quote.groups.some(group => group.items.some(item => item.name === COUNTERTOP_LIFTING_NOTICE));
+  const summaryGroups = separateLifting
+    ? quote.groups.filter(group => group.total !== 0 || group.items.some(item => item.name !== COUNTERTOP_LIFTING_NOTICE))
+    : quote.groups;
   sheet.innerHTML = `
     <article class="contract-print-page customer-quote-document">
     <header class="contract-print-header">
@@ -25,11 +30,12 @@ function renderPrintQuote(quote, { mode = "detail" } = {}) {
       <thead>
         ${summary ? "<tr><th>공정</th><th>금액</th></tr>" : "<tr><th>공정</th><th>항목</th><th>금액</th></tr>"}
       </thead>
-      ${summary ? renderCustomerSummaryRows(quote.groups)
+      ${summary ? renderCustomerSummaryRows(summaryGroups)
         : renderCustomerQuoteRows(quote.groups, customerWon, label => printGroupLabels[label] || `${label}공사`)}
     </table>
     <footer>
       <div><span>총 공사금액</span><strong>${escapeHtml(quote.totalText || customerWon(quote.total))}</strong></div>
+      ${separateLifting ? `<p>※ ${COUNTERTOP_LIFTING_NOTICE}</p>` : ""}
       <p>※ 부가세 별도 금액입니다.</p>
       <p>※ 현장 실측 및 최종 자재 선택에 따라 공사금액은 조정될 수 있습니다.</p>
     </footer>

@@ -1,4 +1,4 @@
-import { TRADE_REVISION_INPUTS } from "./trade-revision-inputs.js";
+import { COUNTERTOP_DEFAULT_DEPTH_MM, TRADE_REVISION_INPUTS } from "./trade-revision-inputs.js";
 
 const groups={
   Demolition:[
@@ -17,7 +17,6 @@ const groups={
   Furniture:[
     ["문짝 교체·몰딩",[["furnitureTallDoors","키큰장 문짝 (개)"],["furnitureSinkSmallDoors","싱크대 문짝 400mm 이하 (개)"],["furnitureSinkMediumDoors","싱크대 문짝 400mm 초과~600mm 이하 (개)"],["furnitureMoldingMm","몰딩 길이 (mm)"]]],
     ["화장대",[["vanityMm","하부장 길이 (mm)"],["vanityDrawers","서랍 (개)"],["vanityTop","상판",{none:"없음",himacs:"인조대리석",khanstone:"칸스톤",ceramic:"세라믹"}],["vanityDepthMm","상판 깊이 (mm)"]]],
-    ["상판 규격·운반",[["baseCounterWidthMm","주방 상판 가로 (mm)"],["baseCounterDepthMm","주방 상판 세로 (mm)"],["homebarCounterWidthMm","홈바 상판 가로 (mm)"],["homebarCounterDepthMm","홈바 상판 세로 (mm)"],["countertopTransport","상판 운반비 (현장 1회)"],["countertopLadder","사다리차 (E/V 적재 불가)"]]],
   ],
   Finish:[["소운반비",[["carryFloor","건물 층수"],["carryNoElevator","E/V 없음"],["carrySelected","소운반비 적용"]]]],
 };
@@ -78,6 +77,7 @@ export function mountTradeRevisionInputs(document){
   }
   const get=id=>document.getElementById(id);
   const hide=(id,value,selector="label")=>{const node=get(id)?.closest(selector);if(node)node.hidden=value;};
+  const syncCountertops=mountCabinetCountertopInputs(document,get);
   const preset=get("wallpaperPreset").closest("label"),publicGrade=get("wallpaperPublicMaterialGrade").closest("label"),roomGrade=get("wallpaperRoomMaterialGrade").closest("label");
   const gradePosition=document.createComment("room grade position");roomGrade.before(gradePosition);
   const wallpaperGrid=document.createElement("div");wallpaperGrid.className="trade-wallpaper-grid";
@@ -107,23 +107,120 @@ export function mountTradeRevisionInputs(document){
     hide("electricArea",!get("electricBasic").checked);
     get("filmWindowArea").disabled=get("filmWindow").disabled||!get("filmWindow").checked;
     const areaTop=id=>["himacs","ceramic","khanstone"].includes(get(id).value);
-    for(const id of ["baseCounterWidthMm","baseCounterDepthMm"])hide(id,!(get("baseEnabled").checked&&get("baseCountertopEnabled").checked&&areaTop("baseCountertop")));
-    for(const id of ["homebarCounterWidthMm","homebarCounterDepthMm"])hide(id,!(get("homebarEnabled").checked&&areaTop("homebarCountertop")));
     const vanity=vanityValue.value==="on"||(vanityValue.value==="auto"&&Number(get("vanityMm").value)>0);
     vanityToggle.checked=vanity;
     vanityFields.closest(".furniture-block").hidden=!revised;
     vanityFields.hidden=!vanity;
     for(const field of vanityFields.querySelectorAll("input,select"))field.disabled=!vanity||vanityToggle.disabled;
     hide("vanityDepthMm",Number(get("vanityMm").value)<=0||!areaTop("vanityTop"));
-    hide("countertopTransport",![
-      get("baseEnabled").checked&&get("baseCountertopEnabled").checked&&["himacs","ceramic","khanstone"].includes(get("baseCountertop").value)&&Number(get("baseCounterWidthMm").value)>2000,
-      get("islandEnabled").checked&&["himacs","ceramic","khanstone"].includes(get("islandCountertop").value)&&Number(get("islandM").value)>2000,
-      get("homebarEnabled").checked&&["himacs","ceramic","khanstone"].includes(get("homebarCountertop").value)&&Number(get("homebarCounterWidthMm").value)>2000,
-      vanity&&get("vanityTop").value!=="none"&&Number(get("vanityMm").value)>2000,
-    ].some(Boolean));
+    syncCountertops(revised,areaTop("baseCountertop"));
     hide("carrySelected",!get("carryNoElevator").checked||Number(get("carryFloor").value)<2);
     const room=get("wallpaperRoomPyeong");
     room.max=String(Number(get("areaPyeong").value)||0);
     room.setCustomValidity(Number(room.value)>Number(room.max)?"방 면적은 전체 평수 이하여야 합니다.":"");
+  };
+}
+
+function mountCabinetCountertopInputs(document,get){
+  function input(id,type){
+    const field=document.createElement("input");
+    field.id=id;field.type=type;
+    if(type!=="checkbox")field.value=TRADE_REVISION_INPUTS[id].value;
+    if(type==="number"){field.min="0";field.max=String(TRADE_REVISION_INPUTS[id].max);field.step="1";field.inputMode="numeric";}
+    return field;
+  }
+  function label(title,field){
+    const element=document.createElement("label");
+    element.append(title,field);
+    return element;
+  }
+  function select(id,names){
+    const field=document.createElement("select");field.id=id;
+    for(const value of TRADE_REVISION_INPUTS[id].choices){
+      const option=document.createElement("option");option.value=value;option.textContent=names[value];field.append(option);
+    }
+    field.value=TRADE_REVISION_INPUTS[id].value;
+    return field;
+  }
+  function check(title,field,style="inline-check"){
+    const node=document.createElement("label");node.className=style;
+    const caption=document.createElement("span");caption.textContent=title;node.append(field,caption);
+    return node;
+  }
+  function bindPrefill(toggle,length,width,depth){
+    const prefill=()=>{
+      if(!toggle.checked)return;
+      if(!(Number(width.value)>0))width.value=length.value;
+      if(!(Number(depth.value)>0))depth.value=String(COUNTERTOP_DEFAULT_DEPTH_MM);
+    };
+    for(const event of ["input","change"])toggle.addEventListener(event,prefill);
+  }
+  const saved=document.createElement("div");saved.hidden=true;
+  const mode=input("countertopLayoutMode","hidden");
+  saved.append(mode,input("homebarCounterWidthMm","hidden"),input("homebarCounterDepthMm","hidden"),
+    input("countertopTransport","checkbox"),input("countertopLadder","checkbox"));
+  get("tradeFormulaVersion").after(saved);
+  const base=document.createElement("div");base.className="trade-revision-inputs";
+  const custom=input("baseCounterCustomSize","checkbox");
+  const dimensions=document.createElement("fieldset");dimensions.className="control-grid compact-row-grid";
+  dimensions.setAttribute("aria-label","상하부장 상판 별도 치수");
+  const width=input("baseCounterWidthMm","number"),depth=input("baseCounterDepthMm","number");
+  dimensions.append(label("상판 길이 (mm)",width),label("상판 깊이 (mm)",depth));
+  base.append(check("상판 별도 치수",custom),dimensions);get("baseEnabled").closest(".furniture-block").append(base);
+  bindPrefill(custom,get("lowerCabinetM"),width,depth);
+  const homebarLength=get("homebarM"),homebarLabel=homebarLength.closest("label");
+  const lengthCaption=document.createElement("span");homebarLabel.replaceChildren(lengthCaption,homebarLength);
+  const tall=input("homebarTallLengthMm","number"),tallLabel=label("키큰장 길이 (mm)",tall);
+  homebarLabel.after(tallLabel);
+  const thicknessLabels={"12":"12T","20":"20T"};
+  const thicknessControls=[
+    ["baseCounterThickness","baseCountertop",()=>get("baseEnabled").checked&&get("baseCountertopEnabled").checked],
+    ["islandCounterThickness","islandCountertop",()=>get("islandEnabled").checked],
+    ["homebarCounterThickness","homebarCountertop",()=>get("homebarEnabled").checked],
+    ["vanityCounterThickness","vanityTop",()=>get("vanityToggle").checked],
+  ].map(([id,material,enabled])=>{
+    const field=select(id,thicknessLabels);
+    const node=label(id==="islandCounterThickness"?"칸스톤 상판·측판 두께":"칸스톤 상판 두께",field);
+    get(material).closest("label").after(node);
+    return {field,node,material,enabled};
+  });
+  const dry=document.createElement("div");dry.className="furniture-block trade-revision-inputs";
+  const dryEnabled=input("dryVanityEnabled","checkbox"),dryLength=input("dryVanityLengthMm","number");
+  const dryMaterial=select("dryVanityCountertop",{none:"없음",himacs:"하이막스",khanstone:"칸스톤",ceramic:"세라믹"});
+  const dryThickness=select("dryVanityCounterThickness",thicknessLabels);
+  const dryThicknessLabel=label("칸스톤 상판 두께",dryThickness);
+  const dryCustom=input("dryVanityCounterCustomSize","checkbox");
+  const dryCustomLabel=check("상판 별도 치수",dryCustom);
+  const dryWidth=input("dryVanityCounterWidthMm","number"),dryDepth=input("dryVanityCounterDepthMm","number");
+  const dryWidthLabel=label("상판 길이 (mm)",dryWidth),dryDepthLabel=label("상판 깊이 (mm)",dryDepth);
+  const dryFields=document.createElement("div");dryFields.className="control-grid compact-row-grid";
+  dryFields.append(label("하부장 종류",select("dryVanityCabinetType",{standard:"일반 가구장",foam:"발포 하부장"})),
+    label("하부장 길이 (mm)",dryLength),label("상판 소재",dryMaterial),dryThicknessLabel,dryCustomLabel,dryWidthLabel,dryDepthLabel);
+  dry.append(check("건식세면대",dryEnabled,"check-title"),dryFields);
+  get("sectionBathroomEnabled").closest(".section-heading").after(dry);
+  bindPrefill(dryCustom,dryLength,dryWidth,dryDepth);
+  return (revised,areaTop)=>{
+    const furniture=get("sectionFurnitureEnabled").checked;
+    const enabled=revised&&get("baseEnabled").checked&&get("baseCountertopEnabled").checked&&areaTop;
+    base.hidden=!enabled;custom.disabled=!enabled||!furniture;
+    dimensions.hidden=!custom.checked;
+    width.disabled=depth.disabled=custom.disabled||!custom.checked;
+    const split=revised&&mode.value!=="legacy";
+    lengthCaption.textContent=split?"상하부장 길이 (mm)":"길이 (mm)";
+    tallLabel.hidden=!split;
+    tall.disabled=!split||!furniture||!get("homebarEnabled").checked;
+    for(const {field,node,material,enabled:isEnabled} of thicknessControls){
+      const khanstone=get(material).value==="khanstone"||(material==="islandCountertop"&&get("islandSideFinish").value==="khanstone"&&Number(get("islandSideFinishCount").value)>0);
+      node.hidden=!split||!isEnabled()||!khanstone;field.disabled=node.hidden||!furniture;
+    }
+    dry.hidden=!split;
+    dryFields.hidden=!dryEnabled.checked;
+    dryEnabled.disabled=!split||!get("sectionBathroomEnabled").checked;
+    const dryOff=dryEnabled.disabled||!dryEnabled.checked;
+    dryFields.querySelectorAll("input,select").forEach(field=>{field.disabled=dryOff;});
+    dryThicknessLabel.hidden=dryMaterial.value!=="khanstone";dryThickness.disabled||=dryThicknessLabel.hidden;
+    dryCustomLabel.hidden=dryMaterial.value==="none";dryCustom.disabled||=dryCustomLabel.hidden;
+    dryWidthLabel.hidden=dryDepthLabel.hidden=dryCustomLabel.hidden||!dryCustom.checked;
+    dryWidth.disabled||=dryWidthLabel.hidden;dryDepth.disabled||=dryDepthLabel.hidden;
   };
 }

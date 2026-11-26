@@ -48,6 +48,9 @@ export function buildCalculatedEstimatePresentation(result, displayEstimate, { g
   const displayCost = Number(displaySummary.directCost ?? displayEstimate.costTotal ?? directCost) || 0;
   const displayProfit = Number(displaySummary.profit ?? profit) || 0;
   const displayMarginRate = Number(displaySummary.marginRate ?? (actualMargin * 100)) || 0;
+  const splitHomebar = state.tradeRevision?.tradeFormulaVersion === "v2" && state.tradeRevision.countertopLayoutMode !== "legacy";
+  const homebarTall = splitHomebar ? state.tradeRevision.homebarTallLengthMm : 0;
+  const homebarLength = splitHomebar ? `상하부장 ${mmText(state.homebarM)} / 키큰장 ${mmText(homebarTall)}` : mmText(state.homebarM);
   return {
     displayRevenue, displayCost:displayEstimate.costIncomplete?null:displayCost, displayProfit:displayEstimate.costIncomplete?null:displayProfit, displayMarginRate:displayEstimate.costIncomplete?null:displayMarginRate, discountRoom:displayEstimate.costIncomplete?null:discountRoom,
     marginStatus: warnings.some((item) => item.includes("미달")) ? "미달" : "정상",
@@ -55,7 +58,7 @@ export function buildCalculatedEstimatePresentation(result, displayEstimate, { g
       selectionCount: `${quoteLines.length}개 항목`,
       cabinetSummary: state.baseEnabled ? `하부 ${counts.lowerJa}자 / 상부 ${counts.upperJa}자 / 키큰장 ${counts.tallJa}자` : "미선택",
       islandSummary: state.islandEnabled && state.islandM > 0 ? `가로 ${mmText(state.islandM)} / 세로 ${mmText(state.islandDepthMm)}, 서랍 ${state.islandDrawers}개` : "미선택",
-      homebarSummary: state.homebarEnabled && state.homebarM > 0 ? `${mmText(state.homebarM)}, 서랍 ${state.homebarDrawers}개` : "미선택",
+      homebarSummary: state.homebarEnabled && (state.homebarM > 0 || homebarTall > 0) ? `${homebarLength}, 서랍 ${state.homebarDrawers}개` : "미선택",
       shoeSummary: state.shoeEnabled && state.shoeM > 0 ? `${mmText(state.shoeM)} / ${counts.shoeJa}자` : "미선택",
       fridgeLaundrySummary: state.fridgeLaundryEnabled && state.fridgeLaundryM > 0 ? `${mmText(state.fridgeLaundryM)} / ${counts.fridgeLaundryJa}자` : "미선택",
       pantrySummary: state.pantryEnabled && state.pantryM > 0 ? `${mmText(state.pantryM)} / ${counts.pantryJa}자` : "미선택",

@@ -61,7 +61,7 @@ test("film rounds once after combining fractional labor",()=>{
   expect(filmLabor({...base,filmDoorCount:1,filmOneSideMm:200,filmBothSidesMm:400,filmWallMm:0})).toBe(5);
 });
 test("furniture doors, molding, vanity and area-based tops use their own rates",()=>{
-  expect([countertopAreaCost(3000,1000,"ceramic"),countertopAreaCost(1000,700,"khanstone"),countertopAreaCost(1000,700,"himacs")]).toEqual([1714285,320000,200000]);
+  expect([countertopAreaCost(3000,1000,"ceramic"),countertopAreaCost(1000,700,"khanstone"),countertopAreaCost(1000,700,"himacs")]).toEqual([2142857,400000,210000]);
   const scope={sectionFurnitureEnabled:true,furnitureTallDoors:"1",furnitureSinkSmallDoors:"2",furnitureSinkMediumDoors:"3",furnitureMoldingMm:"1500",vanityMm:"900",vanityDrawers:"2"};
   const r=run(scope);
   expect(detail(r,"키큰장 문짝 교체").cost).toBe(70000);
@@ -70,27 +70,66 @@ test("furniture doors, molding, vanity and area-based tops use their own rates",
   expect(detail(r,"화장대 서랍").quantity).toBe("2개");
   expect(detail(r,"싱크대 문짝 교체 (400mm 초과~600mm 이하)").cost).toBe(135000);
 });
-test("transport is one opt-in charge; ladder and carry are independent and gated",()=>{
-  const scope={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"ceramic",baseCounterWidthMm:"3000",islandEnabled:true,islandM:"3000",islandDepthMm:"700",islandCountertop:"himacs",sectionFinishEnabled:true,carryFloor:"2",carryNoElevator:true};
+test("saved transport charges stay pinned; new quotes only disclose separate lifting and retain independent carry",()=>{
+  const scope={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"ceramic",baseCounterWidthMm:"3000",lowerCabinetM:"3000",islandEnabled:true,islandM:"3000",islandDepthMm:"700",islandCountertop:"himacs",sectionFinishEnabled:true,carryFloor:"2",carryNoElevator:true};
   expect(detail(run(scope),"상판 운반비")).toBeUndefined();
-  const r=run({...scope,countertopTransport:true,countertopLadder:true,carrySelected:true});
+  const r=run({...scope,countertopLayoutMode:"legacy",baseCounterCustomSize:true,countertopTransport:true,countertopLadder:true,carrySelected:true});
   expect(r.details.filter(row=>row.item==="상판 운반비")).toHaveLength(1);
   expect(detail(r,"상판 운반비").cost).toBe(300000);
   expect(detail(r,"상판 사다리차").cost).toBe(120000);
   expect(detail(r,"소운반비").revenue).toBe(2340000);
   expect(detail(run({...scope,carrySelected:true,carryFloor:"1"}),"소운반비")).toBeUndefined();
+  const current=run({...scope,countertopTransport:true,countertopLadder:true,carrySelected:true});
+  expect(current.details.some(d=>/상판 운반비|상판 사다리차/.test(d.item))).toBe(false);
+  expect(current.quoteLines.filter(l=>l.description==="양중비용 별도")).toEqual([{process:"양중비",description:"양중비용 별도",amountText:"현장별 별도",revenue:0}]);
+  expect(detail(current,"소운반비").revenue).toBe(2340000);
 });
 
 test("island stone sides use depth, fixed 900 mm height and count without duplicate charges",()=>{
   const input={sectionFurnitureEnabled:true,islandEnabled:true,islandM:"3000",islandDepthMm:"700",islandSideFinishCount:"2"};
   const sides=r=>r.details.filter(d=>d.item.startsWith("아일랜드 좌우마감재"));
-  for(const [material,cost] of [["ceramic",720000],["khanstone",576000],["himacs",360000]]){
+  for(const [material,cost] of [["ceramic",900000],["khanstone",720000],["himacs",378000]]){
     const rows=sides(run({...input,islandSideFinish:material}));
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({cost,input:"700mm × 900mm × 2개",quantity:"1.8장 환산"});
     expect(rows[0].revenue).toBeCloseTo(cost*1.3);
   }
+  expect(sides(run({...input,islandSideFinish:"khanstone",islandCounterThickness:"20"}))[0]).toMatchObject({cost:810000});
+  expect(sides(run({...input,countertopLayoutMode:"legacy",islandSideFinish:"ceramic"}))[0]).toMatchObject({cost:720000});
   expect(sides(run({...input,islandSideFinish:"ceramic",islandSideFinishCount:"0"}))).toHaveLength(0);
   const ep={...input,islandSideFinish:"epPanel"};
   expect(sides(run(ep))).toEqual(sides(run({...ep,tradeFormulaVersion:"legacy"})));
+});
+
+test("base cabinet dimensions default to the lower cabinet and 700 mm unless explicitly overridden",()=>{
+  const inputs={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"khanstone",lowerCabinetM:"3200",baseCounterWidthMm:"1000",baseCounterDepthMm:"800"};
+  const top=result=>result.details.find(d=>d.item.startsWith("상하부장 상판"));
+  expect(top(run(inputs))).toMatchObject({cost:1280000,unitPrice:400000,input:"3,200mm × 700mm"});
+  expect(top(run({...inputs,baseCounterCustomSize:true,baseCounterThickness:"20"}))).toMatchObject({cost:514285,unitPrice:450000,input:"1,000mm × 800mm",item:expect.stringContaining("20T")});
+  expect(top(run({...inputs,baseCountertop:"ceramic",baseCounterThickness:"20"}))).toMatchObject({cost:1600000,unitPrice:500000,item:expect.stringContaining("12T")});
+});
+
+test("homebar tall cabinet length never extends the countertop",()=>{
+  const inputs={sectionFurnitureEnabled:true,homebarEnabled:true,homebarM:"1400",homebarTallLengthMm:"900",homebarCountertop:"ceramic"};
+  const r=run(inputs), top=result=>result.details.find(d=>d.item.startsWith("홈바장 상판"));
+  expect(detail(r,"홈바장 상하부장")).toMatchObject({quantity:"5자",input:"1,400mm"});
+  expect(detail(r,"홈바장 키큰수납장")).toMatchObject({quantity:"3자",input:"900mm"});
+  expect(top(r)).toMatchObject({input:"1,400mm × 700mm",cost:700000});
+  expect(top(run({...inputs,homebarTallLengthMm:"1800"})).cost).toBe(700000);
+  const tallOnly=run({...inputs,homebarM:"0",homebarMidway:"ceramic"});
+  expect(top(tallOnly)).toBeUndefined();
+  expect(tallOnly.details.some(d=>d.item.startsWith("홈바장 미드웨이"))).toBe(false);
+  expect(detail(tallOnly,"홈바장 키큰수납장")).toBeTruthy();
+});
+
+test("bathroom dry vanity uses kitchen cabinet rates or the independent foam price",()=>{
+  const inputs={sectionBathroomEnabled:true,dryVanityEnabled:true,dryVanityLengthMm:"900",dryVanityCountertop:"himacs"};
+  const r=run(inputs,{rateValues:{rateLowerPerJa:220000}});
+  expect(detail(r,"건식세면대 일반 가구장")).toMatchObject({quantity:"3자",unitPrice:220000,cost:660000,group:"bathroom"});
+  expect(r.details.find(d=>d.item.startsWith("건식세면대 상판"))).toMatchObject({cost:189000,input:"900mm × 700mm"});
+  const foam=run({...inputs,dryVanityCabinetType:"foam",dryVanityCountertop:"khanstone",dryVanityCounterThickness:"20",dryVanityCounterCustomSize:true,dryVanityCounterWidthMm:"1000",dryVanityCounterDepthMm:"700"});
+  expect(detail(foam,"건식세면대 발포 하부장")).toMatchObject({quantity:"3자",unitPrice:310000,cost:930000,customerRevenue:1209000});
+  expect(foam.details.find(d=>d.item.startsWith("건식세면대 상판"))).toMatchObject({cost:450000,item:expect.stringContaining("20T")});
+  expect(run({...inputs,dryVanityEnabled:false}).details).toEqual([]);
+  expect(run({...inputs,sectionBathroomEnabled:false}).details).toEqual([]);
 });
