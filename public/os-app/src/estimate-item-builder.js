@@ -86,7 +86,7 @@ export function mountEstimateItemBuilder({document,request,role,changed}) {
   function renderQuotes(){
     for(const [trade,key]of Object.entries(sectionKeys)){
       const panel=document.getElementById(`preliminary-section${key}Enabled`);if(!panel)continue;
-      let node=panel.querySelector('[data-item-quote]');if(!node){node=document.createElement('section');node.className='item-quote';node.dataset.itemQuote=trade;panel.append(node);}
+      let node=panel.querySelector('[data-item-quote]');if(!node){node=document.createElement('section');node.className='item-quote';node.dataset.itemQuote=trade;panel.insertBefore(node,panel.querySelector(':scope > [data-last-trade-input]'));}
       const own=selections.filter(s=>catalog.find(c=>c.id===s.versionId)?.trade===trade||rows.find(r=>r.id===s.id)?.trade===trade);
       const available=catalog.filter(c=>c.trade===trade);
       node.hidden=mode==='OFF'&&!own.length;

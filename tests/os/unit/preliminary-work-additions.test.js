@@ -10,6 +10,9 @@ import { workDefinitions, newWorkState } from "../../../public/os-app/src/detail
 import {mountTradeRevisionInputs} from "../../../public/os-app/src/trade-revision-view.js";
 import {mountBathroomTileInputs} from "../../../public/os-app/src/bathroom-tile-view.js";
 import {createEstimatePrint} from "../../../public/os-app/src/estimate-print.js";
+import {mountPreliminaryEstimateView} from "../../../public/os-app/src/preliminary-estimate-view.js";
+import {mountSiteCostView} from "../../../public/os-app/src/site-cost-view.js";
+import {mountEstimateItemBuilder} from "../../../public/os-app/src/estimate-item-builder.js";
 
 const mock = vi.hoisted(() => ({ fetch: vi.fn() }));
 vi.mock("../../../app/api/os/_lib/server", () => ({
@@ -120,6 +123,29 @@ test("countertop fields sit under their own cabinet; only applicable dimensions 
   get("dryVanityCountertop").value="khanstone";
   sync();
   expect(hidden("dryVanityCounterThickness")).toBe(false);
+});
+
+test("dry vanity stays last in the expanded bathroom panel when trade tools load", async()=>{
+  document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
+  const syncTrade=mountTradeRevisionInputs(document),syncTile=mountBathroomTileInputs(document);
+  document.getElementById("sectionBathroomEnabled").checked=true;
+  document.getElementById("bathroomUnits").value="1";
+  syncTrade();syncTile();
+  const view=mountPreliminaryEstimateView({document,getContext:()=>({}),onPrint:()=>{}});
+  document.getElementById("preliminary-sectionBathroomEnabled-button").click();
+  const panel=document.getElementById("preliminary-sectionBathroomEnabled");
+  const dry=document.getElementById("dryVanityEnabled").closest(".furniture-block");
+  expect(panel.hidden).toBe(false);
+  expect(panel.lastElementChild).toBe(dry);
+  const siteCost=mountSiteCostView({document,canView:()=>true,canStandardEdit:()=>false});
+  siteCost.render([]);
+  const builder=mountEstimateItemBuilder({document,request:async action=>action==="state"?{mode:"ON"}:[],role:()=>"admin"});
+  await builder.loadCatalog();
+  for(const selector of [".bathroom-tile-rooms","[data-site-cost-trade]","[data-item-quote]","[data-manual-works]"]){
+    expect(panel.querySelector(selector)?.hidden,selector).toBe(false);
+  }
+  expect(panel.lastElementChild).toBe(dry);
+  view.destroy();
 });
 
 test("cabinet and dry vanity choices survive save projection and appear in both customer prints", async()=>{

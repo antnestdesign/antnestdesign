@@ -197,7 +197,8 @@ function mountCabinetCountertopInputs(document,get){
   dryFields.append(label("하부장 종류",select("dryVanityCabinetType",{standard:"일반 가구장",foam:"발포 하부장"})),
     label("하부장 길이 (mm)",dryLength),label("상판 소재",dryMaterial),dryThicknessLabel,dryCustomLabel,dryWidthLabel,dryDepthLabel);
   dry.append(check("건식세면대",dryEnabled,"check-title"),dryFields);
-  get("sectionBathroomEnabled").closest(".section-heading").after(dry);
+  dry.dataset.lastTradeInput="";
+  get("bathroomUnits").closest(".furniture-block").after(dry);
   bindPrefill(dryCustom,dryLength,dryWidth,dryDepth);
   return (revised,areaTop)=>{
     const furniture=get("sectionFurnitureEnabled").checked;

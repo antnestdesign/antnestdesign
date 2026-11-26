@@ -9,7 +9,9 @@ export function mountSiteCostView({ document, canView, canStandardEdit, readConf
     const panel = document.getElementById(`preliminary-section${trade}Enabled`);
     if (!panel) continue;
     const node = document.createElement("details"); node.className = "site-cost-composition"; node.hidden = true;
-    node.dataset.siteCostTrade = trade; panel.append(node); hosts.set(trade, node);
+    node.dataset.siteCostTrade = trade;
+    panel.insertBefore(node, panel.querySelector(":scope > [data-last-trade-input]"));
+    hosts.set(trade, node);
   }
   const config = () => { try { return JSON.parse(readConfig() || '{"version":1,"rows":{}}'); } catch { return { version: 1, rows: {} }; } };
   const peer = row => ["WOOD_LABOR_WORKER","WOOD_MACHINE_DAY"].includes(row.code) ? rows.find(r=>r.work===row.work&&r.code!==row.code&&["WOOD_LABOR_WORKER","WOOD_MACHINE_DAY"].includes(r.code)) : null;
