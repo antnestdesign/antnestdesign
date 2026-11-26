@@ -166,7 +166,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   if (excluded) form.append(excluded);
 
   function update() {
-    const { estimate, editingId, storedSnapshot = false, confirmation = estimate?.confirmation } = getContext();
+    const { estimate, editingId, storedSnapshot = false, calculationFailed = false, confirmation = estimate?.confirmation } = getContext();
     const groups = estimate?.customerQuote?.groups || [];
     setText(context, confirmation?.viewingVersion?`확정 V${confirmation.viewingVersion.versionNo} 조회`:confirmation?.state==='confirmed'?`확정 V${confirmation.draftVersion}`:confirmation?.state==='revising'?`수정본 V${confirmation.draftVersion} 작성 중`:editingId ? "저장 견적 수정 중" : "신규 견적 작성 중");
     const project = document.getElementById("projectName").value.trim() || "새 프로젝트";
@@ -193,7 +193,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
       const mismatch = !entry.toggle.checked && amount !== 0 && !additional;
       unselectedWithAmount ||= mismatch;
       setText(entry.summary, entry.toggle.checked ? selectedSummary(entry.panel) : additional ? "추가 공사 선택" : mismatch ? "입력 미선택" : "미선택");
-      setText(entry.amount, won(displayAmounts[index]));
+      setText(entry.amount, calculationFailed ? "—" : won(displayAmounts[index]));
       entry.amountSource.hidden = !mismatch;
       setText(entry.amountSource, storedSnapshot ? "저장 금액 포함" : "표시 견적에 포함");
       entry.panel.closest(".preliminary-trade").classList.toggle("is-selected", entry.toggle.checked);

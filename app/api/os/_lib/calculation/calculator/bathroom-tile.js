@@ -13,7 +13,7 @@ const supplyCount = (area, coverage) => Math.ceil(area * 1000 / (PYEONG_AREA * M
 
 export function bathroomTileAmounts(room, laborEnabled, material = bathroomTileMaterialPolicy()) {
   // Use integer millionths of a square metre so exact box boundaries do not round up twice.
-  const wallArea = Math.round(room.wallLength * 1000) * 2400;
+  const wallArea = room.wallLengthMm * 2400;
   const floorArea = Math.round(room.floorArea * 1000) * 1000;
   const wallBuy = Math.ceil(wallArea * 115 / (BOX_AREA * 100));
   const floorBuy = Math.ceil(floorArea * 115 / (BOX_AREA * 100));

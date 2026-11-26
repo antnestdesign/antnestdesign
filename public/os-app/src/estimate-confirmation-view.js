@@ -1,6 +1,6 @@
 import {escapeHtml as esc} from './utils.js';
 
-export function createEstimateConfirmationView({document,load,confirm,revise,isDirty,onLoad,onBusy,onContract}) {
+export function createEstimateConfirmationView({document,load,confirm,revise,isDirty,calculationFailed=()=>false,onLoad,onBusy,onContract}) {
   const host=document.createElement('section');host.className='preliminary-confirmation';
   document.querySelector('.estimate-history')?.after(host);
   let current=null,data=null,generation=0,busy=false,notice='',selectedProject='',pending=null;
@@ -13,14 +13,15 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
     const versionsOpen=Boolean(host.querySelector('details')?.open);
     const candidates=!data?.projectId ? data?.projectCandidates||[] : [];
     const needsProject=canConfirm&&candidates.length>0;
+    const cannotConfirm=busy||!data||calculationFailed()||(needsProject&&!selectedProject);
     host.innerHTML=`<h3>${frozen?`확정 V${frozen.versionNo} 조회`:state.state==='confirmed'?`확정 V${state.draftVersion}`:state.state==='revising'?`수정본 V${state.draftVersion} 작성 중`:'미확정'}</h3>
       ${state.state==='confirmed'&&(frozen||latest)?`<p>${esc((frozen||latest).confirmedBy)} · ${esc(time((frozen||latest).confirmedAt))}</p>`:''}
       ${notice?`<p role="status" data-confirmation-status>${esc(notice)}</p>`:'<p role="status" data-confirmation-status></p>'}
       ${needsProject?`<div class="management-filters"><label>같은 현장 확인<select data-confirmation-project ${busy?'disabled':''}><option value="">연결할 기존 현장 선택</option>${candidates.map(p=>`<option value="${esc(p.id)}" ${p.archived?'disabled':''} ${p.id===selectedProject?'selected':''}>${esc(p.project_name)}${p.address?' · '+esc(p.address):''}${p.archived?' · 보관됨':''}</option>`).join('')}</select></label></div>${candidates.every(p=>p.archived)?'<p>같은 현장이 보관 중입니다. 복구 후 확정할 수 있습니다.</p>':''}`:''}
       ${canConfirm&&data?.issues?.length?`<ul>${data.issues.map(issue=>`<li>${esc(issue)}</li>`).join('')}</ul>`:''}
       <div class="preliminary-confirmation-actions">
-        ${canConfirm?`<button type="button" data-estimate-confirm ${busy||!data||(needsProject&&!selectedProject)?'disabled':''}>견적 확정</button>`:''}
-        ${canConfirm&&onContract?`<button type="button" data-estimate-contract ${busy||!data||(needsProject&&!selectedProject)?'disabled':''}>계약서 작성</button>`:''}
+        ${canConfirm?`<button type="button" data-estimate-confirm ${cannotConfirm?'disabled':''}>견적 확정</button>`:''}
+        ${canConfirm&&onContract?`<button type="button" data-estimate-contract ${cannotConfirm?'disabled':''}>계약서 작성</button>`:''}
         ${canRevise?`<button type="button" data-estimate-revise ${busy?'disabled':''}>수정본 만들기</button>`:''}
         ${frozen?'<button type="button" data-estimate-current>현재 견적 보기</button>':''}
       </div>
@@ -36,6 +37,7 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
   }
   async function command(action,writeContract=false){
     if(busy||!current)return;
+    if(action==='confirm'&&calculationFailed()){notice='최신 견적 계산을 완료한 뒤 확정해 주세요.';render();return;}
     if(isDirty()){notice='저장하지 않은 변경사항이 있습니다. 먼저 견적을 저장해 주세요.';render();return;}
     if(action==='confirm'&&data?.issues?.length){notice='확정 전 확인사항을 해결하고 저장해 주세요.';render();return;}
     if(action==='confirm'&&!data)return;
@@ -56,7 +58,7 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
   }
   host.addEventListener('change',event=>{if(event.target.matches('[data-confirmation-project]')){
     selectedProject=event.target.value;pending=null;
-    host.querySelectorAll('[data-estimate-confirm],[data-estimate-contract]').forEach(button=>{button.disabled=!selectedProject||busy;});
+    host.querySelectorAll('[data-estimate-confirm],[data-estimate-contract]').forEach(button=>{button.disabled=!selectedProject||busy||calculationFailed();});
   }});
   host.addEventListener('click',async event=>{
     const button=event.target.closest('button');if(!button||busy)return;
@@ -69,5 +71,5 @@ export function createEstimateConfirmationView({document,load,confirm,revise,isD
       try{await onLoad(current.id,version);}catch(error){notice=error.message;render();}
     }
   });
-  return {update(estimate){current=estimate;data=null;notice='';selectedProject='';pending=null;const token=++generation;render();if(estimate?.id)refresh(token,estimate.id);}};
+  return {syncCalculationState:render,update(estimate){current=estimate;data=null;notice='';selectedProject='';pending=null;const token=++generation;render();if(estimate?.id)refresh(token,estimate.id);}};
 }

@@ -3,14 +3,19 @@ import { readFileSync } from "node:fs";
 import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { bathroomTileAmounts } from "../../../app/api/os/_lib/calculation/calculator/bathroom-tile.js";
 import { bathroomTileMaterialPolicy, withBathroomTileMaterialPolicy } from "../../../app/api/os/_lib/calculation/bathroom-tile-materials.js";
+import { describeSiteRows } from "../../../app/api/os/_lib/calculation/site-costs.js";
 import { defaultPolicy, policyCatalog, validatePolicy } from "../../../app/api/os/_lib/calculation/preliminary-policy.js";
 import { projectStaffEstimate, validateStaffBody } from "../../../app/api/os/estimates/_lib/estimates.js";
 import { parseBathroomTileRooms } from "../../../public/os-app/src/bathroom-tile-inputs.js";
 import { mountBathroomTileInputs } from "../../../public/os-app/src/bathroom-tile-view.js";
+import { bindApplicationEvents } from "../../../public/os-app/src/application-events.js";
+import { collectEstimateFormValues } from "../../../public/os-app/src/estimate-form.js";
 
-const room = { wallLength: 8, floorArea: 4, wallTile: "ara-1200", floorTile: "ekr-600", labor: true, jolly: false };
+const room = { wallLengthMm: 8000, floorArea: 4, wallTile: "ara-1200", floorTile: "ekr-600", labor: true, jolly: false };
 const base = { sectionBathroomEnabled: true, bathroomUnits: "1", tileEnabled: true, tileGroutEnabled: true };
 const payload = rooms => JSON.stringify(rooms);
+const { wallLengthMm, ...oldRoomFields } = room;
+const oldRoom = { wallLength: wallLengthMm / 1000, ...oldRoomFields };
 function calculate(inputs) {
   const core = createEstimateCalculation();
   const r = core.calculate(core.readState({ ...base, ...inputs }));
@@ -39,7 +44,7 @@ test.each([
   ["ekr-1200", 42840], ["ekr-600", 30600],
   ["lt-1200", 75888], ["lt-600", 61200],
 ])("tile %s receives the purchase price discount once", (wallTile, price) => {
-  expect(bathroomTileAmounts({ ...room, wallTile, wallLength: 0.3, floorArea: 0 }, true))
+  expect(bathroomTileAmounts({ ...room, wallTile, wallLengthMm: 300, floorArea: 0 }, true))
     .toMatchObject({ wallBuy: 1, tile: price, labor: 700000 });
 });
 
@@ -68,7 +73,7 @@ test("bathroom material policy defaults, editable coverage, and saved rates stay
 });
 
 test("each room has its own minimum; grout labor remains one line and jolly is independent", () => {
-  const second = { ...room, wallLength: 0.6, floorArea: 1.44, wallTile: "lt-600", jolly: true };
+  const second = { ...room, wallLengthMm: 600, floorArea: 1.44, wallTile: "lt-600", jolly: true };
   expect(bathroomTileAmounts(second, true)).toMatchObject({ wallLay: 1, floorLay: 1, wallBuy: 2, floorBuy: 2, labor: 700000 });
   const inputs = { bathroomUnits: "2", bathroomTileRooms: payload([room, second]) };
   const work = calculate(inputs).details;
@@ -79,8 +84,18 @@ test("each room has its own minimum; grout labor remains one line and jolly is i
   expect(laborOff).toEqual(work.filter(d => !/메지|시공 인건비/.test(d.item)));
   expect(calculate({ ...inputs, bathroomTileRooms: payload([{ ...room, labor: false }, second]) }).details
     .filter(d => d.item.includes("타일 시공 인건비")).map(d => d.item)).toEqual(["욕실 2 타일 시공 인건비"]);
-  expect(bathroomTileAmounts({ ...room, wallLength: 16, floorArea: 6 }, true).labor).toBe(1216000);
-  expect(bathroomTileAmounts({ ...room, wallLength: 0, floorArea: 0 }, true).labor).toBe(0);
+  expect(bathroomTileAmounts({ ...room, wallLengthMm: 16000, floorArea: 6 }, true).labor).toBe(1216000);
+  expect(bathroomTileAmounts({ ...room, wallLengthMm: 0, floorArea: 0 }, true).labor).toBe(0);
+});
+
+test("existing metre snapshots keep their stored unit and calculate exactly like millimetres", () => {
+  expect(parseBathroomTileRooms(payload([oldRoom]))).toEqual([room]);
+  expect(calculate({ bathroomTileRooms: payload([oldRoom]) })).toEqual(calculate({ bathroomTileRooms: payload([room]) }));
+  const stored = projectStaffEstimate({ estimate_data: { inputs: { ...base, bathroomTileRooms: payload([oldRoom]) } } });
+  expect(JSON.parse(stored.inputs.bathroomTileRooms)).toEqual([oldRoom]);
+  expect(() => parseBathroomTileRooms(payload([{ ...oldRoom, wallLength: 8000 }]))).toThrow();
+  expect(() => parseBathroomTileRooms(payload([{ ...room, wallLengthMm: 8000.1 }]))).toThrow();
+  expect(() => parseBathroomTileRooms(payload([{ ...room, wallLength: 8 }]))).toThrow();
 });
 
 test("new scope fixes the 30% markup, floors each item and keeps other bathroom and demolition details", () => {
@@ -129,7 +144,56 @@ test("room controls preserve per-room entries on count changes and after reloadi
   expect(field(1, "jolly").checked).toBe(true);
   input.value = ""; sync();
   expect(field(0, "wallTile")).toBeNull();
-  input.value = payload([room]); sync();
-  expect(field(0, "wallLength").value).toBe("8");
+  input.value = payload([oldRoom]); sync();
+  expect(field(0, "wallLengthMm").value).toBe("8000");
+  expect(JSON.parse(input.value)).toEqual([oldRoom]);
   expect(field(0, "floorTile").value).toBe("ekr-600");
+});
+
+test("two bathrooms calculate from the actual form event payload and price all works", () => {
+  const html = readFileSync("public/os-app/index.html", "utf8");
+  document.body.innerHTML = new DOMParser().parseFromString(html, "text/html").body.innerHTML;
+  const sync = mountBathroomTileInputs(document);
+  const elements = Object.fromEntries(["bathroomTileRooms", ...Object.keys(base), "bathroomPlumbingRelocationEnabled"]
+    .map(id => [id, document.getElementById(id)]));
+  let last;
+  bindApplicationEvents({ document, window, elements, actions: { onEstimateInput: () => {
+    last = validateStaffBody({ inputs: collectEstimateFormValues(elements, {}) }).inputs;
+  } } });
+  elements.bathroomUnits.value = "2";
+  for (const id of ["sectionBathroomEnabled","tileEnabled","tileGroutEnabled","bathroomPlumbingRelocationEnabled"]) elements[id].checked = true;
+  sync();
+  for (const index of [0, 1]) {
+    for (const [key, value] of Object.entries({ wallLengthMm: "8000", wallTile: "ara-1200", floorArea: "3.84", floorTile: "ara-600", labor: true, jolly: true })) {
+      const field = document.querySelector(`[data-tile-room="${index}"][data-tile-field="${key}"]`);
+      if (typeof value === "boolean") field.checked = value;
+      else field.value = value;
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+  expect(parseBathroomTileRooms(last.bathroomTileRooms).map(r => r.wallLengthMm)).toEqual([8000, 8000]);
+  const core = createEstimateCalculation();
+  const run = inputs => core.calculate(core.readState(inputs));
+  const result = run(last);
+  const failure = run({ ...last, bathroomTileRooms: "[]" });
+  const groups = value => core.groupedCustomerItems(value.details, value.quoteLines);
+  const customer = value => sum(groups(value), "total");
+  expect(sum(failure.details.filter(d => d.group === "tile"), "cost")).toBe(372000);
+  expect(customer(failure)).toBe(6151000);
+  expect(sum(result.details.filter(d => d.group === "tile"), "cost")).toBe(3856080);
+  expect(sum(result.details.filter(d => d.group === "bathroom"), "cost")).toBe(4360000);
+  expect(result.directCost).toBe(8216080);
+  expect(customer(result)).toBe(10679000);
+  const breakdown = describeSiteRows(result.details).filter(row => row.group === "tile");
+  expect(breakdown.find(row => row.code === "TILE_GROUT")).toMatchObject({ kind: "labor", amount: 350000, missing: false });
+  expect(breakdown.every(row => !row.missing)).toBe(true);
+  const setUnchecked = (index, key) => {
+    const field = document.querySelector(`[data-tile-room="${index}"][data-tile-field="${key}"]`);
+    field.checked = false;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  setUnchecked(0, "labor");
+  expect(run(last).directCost).toBe(7516080);
+  setUnchecked(1, "jolly");
+  expect(run(last).directCost).toBe(7116080);
 });

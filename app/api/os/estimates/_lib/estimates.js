@@ -54,7 +54,7 @@ function inputValue(id, value, strict = false) {
   if (strict && result.length > (schema.maxLength ?? 500)) throw new ApiError(400, "견적 입력값이 너무 깁니다.");
   if (id === "bathroomTileRooms") {
     try {
-      const rooms = parseBathroomTileRooms(result);
+      const rooms = parseBathroomTileRooms(result, { preserveStoredUnits: true });
       return rooms === null ? "" : JSON.stringify(rooms);
     } catch {
       if (strict) throw new ApiError(400, "욕실별 타일 제품, 치수 또는 시공 선택을 확인해 주세요.");
@@ -162,7 +162,7 @@ function validateTradeRevision(inputs, previous) {
   if (rooms !== null && inputs.sectionBathroomEnabled) {
     if (Number(inputs.bathroomUnits) > BATHROOM_TILE_LIMIT) throw new ApiError(400, "욕실은 최대 80칸까지 입력할 수 있습니다.");
     for (const [i, room] of rooms.slice(0, Number(inputs.bathroomUnits)).entries()) {
-      if (room.wallLength > 0 && !room.wallTile) throw new ApiError(400, `욕실 ${i + 1}의 벽체 타일을 선택해 주세요.`);
+      if (room.wallLengthMm > 0 && !room.wallTile) throw new ApiError(400, `욕실 ${i + 1}의 벽체 타일을 선택해 주세요.`);
       if (room.floorArea > 0 && !room.floorTile) throw new ApiError(400, `욕실 ${i + 1}의 바닥 타일을 선택해 주세요.`);
     }
   }

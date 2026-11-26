@@ -1,4 +1,4 @@
-import { BATHROOM_TILE_LIMIT, BATHROOM_TILE_PRODUCTS, EMPTY_BATHROOM_TILE_ROOM, parseBathroomTileRooms } from "./bathroom-tile-inputs.js";
+import { BATHROOM_TILE_LIMIT, BATHROOM_TILE_WALL_LIMIT_MM, BATHROOM_TILE_PRODUCTS, EMPTY_BATHROOM_TILE_ROOM, parseBathroomTileRooms } from "./bathroom-tile-inputs.js";
 
 export function mountBathroomTileInputs(document) {
   const count = document.getElementById("bathroomUnits");
@@ -19,7 +19,7 @@ export function mountBathroomTileInputs(document) {
   let renderedValue, renderedCount, rooms = [];
 
   const fields = [
-    ["wallLength", "벽체 총길이 (m)", "number"], ["wallTile", "벽체 타일", "select"],
+    ["wallLengthMm", "벽체 총길이 (mm)", "number"], ["wallTile", "벽체 타일", "select"],
     ["floorArea", "바닥 면적 (㎡)", "number"], ["floorTile", "바닥 타일", "select"],
     ["labor", "타일 시공 인건비", "checkbox"], ["jolly", "졸리컷", "checkbox"],
   ];
@@ -47,10 +47,11 @@ export function mountBathroomTileInputs(document) {
       } else {
         field.type = type;
         if (type === "number") {
+          const wall = key === "wallLengthMm";
           field.min = "0";
-          field.max = "1000";
-          field.step = "0.001";
-          field.inputMode = "decimal";
+          field.max = wall ? String(BATHROOM_TILE_WALL_LIMIT_MM) : "1000";
+          field.step = wall ? "1" : "0.001";
+          field.inputMode = wall ? "numeric" : "decimal";
         }
       }
       if (type === "checkbox") {
