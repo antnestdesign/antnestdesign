@@ -2,6 +2,7 @@ import { ApiError, supabaseFetch, type UserContext } from '../../_lib/server';
 import { projectStaffEstimate, staffInputIds } from './estimates';
 import { customerQuoteProjection } from '../../../../../public/os-app/src/customer-quote.js';
 import { publicItemState } from '../../estimate-items/_lib/model.js';
+import { estimateListRow } from './list-summary';
 
 type Row = Record<string, unknown>;
 type Actor = { id: string; role: string; name?: string; is_active: boolean; must_change_password: boolean };
@@ -35,7 +36,7 @@ export function canEditEstimate(actor: Actor, row: Row, creator?: Actor) {
   return actor.id === row.creator_id && actor.role === row.creator_role || actor.role === 'manager' && row.creator_role === 'staff';
 }
 
-export async function estimateViews(rows: Row[], actor: Actor) {
+export async function estimateViews(rows: Row[], actor: Actor, summary = false) {
   async function fetchGroups<T>(ids: unknown[], path: (ids: string) => string) {
     const unique=[...new Set(ids.filter(Boolean))], result:T[]=[];
     for(let start=0;start<unique.length;start+=50) {
@@ -53,7 +54,7 @@ export async function estimateViews(rows: Row[], actor: Actor) {
   const projectByEstimate=new Map();
   for(const row of associations)if(!projectByEstimate.has(row.estimate_id))projectByEstimate.set(row.estimate_id,row.project_id);
   const editable=(row:Row)=>canEditEstimate(actor,row,creatorById.get(row.creator_id as string));
-  return rows.map(row=>({ ...(actor.role === 'staff' ? projectStaffEstimate(row) : row),
+  return rows.map(row=>({ ...(summary ? estimateListRow(row, actor.role === 'staff') : actor.role === 'staff' ? projectStaffEstimate(row) : row),
     projectId:row.confirmation_project_id||row.project_id||projectByEstimate.get(row.id)||null,
     authorship: { creatorId:row.creator_id ?? null, creatorName:row.creator_name ?? '작성자 미확인',
       createdAt:row.creator_recorded_at ?? row.created_at, editorId:row.last_editor_id ?? null,

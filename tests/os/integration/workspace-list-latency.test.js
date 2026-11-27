@@ -50,11 +50,13 @@ test("login and list navigation with fixed endpoint latency", async () => {
   clearRequestLog();
   const quotes = await measure(() => clickTab("quote"), listRow);
   if (!baseline) expect(seen("/api/os/estimates", "contracts")).toBe(false);
+  if (!baseline) expect(requestLog.requests.some(({ url }) => url.pathname === "/api/os/estimates" && url.searchParams.get("summary") === "1")).toBe(true);
   clearRequestLog();
   const contracts = await measure(() => clickTab("admin"), () =>
     document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
     (!baseline || listRow()));
   expect(seen("/api/os/estimates", "contracts")).toBe(true);
+  if (!baseline) expect(requestLog.requests.some(({ url }) => url.pathname === "/api/os/contract-packages" && !url.searchParams.has("estimateId") && url.searchParams.get("summary") === "1")).toBe(true);
   const contractsAgain = await measure(() => clickTab("admin"), () =>
     document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
     (!baseline || listRow()));

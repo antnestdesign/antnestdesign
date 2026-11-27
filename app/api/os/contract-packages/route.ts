@@ -24,6 +24,7 @@ import {
 import { issuedLinks, readIssuedPackage } from "./_lib/issued-access";
 import {assertLegacyContractWorkflow} from '../projects/_lib/contract-workflow-boundary';
 import {confirmedContractAccess} from './_lib/confirmed-source';
+import { contractPackageListRow, contractPackageListSelect } from "./_lib/list-summary";
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,14 +35,16 @@ export async function GET(request: NextRequest) {
       : null;
     const keyword = (url.searchParams.get("q") || "").trim().toLowerCase();
     requireEstimateScopeForStaff(context, estimateId);
+    const summary = !estimateId && url.searchParams.get("summary") === "1";
     const filters = [
-      "select=*,contract_document_versions(id,package_id,document_type,package_version,generation_status,content_json,content_hash,file_path,file_url,mime_type,created_by,locked_at,created_at,pdf_sha256)",
+      summary ? `select=${contractPackageListSelect}` : "select=*,contract_document_versions(id,package_id,document_type,package_version,generation_status,content_json,content_hash,file_path,file_url,mime_type,created_by,locked_at,created_at,pdf_sha256)",
       "order=created_at.desc",
     ];
     if (estimateId) filters.push(`estimate_id=eq.${encodeURIComponent(estimateId)}`);
-    const rows = await supabaseFetch<Array<Record<string, unknown>>>(
+    const raw = await supabaseFetch<Array<Record<string, unknown>>>(
       `/rest/v1/contract_package_snapshots?${filters.join("&")}`,
     );
+    const rows = summary ? raw.map(row => contractPackageListRow(row, true)) : raw;
     const filteredRows = keyword
       ? rows.filter((row) => {
         const contractInfo = row.contract_info && typeof row.contract_info === "object"
@@ -80,12 +83,16 @@ export async function GET(request: NextRequest) {
         continue;
       }
       if (!linked.has(String(row.id))) { accessible.push(row); continue; }
-      try { accessible.push(await readIssuedPackage(context, String(row.id))); } catch (error) {
+      try {
+        const issued = await readIssuedPackage(context, String(row.id));
+        accessible.push(summary ? contractPackageListRow(issued) : issued);
+      } catch (error) {
         const status = (error as { status?: number }).status;
         if (![403, 423, 503].includes(status || 0) && !/42501|P5F01/.test((error as Error).message)) throw error;
       }
     }
-    return json(sanitizePackageList(accessible, context.profile.role));
+    return summary ? json(accessible, { headers: { "Cache-Control": "private, no-store" } })
+      : json(sanitizePackageList(accessible, context.profile.role));
   } catch (error) {
     return errorResponse(error);
   }

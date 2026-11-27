@@ -243,6 +243,7 @@ export async function loadContractPackages(estimateId, params = {}) {
   const query = new URLSearchParams();
   if (estimateId) query.set("estimateId", estimateId);
   if (params.q) query.set("q", params.q);
+  if (params.summary && !estimateId) query.set("summary", "1");
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return requestOsApi(`/contract-packages${suffix}`);
 }
@@ -432,8 +433,11 @@ export async function updateEstimate(id, estimate) {
 export async function updateEstimateFinancials(id,expectedRevision,financialAdjustment){
   return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({expectedRevision,financialAdjustment})},true));
 }
-export async function loadEstimates({contracts=false}={}) {
-  return (await requestOsApi(contracts?'/estimates?view=contracts':'/estimates')).map(estimateResponse);
+export async function loadEstimates({contracts=false,summary=false}={}) {
+  const query = new URLSearchParams();
+  if (contracts) query.set("view", "contracts");
+  if (summary) query.set("summary", "1");
+  return (await requestOsApi(`/estimates${query.size ? "?" + query : ""}`)).map(estimateResponse);
 }
 export async function getEstimate(id) {
   return estimateResponse(await requestOsApi(`/estimates/${encodeURIComponent(id)}`));

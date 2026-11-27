@@ -548,7 +548,7 @@ function selectedContractEstimate() {
   if (preliminaryContractEstimate) return preliminaryContractEstimate;
   if (loadedContractEstimateState) return loadedContractEstimateState;
   if (currentEditingEstimateId) {
-    return activeQuoteEstimate || cachedEstimates.find((estimate) => estimate.id === currentEditingEstimateId) || loadedContractEstimateState || null;
+    return activeQuoteEstimate || (loadedEstimateBaseline?.id === currentEditingEstimateId ? loadedEstimateBaseline.estimate : null);
   }
   return loadedContractEstimateState || null;
 }
@@ -763,7 +763,7 @@ async function refreshAllContractPackages() {
     return;
   }
   try {
-    allContractPackagesState = await loadContractPackages(null, { q: contractPackageSearchKeyword });
+    allContractPackagesState = await loadContractPackages(null, { q: contractPackageSearchKeyword, summary: true });
     renderAllContractPackages();
   } catch (error) {
     console.error("계약 목록 조회 실패", error);
@@ -1521,14 +1521,14 @@ async function renderSavedEstimateRows({includeContracts=true}={}) {
   try {
     const contractLists=includeContracts?Promise.all([
       requestProjectFoundation('/projects?view=contracts'),
-      loadEstimates({contracts:true}),
+      loadEstimates({contracts:true,summary:true}),
     ]).catch(error=>{
       if(generation===managementGeneration)workspaceView?.showStatus(error.message);
       return null;
     }):null;
     const [estimates,packages,projects] = await Promise.all([
-      loadEstimates(),
-      canMergeContracts ? loadContractPackages(null).catch(error=>{
+      loadEstimates({summary:true}),
+      canMergeContracts ? loadContractPackages(null, {summary:true}).catch(error=>{
         console.warn("프로젝트 계약 상태 조회 실패", error);
         return null;
       }) : null,
@@ -2822,6 +2822,7 @@ async function onLogoutClick() {
   lastRenderedEstimateSnapshot = null;
   currentEditingEstimateId = null;
   cachedEstimates = [];
+  adminEstimateDetailCache.clear();
   managementGeneration++;
   managementRequest=null;
   projectContractPackageMap=new Map();
@@ -3172,6 +3173,10 @@ async function onInternalEstimateToggle(event) {
   expandedAdminTradeKey = null;
   const cached = cachedEstimates.find((estimate) => estimate.id === estimateId);
   if (cached?.internalDetails) adminEstimateDetailCache.set(estimateId, cached);
+  const cachedDetail = adminEstimateDetailCache.get(estimateId);
+  if (cached && cachedDetail && (cached.revision !== cachedDetail.revision || cached.canEdit !== cachedDetail.canEdit)) {
+    adminEstimateDetailCache.delete(estimateId);
+  }
   renderSavedEstimateTableRows(tbody, cachedEstimates, {
     admin: isAdmin(),
     canViewInternal: canViewSystem(),
