@@ -1,4 +1,5 @@
 import { COUNTERTOP_DEFAULT_DEPTH_MM, TRADE_REVISION_INPUTS, furnitureDoorsSelected } from "./trade-revision-inputs.js";
+import { KHANSTONE_PRODUCTS, KHANSTONE_SELECTION_FIELDS } from "./khanstone-products.js";
 
 const groups={
   Demolition:[
@@ -172,7 +173,9 @@ function mountCabinetCountertopInputs(document,get){
   }
   const saved=document.createElement("div");saved.hidden=true;
   const mode=input("countertopLayoutMode","hidden");
-  saved.append(mode,input("homebarCounterWidthMm","hidden"),input("homebarCounterDepthMm","hidden"),
+  const khanstoneCatalog=input("khanstoneCatalogVersion","hidden");
+  khanstoneCatalog.value="v1";
+  saved.append(mode,khanstoneCatalog,input("homebarCounterWidthMm","hidden"),input("homebarCounterDepthMm","hidden"),
     input("countertopTransport","checkbox"),input("countertopLadder","checkbox"));
   get("tradeFormulaVersion").after(saved);
   const base=document.createElement("div");base.className="trade-revision-inputs";
@@ -215,6 +218,24 @@ function mountCabinetCountertopInputs(document,get){
   dry.dataset.lastTradeInput="";
   get("bathroomUnits").closest(".furniture-block").after(dry);
   bindPrefill(dryCustom,dryLength,dryWidth,dryDepth);
+  const productControls=[
+    ...thicknessControls.map(({node,material,enabled})=>[material, "칸스톤 제품", enabled, node]),
+    ["islandSideFinish","칸스톤 측판 제품",()=>get("islandEnabled").checked&&Number(get("islandSideFinishCount").value)>0],
+    ["homebarMidway","칸스톤 미드웨이 제품",()=>get("homebarEnabled").checked],
+    ["dryVanityCountertop","칸스톤 제품",()=>dryEnabled.checked,dryThicknessLabel],
+  ].map(([material,title,enabled,anchor])=>{
+    const field=select(KHANSTONE_SELECTION_FIELDS[material],{"":"제품 선택",...KHANSTONE_PRODUCTS});
+    const node=label(title,field);
+    (anchor ?? get(material).closest("label")).after(node);
+    return {field,node,material,enabled};
+  });
+  const midwayProduct=productControls.find(item=>item.material==="homebarMidway");
+  const midwayThickness=select("homebarMidwayCounterThickness",thicknessLabels);
+  const midwayHeight=input("homebarMidwayHeightMm","number");
+  const midwayThicknessLabel=label("칸스톤 미드웨이 두께",midwayThickness);
+  const midwayHeightLabel=label("칸스톤 미드웨이 높이 (mm)",midwayHeight);
+  midwayHeight.min="1";
+  midwayProduct.node.after(midwayThicknessLabel,midwayHeightLabel);
   return (revised,areaTop)=>{
     const furniture=get("sectionFurnitureEnabled").checked;
     const enabled=revised&&get("baseEnabled").checked&&get("baseCountertopEnabled").checked&&areaTop;
@@ -227,7 +248,7 @@ function mountCabinetCountertopInputs(document,get){
     tall.disabled=!split||!furniture||!get("homebarEnabled").checked;
     for(const {field,node,material,enabled:isEnabled} of thicknessControls){
       const khanstone=get(material).value==="khanstone"||(material==="islandCountertop"&&get("islandSideFinish").value==="khanstone"&&Number(get("islandSideFinishCount").value)>0);
-      node.hidden=material==="vanityTop"?!split:!split||!isEnabled()||!khanstone;
+      node.hidden=!split||!isEnabled()||!khanstone;
       field.disabled=node.hidden||!furniture||!isEnabled()||!khanstone;
     }
     dry.hidden=!split;
@@ -238,5 +259,15 @@ function mountCabinetCountertopInputs(document,get){
     dryCustom.disabled||=!["himacs","khanstone","ceramic"].includes(dryMaterial.value);
     dryWidth.disabled||=dryCustom.disabled||!dryCustom.checked;
     dryDepth.disabled||=dryCustom.disabled||!dryCustom.checked;
+    for(const {field,node,material,enabled:isEnabled} of productControls){
+      const inBathroom=material==="dryVanityCountertop";
+      node.hidden=!split||!isEnabled()||get(material).value!=="khanstone";
+      field.disabled=node.hidden||(inBathroom?dryOff:!furniture);
+      field.required=!field.disabled&&khanstoneCatalog.value==="v1";
+      field.options[0].textContent=khanstoneCatalog.value==="v1"?"제품 선택":"기존 단가";
+    }
+    midwayThicknessLabel.hidden=midwayHeightLabel.hidden=midwayProduct.node.hidden||!midwayProduct.field.value;
+    midwayThickness.disabled=midwayHeight.disabled=midwayProduct.field.disabled||midwayHeightLabel.hidden;
+    midwayHeight.required=!midwayHeight.disabled;
   };
 }

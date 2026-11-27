@@ -28,6 +28,47 @@ const elec = { sectionElectricalEnabled: true, electricalOutletMoveEnabled: true
 const row = (r, name) => r.details.find(d => d.item === name);
 beforeEach(() => mock.fetch.mockResolvedValue([{ item_code: "DEMO_CABINET_PER_JA", cost_price: 25000, unit: "자", default_margin_rate: .3, is_active: true }]));
 
+test("Khanstone products and thickness appear only for the matching active work",()=>{
+  document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
+  const sync=mountTradeRevisionInputs(document), get=id=>document.getElementById(id);
+  const base=get("baseKhanstoneProduct"), side=get("islandSideKhanstoneProduct");
+  for(const id of ["sectionFurnitureEnabled","baseEnabled","baseCountertopEnabled","islandEnabled"])get(id).checked=true;
+  get("baseCountertop").value="ceramic";
+  get("islandSideFinish").value="khanstone";
+  get("islandSideFinishCount").value="0";
+  sync();
+  expect(base.disabled).toBe(true);
+  expect(side.disabled).toBe(true);
+  get("baseCountertop").value="khanstone";
+  get("islandSideFinishCount").value="2";
+  sync();
+  expect(base.options).toHaveLength(13);
+  expect(base.closest("label").hidden).toBe(false);
+  expect(base.required).toBe(true);
+  expect(side.disabled).toBe(false);
+  expect(get("islandCounterThickness").disabled).toBe(false);
+  get("khanstoneCatalogVersion").value="";
+  sync();
+  expect(base.required).toBe(false);
+  expect(base.options[0].textContent).toBe("기존 단가");
+});
+
+test("Khanstone new quotes require an actual model and retain it on save and staff projection",async()=>{
+  const inputs={projectName:"Synthetic Khanstone",sectionFurnitureEnabled:true,
+    tradeFormulaVersion:"v2",countertopLayoutMode:"current",khanstoneCatalogVersion:"v1",
+    baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"khanstone",lowerCabinetM:"1000",
+    baseCounterThickness:"20"};
+  expect(()=>validateStaffBody({inputs:{...inputs,baseKhanstoneProduct:"unknown"}})).toThrow();
+  await expect(calculateStaffEstimate(validateStaffBody({inputs}),actor("staff"))).rejects.toThrow(/제품을 선택/);
+  await expect(calculateStaffEstimate(validateStaffBody({inputs:{...inputs,baseKhanstoneProduct:"denver",
+    homebarEnabled:true,homebarM:"1400",homebarMidway:"khanstone",homebarMidwayKhanstoneProduct:"eden"}}),actor("staff"))).rejects.toThrow(/시공 높이/);
+  const saved=await calculateStaffEstimate(validateStaffBody({inputs:{...inputs,baseKhanstoneProduct:"denver"}}),actor("staff"));
+  expect(saved.internalDetails.find(d=>d.item.includes("칸스톤 덴버"))).toMatchObject({cost:350000,customerRevenue:455000});
+  const reopened=projectStaffEstimate(estimateRowPayload(saved));
+  expect(reopened.inputs).toMatchObject({baseKhanstoneProduct:"denver",baseCounterThickness:"20"});
+  expect(reopened).not.toHaveProperty("internalDetails");
+});
+
 test.each([["normal", 800000, 1040000], ["special", 1200000, 1560000]])("basic %s uses independent area and one markup", (type, cost, sale) => {
   const r = calc({ ...demo, areaPyeong: "45", demolitionBasicType: type });
   expect(r.directCost).toBe(cost); expect(r.customerRevenue).toBe(sale);

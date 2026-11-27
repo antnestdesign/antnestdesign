@@ -1,9 +1,43 @@
 import {expect,test} from "vitest";
 import {createEstimateCalculation} from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import {countertopAreaCost,filmLabor} from "../../../app/api/os/_lib/calculation/calculator/trade-revision.js";
+import {KHANSTONE_PRODUCTS} from "../../../public/os-app/src/khanstone-products.js";
 
 const run=(inputs,options)=>{const core=createEstimateCalculation(options);return core.calculate(core.readState({tradeFormulaVersion:"v2",...inputs}));};
 const detail=(result,item)=>result.details.find(row=>row.item===item);
+
+test("Khanstone all twelve products use their quoted 12T and 20T reference-area prices",()=>{
+  const tiers=[
+    [["snowfield","denver","luna-white","ash-concrete","luna-shadow"],320000,350000],
+    [["eden","eden-gray","patagonia","cremosa"],400000,450000],
+    [["cristallo","matterhorn","boa-vista"],450000,500000],
+  ];
+  expect(new Set(tiers.flatMap(([products])=>products))).toEqual(new Set(Object.keys(KHANSTONE_PRODUCTS)));
+  for(const [products,t12,t20] of tiers)for(const sku of products){
+    expect(countertopAreaCost(1000,700,"khanstone","12",false,sku)).toBe(t12);
+    expect(countertopAreaCost(1000,700,"khanstone","20",false,sku)).toBe(t20);
+  }
+});
+
+test("Khanstone selection uses existing dimensions, one markup, and leaves unselected and legacy rows unchanged",()=>{
+  const scope={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,
+    baseCountertop:"khanstone",lowerCabinetM:"1000",baseCounterThickness:"20",
+    islandEnabled:true,islandM:"2000",islandDepthMm:"700",islandCountertop:"khanstone",
+    islandSideFinish:"khanstone",islandSideFinishCount:"2",islandCounterThickness:"20",
+    homebarEnabled:true,homebarM:"1400",homebarMidway:"khanstone"};
+  const selected={baseKhanstoneProduct:"snowfield",islandKhanstoneProduct:"eden",islandSideKhanstoneProduct:"cristallo",
+    homebarMidwayKhanstoneProduct:"patagonia",homebarMidwayCounterThickness:"20",homebarMidwayHeightMm:"500"};
+  const r=run({...scope,...selected});
+  expect(detail(r,"상하부장 상판(칸스톤 스노우필드, 20T)")).toMatchObject({cost:350000,customerRevenue:455000});
+  expect(detail(r,"아일랜드 상판(칸스톤 에덴, 20T)")).toMatchObject({cost:900000});
+  expect(detail(r,"아일랜드 좌우마감재(칸스톤 크리스탈로, 20T)")).toMatchObject({cost:900000,input:"700mm × 900mm × 2개"});
+  expect(r.details.filter(row=>row.item.startsWith("홈바장 미드웨이"))).toMatchObject([
+    {item:"홈바장 미드웨이(칸스톤 파타고니아, 20T)",cost:450000,input:"1,400mm × 500mm"},
+  ]);
+  expect(detail(run(scope),"상하부장 상판(칸스톤, 20T)").cost).toBe(450000);
+  const legacy={...scope,countertopLayoutMode:"legacy"};
+  expect(run({...legacy,...selected}).details).toEqual(run(legacy).details);
+});
 test.each(["full","partial","legacy"])("expansion keeps fixed costs and customer prices in %s",mode=>{
   const inputs={sectionDemolitionEnabled:true,demolitionMode:mode==="partial"?"partial":"full",
     tradeFormulaVersion:mode==="legacy"?"legacy":"v2",expansionLiving:true,expansionRooms:"2",expansionKitchen:"1",targetMargin:"55"};

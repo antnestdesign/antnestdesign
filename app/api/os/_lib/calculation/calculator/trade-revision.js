@@ -1,12 +1,19 @@
 import { wallpaperGradeOption } from "./finish.js";
 import { cabinetCountertopDimensions, dryVanityCountertopDimensions, furnitureDoorsSelected } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
+import { countertopProductLabel, khanstonePrice } from "./khanstone-rates.js";
 
 export const counterRates={ceramic:500000,khanstone:400000,himacs:210000};
 const previousCounterRates={ceramic:400000,khanstone:320000,himacs:200000};
 const slabThickness=(material,thickness,legacy)=>!legacy&&material==="khanstone"&&thickness==="20"?"20":"12";
-const countertopRate=(material,thickness,legacy)=>legacy?previousCounterRates[material]||0:
-  slabThickness(material,thickness,legacy)==="20"?450000:counterRates[material]||0;
-export const countertopAreaCost=(width,depth,material,thickness,legacy=false)=>Math.floor(width*depth*countertopRate(material,thickness,legacy)/700000);
+const countertopReferenceAreaMm2 = 700000;
+function countertopRate(material,thickness,legacy,product) {
+  if (legacy) return previousCounterRates[material] || 0;
+  const t = slabThickness(material,thickness,legacy);
+  if (material === "khanstone") return khanstonePrice(product,t) ?? (t === "20" ? 450000 : counterRates.khanstone);
+  return counterRates[material] || 0;
+}
+export const countertopAreaCost=(width,depth,material,thickness,legacy=false,product)=>
+  Math.floor(width*depth*countertopRate(material,thickness,legacy,product)/countertopReferenceAreaMm2);
 export const wallpaperRolls=area=>Math.ceil(area*2.5/5);
 export const filmLabor=v=>Math.ceil(((v.filmWindow?({20:4,30:6,40:8,50:10}[v.filmWindowArea]||0):0)*4000
   +v.filmDoorCount*2000+v.filmOneSideMm*2+v.filmBothSidesMm*4+v.filmWallMm)/4000);
@@ -29,6 +36,10 @@ export function expansionDetails(v,mmText){
   return rows;
 }
 
+export const usesPricedKhanstoneMidway = state =>
+  state.tradeRevision?.tradeFormulaVersion === "v2" && state.tradeRevision.countertopLayoutMode !== "legacy"
+  && state.homebarMidway === "khanstone" && Boolean(state.tradeRevision.homebarMidwayKhanstoneProduct);
+
 export function revisedCountertops(state, legacyHomebarCounterLength) {
   const v = state.tradeRevision;
   if (!v) return [];
@@ -37,11 +48,13 @@ export function revisedCountertops(state, legacyHomebarCounterLength) {
   const vanity = v.vanityEnabled !== "off" && v.vanityMm > 0;
   const dryVanity = v.countertopLayoutMode !== "legacy" && state.bathroomEnabled && v.dryVanityEnabled && v.dryVanityLengthMm>0;
   return [
-    ["base","상하부장 상판",v.furniture&&state.baseEnabled&&state.baseCountertopEnabled,base[0],state.baseCountertop,base[1],v.baseCounterThickness],
-    ["island","아일랜드 상판",v.furniture&&state.islandEnabled,state.islandM,state.islandCountertop,state.islandDepthMm,v.islandCounterThickness],
-    ["homebar","홈바장 상판",v.furniture&&state.homebarEnabled,homebar[0],state.homebarCountertop,homebar[1],v.homebarCounterThickness],
-    ["base","화장대 상판",v.furniture&&vanity,v.vanityMm,v.vanityTop,v.vanityDepthMm,v.vanityCounterThickness],
-    ["bathroom","건식세면대 상판",dryVanity,dry[0],v.dryVanityCountertop,dry[1],v.dryVanityCounterThickness],
+    ["base","상하부장 상판",v.furniture&&state.baseEnabled&&state.baseCountertopEnabled,base[0],state.baseCountertop,base[1],v.baseCounterThickness,v.baseKhanstoneProduct],
+    ["island","아일랜드 상판",v.furniture&&state.islandEnabled,state.islandM,state.islandCountertop,state.islandDepthMm,v.islandCounterThickness,v.islandKhanstoneProduct],
+    ["homebar","홈바장 상판",v.furniture&&state.homebarEnabled,homebar[0],state.homebarCountertop,homebar[1],v.homebarCounterThickness,v.homebarKhanstoneProduct],
+    ["homebar","홈바장 미드웨이",v.furniture&&state.homebarEnabled&&usesPricedKhanstoneMidway(state),
+      state.homebarM,state.homebarMidway,v.homebarMidwayHeightMm,v.homebarMidwayCounterThickness,v.homebarMidwayKhanstoneProduct],
+    ["base","화장대 상판",v.furniture&&vanity,v.vanityMm,v.vanityTop,v.vanityDepthMm,v.vanityCounterThickness,v.vanityKhanstoneProduct],
+    ["bathroom","건식세면대 상판",dryVanity,dry[0],v.dryVanityCountertop,dry[1],v.dryVanityCounterThickness,v.dryVanityKhanstoneProduct],
   ].filter(([, ,enabled,width,material,depth])=>enabled&&width>0&&depth>0&&Object.hasOwn(counterRates,material));
 }
 
@@ -77,10 +90,11 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimum
   if(v.film&&state.filmEnabled)add("film","필름 인건비",filmLabor(v),"품",rates.finish.filmWorkerDay);
   const legacy=v.countertopLayoutMode==="legacy";
   const tops=revisedCountertops(state,homebarCounterActualMm);
-  const addTop=([group,label,,width,material,depth,thickness])=>{
+  const addTop=([group,label,,width,material,depth,thickness,product])=>{
     const t=slabThickness(material,thickness,legacy);
-    add(group,`${label}(${rates.countertop[material].label}, ${t}T)`,width*depth/700000,"장 환산",
-      countertopRate(material,t,legacy),countertopAreaCost(width,depth,material,t,legacy),`${mmText(width)} × ${mmText(depth)}`);
+    const name=countertopProductLabel(material,rates.countertop[material].label,legacy?"":product);
+    add(group,`${label}(${name}, ${t}T)`,width*depth/countertopReferenceAreaMm2,"장 환산",
+      countertopRate(material,t,legacy,product),countertopAreaCost(width,depth,material,t,legacy,product),`${mmText(width)} × ${mmText(depth)}`);
   };
   if(!legacy&&state.bathroomEnabled&&v.dryVanityEnabled&&v.dryVanityLengthMm>0){
     const foam=v.dryVanityCabinetType==="foam";
@@ -106,9 +120,11 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimum
     const side=state.islandSideFinish, count=state.islandSideFinishCount, depth=state.islandDepthMm, height=900;
     if(state.islandEnabled&&state.islandM>0&&depth>0&&count>0&&Object.hasOwn(counterRates,side)){
       const t=slabThickness(side,v.islandCounterThickness,legacy);
-      const name=legacy?`아일랜드 좌우마감재(${rates.countertop[side].label})`:`아일랜드 좌우마감재(${rates.countertop[side].label}, ${t}T)`;
+      const product=v.islandSideKhanstoneProduct;
+      const material=countertopProductLabel(side,rates.countertop[side].label,legacy?"":product);
+      const name=legacy?`아일랜드 좌우마감재(${material})`:`아일랜드 좌우마감재(${material}, ${t}T)`;
       add("island",name,
-        depth*height*count/700000,"장 환산",countertopRate(side,t,legacy),countertopAreaCost(depth*count,height,side,t,legacy),
+        depth*height*count/countertopReferenceAreaMm2,"장 환산",countertopRate(side,t,legacy,product),countertopAreaCost(depth*count,height,side,t,legacy,product),
         `${mmText(depth)} × ${mmText(height)} × ${count}개`);
     }
     if(legacy){

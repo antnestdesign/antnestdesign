@@ -3,7 +3,7 @@ import { resolveFlooring, publicFlooringSummary } from "../../_lib/flooring-stor
 import { FlooringInputError, parseFlooringPlan } from "../../../../../public/os-app/src/flooring-inputs.js";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
-import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput } from "../../../../../public/os-app/src/trade-revision-inputs.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput, selectedKhanstoneWorks } from "../../../../../public/os-app/src/trade-revision-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
 import { withBathroomTileMaterialPolicy } from '../../_lib/calculation/bathroom-tile-materials.js';
@@ -202,7 +202,15 @@ function validateTradeRevision(inputs, previous) {
     throw new ApiError(409,"저장 견적의 산식 버전은 변경할 수 없습니다.");
   if(previous&&inputs.countertopLayoutMode!==(previous.inputs?.countertopLayoutMode??"legacy"))
     throw new ApiError(409,"저장 견적의 상판 산정 기준은 변경할 수 없습니다.");
+  if(previous&&inputs.khanstoneCatalogVersion!==(previous.inputs?.khanstoneCatalogVersion??""))
+    throw new ApiError(409,"저장 견적의 칸스톤 제품 적용 기준은 변경할 수 없습니다.");
   if(inputs.tradeFormulaVersion!=="v2")return;
+  const khanstone=selectedKhanstoneWorks(inputs);
+  for(const {field,label} of khanstone){
+    if(inputs.khanstoneCatalogVersion==="v1"&&!inputs[field])throw new ApiError(400,`${label}의 칸스톤 제품을 선택해 주세요.`);
+    if(field==="homebarMidwayKhanstoneProduct"&&inputs[field]&&!(Number(inputs.homebarMidwayHeightMm)>0))
+      throw new ApiError(400,"홈바장 미드웨이의 시공 높이를 입력해 주세요.");
+  }
   if(inputs.sectionWallpaperEnabled&&Number(inputs.wallpaperRoomPyeong)>Number(inputs.areaPyeong))
     throw new ApiError(400,"별도 벽지 시공 방 면적은 전체 분양평수 이하여야 합니다.");
   if(inputs.sectionDemolitionEnabled&&["demoBathTub","demoBathOverlay"].some(id=>Number(inputs[id])>Number(inputs.demoBathFull)))

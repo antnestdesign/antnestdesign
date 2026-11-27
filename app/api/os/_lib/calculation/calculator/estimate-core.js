@@ -10,7 +10,7 @@ import { parseBathroomTileRooms } from "../../../../../../public/os-app/src/bath
 import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
-import { expansionDetails, revisedTradeDetails, revisedCountertops, counterRates } from "./trade-revision.js";
+import { expansionDetails, revisedTradeDetails, revisedCountertops, counterRates, usesPricedKhanstoneMidway } from "./trade-revision.js";
 import { COUNTERTOP_LIFTING_NOTICE, expansionPartitionInput, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
@@ -757,7 +757,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.countertop,
     });
-    if(!splitHomebar||state.homebarM>0)addDetail(details, {
+    if((!splitHomebar||state.homebarM>0)&&!usesPricedKhanstoneMidway(state))addDetail(details, {
       group: "homebar",
       item: `홈바장 미드웨이(${homebarMidway.label})`,
       input: `상하부장 ${mmText(homebarCounterActualMm)}`,

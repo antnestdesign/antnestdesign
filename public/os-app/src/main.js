@@ -2922,7 +2922,7 @@ function onNewEstimateClick(approved=false) {
   preliminaryContractEstimate = null;
   contractSourceView.reset();
   itemBuilderView?.reset();
-  restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults, flooringPlan: FLOORING_DEFAULT_PLAN });
+  restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults, flooringPlan: FLOORING_DEFAULT_PLAN, khanstoneCatalogVersion: "v1" });
   el.projectSearch.value = "";
   el.projectSearchResults.value = "";
   newEstimateInputBaseline = currentInputKey();
