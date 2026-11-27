@@ -10,6 +10,7 @@ export const CARPENTRY_INPUT_SCHEMA = {
 export const PRELIMINARY_WORK_INPUT_SCHEMA = {
   ...TRADE_REVISION_INPUTS,
   bathroomTileRooms: { type: "text", value: "[]", maxLength: 16000 },
+  flooringPlan: { type: "text", value: "", maxLength: 4000 },
   demolitionBasicEnabled: { type: "checkbox", value: false },
   demolitionBasicType: { type: "select-one", value: "normal", choices: ["normal", "special"] },
   demolitionBasicArea: { type: "number", value: "0", min: 0 },

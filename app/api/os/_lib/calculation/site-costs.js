@@ -54,7 +54,7 @@ export function describeSiteRows(details) {
       basis, formula: part?.formula || d.input, source: part?.source || "기존 적용 원가", standardPrice: part?.standardPrice ?? null,
       amount: d.cost, sale: d.customerRevenue, manualQuantity: d.siteQuantity !== undefined, manualPrice: d.sitePrice !== undefined,
       stale: Boolean(d.siteStale), missing: basePrice == null && d.sitePrice === undefined && baseQuantity > 0,
-      adjustable: d.item !== "기존 배관 청소" && Boolean(part || d.unitPrice > 0), kind: definition?.itemCode === "TILE_GROUT" || part?.code === "WOOD_LABOR_WORKER" || /인건비|기공|조공/.test(d.item) ? "labor" : part?.code === "WOOD_MACHINE_DAY" || /기계품/.test(d.item) ? "equipment" : "material" };
+      adjustable: !d.lockedSiteCost && d.item !== "기존 배관 청소" && Boolean(part || d.unitPrice > 0), kind: definition?.itemCode === "TILE_GROUT" || part?.code === "WOOD_LABOR_WORKER" || /인건비|기공|조공/.test(d.item) ? "labor" : part?.code === "WOOD_MACHINE_DAY" || /기계품/.test(d.item) ? "equipment" : "material" };
   });
 }
 

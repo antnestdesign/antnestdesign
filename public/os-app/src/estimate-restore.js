@@ -94,6 +94,7 @@ function restoreInputValues(inputs = {}) {
   nextInputs.countertopLayoutMode=inputs.countertopLayoutMode??"legacy";
   nextInputs.baseCounterCustomSize=inputs.baseCounterCustomSize??(nextInputs.countertopLayoutMode==="legacy");
   nextInputs.bathroomTileRooms=inputs.bathroomTileRooms ?? "";
+  nextInputs.flooringPlan = inputs.flooringPlan ?? "";
   nextInputs.dryVanityCountertop=inputs.dryVanityCountertop ?? "none";
   nextInputs.expansionPartitionMm=expansionPartitionInput(inputs);
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {
@@ -175,7 +176,7 @@ function syncBlockLocks() {
   for(const [gradeId,material] of [["flooringSheetGrade","sheet"],["flooringWoodGrade","wood"]]){
     const grade=el[gradeId],choice=el.flooringMaterialType;
     if(!grade||!choice)continue;
-    const inactive=choice.value!==material;
+    const inactive=choice.value!==material || material==="wood" && Boolean(el.flooringPlan?.value);
     grade.closest("label").hidden=inactive;
     grade.disabled=choice.disabled||inactive;
   }

@@ -1,0 +1,14 @@
+#flooringProductControls[hidden], .flooring-catalog-manager [hidden] { display: none; }
+.flooring-plan-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+.flooring-zone { min-inline-size: 0; margin: 0 0 8px; padding: 8px 0; border: 0; border-bottom: 1px solid #dce3e5; }
+.flooring-zone legend { padding: 0; font-weight: 600; }
+.flooring-product-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 10px; margin-bottom: 8px; }
+.flooring-product-grid > label { min-width: 0; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.flooring-product-grid select, .flooring-product-grid input:not([type="checkbox"]) { min-width: 0; width: 100%; }
+.flooring-product-grid .flooring-active { display: flex; align-items: center; gap: 8px; }
+.flooring-product-grid output { display: block; font-weight: 600; }
+[data-floor-meta], [data-floor-calculated] { overflow-wrap: anywhere; }
+[data-floor-meta]:empty { display: none; }
+.flooring-catalog-manager { padding: 12px 0; border-top: 1px solid #dce3e5; }
+.flooring-catalog-manager summary { cursor: pointer; font-weight: 600; }
+.flooring-catalog-manager [data-floor-admin] { margin-top: 8px; }

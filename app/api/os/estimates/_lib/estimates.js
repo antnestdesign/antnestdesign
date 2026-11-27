@@ -1,4 +1,6 @@
 import { ApiError, errorResponse, supabaseFetch } from "../../_lib/server";
+import { resolveFlooring, publicFlooringSummary } from "../../_lib/flooring-store.js";
+import { FlooringInputError, parseFlooringPlan } from "../../../../../public/os-app/src/flooring-inputs.js";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
 import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput } from "../../../../../public/os-app/src/trade-revision-inputs.js";
@@ -24,6 +26,7 @@ const text = (value) => typeof value === "string" ? value : "";
 const amount = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
 
 export function estimateErrorResponse(error) {
+  if (error instanceof FlooringInputError) return errorResponse(new ApiError(400, error.message));
   if (error instanceof ItemDefinitionError) return errorResponse(new ApiError(400,error.message));
   if (error instanceof SiteCostValidationError) return errorResponse(new ApiError(400,error.message));
   if (error instanceof PreliminaryPolicyError) return errorResponse(new ApiError(400,'회사 산정 기준을 확인할 수 없습니다. 관리자에게 문의해 주세요.'));
@@ -53,6 +56,15 @@ function inputValue(id, value, strict = false) {
   }
   const result = String(value);
   if (strict && result.length > (schema.maxLength ?? 500)) throw new ApiError(400, "견적 입력값이 너무 깁니다.");
+  if (id === "flooringPlan") {
+    try {
+      const plan = parseFlooringPlan(result);
+      return plan ? JSON.stringify(plan) : "";
+    } catch (error) {
+      if (strict) throw new ApiError(400, error.message);
+      return "";
+    }
+  }
   if (id === "bathroomTileRooms") {
     try {
       const rooms = parseBathroomTileRooms(result, { preserveStoredUnits: true });
@@ -135,6 +147,7 @@ export function projectStaffEstimate(row) {
     total, totalText: money(total), status: text(row.status || data.status), savedAt,
     updatedAt: text(row.updated_at), inputs,
     ...(data.itemBuilder?publicItemState(data.itemBuilder):{}),
+    ...(data.flooringSummary ? { flooringSummary: publicFlooringSummary(data.flooringSummary) } : {}),
     ...(data.reviewNotice ? { reviewNotice: "시공 구성·수량·적용 기준을 담당자와 확인해 주세요." } : {}),
     customerQuote: {
       projectName, clientName, phone, areaPyeong: amount(row.area_pyeong ?? data.areaPyeong),
@@ -172,6 +185,8 @@ function mergeEstimateInputs(baseline, incoming, stored) {
 }
 
 function validateTradeRevision(inputs, previous) {
+  if (previous && Boolean(inputs.flooringPlan) !== Boolean(previous.inputs?.flooringPlan))
+    throw new ApiError(409, "저장 견적의 마루 산식은 변경할 수 없습니다.");
   const rooms = parseBathroomTileRooms(inputs.bathroomTileRooms);
   const hasPreviousTileRooms = inputValue("bathroomTileRooms", previous?.inputs?.bathroomTileRooms ?? "") !== "";
   if (previous && (rooms !== null) !== hasPreviousTileRooms)
@@ -275,7 +290,8 @@ export async function calculatePrivilegedEstimate(body, context) {
   if(preliminaryPolicy)for(const definition of COST_ITEM_DEFINITIONS)if(Number.isFinite(rateValues[definition.inputId]))preliminaryPolicy.config.prices[definition.itemCode]=rateValues[definition.inputId];
   const carpentryPrices=clone(costs.carpentryPrices);
   if(preliminaryPolicy)for(const code of Object.keys(carpentryPrices))carpentryPrices[code].price=preliminaryPolicy.config.prices[code];
-  const core=createEstimateCalculation({rateValues,carpentryPrices,preliminaryPolicy:preliminaryPolicy?.config}),state=core.readState(inputs),result=core.calculate(state);
+  const flooring = await resolveFlooring(inputs, old?.flooringCostSnapshot);
+  const core=createEstimateCalculation({rateValues,carpentryPrices,preliminaryPolicy:preliminaryPolicy?.config,flooringRows:flooring.rows}),state=core.readState(inputs),result=core.calculate(state);
   const costRows=describeSiteRows(result.details);
   if(!applyCurrent&&old?.costSnapshot?.items?.length&&!old.costSnapshot.preliminaryPolicy&&changed.length&&state.wallpaperMaterialEnabled&&!old.costSnapshot.items.some(i=>i.itemCode==='WALLPAPER_MATERIAL_PER_PYEONG'))throw new ApiError(409,'저장 당시 원가 스냅샷에 도배 자재비가 없어 현재 원가와 섞어 계산하지 않았습니다.');
   const groups=core.groupedCustomerItems(result.details,result.quoteLines),total=groups.reduce((n,g)=>n+amount(g.total),0),savedAt=new Date().toISOString();
@@ -286,6 +302,7 @@ export async function calculatePrivilegedEstimate(body, context) {
     marginRate:Number((result.actualMargin*100).toFixed(2)),costSnapshot:preliminaryPolicy?{...costs.snapshot,preliminaryPolicy}:costs.snapshot,
     inputs:{...(old?.inputs||{}),...inputs,...core.effectiveEstimateInputOverrides(state)},
     author:old?.author||{user_id:context.authUser.id,user_email:context.profile.email,role:context.profile.role},
+    ...(inputs.flooringPlan ? { flooringCostSnapshot: flooring.snapshot, flooringSummary: flooring.summary } : {}),
     internalDetails:result.details,internalSummary:{directCost:result.directCost,customerRevenue:result.customerRevenue,profit:result.profit,marginRate:Number((result.actualMargin*100).toFixed(2)),discountRoom:result.discountRoom},
     costBreakdown:costRows, reviewNotice:costRows.some(r=>r.missing||r.stale)||state.carpentryCostMode==='assembly-v1'&&state.carpentryCeilingFanUnits>0,
     customerQuote:{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,savedAt,total,totalText:money(total),groups},
@@ -326,7 +343,9 @@ export async function calculateStaffEstimate(validated, context, existing = null
   } else {
     recalculated = true;
     const costs = await trustedCostContext(existing);
-    const core = createEstimateCalculation({ rateValues: costs.rateValues, carpentryPrices: costs.carpentryPrices, preliminaryPolicy:costs.preliminaryPolicy?.config });
+    const flooring = await resolveFlooring(inputs, oldData?.flooringCostSnapshot);
+    const core = createEstimateCalculation({ rateValues: costs.rateValues, carpentryPrices: costs.carpentryPrices,
+      preliminaryPolicy:costs.preliminaryPolicy?.config, flooringRows: flooring.rows });
     const state = core.readState(inputs);
     if (oldData?.costSnapshot?.items?.length && !oldData.costSnapshot.preliminaryPolicy && state.wallpaperMaterialEnabled
       && !oldData.costSnapshot.items.some((item) => item.itemCode === "WALLPAPER_MATERIAL_PER_PYEONG")) {
@@ -341,6 +360,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
       areaPyeong: state.areaPyeong, status: state.status, total, totalText: money(total),
       costTotal: result.directCost, marginRate: Number((result.actualMargin * 100).toFixed(2)),
       costSnapshot: costs.snapshot, internalDetails: result.details, costBreakdown: describeSiteRows(result.details),
+      ...(inputs.flooringPlan ? { flooringCostSnapshot: flooring.snapshot, flooringSummary: flooring.summary } : {}),
       reviewNotice: describeSiteRows(result.details).some(r=>r.missing||r.stale)||state.carpentryCostMode==='assembly-v1'&&state.carpentryCeilingFanUnits>0,
       internalSummary: { directCost: result.directCost, customerRevenue: result.customerRevenue,
         profit: result.profit, marginRate: Number((result.actualMargin * 100).toFixed(2)), discountRoom: result.discountRoom },

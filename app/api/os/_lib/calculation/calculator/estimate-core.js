@@ -167,7 +167,7 @@ function countertopQuantity(material, billingM) {
   return mText(billingM);
 }
 
-function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue, fixedMarkup = undefined }) {
+function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, correction = 0, customerRevenue: fixedCustomerRevenue, fixedMarkup = undefined, lockedSiteCost = false }) {
   if(policy&&(!Number.isFinite(cost)||cost<0||cost>1e12))throw new PreliminaryPolicyError('산식으로 계산한 원가가 허용 범위를 벗어났습니다.');
   const hasFixedCustomerRevenue = Number.isFinite(Number(fixedCustomerRevenue));
   const revenue = hasFixedCustomerRevenue ? Number(fixedCustomerRevenue) : sellPrice(cost, margin, correction);
@@ -185,6 +185,7 @@ function makeDetail({ group, item, input, quantity, unitPrice, cost, margin, cor
     customerRevenue,
     profit: customerRevenue - cost,
     ...(fixedMarkup===undefined?{}:{fixedMarkup}),
+    ...(lockedSiteCost ? { lockedSiteCost } : {}),
   };
 }
 
@@ -1167,7 +1168,7 @@ function calculate(state) {
   addUnitDetail(details, {
     group: "flooring",
     item: `바닥 시공(${flooringLabel})`,
-    enabled: state.flooringEnabled,
+    enabled: state.flooringEnabled && !options.flooringRows,
     input: `${state.flooringArea}평 · ${flooringLabel}`,
     quantity: `${state.flooringArea}평`,
     unitPrice: flooringGrade.unitPrice,
@@ -1176,6 +1177,9 @@ function calculate(state) {
     correction: state.corrections.option,
   });
 
+  if (state.flooringEnabled && options.flooringRows) {
+    for (const row of options.flooringRows) addDetail(details, { ...row, margin: 0.30, lockedSiteCost: true });
+  }
   addModuleDetails(details, kitchenDetails(state, rates.kitchen), margin, state.corrections.option);
   addModuleDetails(details, doorDetails(state, rates.door), margin, state.corrections.option);
   addModuleDetails(details, miscDetails(state, rates.misc), margin, state.corrections.option);

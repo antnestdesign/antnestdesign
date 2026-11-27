@@ -5,6 +5,8 @@ import {defaultPolicy,policyCatalog,policyRateValues,policyScenario,PreliminaryP
 import {withBathroomTileMaterialPolicy} from '../_lib/calculation/bathroom-tile-materials.js';
 import {createEstimateCalculation} from '../_lib/calculation/calculator/estimate-core.js';
 import {PRELIMINARY_POLICY_EXAMPLES} from '../_lib/calculation/preliminary-policy-examples.js';
+import {resolveFlooring} from '../_lib/flooring-store.js';
+import {FlooringInputError} from '../../../../public/os-app/src/flooring-inputs.js';
 type PolicyState={version:number;revision:number;draft:unknown;draft_master_hash:string|null;master_hash:string;masters:Array<{id:string;item_code:string;item_name:string;unit:string;cost_price:number;is_active:boolean}>;current:unknown;history:Array<{version:number;reason:string;published_at:string;published_by:string}>};
 
 async function state(request:NextRequest) {
@@ -18,7 +20,7 @@ async function state(request:NextRequest) {
   return {...data,current:validatePolicy(config),draft:data.draft?withBathroomTileMaterialPolicy(data.draft):null,catalog:policyCatalog(),can_edit:context.profile.role==='admin'};
 }
 function safeError(error:unknown) {
-  if(error instanceof PreliminaryPolicyError)return json({error:error.message},{status:400});
+  if(error instanceof PreliminaryPolicyError||error instanceof FlooringInputError)return json({error:error.message},{status:400});
   if(error instanceof ApiError){let status=error.status,message=error.message;try{const parsed=JSON.parse(message);if(parsed.code==='40001')status=409;else if(parsed.code==='42501')status=403;else if(parsed.code==='22023')status=400;message=typeof parsed.message==='string'&&/^[가-힣]/.test(parsed.message)?parsed.message:'산정 기준 요청을 처리하지 못했습니다.';}catch{if(!/^[가-힣]/.test(message))message='산정 기준 요청을 처리하지 못했습니다.';}return json({error:message},{status});}
   return errorResponse(error);
 }
@@ -32,7 +34,8 @@ export async function POST(request:NextRequest) {
     if(!['save','preview','publish','cancel','restore'].includes(action)||Object.keys(body).some(k=>!['action','config','revision','master_hash','inputs','reason','version','preview_token'].includes(k)))throw new ApiError(400,'허용되지 않은 산정 기준 요청입니다.');
     if(action==='preview'){
       const data=await state(request),next=validatePolicy(body.config),inputs=policyScenario(body.inputs||{});
-      const run=(config:ReturnType<typeof validatePolicy>)=>{const core=createEstimateCalculation({preliminaryPolicy:config,rateValues:policyRateValues(config),carpentryPrices:Object.fromEntries(Object.entries(config.prices).filter(([code])=>code.startsWith('WOOD_')).map(([code,price])=>[code,{price,source:'시험 계산 기준'}]))}),r=core.calculate(core.readState(inputs)),groups=core.groupedCustomerItems(r.details,r.quoteLines);return {cost:r.directCost,total:groups.reduce((sum:number,g:{total:number})=>sum+g.total,0),details:r.details,groups};};
+      const flooring=await resolveFlooring(inputs);
+      const run=(config:ReturnType<typeof validatePolicy>)=>{const core=createEstimateCalculation({preliminaryPolicy:config,rateValues:policyRateValues(config),flooringRows:flooring.rows,carpentryPrices:Object.fromEntries(Object.entries(config.prices).filter(([code])=>code.startsWith('WOOD_')).map(([code,price])=>[code,{price,source:'시험 계산 기준'}]))}),r=core.calculate(core.readState(inputs)),groups=core.groupedCustomerItems(r.details,r.quoteLines);return {cost:r.directCost,total:groups.reduce((sum:number,g:{total:number})=>sum+g.total,0),details:r.details,groups};};
       const trial=(config:ReturnType<typeof validatePolicy>,scenario:Record<string,unknown>)=>{const core=createEstimateCalculation({preliminaryPolicy:config,carpentryPrices:Object.fromEntries(Object.entries(config.prices).filter(([code])=>code.startsWith('WOOD_')).map(([code,price])=>[code,{price,source:'시험 계산 기준'}]))}),r=core.calculate(core.readState(scenario)),groups=core.groupedCustomerItems(r.details,r.quoteLines);return {cost:r.directCost,total:groups.reduce((sum:number,g:{total:number})=>sum+g.total,0)};};
       const examples=PRELIMINARY_POLICY_EXAMPLES.map(s=>({label:s.label,trade:s.trade,before:trial(data.current,s.inputs),after:trial(next,s.inputs)}));
       return json({before:run(data.current),after:run(next),examples,changes:changes(data.current,next),preview_token:previewToken(actor.authUser.id,next,data.master_hash,data.revision,Date.now())});

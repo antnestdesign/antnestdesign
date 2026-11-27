@@ -9,6 +9,8 @@ import { COST_ITEM_DEFINITIONS } from "./cost-item-definitions.js";
 import { ESTIMATE_INPUT_SCHEMA, CARPENTRY_INPUT_SCHEMA, PRELIMINARY_WORK_INPUT_SCHEMA } from "./estimate-inputs.js";
 import { mountTradeRevisionInputs } from "./trade-revision-view.js";
 import { mountBathroomTileInputs } from "./bathroom-tile-view.js";
+import { mountFlooringView } from "./flooring-view.js";
+import { FLOORING_DEFAULT_PLAN } from "./flooring-inputs.js";
 import { mountSiteCostView } from "./site-cost-view.js";
 import { mountPreliminaryPolicyView } from "./preliminary-policy-view.js";
 import { mountEstimateItemBuilder } from "./estimate-item-builder.js";
@@ -80,6 +82,7 @@ import {
   getAuthSession,
   requestProjectFoundation,
   requestPreliminaryPolicy,
+  requestFlooringProducts,
   requestEstimateItems,
   loadProjectFoundationMode,
   loadConfirmedContractPdf,
@@ -390,6 +393,14 @@ const integerIds = [
 
 const syncTradeRevision=mountTradeRevisionInputs(document);
 const syncBathroomTiles=mountBathroomTileInputs(document);
+const flooringPlan = document.createElement("input");
+flooringPlan.id = "flooringPlan";
+flooringPlan.type = "hidden";
+flooringPlan.value = FLOORING_DEFAULT_PLAN;
+document.getElementById("flooringProductControls").before(flooringPlan);
+const flooringView = mountFlooringView({document,request:requestFlooringProducts,
+  canEditEstimate:()=>Boolean(currentProfile) && !confirmedEstimateView && loadedEstimateBaseline?.estimate?.canEdit!==false,
+  canEditCatalog:canEditCost});
 const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
 let activeQuoteEstimate = null;
 let currentEditingEstimateId = null;
@@ -1624,6 +1635,7 @@ function renderCalculatedEstimate(result){
   const calculatedSnapshot = buildEstimateSnapshot(result);
   clearEstimateCalculationFailure();
   const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
+  flooringView.result(displayEstimate);
   itemBuilderView?.result(displayEstimate);
   siteCostView?.render(displayEstimate.costBreakdown || serverCalculation?.costRows || []);
   const presentation = buildCalculatedEstimatePresentation(result, displayEstimate, { groupTotalFromDetails, mmText, customerWon });
@@ -1648,6 +1660,7 @@ function refresh(options) {
   syncBathroomTiles();
   syncSectionLocks();
   syncBlockLocks();
+  flooringView.sync();
   syncCarpentryMode(activeQuoteEstimate || lastRenderedEstimateSnapshot);
   render(options);
 }
@@ -1665,6 +1678,7 @@ let staffPreviewTimer = null;
 
 function displayStaffEstimate(estimate) {
   clearEstimateCalculationFailure();
+  flooringView.result(estimate);
   itemBuilderView?.result(estimate);
   activeQuoteEstimate = estimate;
   lastRenderedEstimateSnapshot = estimate;
@@ -2017,6 +2031,7 @@ function renderSystemManagement() {
 async function refreshSystemManagement() {
   if (!canViewSystem()) return;
   ensureSystemManagementShell();
+  flooringView.mountCatalogManager();
   try {
     const [history, logs, count] = await Promise.all([
       loadCostItemHistory(),
@@ -2469,12 +2484,16 @@ function applyAccessControl() {
   workspaceView?.permissions(currentProfile?.role);
 }
 
-function setAuthenticated(isAuthenticated) { return uiShell.setAuthenticated(isAuthenticated); }
+function setAuthenticated(isAuthenticated) {
+  if (!isAuthenticated) flooringView.clear();
+  return uiShell.setAuthenticated(isAuthenticated);
+}
 
 let estimateCatalogLoading = null;
 
 async function enterAuthenticatedApp(profile) {
   currentProfile = profile;
+  flooringView.clear();
   itemBuilderView?.reset();
   siteCostView?.clear();
   preliminaryPolicyView?.clear();
@@ -2577,6 +2596,7 @@ function loadEstimateIntoUi(estimate,{refreshContract=true}={}) {
     inputs: currentInputKey(),
     estimate: displayEstimate,
   };
+  flooringView.result(displayEstimate);
   setText("clientTotal", customerWon(Number(displayEstimate.total ?? displayEstimate.customerQuote?.total) || 0));
   renderCustomerQuote(displayEstimate);
   renderStoredInternalSummary(displayEstimate);
@@ -2902,7 +2922,7 @@ function onNewEstimateClick(approved=false) {
   preliminaryContractEstimate = null;
   contractSourceView.reset();
   itemBuilderView?.reset();
-  restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults });
+  restoreInputValues({ ...Object.fromEntries(Object.entries(ESTIMATE_INPUT_SCHEMA).map(([id, field]) => [id, field.value])), ...newEstimatePrivateDefaults, flooringPlan: FLOORING_DEFAULT_PLAN });
   el.projectSearch.value = "";
   el.projectSearchResults.value = "";
   newEstimateInputBaseline = currentInputKey();

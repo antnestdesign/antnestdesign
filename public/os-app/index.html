@@ -8,6 +8,7 @@
 <link href="./styles.css?v=and-os-78" rel="stylesheet"/>
 <link href="./document-print.css?v=phase-3g" rel="stylesheet"/>
 <link href="./estimate-item-builder.css?v=and-os-78" rel="stylesheet"/>
+<link href="./flooring.css?v=1" rel="stylesheet"/>
 </head>
 <body>
 <section class="login-screen" id="loginScreen">
@@ -318,8 +319,8 @@
 <div class="furniture-block">
 <div class="control-grid compact-row-grid">
 <label>
-                  면적(평)
-                  <input id="flooringArea" min="0" step="0.5" type="number" value="0"/>
+                  전체 바닥 시공평수 (평)
+                  <input id="flooringArea" min="0" step="0.001" type="number" value="0"/>
 </label>
 <label>
                   바닥 종류
@@ -347,6 +348,7 @@
                   </select>
 </label>
 </div>
+<div id="flooringProductControls" hidden></div>
 </div>
 <div class="section-heading sub-heading">
 <label class="section-toggle"><input id="sectionCarpentryEnabled" type="checkbox"/><span>목공</span></label>
@@ -1372,6 +1374,6 @@
 </section>
 </main>
 <section aria-hidden="true" class="print-quote-sheet" id="printQuoteSheet"></section>
-<script src="./src/main.js?v=and-os-78" type="module"></script>
+<script src="./src/main.js?v=and-os-79" type="module"></script>
 </body>
 </html>

@@ -95,7 +95,7 @@ function repairStaticKoreanLabels() {
     filmPreset: "기준",
     filmMaterialLengthM: "필름 길이(mm)",
     sectionFlooringEnabled: "바닥",
-    flooringArea: "면적(평)",
+    flooringArea: "전체 바닥 시공평수 (평)",
     flooringMaterialType: "바닥 종류",
     flooringSheetGrade: "장판 등급",
     flooringWoodGrade: "마루 등급",

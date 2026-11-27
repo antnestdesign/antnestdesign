@@ -173,6 +173,10 @@ export async function loadConfirmedContractPdf(projectId,packageId,type) {
   if(!response.ok)throw new Error('저장된 계약 PDF를 조회하지 못했습니다.');
   return response.blob();
 }
+export function requestFlooringProducts(admin = false, body) {
+  return requestOsApi(`/flooring-products${admin ? "?view=admin" : ""}`,
+    body === undefined ? {} : { method: "PATCH", body: JSON.stringify(body) }, true);
+}
 export function requestPreliminaryPolicy(body) {
   return requestOsApi('/preliminary-policy',body===undefined?{}:{method:'POST',body:JSON.stringify(body)},true);
 }
