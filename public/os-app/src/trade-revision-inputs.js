@@ -20,9 +20,10 @@ export const TRADE_REVISION_INPUTS={
   furnitureTallDoors:number(),furnitureSinkSmallDoors:number(),furnitureSinkMediumDoors:number(),furnitureMoldingMm:number(),
   vanityMm:number(),vanityDrawers:number(),vanityTop:select("none",["none","himacs","khanstone","ceramic"]),vanityDepthMm:number("700"),
   countertopLayoutMode:select("current",["current","legacy"]),
+  tallRiceCabinetMode:select("auto",["auto","on","off"]),
   khanstoneCatalogVersion:select("",["","v1"]),
   ...Object.fromEntries(Object.values(KHANSTONE_SELECTION_FIELDS).map(id=>[id,khanstoneProduct])),
-  baseCounterCustomSize:toggle,homebarTallLengthMm:number(),
+  baseCounterCustomSize:toggle,baseCountertopFollowsLower:toggle,homebarTallLengthMm:number(),
   baseCounterThickness:thickness,islandCounterThickness:thickness,homebarCounterThickness:thickness,vanityCounterThickness:thickness,
   homebarMidwayCounterThickness:thickness,homebarMidwayHeightMm:number(),
   baseCounterWidthMm:number(),baseCounterDepthMm:number(String(COUNTERTOP_DEFAULT_DEPTH_MM)),homebarCounterWidthMm:number(),homebarCounterDepthMm:number(String(COUNTERTOP_DEFAULT_DEPTH_MM)),
@@ -46,13 +47,19 @@ export const furnitureDoorsSelected = inputs => inputs.furnitureDoorsEnabled ===
     [inputs.furnitureTallDoors, inputs.furnitureSinkSmallDoors, inputs.furnitureSinkMediumDoors,
       inputs.furnitureMoldingMm].some(n => Number(n) > 0));
 
+export function tallRiceCabinetSelected(inputs) {
+  return inputs.tallRiceCabinetMode === "on" || (inputs.tallRiceCabinetMode !== "off" && inputs.baseEnabled
+    && [inputs.tallCabinetM, inputs.riceCabinetUnits].some(n => Number(n) > 0));
+}
+
 export const standardCountertopDimensions = (length, custom, width, depth) =>
   custom ? [Number(width), Number(depth)] : [Number(length), COUNTERTOP_DEFAULT_DEPTH_MM];
 
 export function cabinetCountertopDimensions(inputs, lowerLength, homebarLength, legacyHomebarCounterLength = 0) {
   const legacy = inputs.countertopLayoutMode === "legacy";
   return {
-    base: standardCountertopDimensions(lowerLength, inputs.baseCounterCustomSize, inputs.baseCounterWidthMm, inputs.baseCounterDepthMm),
+    base: standardCountertopDimensions(lowerLength, !inputs.baseCountertopFollowsLower && inputs.baseCounterCustomSize,
+      inputs.baseCounterWidthMm, inputs.baseCounterDepthMm),
     homebar: legacy
       ? [Number(inputs.homebarCounterWidthMm) || legacyHomebarCounterLength, Number(inputs.homebarCounterDepthMm) || COUNTERTOP_DEFAULT_DEPTH_MM]
       : [Number(homebarLength), COUNTERTOP_DEFAULT_DEPTH_MM],
@@ -63,12 +70,18 @@ export const dryVanityCountertopDimensions = inputs => standardCountertopDimensi
   inputs.dryVanityCounterCustomSize, inputs.dryVanityCounterWidthMm, inputs.dryVanityCounterDepthMm);
 
 export function selectedKhanstoneWorks(inputs) {
-  if (inputs.tradeFormulaVersion !== "v2" || inputs.countertopLayoutMode === "legacy") return [];
   const furniture = inputs.sectionFurnitureEnabled;
+  const base = furniture && inputs.baseEnabled && (inputs.baseCountertopEnabled || inputs.baseCountertopFollowsLower)
+    && (!inputs.baseCountertopFollowsLower || Number(inputs.lowerCabinetM) > 0);
+  const work = (material,label) => ({ field:KHANSTONE_SELECTION_FIELDS[material], label });
+  if (inputs.tradeFormulaVersion !== "v2" || inputs.countertopLayoutMode === "legacy") {
+    return base && inputs.baseCountertopFollowsLower && inputs.baseCountertop === "khanstone"
+      ? [work("baseCountertop","상하부장 상판")] : [];
+  }
   const homebar = furniture && inputs.homebarEnabled && Number(inputs.homebarM) > 0;
   const island = furniture && inputs.islandEnabled && Number(inputs.islandM) > 0;
   return [
-    ["baseCountertop", furniture && inputs.baseEnabled && inputs.baseCountertopEnabled, "상하부장 상판"],
+    ["baseCountertop", base, "상하부장 상판"],
     ["islandCountertop", island, "아일랜드 상판"],
     ["islandSideFinish", island && Number(inputs.islandSideFinishCount) > 0, "아일랜드 측판"],
     ["homebarCountertop", homebar, "홈바장 상판"],
@@ -76,7 +89,7 @@ export function selectedKhanstoneWorks(inputs) {
     ["vanityTop", furniture && inputs.vanityEnabled !== "off" && Number(inputs.vanityMm) > 0, "화장대 상판"],
     ["dryVanityCountertop", inputs.sectionBathroomEnabled && inputs.dryVanityEnabled, "건식세면대 상판"],
   ].filter(([material,active])=>active&&inputs[material]==="khanstone")
-    .map(([material,,label])=>({ field:KHANSTONE_SELECTION_FIELDS[material], label }));
+    .map(([material,,label])=>work(material,label));
 }
 
 export function tradeRevisionValues(values,checked){

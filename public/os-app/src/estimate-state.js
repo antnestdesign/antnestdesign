@@ -44,7 +44,7 @@ export function buildEstimateState(raw, privateDefaultMarkup = 0) {
     riceCabinetUnits: numberValue("riceCabinetUnits"),
     baseEndPanels: numberValue("baseEndPanels"),
     baseEpDepth: raw.values.baseEpDepth,
-    baseCountertopEnabled: checkedValue("baseCountertopEnabled"),
+    baseCountertopEnabled: checkedValue("baseCountertopFollowsLower") || checkedValue("baseCountertopEnabled"),
     baseCountertop: raw.values.baseCountertop || "himacs",
     baseLightingUnits: integerValue("baseLightingUnits"),
     baseT3Units: integerValue("baseT3Units"),

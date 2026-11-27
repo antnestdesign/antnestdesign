@@ -60,11 +60,24 @@ export function revisedCountertops(state, legacyHomebarCounterLength) {
 
 export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM,homebarCounterActualMm}){
   const v=state.tradeRevision;
-  if(v?.tradeFormulaVersion!=="v2")return [];
+  if(!v||(v.tradeFormulaVersion!=="v2"&&!v.baseCountertopFollowsLower))return [];
   const rows=[];
   const add=(group,item,count,unit,unitPrice,cost=count*unitPrice,input=`${count}${unit}`)=>{
     if(cost>0)rows.push({group,item,input,quantity:`${count}${unit}`,unitPrice,cost});
   };
+  const revised=v.tradeFormulaVersion==="v2",legacy=v.countertopLayoutMode==="legacy";
+  const tops=revisedCountertops(state,homebarCounterActualMm);
+  const addTop=([group,label,,width,material,depth,thickness,product])=>{
+    const legacyPrice=legacy&&!(label==="상하부장 상판"&&v.baseCountertopFollowsLower);
+    const t=slabThickness(material,thickness,legacyPrice);
+    const name=countertopProductLabel(material,rates.countertop[material].label,legacyPrice?"":product);
+    add(group,`${label}(${name}, ${t}T)`,width*depth/countertopReferenceAreaMm2,"장 환산",
+      countertopRate(material,t,legacyPrice,product),countertopAreaCost(width,depth,material,t,legacyPrice,product),`${mmText(width)} × ${mmText(depth)}`);
+  };
+  if(!revised){
+    if(v.baseCountertopFollowsLower)tops.filter(([,label])=>label==="상하부장 상판").forEach(addTop);
+    return rows;
+  }
   const meters=(group,item,mm,price)=>add(group,item,mm/1000,"m",price,mm*price/1000,mmText(mm));
   if(v.demolition){
     if(v.demolitionMode==="partial"){
@@ -88,14 +101,6 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimum
     }
   }
   if(v.film&&state.filmEnabled)add("film","필름 인건비",filmLabor(v),"품",rates.finish.filmWorkerDay);
-  const legacy=v.countertopLayoutMode==="legacy";
-  const tops=revisedCountertops(state,homebarCounterActualMm);
-  const addTop=([group,label,,width,material,depth,thickness,product])=>{
-    const t=slabThickness(material,thickness,legacy);
-    const name=countertopProductLabel(material,rates.countertop[material].label,legacy?"":product);
-    add(group,`${label}(${name}, ${t}T)`,width*depth/countertopReferenceAreaMm2,"장 환산",
-      countertopRate(material,t,legacy,product),countertopAreaCost(width,depth,material,t,legacy,product),`${mmText(width)} × ${mmText(depth)}`);
-  };
   if(!legacy&&state.bathroomEnabled&&v.dryVanityEnabled&&v.dryVanityLengthMm>0){
     const foam=v.dryVanityCabinetType==="foam";
     add("bathroom",foam?"건식세면대 발포 하부장":"건식세면대 일반 가구장",jaRounded(v.dryVanityLengthMm),"자",foam?310000:rates.lowerPerJa,

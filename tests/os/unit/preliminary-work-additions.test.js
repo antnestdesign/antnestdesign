@@ -44,6 +44,9 @@ test("Khanstone products and thickness appear only for the matching active work"
   sync();
   expect(base.options).toHaveLength(13);
   expect(base.closest("label").hidden).toBe(false);
+  expect(base.required).toBe(false);
+  get("lowerCabinetM").value="1000";
+  sync();
   expect(base.required).toBe(true);
   expect(side.disabled).toBe(false);
   expect(get("islandCounterThickness").disabled).toBe(false);
@@ -122,6 +125,9 @@ test("new public fields match server schema and existing form event identity", (
   document.body.innerHTML = readFileSync("public/os-app/index.html", "utf8");
   const sync=mountTradeRevisionInputs(document);
   mountBathroomTileInputs(document);
+  const flooringPlan=document.createElement("input");
+  flooringPlan.type="hidden";flooringPlan.id="flooringPlan";
+  document.getElementById("flooringProductControls").before(flooringPlan);
   sync();
   const el = Object.fromEntries(Object.keys(ESTIMATE_INPUT_SCHEMA).map(id => [id, document.getElementById(id)]));
   for (const [id, schema] of Object.entries(PRELIMINARY_WORK_INPUT_SCHEMA)) {
@@ -136,7 +142,7 @@ test("new public fields match server schema and existing form event identity", (
   expect(el.demolitionBasicType.value).toBe("special"); expect(el.carpentryMoldingLengthM.value).toBe("20000");
 });
 
-test("countertop fields sit under their own cabinet; only applicable dimensions and thickness are shown", () => {
+test("countertop fields sit under their own cabinet; the base only exposes material and Khanstone details", () => {
   document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
   const sync=mountTradeRevisionInputs(document), get=id=>document.getElementById(id);
   const hidden=id=>Boolean(get(id).closest("[hidden]"));
@@ -150,15 +156,17 @@ test("countertop fields sit under their own cabinet; only applicable dimensions 
   expect(hidden("homebarTallLengthMm")).toBe(false);
   expect(hidden("dryVanityLengthMm")).toBe(false);
   expect(get("dryVanityLengthMm").disabled).toBe(true);
-  get("baseCounterCustomSize").click();
+  get("baseCountertopEnabled").checked=false;
   get("baseCountertop").value="khanstone";
   get("dryVanityEnabled").checked=true;
   get("dryVanityLengthMm").value="900";
   get("dryVanityCountertop").value="ceramic";
   sync();
-  expect(hidden("baseCounterWidthMm")).toBe(false);
-  expect(get("baseCounterWidthMm").value).toBe("3200");
-  expect(get("baseCounterWidthMm").closest(".furniture-block")).toBe(get("baseEnabled").closest(".furniture-block"));
+  expect(hidden("baseCounterWidthMm")).toBe(true);
+  expect(hidden("baseCounterCustomSize")).toBe(true);
+  expect(hidden("baseCountertopEnabled")).toBe(true);
+  expect(document.body.textContent).not.toContain("상하부장 상판 적용");
+  expect(hidden("baseKhanstoneProduct")).toBe(false);
   expect(hidden("baseCounterThickness")).toBe(false);
   expect(hidden("dryVanityLengthMm")).toBe(false);
   expect(hidden("dryVanityCounterThickness")).toBe(false);
@@ -167,6 +175,21 @@ test("countertop fields sit under their own cabinet; only applicable dimensions 
   sync();
   expect(hidden("dryVanityCounterThickness")).toBe(false);
   expect(get("dryVanityCounterThickness").disabled).toBe(false);
+});
+
+test("the tall cabinet and rice cooker block follows the base block without requiring that selection",()=>{
+  document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
+  const sync=mountTradeRevisionInputs(document),get=id=>document.getElementById(id);
+  const base=get("baseEnabled").closest(".furniture-block"),box=get("tallRiceCabinetToggle").closest(".furniture-block");
+  expect(base.nextElementSibling).toBe(box);
+  expect(box.contains(get("tallCabinetM"))).toBe(true);
+  expect(box.contains(get("riceCabinetUnits"))).toBe(true);
+  get("sectionFurnitureEnabled").checked=true;
+  get("baseEnabled").checked=false;sync();
+  expect(get("tallCabinetM").disabled).toBe(true);
+  get("tallRiceCabinetToggle").click();sync();
+  expect(get("tallRiceCabinetMode").value).toBe("on");
+  expect(get("tallCabinetM").disabled).toBe(false);
 });
 
 test("cabinet checkboxes leave fields visible and preserve quantities when switched off",()=>{
@@ -324,21 +347,43 @@ test("cabinet and dry vanity choices survive save projection and appear in both 
   }
 });
 
-test("previous V2 cabinet quotes stay on their original rate and explicit dimensions after an edit",async()=>{
-  const inputs={tradeFormulaVersion:"v2",countertopLayoutMode:"legacy",baseCounterCustomSize:true,
+test("historical cabinet dimensions stay saved until a deliberate cabinet edit uses automatic top pricing",async()=>{
+  const inputs={projectName:"Original kitchen",tradeFormulaVersion:"v2",countertopLayoutMode:"legacy",baseCounterCustomSize:true,
     sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:true,baseCountertop:"khanstone",
-    lowerCabinetM:"2500",baseCounterWidthMm:"3000",baseCounterDepthMm:"700",countertopTransport:true,countertopLadder:true};
-  const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));
+    lowerCabinetM:"2500",baseCounterWidthMm:"3000",baseCounterDepthMm:"700",countertopTransport:true,countertopLadder:true,
+    tallCabinetM:"900",riceCabinetUnits:"1"};
+  const core=createEstimateCalculation(), result=core.calculate(core.readState(inputs));
+  const groups=core.groupedCustomerItems(result.details,result.quoteLines);
+  const snapshot={projectName:inputs.projectName,inputs,internalDetails:result.details,
+    total:groups.reduce((sum,group)=>sum+group.total,0),customerQuote:{groups}};
   const row=JSON.parse(JSON.stringify({...estimateRowPayload(snapshot),id:"20000000-0000-4000-8000-000000000005"}));
   delete row.estimate_data.inputs.countertopLayoutMode;
   delete row.estimate_data.inputs.baseCounterCustomSize;
   const reopened=projectStaffEstimate(row);
   expect(reopened.inputs).toMatchObject({countertopLayoutMode:"legacy",baseCounterCustomSize:true,baseCounterWidthMm:"3000"});
-  const next=await calculateStaffEstimate(validateStaffBody({inputs:{lowerCabinetM:"2700"}}),actor("staff"),row);
+  const stable=await calculateStaffEstimate(validateStaffBody({inputs:{projectName:"Renamed kitchen"}}),actor("staff"),row);
+  expect(stable.internalDetails).toEqual(snapshot.internalDetails);
+  const next=await calculateStaffEstimate(validateStaffBody({inputs:{lowerCabinetM:"2700",baseKhanstoneProduct:"snowfield",
+    baseCounterThickness:"20",baseCountertopEnabled:false}}),actor("staff"),row);
   const lines=next.internalDetails;
-  expect(lines.find(d=>d.item.startsWith("상하부장 상판"))).toMatchObject({cost:960000,unitPrice:320000});
+  expect(next.inputs).toMatchObject({baseCountertopEnabled:true,baseCountertopFollowsLower:true,baseCounterCustomSize:false});
+  expect(lines.find(d=>d.item.startsWith("상하부장 상판"))).toMatchObject({input:"2,700mm × 700mm",cost:945000,unitPrice:350000});
   expect(lines.find(d=>d.item==="상판 운반비").cost).toBe(300000);
   expect(lines.find(d=>d.item==="상판 사다리차").cost).toBe(120000);
+  const tallOnly=await calculateStaffEstimate(validateStaffBody({inputs:{baseEnabled:false}}),actor("staff"),row);
+  expect(tallOnly.inputs.tallRiceCabinetMode).toBe("on");
+  expect(tallOnly.internalDetails.map(d=>d.item)).toEqual(["키큰장","밥솥장"]);
+});
+
+test("new cabinet quotes include the default EP top even when older clients send the obsolete switch off",async()=>{
+  const inputs={projectName:"New kitchen",sectionFurnitureEnabled:true,baseEnabled:true,lowerCabinetM:"1000",baseCountertopEnabled:false};
+  for(const snapshot of [
+    await calculateStaffEstimate(validateStaffBody({inputs}),actor("staff")),
+    (await calculatePrivilegedEstimate({inputs},actor("admin"))).snapshot,
+  ]){
+    expect(snapshot.inputs).toMatchObject({baseCountertopEnabled:true,baseCountertopFollowsLower:true,baseCountertop:"epPanel"});
+    expect(snapshot.internalDetails.filter(d=>d.item==="상하부장 상판(EP판)")).toHaveLength(1);
+  }
 });
 
 test("enabling a legacy saved homebar with a zero hidden width can recalculate without rewriting the original",async()=>{

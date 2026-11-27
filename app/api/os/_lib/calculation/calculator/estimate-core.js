@@ -11,7 +11,7 @@ import { kitchenDetails } from "./kitchen.js";
 import { doorDetails } from "./door.js";
 import { wallpaperMaterialDetails, wallpaperSupplyDetail, filmMaterialDetail } from "./finish.js";
 import { expansionDetails, revisedTradeDetails, revisedCountertops, counterRates, usesPricedKhanstoneMidway } from "./trade-revision.js";
-import { COUNTERTOP_LIFTING_NOTICE, expansionPartitionInput, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
+import { COUNTERTOP_LIFTING_NOTICE, expansionPartitionInput, tallRiceCabinetSelected, tradeRevisionValues } from "../../../../../../public/os-app/src/trade-revision-inputs.js";
 import { miscDetails } from "./misc.js";
 import { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS } from "../estimate-inputs.js";
 export { ESTIMATE_INPUT_SCHEMA, PRIVATE_ESTIMATE_INPUTS };
@@ -527,10 +527,14 @@ function calculate(state) {
   }
   const margin = state.targetMargin;
   const details = [];
+  const tallRiceCabinet = (v?.furniture ?? state.baseEnabled) && tallRiceCabinetSelected({
+    tallRiceCabinetMode: v?.tallRiceCabinetMode, baseEnabled: state.baseEnabled,
+    tallCabinetM: state.tallCabinetM, riceCabinetUnits: state.riceCabinetUnits,
+  });
 
   const lowerJa = state.baseEnabled ? jaRounded(state.lowerCabinetM) : 0;
   const upperJa = state.baseEnabled ? jaRounded(state.upperCabinetM) : 0;
-  const tallJa = state.baseEnabled ? jaRounded(state.tallCabinetM) : 0;
+  const tallJa = tallRiceCabinet ? jaRounded(state.tallCabinetM) : 0;
   const islandJa = state.islandEnabled ? jaRounded(state.islandM) : 0;
   const splitHomebar = revised && v.countertopLayoutMode !== "legacy";
   const homebarTallMm = splitHomebar ? v.homebarTallLengthMm : 0;
@@ -577,6 +581,8 @@ function calculate(state) {
       margin,
       correction: state.corrections.base,
     });
+  }
+  if (tallRiceCabinet) {
     addDetail(details, {
       group: "base",
       item: "키큰장",
@@ -597,6 +603,8 @@ function calculate(state) {
       margin,
       correction: state.corrections.base,
     });
+  }
+  if (state.baseEnabled) {
     addDetail(details, {
       group: "base",
       item: "상하부장 EP",
@@ -607,7 +615,7 @@ function calculate(state) {
       margin,
       correction: state.corrections.option,
     });
-    if (state.baseCountertopEnabled && state.lowerCabinetM > 0 && !(revised&&counterRates[state.baseCountertop])) {
+    if (state.baseCountertopEnabled && state.lowerCabinetM > 0 && !((revised||v?.baseCountertopFollowsLower)&&counterRates[state.baseCountertop])) {
       addDetail(details, {
         group: "base",
         item: `상하부장 상판(${baseCounter.label})`,
@@ -1348,7 +1356,7 @@ function calculate(state) {
     ));
 
   const quoteLines = [
-    { process: "상하부장", description: state.baseEnabled ? "상하부장 선택" : "미선택", revenue: groupTotal("base") },
+    { process: "상하부장", description: state.baseEnabled ? "상하부장 선택" : tallRiceCabinet ? "키큰장·밥솥장 선택" : "미선택", revenue: groupTotal("base") },
     { process: "아일랜드", description: state.islandEnabled && state.islandM > 0 ? "아일랜드 선택" : "미선택", revenue: groupTotal("island") },
     { process: "홈바장", description: state.homebarEnabled && homebarTotalMm > 0 ? "홈바장 선택" : "미선택", revenue: groupTotal("homebar") },
     { process: "신발장", description: state.shoeEnabled && state.shoeM > 0 ? "신발장 선택" : "미선택", revenue: groupTotal("shoe") },
@@ -1702,7 +1710,7 @@ function readState(inputs = {}) {
     riceCabinetUnits: numberValue("riceCabinetUnits"),
     baseEndPanels: numberValue("baseEndPanels"),
     baseEpDepth: el.baseEpDepth.value,
-    baseCountertopEnabled: checkedValue("baseCountertopEnabled"),
+    baseCountertopEnabled: checkedValue("baseCountertopFollowsLower") || checkedValue("baseCountertopEnabled"),
     baseCountertop: el.baseCountertop?.value || "himacs",
     baseLightingUnits: integerValue("baseLightingUnits"),
     baseT3Units: integerValue("baseT3Units"),

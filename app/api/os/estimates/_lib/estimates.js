@@ -3,7 +3,7 @@ import { resolveFlooring, publicFlooringSummary } from "../../_lib/flooring-stor
 import { FlooringInputError, parseFlooringPlan } from "../../../../../public/os-app/src/flooring-inputs.js";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
-import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput, selectedKhanstoneWorks } from "../../../../../public/os-app/src/trade-revision-inputs.js";
+import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput, selectedKhanstoneWorks, tallRiceCabinetSelected } from "../../../../../public/os-app/src/trade-revision-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
 import { withBathroomTileMaterialPolicy } from '../../_lib/calculation/bathroom-tile-materials.js';
@@ -175,11 +175,30 @@ function normalizedInputs(raw, existing = false) {
     Object.hasOwn(values, id) ? inputValue(id, values[id]) : schema.value]));
 }
 
+const baseCabinetFields = ["sectionFurnitureEnabled", "baseEnabled", "lowerCabinetM", "upperCabinetM",
+  "baseCountertop", "baseCounterThickness", "baseKhanstoneProduct"];
+const baseCountertopPolicyValues = inputs => ({
+  baseCountertopFollowsLower: inputs.baseCountertopFollowsLower,
+  baseCountertopEnabled: inputs.baseCountertopEnabled,
+  baseCounterCustomSize: inputs.baseCounterCustomSize,
+  tallRiceCabinetMode: inputs.tallRiceCabinetMode,
+});
+
 function mergeEstimateInputs(baseline, incoming, stored) {
   const inputs = { ...baseline, ...incoming };
+  if (!stored && !Object.hasOwn(incoming, "baseCountertop")) inputs.baseCountertop = "epPanel";
   if (Object.hasOwn(incoming, "demoPartitionMm") && !Object.hasOwn(incoming, "expansionPartitionMm")
       && !Object.hasOwn(stored || {}, "expansionPartitionMm")) {
     inputs.expansionPartitionMm = expansionPartitionInput({ ...inputs, expansionPartitionMm: undefined });
+  }
+  // Leave historical cabinet prices in place until that work is explicitly edited.
+  const cabinetEdited = inputs.sectionFurnitureEnabled && inputs.baseEnabled
+    && baseCabinetFields.some(id => inputs[id] !== baseline[id]);
+  inputs.baseCountertopFollowsLower = !stored || baseline.baseCountertopFollowsLower || cabinetEdited;
+  inputs.baseCountertopEnabled = inputs.baseCountertopFollowsLower || baseline.baseCountertopEnabled;
+  if (inputs.baseCountertopFollowsLower) inputs.baseCounterCustomSize = false;
+  if (inputs.tallRiceCabinetMode === "auto" && !inputs.baseEnabled && tallRiceCabinetSelected(baseline)) {
+    inputs.tallRiceCabinetMode = "on";
   }
   return inputs;
 }
@@ -218,7 +237,7 @@ function validateTradeRevision(inputs, previous) {
   const areaTop=material=>["himacs","khanstone","ceramic"].includes(material);
   const dimensions=cabinetCountertopDimensions(inputs,inputs.lowerCabinetM,inputs.homebarM);
   if(inputs.sectionFurnitureEnabled&&(
-    (inputs.baseEnabled&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!dimensions.base.every(n=>n>0))||
+    (inputs.baseEnabled&&!inputs.baseCountertopFollowsLower&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!dimensions.base.every(n=>n>0))||
     (inputs.islandEnabled&&Number(inputs.islandM)>0&&areaTop(inputs.islandCountertop)&&!(Number(inputs.islandDepthMm)>0))||
     (inputs.vanityEnabled!=="off"&&Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
     throw new ApiError(400,"선택한 상판의 가로·세로 규격을 입력해 주세요.");
@@ -279,7 +298,8 @@ export async function calculatePrivilegedEstimate(body, context) {
     incoming[id]=inputValue(id,value,true);
   }
   const original=body.estimateId?await readEstimate(body.estimateId):null,existing=baseEstimate(original);
-  const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(old)),inputs=mergeEstimateInputs(baseline,incoming,old?.inputs);
+  const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(existing));
+  const inputs=mergeEstimateInputs(baseline,incoming,existing ? old?.inputs || {} : null);
   validateTradeRevision(inputs,existing?(old||{}):null);
   const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
   delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
@@ -317,7 +337,8 @@ export async function calculatePrivilegedEstimate(body, context) {
   },state.existingPipeCleaningEnabled);
   if(!applyCurrent&&Array.isArray(old?.customerQuote?.groups)&&changed.length===0)snapshot=clone(old);
   else if(!applyCurrent&&Array.isArray(old?.customerQuote?.groups)&&changed.length===1&&changed[0]==='existingPipeCleaningEnabled')snapshot=core.applyExistingPipeCleaningAdjustment(old,inputs.existingPipeCleaningEnabled === true);
-  Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,address:body.address??snapshot.address??'',savedAt,inputs:{...snapshot.inputs,...incoming}});
+  Object.assign(snapshot,{projectName:state.projectName,clientName:state.clientName,phone:state.clientPhone,areaPyeong:state.areaPyeong,status:state.status,address:body.address??snapshot.address??'',savedAt,
+    inputs:{...snapshot.inputs,...incoming,...baseCountertopPolicyValues(inputs)}});
   snapshot.inputs.preliminaryPolicySelection='saved';
   Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
   snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context,body.manualWorks);
@@ -338,7 +359,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   const effectiveBaseline = comparisonCore.effectiveEstimateInputOverrides(comparisonCore.readState(baseline));
   delete effectiveBaseline.existingPipeCleaningEnabled;
   Object.assign(baseline, effectiveBaseline);
-  const inputs = mergeEstimateInputs(baseline, validated.inputs, oldData?.inputs);
+  const inputs = mergeEstimateInputs(baseline, validated.inputs, existing ? oldData?.inputs || {} : null);
   validateTradeRevision(inputs,existing?(oldData||{}):null);
   const changed = staffInputIds.filter((id) => inputValue(id, inputs[id]) !== inputValue(id, baseline[id]));
   const calculating = changed.filter((id) => !metadataInputs.has(id));
@@ -381,7 +402,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   Object.assign(snapshot, { projectName, clientName: text(inputs.clientName), phone: text(inputs.clientPhone),
     areaPyeong: amount(inputs.areaPyeong), status: text(inputs.estimateStatus) || "견적",
     address: validated.address ?? existing?.address ?? oldData?.address ?? "",
-    inputs: recalculated ? snapshot.inputs : { ...(snapshot.inputs || {}), ...validated.inputs }, savedAt: new Date().toISOString(),
+    inputs: recalculated ? snapshot.inputs : { ...(snapshot.inputs || {}), ...validated.inputs, ...baseCountertopPolicyValues(inputs) }, savedAt: new Date().toISOString(),
   });
   if (!existing) snapshot.author = { user_id: context.authUser.id, user_email: context.profile.email, role: context.profile.role };
   Object.assign(snapshot.customerQuote, { projectName: snapshot.projectName, clientName: snapshot.clientName,

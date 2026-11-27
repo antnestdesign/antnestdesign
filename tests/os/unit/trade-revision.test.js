@@ -171,6 +171,30 @@ test("base cabinet dimensions default to the lower cabinet and 700 mm unless exp
   expect(top(run({...inputs,baseCountertop:"ceramic",baseCounterThickness:"20"}))).toMatchObject({cost:1600000,unitPrice:500000,item:expect.stringContaining("12T")});
 });
 
+test("automatic base cabinet tops always follow the lower cabinet, even on an older draft",()=>{
+  const options={sectionFurnitureEnabled:true,baseEnabled:true,baseCountertopEnabled:false,
+    baseCountertopFollowsLower:true,baseCountertop:"khanstone",lowerCabinetM:"1000",
+    baseCounterCustomSize:true,baseCounterWidthMm:"5000",baseCounterDepthMm:"950",
+    baseKhanstoneProduct:"snowfield",baseCounterThickness:"20"};
+  for(const tradeFormulaVersion of ["v2","legacy"]){
+    const result=run({...options,tradeFormulaVersion,countertopLayoutMode:"legacy"});
+    expect(result.details.filter(d=>d.item.startsWith("상하부장 상판"))).toMatchObject([
+      {item:"상하부장 상판(칸스톤 스노우필드, 20T)",input:"1,000mm × 700mm",cost:350000,customerRevenue:455000},
+    ]);
+  }
+  expect(run({...options,lowerCabinetM:"0"}).details.some(d=>d.item.startsWith("상하부장 상판"))).toBe(false);
+});
+
+test("tall cabinets and rice cooker cabinets remain billable without base cabinets when separately selected",()=>{
+  const inputs={sectionFurnitureEnabled:true,tallCabinetM:"900",riceCabinetUnits:"2"};
+  const historical=run({...inputs,baseEnabled:true});
+  const independent=run({...inputs,baseEnabled:false,tallRiceCabinetMode:"on"});
+  for(const name of ["키큰장","밥솥장"])expect(detail(independent,name)).toEqual(detail(historical,name));
+  expect(independent.details.map(d=>d.item)).toEqual(["키큰장","밥솥장"]);
+  expect(run({...inputs,baseEnabled:true,tallRiceCabinetMode:"off"}).details.some(d=>["키큰장","밥솥장"].includes(d.item))).toBe(false);
+  expect(run({...inputs,sectionFurnitureEnabled:false,tallRiceCabinetMode:"on"}).details).toEqual([]);
+});
+
 test("homebar tall cabinet length never extends the countertop",()=>{
   const inputs={sectionFurnitureEnabled:true,homebarEnabled:true,homebarM:"1400",homebarTallLengthMm:"900",homebarCountertop:"ceramic"};
   const r=run(inputs), top=result=>result.details.find(d=>d.item.startsWith("홈바장 상판"));
