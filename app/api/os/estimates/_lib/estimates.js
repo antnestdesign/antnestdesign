@@ -3,6 +3,7 @@ import { resolveFlooring, publicFlooringSummary } from "../../_lib/flooring-stor
 import { FlooringInputError, parseFlooringPlan } from "../../../../../public/os-app/src/flooring-inputs.js";
 import { customerQuoteProjection } from "../../../../../public/os-app/src/customer-quote.js";
 import { BATHROOM_TILE_LIMIT, parseBathroomTileRooms } from "../../../../../public/os-app/src/bathroom-tile-inputs.js";
+import { KHANSTONE_SELECTION_FIELDS } from "../../../../../public/os-app/src/khanstone-products.js";
 import { cabinetCountertopDimensions, dryVanityCountertopDimensions, expansionPartitionInput, selectedKhanstoneWorks, tallRiceCabinetSelected } from "../../../../../public/os-app/src/trade-revision-inputs.js";
 import { parseSiteCostConfig, describeSiteRows, SiteCostValidationError } from "../../_lib/calculation/site-costs.js";
 import { publishedPreliminaryPolicy } from '../../_lib/calculation/preliminary-policy-store.js';
@@ -203,7 +204,15 @@ function mergeEstimateInputs(baseline, incoming, stored) {
   return inputs;
 }
 
-function validateTradeRevision(inputs, previous) {
+function estimateCalculationInputs(inputs, previous, { preview, preserveSnapshot }) {
+  const calculationInputs = { ...inputs };
+  const issues = [];
+  const omit = (trade, message, overrides) => {
+    if (preserveSnapshot) return;
+    if (!preview) throw new ApiError(400, message);
+    issues.push({ trade, message });
+    Object.assign(calculationInputs, overrides);
+  };
   if (previous && Boolean(inputs.flooringPlan) !== Boolean(previous.inputs?.flooringPlan))
     throw new ApiError(409, "저장 견적의 마루 산식은 변경할 수 없습니다.");
   const rooms = parseBathroomTileRooms(inputs.bathroomTileRooms);
@@ -213,8 +222,18 @@ function validateTradeRevision(inputs, previous) {
   if (rooms !== null && inputs.sectionBathroomEnabled) {
     if (Number(inputs.bathroomUnits) > BATHROOM_TILE_LIMIT) throw new ApiError(400, "욕실은 최대 80칸까지 입력할 수 있습니다.");
     for (const [i, room] of rooms.slice(0, Number(inputs.bathroomUnits)).entries()) {
-      if (room.wallLengthMm > 0 && !room.wallTile) throw new ApiError(400, `욕실 ${i + 1}의 벽체 타일을 선택해 주세요.`);
-      if (room.floorArea > 0 && !room.floorTile) throw new ApiError(400, `욕실 ${i + 1}의 바닥 타일을 선택해 주세요.`);
+      for (const [dimension, tile, label, missing] of [["wallLengthMm", "wallTile", "벽체", "총길이를"], ["floorArea", "floorTile", "바닥", "면적을"]]) {
+        const hasDimension = room[dimension] > 0;
+        if (hasDimension === Boolean(room[tile])) continue;
+        const action = hasDimension ? "타일을 선택" : `${missing} 입력`;
+        omit("Bathroom", `욕실 ${i + 1} ${label} ${action}해 주세요.`);
+        if (!preserveSnapshot) {
+          room[dimension] = 0;
+          // Combined installation labor cannot be priced from just one of the intended surfaces.
+          room.labor = false;
+          calculationInputs.bathroomTileRooms = JSON.stringify(rooms);
+        }
+      }
     }
   }
   if(previous&&inputs.tradeFormulaVersion!==(previous.inputs?.tradeFormulaVersion||"legacy"))
@@ -223,29 +242,53 @@ function validateTradeRevision(inputs, previous) {
     throw new ApiError(409,"저장 견적의 상판 산정 기준은 변경할 수 없습니다.");
   if(previous&&inputs.khanstoneCatalogVersion!==(previous.inputs?.khanstoneCatalogVersion??""))
     throw new ApiError(409,"저장 견적의 칸스톤 제품 적용 기준은 변경할 수 없습니다.");
-  if(inputs.tradeFormulaVersion!=="v2")return;
+  if(inputs.tradeFormulaVersion!=="v2"&&!inputs.baseCountertopFollowsLower)return { calculationInputs, issues };
   const khanstone=selectedKhanstoneWorks(inputs);
   for(const {field,label} of khanstone){
-    if(inputs.khanstoneCatalogVersion==="v1"&&!inputs[field])throw new ApiError(400,`${label}의 칸스톤 제품을 선택해 주세요.`);
+    const material = Object.keys(KHANSTONE_SELECTION_FIELDS).find(key => KHANSTONE_SELECTION_FIELDS[key] === field);
+    const trade = material === "dryVanityCountertop" ? "Bathroom" : "Furniture";
+    if(inputs.khanstoneCatalogVersion==="v1"&&!inputs[field])
+      omit(trade, `${label}의 칸스톤 제품을 선택해 주세요.`, { [material]: "none" });
     if(field==="homebarMidwayKhanstoneProduct"&&inputs[field]&&!(Number(inputs.homebarMidwayHeightMm)>0))
-      throw new ApiError(400,"홈바장 미드웨이의 시공 높이를 입력해 주세요.");
+      omit(trade, "홈바장 미드웨이의 시공 높이를 입력해 주세요.", { homebarMidway: "none" });
   }
+  if(inputs.tradeFormulaVersion!=="v2")return { calculationInputs, issues };
   if(inputs.sectionWallpaperEnabled&&Number(inputs.wallpaperRoomPyeong)>Number(inputs.areaPyeong))
     throw new ApiError(400,"별도 벽지 시공 방 면적은 전체 분양평수 이하여야 합니다.");
   if(inputs.sectionDemolitionEnabled&&["demoBathTub","demoBathOverlay"].some(id=>Number(inputs[id])>Number(inputs.demoBathFull)))
     throw new ApiError(400,"욕조·덧방 철거 개소는 화장실 전체철거 개소 이하여야 합니다.");
   const areaTop=material=>["himacs","khanstone","ceramic"].includes(material);
   const dimensions=cabinetCountertopDimensions(inputs,inputs.lowerCabinetM,inputs.homebarM);
-  if(inputs.sectionFurnitureEnabled&&(
-    (inputs.baseEnabled&&!inputs.baseCountertopFollowsLower&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!dimensions.base.every(n=>n>0))||
-    (inputs.islandEnabled&&Number(inputs.islandM)>0&&areaTop(inputs.islandCountertop)&&!(Number(inputs.islandDepthMm)>0))||
-    (inputs.vanityEnabled!=="off"&&Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))))
-    throw new ApiError(400,"선택한 상판의 가로·세로 규격을 입력해 주세요.");
-  if(inputs.sectionBathroomEnabled&&inputs.countertopLayoutMode!=="legacy"&&inputs.dryVanityEnabled){
-    if(!(Number(inputs.dryVanityLengthMm)>0))throw new ApiError(400,"건식세면대 하부장 길이를 입력해 주세요.");
-    if(areaTop(inputs.dryVanityCountertop)&&!dryVanityCountertopDimensions(inputs).every(n=>n>0))
-      throw new ApiError(400,"건식세면대 상판 길이와 깊이를 입력해 주세요.");
+  if(inputs.sectionFurnitureEnabled){
+    if(inputs.baseEnabled&&inputs.baseCountertopFollowsLower&&!(Number(inputs.lowerCabinetM)>0||Number(inputs.upperCabinetM)>0))
+      omit("Furniture", "상하부장 길이를 입력해 주세요.");
+    if(inputs.baseEnabled&&!inputs.baseCountertopFollowsLower&&inputs.baseCountertopEnabled&&areaTop(inputs.baseCountertop)&&!dimensions.base.every(n=>n>0))
+      omit("Furniture", "상하부장 상판의 가로·세로 규격을 입력해 주세요.", { baseCountertop: "none" });
+    if(inputs.islandEnabled&&!(Number(inputs.islandM)>0))
+      omit("Furniture", "아일랜드 길이를 입력해 주세요.", { islandEnabled: false });
+    else if(inputs.islandEnabled&&!(Number(inputs.islandDepthMm)>0)
+      &&(areaTop(inputs.islandCountertop)||(inputs.islandSideFinish!=="none"&&Number(inputs.islandSideFinishCount)>0)))
+      omit("Furniture", "아일랜드 세로 규격을 입력해 주세요.", { islandCountertop: areaTop(inputs.islandCountertop) ? "none" : calculationInputs.islandCountertop, islandSideFinish: "none" });
+    if(inputs.countertopLayoutMode!=="legacy"&&inputs.homebarEnabled&&!(Number(inputs.homebarM)>0||Number(inputs.homebarTallLengthMm)>0))
+      omit("Furniture", "홈바장 길이를 입력해 주세요.", { homebarEnabled: false });
+    if(inputs.vanityEnabled==="on"&&!(Number(inputs.vanityMm)>0))
+      omit("Furniture", "화장대 길이를 입력해 주세요.");
+    if(inputs.vanityEnabled!=="off"&&Number(inputs.vanityMm)>0&&areaTop(inputs.vanityTop)&&!(Number(inputs.vanityDepthMm)>0))
+      omit("Furniture", "화장대 상판의 세로 규격을 입력해 주세요.", { vanityTop: "none" });
   }
+  if(inputs.sectionBathroomEnabled&&inputs.countertopLayoutMode!=="legacy"&&inputs.dryVanityEnabled){
+    if(!(Number(inputs.dryVanityLengthMm)>0))
+      omit("Bathroom", "건식세면대 하부장 길이를 입력해 주세요.", { dryVanityEnabled: false });
+    else if(areaTop(inputs.dryVanityCountertop)&&!dryVanityCountertopDimensions(inputs).every(n=>n>0))
+      omit("Bathroom", "건식세면대 상판 길이와 깊이를 입력해 주세요.", { dryVanityCountertop: "none" });
+  }
+  return { calculationInputs, issues };
+}
+
+function finishEstimateCalculation(snapshot, issues) {
+  if (!issues.length) return applyManagementFinancials(snapshot);
+  // Show only calculated work; the final discount may exceed this temporary subtotal.
+  return { ...snapshot, incompleteItems: issues };
 }
 
 async function trustedCostContext(existing,applyCurrent=false) {
@@ -287,7 +330,7 @@ export function privateEstimateDefaults() {
 }
 
 // Same engine and rounding as the former browser runtime; only its execution location changes.
-export async function calculatePrivilegedEstimate(body, context) {
+export async function calculatePrivilegedEstimate(body, context, { preview = false } = {}) {
   if(!['admin','manager'].includes(context.profile.role))throw new ApiError(403,'내부 견적 계산 권한이 없습니다.');
   if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['inputs','estimateId','rateValues','address','itemSelections','manualWorks'].includes(k))||!body.inputs||typeof body.inputs!=='object'||Array.isArray(body.inputs))throw new ApiError(400,'견적 입력값을 확인해 주세요.');
   if(JSON.stringify(body).length>100000)throw new ApiError(413,'견적 입력값이 너무 큽니다.');
@@ -300,11 +343,12 @@ export async function calculatePrivilegedEstimate(body, context) {
   const original=body.estimateId?await readEstimate(body.estimateId):null,existing=baseEstimate(original);
   const old=existing?.estimate_data,baseline=normalizedInputs(old?.inputs||{},Boolean(existing));
   const inputs=mergeEstimateInputs(baseline,incoming,existing ? old?.inputs || {} : null);
-  validateTradeRevision(inputs,existing?(old||{}):null);
   const compare=createEstimateCalculation(),effective=compare.effectiveEstimateInputOverrides(compare.readState(baseline));
   delete effective.existingPipeCleaningEnabled;Object.assign(baseline,effective);
   const changed=Object.keys(ESTIMATE_INPUT_SCHEMA).filter(id=>!metadataInputs.has(id)&&inputValue(id,inputs[id])!==inputValue(id,baseline[id]));
   const applyCurrent=inputs.preliminaryPolicySelection==='current';
+  const useStoredQuote=!applyCurrent&&Array.isArray(old?.customerQuote?.groups)&&(!changed.length||changed.length===1&&changed[0]==='existingPipeCleaningEnabled');
+  const { calculationInputs, issues } = estimateCalculationInputs(inputs,existing?(old||{}):null,{preview,preserveSnapshot:useStoredQuote});
   const costs=await trustedCostContext(existing,applyCurrent);
   const rateValues={...costs.rateValues};
   if(body.rateValues!==undefined){
@@ -318,8 +362,9 @@ export async function calculatePrivilegedEstimate(body, context) {
   if(preliminaryPolicy)for(const definition of COST_ITEM_DEFINITIONS)if(Number.isFinite(rateValues[definition.inputId]))preliminaryPolicy.config.prices[definition.itemCode]=rateValues[definition.inputId];
   const carpentryPrices=clone(costs.carpentryPrices);
   if(preliminaryPolicy)for(const code of Object.keys(carpentryPrices))carpentryPrices[code].price=preliminaryPolicy.config.prices[code];
-  const flooring = await resolveFlooring(inputs, old?.flooringCostSnapshot);
-  const core=createEstimateCalculation({rateValues,carpentryPrices,preliminaryPolicy:preliminaryPolicy?.config,flooringRows:flooring.rows}),state=core.readState(inputs),result=core.calculate(state);
+  const flooring = await resolveFlooring(inputs, old?.flooringCostSnapshot, {preview:preview&&!useStoredQuote});
+  issues.push(...(flooring.issues||[]).map(message=>({trade:"Flooring",message})));
+  const core=createEstimateCalculation({rateValues,carpentryPrices,preliminaryPolicy:preliminaryPolicy?.config,flooringRows:flooring.rows}),state=core.readState(calculationInputs),result=core.calculate(state);
   const costRows=describeSiteRows(result.details);
   if(!applyCurrent&&old?.costSnapshot?.items?.length&&!old.costSnapshot.preliminaryPolicy&&changed.length&&state.wallpaperMaterialEnabled&&!old.costSnapshot.items.some(i=>i.itemCode==='WALLPAPER_MATERIAL_PER_PYEONG'))throw new ApiError(409,'저장 당시 원가 스냅샷에 도배 자재비가 없어 현재 원가와 섞어 계산하지 않았습니다.');
   const groups=core.groupedCustomerItems(result.details,result.quoteLines),total=groups.reduce((n,g)=>n+amount(g.total),0),savedAt=new Date().toISOString();
@@ -342,12 +387,12 @@ export async function calculatePrivilegedEstimate(body, context) {
   snapshot.inputs.preliminaryPolicySelection='saved';
   Object.assign(snapshot.customerQuote,{projectName:snapshot.projectName,clientName:snapshot.clientName,phone:snapshot.phone,areaPyeong:snapshot.areaPyeong,status:snapshot.status,savedAt});
   snapshot=await appendEstimateItems(snapshot,body.itemSelections,original,context,body.manualWorks);
-  snapshot=applyManagementFinancials(snapshot);
+  snapshot=finishEstimateCalculation(snapshot,issues);
   if(snapshot.itemBuilder||Number(snapshot.inputs.managementCost)||Number(snapshot.inputs.managementDiscount)){result.directCost=snapshot.costTotal;result.customerRevenue=snapshot.total;result.profit=snapshot.internalSummary.profit;result.details=snapshot.internalDetails;result.actualMargin=snapshot.marginRate===null?null:snapshot.marginRate/100;}
   return {snapshot,result,costRows:snapshot.costBreakdown||costRows};
 }
 
-export async function calculateStaffEstimate(validated, context, existing = null) {
+export async function calculateStaffEstimate(validated, context, existing = null, { preview = false } = {}) {
   const original=existing;existing=baseEstimate(existing);
   const oldData = existing?.estimate_data;
   const baseline = normalizedInputs({ ...(oldData?.inputs || {}), ...(existing ? {
@@ -360,10 +405,11 @@ export async function calculateStaffEstimate(validated, context, existing = null
   delete effectiveBaseline.existingPipeCleaningEnabled;
   Object.assign(baseline, effectiveBaseline);
   const inputs = mergeEstimateInputs(baseline, validated.inputs, existing ? oldData?.inputs || {} : null);
-  validateTradeRevision(inputs,existing?(oldData||{}):null);
   const changed = staffInputIds.filter((id) => inputValue(id, inputs[id]) !== inputValue(id, baseline[id]));
   const calculating = changed.filter((id) => !metadataInputs.has(id));
   const hasStoredQuote = Array.isArray(oldData?.customerQuote?.groups);
+  const useStoredQuote = hasStoredQuote && (!calculating.length || calculating.length===1&&calculating[0]==="existingPipeCleaningEnabled");
+  const { calculationInputs, issues } = estimateCalculationInputs(inputs,existing?(oldData||{}):null,{preview,preserveSnapshot:useStoredQuote});
   let snapshot;
   let recalculated = false;
   if (hasStoredQuote && calculating.length === 0) snapshot = clone(oldData);
@@ -372,10 +418,11 @@ export async function calculateStaffEstimate(validated, context, existing = null
   } else {
     recalculated = true;
     const costs = await trustedCostContext(existing);
-    const flooring = await resolveFlooring(inputs, oldData?.flooringCostSnapshot);
+    const flooring = await resolveFlooring(inputs, oldData?.flooringCostSnapshot, {preview});
+    issues.push(...(flooring.issues||[]).map(message=>({trade:"Flooring",message})));
     const core = createEstimateCalculation({ rateValues: costs.rateValues, carpentryPrices: costs.carpentryPrices,
       preliminaryPolicy:costs.preliminaryPolicy?.config, flooringRows: flooring.rows });
-    const state = core.readState(inputs);
+    const state = core.readState(calculationInputs);
     if (oldData?.costSnapshot?.items?.length && !oldData.costSnapshot.preliminaryPolicy && state.wallpaperMaterialEnabled
       && !oldData.costSnapshot.items.some((item) => item.itemCode === "WALLPAPER_MATERIAL_PER_PYEONG")) {
       throw new ApiError(409, "저장 당시 원가 스냅샷에 도배 자재비가 없어 현재 원가와 섞어 저장하지 않았습니다.");
@@ -398,7 +445,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
     }, state.existingPipeCleaningEnabled);
   }
   const projectName = text(inputs.projectName).trim();
-  if (!projectName) throw new ApiError(400, "프로젝트명을 입력해 주세요.");
+  if (!projectName && !preview) throw new ApiError(400, "프로젝트명을 입력해 주세요.");
   Object.assign(snapshot, { projectName, clientName: text(inputs.clientName), phone: text(inputs.clientPhone),
     areaPyeong: amount(inputs.areaPyeong), status: text(inputs.estimateStatus) || "견적",
     address: validated.address ?? existing?.address ?? oldData?.address ?? "",
@@ -407,7 +454,7 @@ export async function calculateStaffEstimate(validated, context, existing = null
   if (!existing) snapshot.author = { user_id: context.authUser.id, user_email: context.profile.email, role: context.profile.role };
   Object.assign(snapshot.customerQuote, { projectName: snapshot.projectName, clientName: snapshot.clientName,
     phone: snapshot.phone, areaPyeong: snapshot.areaPyeong, status: snapshot.status, savedAt: snapshot.savedAt });
-  return applyManagementFinancials(await appendEstimateItems(snapshot,validated.itemSelections,original,context,validated.manualWorks));
+  return finishEstimateCalculation(await appendEstimateItems(snapshot,validated.itemSelections,original,context,validated.manualWorks),issues);
 }
 
 export function estimateRowPayload(snapshot) {

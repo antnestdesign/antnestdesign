@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flooringZones, parseFlooringPlan } from "../../../public/os-app/src/flooring-inputs.js";
+import { flooringZones, flooringZonePreview, parseFlooringPlan } from "../../../public/os-app/src/flooring-inputs.js";
 import { calculateFlooring } from "../../../app/api/os/_lib/calculation/flooring.js";
 import { createEstimateCalculation } from "../../../app/api/os/_lib/calculation/calculator/estimate-core.js";
 import { publicFlooringSummary } from "../../../app/api/os/_lib/flooring-store.js";
@@ -31,6 +31,16 @@ describe("flooring V1 pricing", () => {
     expect([box.cost,bundle.cost,pyeong.cost]).toEqual([1300000,1200000,1200000]);
     expect([box.summary.quantity,bundle.summary.quantity,pyeong.summary.quantity]).toEqual(["13박스","12묶음(2박스)","12평"]);
     expect(box.customerRevenue).toBe(1690000);
+  });
+
+  it("previews only priced zones without guessing the common area or using a fallback SKU", () => {
+    const plan = JSON.parse(inputs.flooringPlan);
+    const blankSku = { ...inputs, flooringPlan: JSON.stringify({ ...plan, rooms: [{ sku: "", loss: null, area: 15 }] }) };
+    expect(flooringZonePreview(blankSku)).toMatchObject({ zones: [{ label: "공용부", areaMilli: 19000 }], issues: ["별도 방 1 마루 제품을 선택해 주세요."] });
+    const blankArea = { ...inputs, flooringPlan: JSON.stringify({ ...plan, rooms: [...plan.rooms, { sku: "test-a", loss: null, area: 0 }] }) };
+    expect(flooringZonePreview(blankArea)).toMatchObject({ zones: [{ label: "별도 방 1", areaMilli: 15000 }], issues: ["별도 방 2 시공평수를 입력해 주세요."] });
+    expect(() => flooringZones(blankArea)).toThrow(/시공평수/);
+    expect(flooringZonePreview({ ...inputs, flooringArea: "10" }).zones).toEqual([]);
   });
 
   it("groups the same product and resolved loss but not distinct loss rates", () => {

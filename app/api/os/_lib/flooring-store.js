@@ -1,6 +1,6 @@
 import { supabaseFetch } from "./server";
 import { calculateFlooring } from "./calculation/flooring.js";
-import { flooringZones } from "../../../../public/os-app/src/flooring-inputs.js";
+import { flooringZonePreview, flooringZones } from "../../../../public/os-app/src/flooring-inputs.js";
 
 export const FLOORING_PUBLIC_FIELDS = "sku,brand,product_group,short_name,width_mm,length_mm,thickness_mm,pack_m2,billing_unit,supplier_pyeong_m2,loss_percent";
 export const FLOORING_ADMIN_FIELDS = FLOORING_PUBLIC_FIELDS + ",official_name,source_version,source_notes,supply_cost,active,revision";
@@ -10,9 +10,9 @@ export function listFlooringProducts(admin) {
   return supabaseFetch(`${table}?select=${admin ? FLOORING_ADMIN_FIELDS : FLOORING_PUBLIC_FIELDS}&order=brand.asc,short_name.asc,sku.asc${admin ? "" : "&active=eq.true"}`);
 }
 
-export async function resolveFlooring(inputs, saved = []) {
+export async function resolveFlooring(inputs, saved = [], { preview = false } = {}) {
   // Only trust SKU prices fetched here or stored by a previous server-side calculation.
-  const zones = flooringZones(inputs);
+  const { zones, issues } = preview ? flooringZonePreview(inputs) : { zones: flooringZones(inputs), issues: [] };
   if (!zones) return { rows: null, snapshot: saved, summary: [] };
   const skus = new Set(zones.map(zone => zone.sku));
   const old = saved.filter(product => skus.has(product.sku));
@@ -23,7 +23,7 @@ export async function resolveFlooring(inputs, saved = []) {
     : [];
   const snapshot = [...old, ...current];
   const rows = calculateFlooring(zones, snapshot);
-  return { rows, snapshot, summary: rows.map(row => row.summary) };
+  return { rows, snapshot, summary: rows.map(row => row.summary), issues };
 }
 
 export function publicFlooringSummary(value) {

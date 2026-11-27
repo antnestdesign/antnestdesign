@@ -72,6 +72,43 @@ test("Khanstone new quotes require an actual model and retain it on save and sta
   expect(reopened).not.toHaveProperty("internalDetails");
 });
 
+test("a missing homebar measurement leaves other work priced in preview only", async () => {
+  const inputs = { ...demo, projectName: "Synthetic", tradeFormulaVersion: "v2", countertopLayoutMode: "current",
+    khanstoneCatalogVersion: "v1", sectionFurnitureEnabled: true, homebarEnabled: true,
+    homebarM: "1400", homebarMidway: "khanstone", homebarMidwayKhanstoneProduct: "eden", homebarMidwayHeightMm: "0" };
+  const { snapshot } = await calculatePrivilegedEstimate({ inputs }, actor("admin"), { preview: true });
+  const staff = await calculateStaffEstimate(validateStaffBody({ inputs }), actor("staff"), null, { preview: true });
+  expect(staff.incompleteItems).toEqual(snapshot.incompleteItems);
+  expect(snapshot.incompleteItems).toEqual([{ trade: "Furniture", message: "홈바장 미드웨이의 시공 높이를 입력해 주세요." }]);
+  expect(snapshot.total).toBeGreaterThan(1040000);
+  expect(snapshot.customerQuote.groups.find(group => group.label === "철거").total).toBe(1040000);
+  expect(snapshot.internalDetails.some(item => item.item.includes("미드웨이"))).toBe(false);
+  expect(snapshot.inputs.homebarMidway).toBe("khanstone");
+  expect(projectStaffEstimate(estimateRowPayload(staff))).not.toHaveProperty("internalDetails");
+  await expect(calculateStaffEstimate(validateStaffBody({ inputs }), actor("staff"))).rejects.toThrow(/시공 높이/);
+  await expect(calculatePrivilegedEstimate({ inputs }, actor("admin"))).rejects.toThrow(/시공 높이/);
+  const ready = (await calculatePrivilegedEstimate({ inputs: { ...inputs, homebarMidwayHeightMm: "600" } }, actor("admin"))).snapshot;
+  expect(ready).not.toHaveProperty("incompleteItems");
+  expect(ready.total).toBeGreaterThan(snapshot.total);
+});
+
+test("missing bathroom tile dimensions do not price that surface or incomplete labor", async () => {
+  const inputs = { ...demo, projectName: "Synthetic", sectionBathroomEnabled: true, bathroomUnits: "1", tileEnabled: true,
+    bathroomTileRooms: JSON.stringify([{ wallLengthMm: 0, wallTile: "ara-1200", floorArea: 4, floorTile: "ara-600", labor: true, jolly: false }]) };
+  const { snapshot } = await calculatePrivilegedEstimate({ inputs }, actor("admin"), { preview: true });
+  expect(snapshot.incompleteItems).toEqual([{ trade: "Bathroom", message: "욕실 1 벽체 총길이를 입력해 주세요." }]);
+  expect(snapshot.internalDetails.some(item => item.item.includes("타일 자재") && item.item.includes("바닥 실속형"))).toBe(true);
+  expect(snapshot.internalDetails.some(item => item.item.includes("타일 시공 인건비"))).toBe(false);
+  expect(JSON.parse(snapshot.inputs.bathroomTileRooms)).toEqual(JSON.parse(inputs.bathroomTileRooms));
+  await expect(calculatePrivilegedEstimate({ inputs }, actor("admin"))).rejects.toThrow(/총길이/);
+});
+
+test("a cost provider failure cannot be downgraded to an incomplete subtotal", async () => {
+  mock.fetch.mockRejectedValueOnce(new Error("cost unavailable"));
+  await expect(calculatePrivilegedEstimate({ inputs: { ...demo, sectionFlooringEnabled: true } }, actor("admin"), { preview: true }))
+    .rejects.toThrow("cost unavailable");
+});
+
 test.each([["normal", 800000, 1040000], ["special", 1200000, 1560000]])("basic %s uses independent area and one markup", (type, cost, sale) => {
   const r = calc({ ...demo, areaPyeong: "45", demolitionBasicType: type });
   expect(r.directCost).toBe(cost); expect(r.customerRevenue).toBe(sale);

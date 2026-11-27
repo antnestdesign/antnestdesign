@@ -141,7 +141,11 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   const sourceNotice = document.createElement("p");
   sourceNotice.className = "preliminary-source-notice";
   sourceNotice.hidden = true;
-  overview.append(sourceNotice);
+  const incompleteNotice = document.createElement("p");
+  incompleteNotice.className = sourceNotice.className;
+  incompleteNotice.setAttribute("role", "status");
+  incompleteNotice.hidden = true;
+  overview.append(incompleteNotice, sourceNotice);
   const actions = document.createElement("div");
   actions.className = "preliminary-actions";
   for (const id of ["saveEstimateButton", "saveAsNewEstimateButton"]) {
@@ -168,6 +172,7 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
   function update() {
     const { estimate, editingId, storedSnapshot = false, calculationFailed = false, confirmation = estimate?.confirmation } = getContext();
     const groups = estimate?.customerQuote?.groups || [];
+    const issues = calculationFailed ? [] : estimate?.incompleteItems || [];
     setText(context, confirmation?.viewingVersion?`확정 V${confirmation.viewingVersion.versionNo} 조회`:confirmation?.state==='confirmed'?`확정 V${confirmation.draftVersion}`:confirmation?.state==='revising'?`수정본 V${confirmation.draftVersion} 작성 중`:editingId ? "저장 견적 수정 중" : "신규 견적 작성 중");
     const project = document.getElementById("projectName").value.trim() || "새 프로젝트";
     const client = document.getElementById("clientName").value.trim();
@@ -176,7 +181,10 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
     setText(address, estimate?.address || "");
     identity.dataset.hasAddress = String(Boolean(estimate?.address));
     const totalLabel = document.getElementById("clientTotal")?.previousElementSibling;
-    if (totalLabel) setText(totalLabel, storedSnapshot ? "저장 견적 총액" : "현재 견적 총액");
+    if (totalLabel) setText(totalLabel, issues.length ? "현재 산출 소계" : storedSnapshot ? "저장 견적 총액" : "현재 견적 총액");
+    incompleteNotice.hidden = !issues.length;
+    setText(incompleteNotice, issues.length
+      ? `미산정 항목과 할인은 소계에 포함되지 않습니다. ${issues.map(issue => issue.message).join(" ")}` : "");
     let unselectedWithAmount = false;
     const amounts=entries.map(entry=>groups.filter(group=>entry.groups.includes(group.label))
       .reduce((sum,group)=>sum+(Number(group.total)||0),0));
@@ -191,11 +199,12 @@ export function mountPreliminaryEstimateView({ document, getContext, onPrint }) 
       const amount=amounts[index];
       const additional = Boolean(entry.panel.querySelector('[data-item-output],.manual-work-row'));
       const mismatch = !entry.toggle.checked && amount !== 0 && !additional;
+      const incomplete = issues.some(issue => entry.id === `section${issue.trade}Enabled`);
       unselectedWithAmount ||= mismatch;
       setText(entry.summary, entry.toggle.checked ? selectedSummary(entry.panel) : additional ? "추가 공사 선택" : mismatch ? "입력 미선택" : "미선택");
-      setText(entry.amount, calculationFailed ? "—" : won(displayAmounts[index]));
-      entry.amountSource.hidden = !mismatch;
-      setText(entry.amountSource, storedSnapshot ? "저장 금액 포함" : "표시 견적에 포함");
+      setText(entry.amount, calculationFailed ? "—" : incomplete && !amount ? "미산정" : won(displayAmounts[index]));
+      entry.amountSource.hidden = !mismatch && !incomplete;
+      setText(entry.amountSource, incomplete ? "미산정 항목 있음" : storedSnapshot ? "저장 금액 포함" : "표시 견적에 포함");
       entry.panel.closest(".preliminary-trade").classList.toggle("is-selected", entry.toggle.checked);
     }
     sourceNotice.hidden = !unselectedWithAmount;

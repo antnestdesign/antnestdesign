@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { estimateId, ...inputBody } = body;
     const existing = estimateId ? await readEstimate(estimateId) : null;
-    const snapshot = await calculateStaffEstimate(validateStaffBody(inputBody), context, existing);
-    return json(projectStaffEstimate({ ...estimateRowPayload(snapshot), id: existing?.id || "", created_at: snapshot.savedAt }));
+    const snapshot = await calculateStaffEstimate(validateStaffBody(inputBody), context, existing, { preview: true });
+    const estimate = projectStaffEstimate({ ...estimateRowPayload(snapshot), id: existing?.id || "", created_at: snapshot.savedAt });
+    return json({ ...estimate, incompleteItems: snapshot.incompleteItems || [] }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) { return estimateErrorResponse(error); }
 }

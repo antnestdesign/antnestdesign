@@ -38,23 +38,32 @@ export function parseFlooringPlan(raw) {
   return { common: room(plan.common, false), rooms: plan.rooms.map(value => room(value, true)) };
 }
 
-export function flooringZones(inputs) {
-  if (inputs.sectionFlooringEnabled !== true || inputs.flooringMaterialType === "sheet") return null;
+export function flooringZonePreview(inputs) {
+  if (inputs.sectionFlooringEnabled !== true || inputs.flooringMaterialType === "sheet") return { zones: null, issues: [] };
   const plan = parseFlooringPlan(inputs.flooringPlan);
-  if (!plan) return null;
+  if (!plan) return { zones: null, issues: [] };
   const total = area(inputs.flooringArea || "0");
   const separate = plan.rooms.reduce((sum, value) => sum + area(value.area), 0);
-  check(separate <= total, "별도 방의 합계는 전체 마루 시공평수를 초과할 수 없습니다.");
+  if (!total) return { zones: [], issues: ["전체 마루 시공평수를 입력해 주세요."] };
+  if (separate > total) return { zones: [], issues: ["별도 방의 합계는 전체 마루 시공평수를 초과할 수 없습니다."] };
   const zones = [
     { ...plan.common, areaMilli: total - separate, label: "공용부" },
     ...plan.rooms.map((value, index) => ({ ...value, areaMilli: area(value.area), label: `별도 방 ${index + 1}` })),
   ];
-  for (const zone of zones) {
-    check(!zone.areaMilli || zone.sku, `${zone.label} 마루 제품을 선택해 주세요.`);
-    check(zone.label === "공용부" || zone.areaMilli > 0, `${zone.label} 시공평수를 입력해 주세요.`);
-  }
-  check(total > 0, "전체 마루 시공평수를 입력해 주세요.");
-  return zones.filter(zone => zone.areaMilli > 0);
+  const issues = zones.flatMap(zone => {
+    if (zone.areaMilli > 0 && !zone.sku) return [`${zone.label} 마루 제품을 선택해 주세요.`];
+    if (zone.label !== "공용부" && !zone.areaMilli) return [`${zone.label} 시공평수를 입력해 주세요.`];
+    return [];
+  });
+  // A room with no area makes the remaining common area unknown.
+  const unknownCommonArea = plan.rooms.some(room => !room.area);
+  return { issues, zones: zones.filter((zone, index) => zone.areaMilli > 0 && zone.sku && (index > 0 || !unknownCommonArea)) };
+}
+
+export function flooringZones(inputs) {
+  const { zones, issues } = flooringZonePreview(inputs);
+  check(!issues.length, issues[0]);
+  return zones;
 }
 
 export function flooringProductLabel(product) {

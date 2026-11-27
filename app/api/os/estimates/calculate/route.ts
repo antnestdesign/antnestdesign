@@ -6,6 +6,6 @@ export async function GET(request: NextRequest) {
   catch(error){return estimateErrorResponse(error);}
 }
 export async function POST(request: NextRequest) {
-  try { const user=await getUserContext(request);if(!['admin','manager'].includes(user.profile.role))throw new ApiError(403,'접근 권한이 없습니다.');return json(await calculatePrivilegedEstimate(await request.json(),user),{headers:{'Cache-Control':'private, no-store'}}); }
+  try { const user=await getUserContext(request);if(!['admin','manager'].includes(user.profile.role))throw new ApiError(403,'접근 권한이 없습니다.');return json(await calculatePrivilegedEstimate(await request.json(),user,{preview:true}),{headers:{'Cache-Control':'private, no-store'}}); }
   catch(error){return estimateErrorResponse(error);}
 }

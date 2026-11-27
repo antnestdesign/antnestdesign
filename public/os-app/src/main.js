@@ -425,6 +425,9 @@ let osAuditLogs = [];
 let osAuditLogsLoaded = false;
 let loadedEstimateBaseline = null;
 let estimateCalculationFailed = false;
+const incompleteEstimateMessage = "미산정 항목의 입력을 완료한 뒤 저장·확정·출력해 주세요.";
+const isIncompleteEstimate = estimate => Boolean(estimate?.incompleteItems?.length);
+const currentEstimateIsIncomplete = () => isIncompleteEstimate(activeQuoteEstimate || lastRenderedEstimateSnapshot);
 let workspaceView=null;
 let workspaceNavigation=null;
 let projectWorkflowView=null;
@@ -436,7 +439,7 @@ const estimateHistoryView = createEstimateHistoryView({document,loadHistory:load
 let estimateWorkflowBusy=false;
 const estimateConfirmationView=createEstimateConfirmationView({document,load:loadEstimateConfirmations,confirm:confirmEstimate,revise:createEstimateRevision,
   isDirty:()=>saveEstimateInProgress||projectWorkflowBusy||Boolean(loadedEstimateBaseline&&(!loadedEstimateMatchesCurrentInputs()||pipeCleaningAdjustmentDirty)),
-  calculationFailed:()=>estimateCalculationFailed,
+  calculationFailed:()=>estimateCalculationFailed||currentEstimateIsIncomplete(),
   onBusy:value=>{estimateWorkflowBusy=value;syncWorkflowBusyControls();},
   onLoad:async(id,version)=>{await openWorkspaceEstimate(id,'quote',version,true);void renderSavedEstimateRows();},
   onContract:async()=>{await projectWorkflowView.startContract(loadedEstimateBaseline.estimate);},
@@ -1625,7 +1628,7 @@ function render({ deferCalculation = false } = {}) {
   setSaveStatus("견적을 계산 중입니다.");
   const calculatePreview = () => {
     if (generation !== calculationGeneration || !canViewSystem() || confirmedEstimateView) return;
-    ensureServerCalculation().then(value=>{if(generation===calculationGeneration&&value.key===serverCalculationKey()&&canViewSystem()){renderCalculatedEstimate(value.result);setSaveStatus(loadedEstimateMatchesCurrentInputs()?"저장 당시 계산 결과를 표시 중입니다.":"입력값으로 계산했습니다. 저장 전까지 원본은 변경되지 않습니다.");}}).catch(error=>{if(generation===calculationGeneration)showEstimateCalculationFailure(error);});
+    ensureServerCalculation().then(value=>{if(generation===calculationGeneration&&value.key===serverCalculationKey()&&canViewSystem()){renderCalculatedEstimate(value.result);setSaveStatus(isIncompleteEstimate(value.snapshot)?incompleteEstimateMessage:loadedEstimateMatchesCurrentInputs()?"저장 당시 계산 결과를 표시 중입니다.":"입력값으로 계산했습니다. 저장 전까지 원본은 변경되지 않습니다.");}}).catch(error=>{if(generation===calculationGeneration)showEstimateCalculationFailure(error);});
   };
   if (deferCalculation) internalPreviewTimer = setTimeout(calculatePreview, ESTIMATE_INPUT_DELAY_MS);
   else calculatePreview();
@@ -1634,7 +1637,9 @@ function renderCalculatedEstimate(result){
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
   const calculatedSnapshot = buildEstimateSnapshot(result);
   clearEstimateCalculationFailure();
-  const displayEstimate = usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
+  const incomplete = isIncompleteEstimate(calculatedSnapshot);
+  if (incomplete) activeQuoteEstimate = null;
+  const displayEstimate = !incomplete && usesStoredEstimateSnapshot && activeQuoteEstimate ? activeQuoteEstimate : calculatedSnapshot;
   flooringView.result(displayEstimate);
   itemBuilderView?.result(displayEstimate);
   siteCostView?.render(displayEstimate.costBreakdown || serverCalculation?.costRows || []);
@@ -1654,6 +1659,7 @@ function renderCalculatedEstimate(result){
     renderPurchaseOrder(activeQuoteEstimate);
   }
   lastRenderedEstimateSnapshot = displayEstimate;
+  estimateConfirmationView.syncCalculationState();
 }
 
 function refresh(options) {
@@ -1675,6 +1681,7 @@ function syncCarpentryMode(estimate) {
 
 let staffPreviewGeneration = 0;
 let staffPreviewTimer = null;
+let staffPreviewReady = false;
 
 function displayStaffEstimate(estimate) {
   clearEstimateCalculationFailure();
@@ -1682,9 +1689,11 @@ function displayStaffEstimate(estimate) {
   itemBuilderView?.result(estimate);
   activeQuoteEstimate = estimate;
   lastRenderedEstimateSnapshot = estimate;
+  staffPreviewReady = true;
   setText("clientTotal", estimate.totalText || customerWon(estimate.total));
   renderCustomerQuote(estimate);
   renderStandardCheck(readState());
+  estimateConfirmationView.syncCalculationState();
 }
 
 function cancelStaffPreview() {
@@ -1694,6 +1703,7 @@ function cancelStaffPreview() {
 
 function renderStaffEstimate() {
   cancelStaffPreview();
+  staffPreviewReady = false;
   const pipeChanged = pipeCleaningAdjustmentDirty && Boolean(el.existingPipeCleaningEnabled?.checked)
     !== Boolean(loadedEstimateBaseline?.estimate?.inputs?.existingPipeCleaningEnabled);
   if (!pipeChanged && loadedEstimateMatchesCurrentInputs() && loadedEstimateBaseline?.estimate?.customerQuote) {
@@ -1709,7 +1719,7 @@ function renderStaffEstimate() {
       const estimate = await previewStaffEstimate(inputs, estimateId, itemBuilderView?.selections()||[],itemBuilderView?.manualWorks?.()||[]);
       if (generation !== staffPreviewGeneration || currentProfile?.role !== "staff" || estimateId !== currentEditingEstimateId) return;
       displayStaffEstimate(estimate);
-      setSaveStatus("입력값으로 고객 견적을 계산했습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
+      setSaveStatus(isIncompleteEstimate(estimate) ? incompleteEstimateMessage : "입력값으로 고객 견적을 계산했습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
     } catch (error) {
       if (generation === staffPreviewGeneration) showEstimateCalculationFailure(error);
     }
@@ -2693,6 +2703,7 @@ async function handleSaveEstimate(mode = "update") {
     setSaveStatus("저장 준비 중입니다.");
     const isUpdate = mode === "update";
     if (currentProfile?.role === "staff") {
+      if (staffPreviewReady && currentEstimateIsIncomplete()) { setSaveStatus(incompleteEstimateMessage); return; }
       const updateId = currentEditingEstimateId;
       if (isUpdate && !updateId) throw new Error("수정할 저장 견적이 없습니다. 새 견적으로 저장을 사용해 주세요.");
       cancelStaffPreview();
@@ -2716,7 +2727,11 @@ async function handleSaveEstimate(mode = "update") {
       return;
     }
     const key=serverCalculationKey();
-    try { await ensureServerCalculation(); }
+    try {
+      const calculation = await ensureServerCalculation();
+      if (key !== serverCalculationKey()) return;
+      if (isIncompleteEstimate(calculation.snapshot)) { setSaveStatus(incompleteEstimateMessage); return; }
+    }
     catch (error) { if(key===serverCalculationKey())showEstimateCalculationFailure(error);return; }
     const pipeCleaningSnapshot = isUpdate ? currentPipeCleaningDerivedEstimate() : null;
     const result = pipeCleaningSnapshot ? null : calculateForCurrentEstimate();
@@ -3020,7 +3035,8 @@ async function onPrintQuoteClick(event) {
   if(document.getElementById('quote')?.classList.contains('active')&&preliminaryIsDirty()){workspaceView?.showStatus('변경사항을 저장한 뒤 견적서를 출력해 주세요.');return;}
   if (estimateCalculationFailed) { render(); return; }
   if(canViewSystem()&&!confirmedEstimateView){const key=serverCalculationKey();try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){if(key===serverCalculationKey())showEstimateCalculationFailure(error);return;}}
-  if (currentProfile?.role === "staff" && !activeQuoteEstimate?.customerQuote) {
+  if (currentEstimateIsIncomplete()) { setSaveStatus(incompleteEstimateMessage); return; }
+  if (currentProfile?.role === "staff" && (!staffPreviewReady || !activeQuoteEstimate?.customerQuote)) {
     setSaveStatus("고객 견적 계산이 완료된 후 출력해 주세요.");
     return;
   }
@@ -3036,6 +3052,7 @@ async function onInternalPrintClick(event) {
   if(managementFinancialsView?.isDirty()||managementFinancialsView?.isBusy()){workspaceView?.showStatus('관리비용과 할인금액을 먼저 저장해 주세요.');return;}
   if (estimateCalculationFailed) { render(); return; }
   if(canViewSystem()&&!confirmedEstimateView){const key=serverCalculationKey();try{await ensureServerCalculation();renderCalculatedEstimate(calculate());}catch(error){if(key===serverCalculationKey())showEstimateCalculationFailure(error);return;}}
+  if (currentEstimateIsIncomplete()) { setSaveStatus(incompleteEstimateMessage); return; }
   const estimate = currentEstimateForPrint();
   if (button.id === "printAdminDetailButton") {
     renderAdminDetailPrint(estimate);
@@ -3270,6 +3287,10 @@ async function onSavedEstimateAction(event) {
 function onStaffQuoteAction(event) {
   const button = event.target?.closest?.("#staffOpenClientQuoteButton, #staffPrintClientQuoteButton");
   if (!button) return;
+  if (button.id === "staffPrintClientQuoteButton" && (estimateCalculationFailed || currentEstimateIsIncomplete() || !staffPreviewReady)) {
+    setSaveStatus(currentEstimateIsIncomplete() ? incompleteEstimateMessage : "고객 견적 계산이 완료된 후 출력해 주세요.");
+    return;
+  }
   activateTab("quote");
   if (button.id === "staffPrintClientQuoteButton") {
     renderCustomerSummaryPrint(currentEstimateForPrint()?.customerQuote);
@@ -3301,7 +3322,7 @@ function bootstrap() {
       if(isCurrent())loadEstimateIntoUi(estimate,{refreshContract:false});
     },
     onLoadContract:async(id,estimateId)=>{await loadContractPackageToPreview(id,estimateId);document.getElementById('contractDocumentPreview')?.scrollIntoView?.({block:'start'});},
-    isEstimateDirty:()=>saveEstimateInProgress||estimateWorkflowBusy||estimateCalculationFailed||preliminaryIsDirty()||contractOptionsDirty,isBusy:()=>saveEstimateInProgress||estimateWorkflowBusy,
+    isEstimateDirty:()=>saveEstimateInProgress||estimateWorkflowBusy||estimateCalculationFailed||currentEstimateIsIncomplete()||preliminaryIsDirty()||contractOptionsDirty,isBusy:()=>saveEstimateInProgress||estimateWorkflowBusy,
     onBusy:value=>{projectWorkflowBusy=value;syncWorkflowBusyControls();},
     onTransferred:async id=>{await renderSavedEstimateRows();await openProjectWorkflow(id,true,true);},onChanged:()=>renderSavedEstimateRows(),
     onOpen:openProjectWorkflow,onViewVersion:(id,version)=>openWorkspaceEstimate(id,'quote',version)});
