@@ -52,10 +52,12 @@ test("login and list navigation with fixed endpoint latency", async () => {
   if (!baseline) expect(seen("/api/os/estimates", "contracts")).toBe(false);
   clearRequestLog();
   const contracts = await measure(() => clickTab("admin"), () =>
-    listRow() && document.getElementById("contractProjectRows").textContent.includes(project.project_name));
+    document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
+    (!baseline || listRow()));
   expect(seen("/api/os/estimates", "contracts")).toBe(true);
   const contractsAgain = await measure(() => clickTab("admin"), () =>
-    listRow() && document.getElementById("contractProjectRows").textContent.includes(project.project_name));
+    document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
+    (!baseline || listRow()));
   const quotesAgain = await measure(() => clickTab("quote"), listRow);
   console.info("WORKSPACE_TIMINGS_MS", JSON.stringify({
     auth: Math.round(authMs), login, afterAuth: Math.round(login - authMs), quotes, contracts, quotesAgain, contractsAgain,

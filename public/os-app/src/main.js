@@ -1306,12 +1306,11 @@ function renderInternalRows(details) {
 
 function renderWarnings(warnings) { return estimateView.renderWarnings(warnings); }
 
-function formatDateTime(value) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+function formatDateTime(value) { return dateTimeFormatter.format(new Date(value)); }
 
 function collectInputValues() {
   return collectEstimateFormValues(el, COST_ITEM_BY_INPUT);
@@ -1550,7 +1549,9 @@ async function renderSavedEstimateRows({includeContracts=true}={}) {
     workspaceView?.updateData(cachedEstimates,projects,packages??allContractPackagesState,...(contracts||[]));
     if(workspaceView?.projectFor(cachedEstimates.find(e=>e.id===selectedContractEstimate()?.id)||selectedContractEstimate()||{})?.workflow)renderContractPackagePanel();
     renderProjectSearchResults();
-    renderSavedEstimateTableRows(tbody, cachedEstimates, { admin, canViewInternal, colspan });
+    if (!includeContracts || !document.getElementById("admin")?.classList.contains("active")) {
+      renderSavedEstimateTableRows(tbody, cachedEstimates, { admin, canViewInternal, colspan });
+    }
   } catch (error) {
     if(generation!==managementGeneration)return;
     console.error("견적 조회 실패", error);
@@ -1598,7 +1599,11 @@ function showEstimateCalculationFailure(error) {
   setSaveStatus(error.message || "견적 계산에 실패했습니다.");
 }
 
-function render() {
+const ESTIMATE_INPUT_DELAY_MS = 160;
+let internalPreviewTimer = null;
+
+function render({ deferCalculation = false } = {}) {
+  clearTimeout(internalPreviewTimer);
   if(!currentProfile)return;
   if(confirmedEstimateView)return;
   if (currentProfile?.role === "staff") {
@@ -1607,7 +1612,12 @@ function render() {
   }
   const generation=++calculationGeneration;
   setSaveStatus("견적을 계산 중입니다.");
-  ensureServerCalculation().then(value=>{if(generation===calculationGeneration&&value.key===serverCalculationKey()&&canViewSystem()){renderCalculatedEstimate(value.result);setSaveStatus(loadedEstimateMatchesCurrentInputs()?"저장 당시 계산 결과를 표시 중입니다.":"입력값으로 계산했습니다. 저장 전까지 원본은 변경되지 않습니다.");}}).catch(error=>{if(generation===calculationGeneration)showEstimateCalculationFailure(error);});
+  const calculatePreview = () => {
+    if (generation !== calculationGeneration || !canViewSystem() || confirmedEstimateView) return;
+    ensureServerCalculation().then(value=>{if(generation===calculationGeneration&&value.key===serverCalculationKey()&&canViewSystem()){renderCalculatedEstimate(value.result);setSaveStatus(loadedEstimateMatchesCurrentInputs()?"저장 당시 계산 결과를 표시 중입니다.":"입력값으로 계산했습니다. 저장 전까지 원본은 변경되지 않습니다.");}}).catch(error=>{if(generation===calculationGeneration)showEstimateCalculationFailure(error);});
+  };
+  if (deferCalculation) internalPreviewTimer = setTimeout(calculatePreview, ESTIMATE_INPUT_DELAY_MS);
+  else calculatePreview();
 }
 function renderCalculatedEstimate(result){
   const usesStoredEstimateSnapshot = syncLoadedEstimateSnapshot();
@@ -1634,12 +1644,12 @@ function renderCalculatedEstimate(result){
   lastRenderedEstimateSnapshot = displayEstimate;
 }
 
-function refresh() {
+function refresh(options) {
   syncBathroomTiles();
   syncSectionLocks();
   syncBlockLocks();
   syncCarpentryMode(activeQuoteEstimate || lastRenderedEstimateSnapshot);
-  render();
+  render(options);
 }
 function syncCarpentryMode(estimate) {
   const publicModern=(estimate?.customerQuote?.groups || []).some(g=>g.label==="목공"&&(g.items||[]).some(i=>/^(우물천장 신설|우물천장 평탄화|커튼박스|에어컨 단내림|실링팬 보강 설치)/.test(i.name)));
@@ -1689,7 +1699,7 @@ function renderStaffEstimate() {
     } catch (error) {
       if (generation === staffPreviewGeneration) showEstimateCalculationFailure(error);
     }
-  }, 160);
+  }, ESTIMATE_INPUT_DELAY_MS);
 }
 
 function staffCurrentEstimateInputs() {
@@ -2461,6 +2471,8 @@ function applyAccessControl() {
 
 function setAuthenticated(isAuthenticated) { return uiShell.setAuthenticated(isAuthenticated); }
 
+let estimateCatalogLoading = null;
+
 async function enterAuthenticatedApp(profile) {
   currentProfile = profile;
   itemBuilderView?.reset();
@@ -2473,11 +2485,17 @@ async function enterAuthenticatedApp(profile) {
     window.location.reload();
     return;
   }
-  const [,config]=await Promise.all([
+  const required = Promise.all([
     loadRateSettings(),
     canViewSystem()?loadPrivateEstimateDefaults():null,
-    itemBuilderView?.loadCatalog(),
   ]);
+  const catalog = itemBuilderView?.loadCatalog();
+  estimateCatalogLoading = catalog ?? null;
+  if (catalog) {
+    const clear = () => { if (estimateCatalogLoading === catalog) estimateCatalogLoading = null; };
+    catalog.then(clear, clear);
+  }
+  const [,config] = await required;
   costManagementDefaults=null;
   newEstimatePrivateDefaults = {};
   if(config){newEstimatePrivateDefaults={...config.defaults};costManagementDefaults=config.costManagement;privateDefaultMarkup=Number(config.defaults.targetMargin)/100;for(const [id,value]of Object.entries(config.defaults))if(el[id])el[id].value=value;PIPE_CLEANING_AMOUNT=Number(el.rateExistingPipeCleaning?.value)||0;}
@@ -2606,12 +2624,11 @@ function handleEstimateInputChanged() {
       setSaveStatus("저장 당시 계산 결과를 표시 중입니다.");
     } else {
       activeQuoteEstimate = null;
-      setSaveStatus("입력값이 변경되어 재계산되었습니다. 저장 전까지 원본 견적은 변경되지 않습니다.");
     }
   } else {
     activeQuoteEstimate = null;
   }
-  refresh();
+  refresh({ deferCalculation: true });
 }
 
 async function handleExistingPipeCleaningChanged() {
@@ -2747,7 +2764,12 @@ function handleTabNavigation(tabId) {
 }
 
 function loadTabData(tabId) {
-  if (tabId === "system"&&canViewSystem()) void Promise.all([refreshSystemManagement(),itemBuilderView?.load()]);
+  if (tabId !== "system" || !canViewSystem()) return;
+  const profile = currentProfile;
+  void refreshSystemManagement();
+  const load = () => { if (profile === currentProfile && canViewSystem()) return itemBuilderView?.load(); };
+  if (estimateCatalogLoading) void estimateCatalogLoading.then(load, load);
+  else void load();
 }
 
 function handlePasswordChangeLogout() {
@@ -2788,6 +2810,8 @@ async function onLogoutClick() {
   issuedContractEstimate = null;
   preliminaryContractEstimate = null;
   contractSourceView.reset();
+  clearTimeout(internalPreviewTimer);
+  estimateCatalogLoading = null;
   await signOut();
   itemBuilderView?.clear();
   projectWorkflowView?.clear();activeWorkflowProjectId=null;

@@ -43,11 +43,13 @@ export const furnitureDoorsSelected = inputs => inputs.furnitureDoorsEnabled ===
 export const standardCountertopDimensions = (length, custom, width, depth) =>
   custom ? [Number(width), Number(depth)] : [Number(length), COUNTERTOP_DEFAULT_DEPTH_MM];
 
-export function cabinetCountertopDimensions(inputs, lowerLength, homebarLength) {
+export function cabinetCountertopDimensions(inputs, lowerLength, homebarLength, legacyHomebarCounterLength = 0) {
   const legacy = inputs.countertopLayoutMode === "legacy";
   return {
     base: standardCountertopDimensions(lowerLength, inputs.baseCounterCustomSize, inputs.baseCounterWidthMm, inputs.baseCounterDepthMm),
-    homebar: legacy ? [Number(inputs.homebarCounterWidthMm), Number(inputs.homebarCounterDepthMm)] : [Number(homebarLength), COUNTERTOP_DEFAULT_DEPTH_MM],
+    homebar: legacy
+      ? [Number(inputs.homebarCounterWidthMm) || legacyHomebarCounterLength, Number(inputs.homebarCounterDepthMm) || COUNTERTOP_DEFAULT_DEPTH_MM]
+      : [Number(homebarLength), COUNTERTOP_DEFAULT_DEPTH_MM],
   };
 }
 

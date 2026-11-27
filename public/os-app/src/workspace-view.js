@@ -47,7 +47,8 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
   admin.append(legacy);
   const notice=document.createElement('p');notice.id='consultationAccessNotice';notice.className='status-text';notice.setAttribute('role','status');document.getElementById('saveStatus')?.after(notice);
   const status=document.getElementById('estimateStatus');if(status){status.closest('label').hidden=true;status.disabled=true;}
-  let projects=[],contractProjects=[],contractEstimates=[],packages=[],role='staff',current=null,busy=false;
+  let projects=[],contractProjects=[],legacyContractEstimates=[],role='staff',current=null,busy=false;
+  let projectById=new Map(),estimatesByProject=new Map(),packagedEstimateIds=new Set();
   const archivePanels=[['estimate',list],['contract',contractList]].map(([kind,host])=>{
     const panel=document.createElement('details');panel.hidden=true;
     panel.innerHTML='<summary>삭제한 항목</summary><p role="status"></p><ul></ul>';
@@ -73,7 +74,8 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     await onOpen(null,'refresh');
   }
   const money=v=>Number(v||0).toLocaleString('ko-KR')+'원';
-  const projectFor=row=>projects.find(p=>p.id===(row.projectId||row.confirmation?.projectId));
+  const estimateProjectId=row=>row.projectId||row.confirmation?.projectId;
+  const projectFor=row=>projectById.get(estimateProjectId(row));
   function filtered(estimates){const term=document.getElementById('estimateManagementSearch').value,mode=document.getElementById('estimateManagementFilter').value;
     const scope=document.getElementById('estimateManagementScope').value;
     return estimates.filter(row=>{
@@ -82,16 +84,16 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     });}
   function contractRows(){
     const term=document.getElementById('contractProjectSearch').value.trim().toLowerCase(),mode=document.getElementById('contractProjectFilter').value;
-    const data=contractProjects.map(p=>({kind:'contract',targetId:p.id,project:p,estimates:contractEstimates.filter(e=>(e.projectId||e.confirmation?.projectId)===p.id)}));
-    for(const e of contractEstimates)if(!e.projectId&&!e.confirmation?.projectId&&(projectStage(e.status)!=='견적'||packages.some(p=>p.estimate_id===e.id)))data.push({kind:'legacy_contract',targetId:e.id,project:{id:e.id,project_name:e.projectName,status:e.status,customer:{name:e.clientName}},estimates:[e]});
+    const data=contractProjects.map(p=>({kind:'contract',targetId:p.id,project:p,estimates:estimatesByProject.get(p.id)||[]}));
+    for(const e of legacyContractEstimates)if(projectStage(e.status)!=='견적'||packagedEstimateIds.has(e.id))data.push({kind:'legacy_contract',targetId:e.id,project:{id:e.id,project_name:e.projectName,status:e.status,customer:{name:e.clientName}},estimates:[e]});
     const visible=data.filter(({project:p,estimates})=>{
-      const stage=projectStage(p.status||estimates[0]?.status),contracted=packages.some(pack=>estimates.some(e=>e.id===pack.estimate_id));
+      const stage=projectStage(p.status||estimates[0]?.status),contracted=estimates.some(e=>packagedEstimateIds.has(e.id));
       const status=mode==='everything'?true:mode==='unclassified'?stage==='미분류':mode==='all'?['계약 준비','계약 체결','계약','착공','준공'].includes(stage)||contracted:stage===mode;
       return status&&`${p.project_name} ${p.customer?.name||''} ${p.address||''}`.toLowerCase().includes(term);
     });
     document.getElementById('contractProjectRows').innerHTML=visible.map(({project:p,estimates,kind,targetId})=>{
       const flow=p.workflow,e=estimates.find(e=>e.id===flow?.estimateId)||estimates[0];
-      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${projects.some(project=>project.id===p.id)?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${flow?`<button type="button" data-project-contract-open="${esc(p.id)}">계약 불러오기</button>`:e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 불러오기</button>`:`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`}${role==='admin'?`<button type="button" data-contract-archive="${esc(targetId)}" data-kind="${esc(kind)}">삭제</button>`:''}</td></tr>`;
+      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${projectById.has(p.id)?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${flow?`<button type="button" data-project-contract-open="${esc(p.id)}">계약 불러오기</button>`:e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 불러오기</button>`:`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`}${role==='admin'?`<button type="button" data-contract-archive="${esc(targetId)}" data-kind="${esc(kind)}">삭제</button>`:''}</td></tr>`;
     }).join('')||'<tr><td colspan="10">해당 프로젝트가 없습니다.</td></tr>';
   }
   for(const id of ['estimateManagementSearch','estimateManagementFilter','estimateManagementScope'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',onFilter);
@@ -106,8 +108,19 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     catch(error){document.defaultView.alert(error.message);}
     finally{button.disabled=false;}
   });
-  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects,visibleContractEstimates){projects=projectRows;packages=contractPackages;
-      if(visibleContractProjects&&visibleContractEstimates){contractProjects=visibleContractProjects;contractEstimates=visibleContractEstimates;contractRows();}
+  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects,visibleContractEstimates){projects=projectRows;
+      projectById=new Map(projects.map(p=>[p.id,p]));
+      packagedEstimateIds=new Set(contractPackages.map(p=>p.estimate_id));
+      if(visibleContractProjects&&visibleContractEstimates){
+        contractProjects=visibleContractProjects;estimatesByProject=new Map();legacyContractEstimates=[];
+        for(const estimate of visibleContractEstimates){
+          const id=estimateProjectId(estimate);
+          if(!id){legacyContractEstimates.push(estimate);continue;}
+          if(!estimatesByProject.has(id))estimatesByProject.set(id,[]);
+          estimatesByProject.get(id).push(estimate);
+        }
+        contractRows();
+      }
       for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
       const select=legacy.querySelector('[data-archive-project]'),value=select.value;select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;},
     permissions(value){role=value;for(const {panel} of archivePanels){panel.hidden=role!=='admin';if(panel.hidden){panel.open=false;panel.querySelector('ul').textContent='';}}contractRows();const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},

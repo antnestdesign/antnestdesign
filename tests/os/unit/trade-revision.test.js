@@ -150,6 +150,17 @@ test("homebar tall cabinet length never extends the countertop",()=>{
   expect(detail(tallOnly,"홈바장 키큰수납장")).toBeTruthy();
 });
 
+test("a legacy homebar without saved slab dimensions uses its lower cabinet span and the legacy rate",()=>{
+  const inputs={sectionFurnitureEnabled:true,homebarEnabled:true,countertopLayoutMode:"legacy",
+    homebarM:"1500",homebarCountertop:"himacs",homebarCounterWidthMm:"0",homebarCounterDepthMm:"700"};
+  const top=result=>result.details.find(d=>d.item.startsWith("홈바장 상판"));
+  expect(top(run(inputs))).toMatchObject({input:"600mm × 700mm",unitPrice:200000,cost:120000});
+  expect(top(run({...inputs,homebarCounterWidthMm:"1250",homebarCounterDepthMm:"800"})))
+    .toMatchObject({input:"1,250mm × 800mm",unitPrice:200000,cost:285714});
+  expect(top(run({...inputs,homebarM:"900"}))).toBeUndefined();
+  expect(top(run({...inputs,homebarEnabled:false}))).toBeUndefined();
+});
+
 test("bathroom dry vanity uses kitchen cabinet rates or the independent foam price",()=>{
   const inputs={sectionBathroomEnabled:true,dryVanityEnabled:true,dryVanityLengthMm:"900",dryVanityCountertop:"himacs"};
   const r=run(inputs,{rateValues:{rateLowerPerJa:220000}});

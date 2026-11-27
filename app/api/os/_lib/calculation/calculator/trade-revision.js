@@ -29,10 +29,10 @@ export function expansionDetails(v,mmText){
   return rows;
 }
 
-export function revisedCountertops(state) {
+export function revisedCountertops(state, legacyHomebarCounterLength) {
   const v = state.tradeRevision;
   if (!v) return [];
-  const { base, homebar } = cabinetCountertopDimensions(v, state.lowerCabinetM, state.homebarM);
+  const { base, homebar } = cabinetCountertopDimensions(v, state.lowerCabinetM, state.homebarM, legacyHomebarCounterLength);
   const dry = dryVanityCountertopDimensions(v);
   const vanity = v.vanityEnabled !== "off" && v.vanityMm > 0;
   const dryVanity = v.countertopLayoutMode !== "legacy" && state.bathroomEnabled && v.dryVanityEnabled && v.dryVanityLengthMm>0;
@@ -45,7 +45,7 @@ export function revisedCountertops(state) {
   ].filter(([, ,enabled,width,material,depth])=>enabled&&width>0&&depth>0&&Object.hasOwn(counterRates,material));
 }
 
-export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM}){
+export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM,homebarCounterActualMm}){
   const v=state.tradeRevision;
   if(v?.tradeFormulaVersion!=="v2")return [];
   const rows=[];
@@ -76,7 +76,7 @@ export function revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimum
   }
   if(v.film&&state.filmEnabled)add("film","필름 인건비",filmLabor(v),"품",rates.finish.filmWorkerDay);
   const legacy=v.countertopLayoutMode==="legacy";
-  const tops=revisedCountertops(state);
+  const tops=revisedCountertops(state,homebarCounterActualMm);
   const addTop=([group,label,,width,material,depth,thickness])=>{
     const t=slabThickness(material,thickness,legacy);
     add(group,`${label}(${rates.countertop[material].label}, ${t}T)`,width*depth/700000,"장 환산",

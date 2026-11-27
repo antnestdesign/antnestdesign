@@ -300,6 +300,21 @@ test("previous V2 cabinet quotes stay on their original rate and explicit dimens
   expect(lines.find(d=>d.item==="상판 사다리차").cost).toBe(120000);
 });
 
+test("enabling a legacy saved homebar with a zero hidden width can recalculate without rewriting the original",async()=>{
+  const inputs={projectName:"Synthetic saved homebar",tradeFormulaVersion:"v2",countertopLayoutMode:"legacy",
+    sectionFurnitureEnabled:true,homebarEnabled:false,homebarM:"1500",homebarCountertop:"himacs",
+    homebarCounterWidthMm:"0",homebarCounterDepthMm:"700"};
+  const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));
+  const stored=JSON.parse(JSON.stringify({...estimateRowPayload(snapshot),id:"20000000-0000-4000-8000-000000000006"}));
+  const frozen=structuredClone(stored);
+  const change=validateStaffBody({inputs:{homebarEnabled:true}});
+  const after=await calculateStaffEstimate(change,actor("staff"),stored);
+  expect(after.total).toBeGreaterThan(snapshot.total);
+  expect(after.inputs).toMatchObject({countertopLayoutMode:"legacy",homebarEnabled:true,homebarCounterWidthMm:"0"});
+  expect(after.internalDetails.find(d=>d.item.startsWith("홈바장 상판"))).toMatchObject({input:"600mm × 700mm",cost:120000});
+  expect(stored).toStrictEqual(frozen);
+});
+
 test("revised saved inputs and discounts survive reload; legacy version cannot be changed",async()=>{
   const inputs={projectName:"Synthetic trade revision",tradeFormulaVersion:"v2",sectionWallpaperEnabled:true,areaPyeong:"34",wallpaperRoomPyeong:"15",sectionFinishEnabled:true,carrySelected:true,carryFloor:"2",carryNoElevator:true,managementCost:"100000",managementDiscount:"50000"};
   const {snapshot}=await calculatePrivilegedEstimate({inputs},actor("admin"));

@@ -1321,7 +1321,7 @@ function calculate(state) {
   for (const part of carpentryAssemblies(state, options.carpentryPrices, policy)) {
     details.push({ ...makeDetail({ group: "carpentry", item: `${part.workLabel} · ${part.name}`, input: part.formula, quantity: `${part.quantity}${part.unit}`, unitPrice: part.price ?? 0, cost: part.quantity * (part.price ?? 0), margin, correction: state.corrections.option }), assembly: part });
   }
-  addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM:parameter('counterMinimumM',1)}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
+  addModuleDetails(details,revisedTradeDetails(state,rates,{jaRounded,mmText,counterMinimumM:parameter('counterMinimumM',1),homebarCounterActualMm}).map(row=>({...row,fixedMarkup:0.30})),0.30,0);
   addModuleDetails(details,expansionDetails(v,mmText),0.30,0);
   applySiteCostOverrides(details, state, makeDetail);
   const directCost = details.reduce((sum, item) => sum + item.cost, 0);
