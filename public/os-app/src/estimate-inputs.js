@@ -224,8 +224,9 @@ export const ESTIMATE_INPUT_SCHEMA = {
   },
   "homebarCountertop": {
     "type": "select-one",
-    "value": "himacs",
+    "value": "none",
     "choices": [
+      "none",
       "himacs",
       "khanstone",
       "ceramic",

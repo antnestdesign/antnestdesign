@@ -106,6 +106,7 @@ function legacyInputs(raw = {}) {
 
 export function safeInputs(raw = {}) {
   const inputs = legacyInputs(raw);
+  if (!inputs.homebarCountertop) inputs.homebarCountertop = "himacs";
   if (!Object.hasOwn(inputs, "bathroomTileRooms")) inputs.bathroomTileRooms = "";
   if(!Object.hasOwn(inputs,"tradeFormulaVersion"))inputs.tradeFormulaVersion="legacy";
   if(!Object.hasOwn(inputs,"countertopLayoutMode"))inputs.countertopLayoutMode="legacy";
@@ -166,6 +167,7 @@ export async function readEstimate(id) {
 
 function normalizedInputs(raw, existing = false) {
   const values = legacyInputs(raw);
+  if (existing && !values.homebarCountertop) values.homebarCountertop = "himacs";
   if (existing && !Object.hasOwn(values, "bathroomTileRooms")) values.bathroomTileRooms = "";
   if(existing&&!Object.hasOwn(values,"tradeFormulaVersion"))values.tradeFormulaVersion="legacy";
   if(existing&&!Object.hasOwn(values,"countertopLayoutMode"))values.countertopLayoutMode="legacy";

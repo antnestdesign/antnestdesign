@@ -208,6 +208,14 @@ test("homebar tall cabinet length never extends the countertop",()=>{
   expect(detail(tallOnly,"홈바장 키큰수납장")).toBeTruthy();
 });
 
+test("a new homebar has no countertop unless selected, independently of the midway",()=>{
+  const inputs={sectionFurnitureEnabled:true,homebarEnabled:true,homebarM:"1400",homebarMidway:"epPanel"};
+  const result=run(inputs);
+  expect(result.details.some(row=>row.item.startsWith("홈바장 상판"))).toBe(false);
+  expect(detail(result,"홈바장 미드웨이(EP판)")).toBeTruthy();
+  expect(detail(run({...inputs,homebarCountertop:"himacs"}),"홈바장 상판(하이막스, 12T)")).toMatchObject({cost:294000});
+});
+
 test("a legacy homebar without saved slab dimensions uses its lower cabinet span and the legacy rate",()=>{
   const inputs={sectionFurnitureEnabled:true,homebarEnabled:true,countertopLayoutMode:"legacy",
     homebarM:"1500",homebarCountertop:"himacs",homebarCounterWidthMm:"0",homebarCounterDepthMm:"700"};

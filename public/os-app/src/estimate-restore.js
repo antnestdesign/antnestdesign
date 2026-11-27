@@ -95,6 +95,7 @@ function restoreInputValues(inputs = {}) {
   nextInputs.baseCounterCustomSize=inputs.baseCounterCustomSize??(nextInputs.countertopLayoutMode==="legacy");
   nextInputs.bathroomTileRooms=inputs.bathroomTileRooms ?? "";
   nextInputs.flooringPlan = inputs.flooringPlan ?? "";
+  nextInputs.homebarCountertop = inputs.homebarCountertop || "himacs";
   nextInputs.dryVanityCountertop=inputs.dryVanityCountertop ?? "none";
   nextInputs.expansionPartitionMm=expansionPartitionInput(inputs);
   if (!Object.prototype.hasOwnProperty.call(nextInputs, "wallpaperPublicMaterialGrade") && nextInputs.wallpaperMaterialGrade) {

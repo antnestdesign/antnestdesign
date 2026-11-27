@@ -238,7 +238,7 @@ function repairStaticKoreanLabels() {
     baseCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
     islandCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
     islandSideFinish: { epPanel: "EP판", himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹" },
-    homebarCountertop: { himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
+    homebarCountertop: { none: "없음", himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹", epPanel: "EP판" },
     homebarMidway: { none: "없음", epPanel: "EP판", himacs: "하이막스", khanstone: "칸스톤", ceramic: "세라믹" },
     homebarEpDepth: { shallow: "400mm 이하", deep: "400mm 초과" },
     shoeDepth: { shallow: "400mm 이하", deep: "400mm 초과" },

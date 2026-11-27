@@ -38,9 +38,12 @@ test('project search does not trigger an unsaved warning when navigating',async(
 afterEach(async()=>{await new Promise(resolve=>setTimeout(resolve,200));await flushAsyncWork();});
 for(const role of ['admin','manager','staff']){
  test(`${role}: new estimate clears form and saved identity without changing the original`,async()=>{
-  const fixture=latestEstimate(),db=createEstimateDatabase(fixture),before=structuredClone(db.row);
+  const fixture=latestEstimate();fixture.inputs.homebarCountertop='epPanel';
+  const db=createEstimateDatabase(fixture),before=structuredClone(db.row);
   const {main,storage}=await mountOs(db,testProfile(role));main.loadEstimateIntoUi(await storage.getEstimate(fixture.id));await flushAsyncWork();
+  const top=document.getElementById('homebarCountertop');expect(top.value).toBe('epPanel');
   vi.mocked(confirm).mockClear();button().click();
+  expect(top.value).toBe('none');expect(top.selectedOptions[0].textContent).toBe('없음');
   expect(confirm).not.toHaveBeenCalled();expect(document.getElementById('projectName').value).toBe('');expect(document.getElementById('clientName').value).toBe('');expect(document.getElementById('clientPhone').value).toBe('');expect(document.getElementById('areaPyeong').value).toBe('34');expect(document.getElementById('estimateStatus').value).toBe('견적');
   expect([...document.querySelectorAll('.section-toggle input')].every(n=>!n.checked)).toBe(true);expect(document.getElementById('projectSearchResults').value).toBe('');expect(document.getElementById('client').classList.contains('active')).toBe(true);expect(document.getElementById('saveEstimateButton').textContent).toBe('견적 저장');expect(document.activeElement.id).toBe('projectName');
   expect(db.row).toEqual(before);expect(mutations()).toEqual([]);
