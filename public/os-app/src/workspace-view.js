@@ -38,6 +38,8 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
   const contractList=document.createElement('section');contractList.className='contract-project-list';contractList.innerHTML='<h2>계약·공사 프로젝트</h2><div class="management-filters"><label>프로젝트 검색<input id="contractProjectSearch" type="search" placeholder="현장, 고객 검색"></label><label>진행 상태<select id="contractProjectFilter"><option value="all">계약·착공·준공</option><option value="계약">계약</option><option value="착공">착공</option><option value="준공">준공</option><option value="unclassified">미분류</option><option value="everything">전체 프로젝트</option></select></label></div><div class="table-wrap"><table class="saved-table"><thead><tr><th>현장명</th><th>고객명</th><th>프로젝트 진행</th><th>견적금액</th><th>작업</th></tr></thead><tbody id="contractProjectRows"></tbody></table></div>';
   admin.prepend(contractList);
   contractList.querySelector('h2').textContent='계약서 목록';
+  const contractStatus=document.createElement('p');contractStatus.className='status-text';contractStatus.setAttribute('role','status');contractStatus.hidden=true;
+  contractList.querySelector('.table-wrap').after(contractStatus);
   contractList.querySelector('.table-wrap').classList.add('project-flow-list-scroll');
   contractList.querySelector('thead tr').innerHTML='<th>현장명</th><th>고객명</th><th>최초 작성자</th><th>담당자</th><th>계약 기준 견적금액</th><th>진행 상태</th><th>계약일</th><th>착공일</th><th>준공일</th><th>관리 기능</th>';
   const contractFilter=contractList.querySelector('select');contractFilter.querySelector('[value="all"]').textContent='계약 준비·체결·착공·준공';
@@ -47,7 +49,8 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
   admin.append(legacy);
   const notice=document.createElement('p');notice.id='consultationAccessNotice';notice.className='status-text';notice.setAttribute('role','status');document.getElementById('saveStatus')?.after(notice);
   const status=document.getElementById('estimateStatus');if(status){status.closest('label').hidden=true;status.disabled=true;}
-  let projects=[],contractProjects=[],legacyContractEstimates=[],role='staff',current=null,busy=false;
+  let contractProjects=[],legacyContractEstimates=[],role='staff',current=null,busy=false;
+  let contractsLoading=false,contractListError=false,contractEstimatesReady=false;
   let projectById=new Map(),estimatesByProject=new Map(),packagedEstimateIds=new Set();
   const archivePanels=[['estimate',list],['contract',contractList]].map(([kind,host])=>{
     const panel=document.createElement('details');panel.hidden=true;
@@ -74,7 +77,7 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     await onOpen(null,'refresh');
   }
   const money=v=>Number(v||0).toLocaleString('ko-KR')+'원';
-  const estimateProjectId=row=>row.projectId||row.confirmation?.projectId;
+  const estimateProjectId=row=>row?.projectId||row?.confirmation?.projectId;
   const projectFor=row=>projectById.get(estimateProjectId(row));
   function filtered(estimates){const term=document.getElementById('estimateManagementSearch').value,mode=document.getElementById('estimateManagementFilter').value;
     const scope=document.getElementById('estimateManagementScope').value;
@@ -93,8 +96,12 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     });
     document.getElementById('contractProjectRows').innerHTML=visible.map(({project:p,estimates,kind,targetId})=>{
       const flow=p.workflow,e=estimates.find(e=>e.id===flow?.estimateId)||estimates[0];
-      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${projectById.has(p.id)?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${flow?`<button type="button" data-project-contract-open="${esc(p.id)}">계약 불러오기</button>`:e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 불러오기</button>`:`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`}${role==='admin'?`<button type="button" data-contract-archive="${esc(targetId)}" data-kind="${esc(kind)}">삭제</button>`:''}</td></tr>`;
-    }).join('')||'<tr><td colspan="10">해당 프로젝트가 없습니다.</td></tr>';
+      const openDocument=flow?`<button type="button" data-project-contract-open="${esc(p.id)}">계약 불러오기</button>`
+        :e?`<button type="button" data-contract-estimate="${esc(e.id)}">계약 불러오기</button>`
+        :contractsLoading&&!contractEstimatesReady?'<small>연결 자료 조회 중</small>'
+        :`<button type="button" data-archive-project-open="${esc(p.id)}">과거 자료</button>`;
+      return `<tr data-project-id="${esc(p.id)}"><td>${esc(p.project_name)}</td><td>${esc(p.customer?.name||e?.clientName||'—')}</td><td>${esc(flow?.creatorName||e?.authorship?.creatorName||'작성자 미확인')}</td><td>담당자 미지정</td><td>${flow?.basis?`${money(flow.basis.supply)}<small>확정 V${flow.basis.versionNo} · 부가세 별도</small>`:e?money(e.total):'—'}</td><td>${esc(p.status||e?.status||'미분류')}${!flow&&projectStage(p.status||e?.status)!=='견적'?'<small>기존 자료</small>':''}</td><td>${esc(flow?.contractDate||'—')}</td><td>${esc(flow?.startDate||'—')}</td><td>${esc(flow?.completionDate||'—')}</td><td>${kind==='contract'?`<button type="button" data-project-workflow="${esc(p.id)}">진행 정보</button>`:''}${openDocument}${role==='admin'?`<button type="button" data-contract-archive="${esc(targetId)}" data-kind="${esc(kind)}">삭제</button>`:''}</td></tr>`;
+    }).join('')||`<tr><td colspan="10">${contractsLoading?'계약 목록을 불러오는 중입니다.':contractListError?'계약 목록 조회를 완료하지 못했습니다.':'해당 프로젝트가 없습니다.'}</td></tr>`;
   }
   for(const id of ['estimateManagementSearch','estimateManagementFilter','estimateManagementScope'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',onFilter);
   for(const id of ['contractProjectSearch','contractProjectFilter'])document.getElementById(id).addEventListener(id.endsWith('Search')?'input':'change',contractRows);
@@ -108,21 +115,34 @@ export function mountWorkspaceView({document,request,onFilter,onOpen,onEdit,onPr
     catch(error){document.defaultView.alert(error.message);}
     finally{button.disabled=false;}
   });
-  return {filtered,projectFor,updateData(estimates,projectRows,contractPackages,visibleContractProjects,visibleContractEstimates){projects=projectRows;
+  return {filtered,projectFor,updateProjects(projects){
       projectById=new Map(projects.map(p=>[p.id,p]));
-      packagedEstimateIds=new Set(contractPackages.map(p=>p.estimate_id));
-      if(visibleContractProjects&&visibleContractEstimates){
-        contractProjects=visibleContractProjects;estimatesByProject=new Map();legacyContractEstimates=[];
-        for(const estimate of visibleContractEstimates){
+      for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
+      const select=legacy.querySelector('[data-archive-project]'),value=select.value;
+      select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;
+    },
+    updateContracts({projects,estimates,packages}){
+      if(projects)contractProjects=projects;
+      if(packages)packagedEstimateIds=new Set(packages.map(p=>p.estimate_id));
+      if(estimates){
+        contractEstimatesReady=true;
+        estimatesByProject=new Map();legacyContractEstimates=[];
+        for(const estimate of estimates){
           const id=estimateProjectId(estimate);
           if(!id){legacyContractEstimates.push(estimate);continue;}
           if(!estimatesByProject.has(id))estimatesByProject.set(id,[]);
           estimatesByProject.get(id).push(estimate);
         }
-        contractRows();
       }
-      for(const {panel,refresh} of archivePanels)if(role==='admin'&&panel.open)refresh().catch(error=>panel.querySelector('[role="status"]').textContent=error.message);
-      const select=legacy.querySelector('[data-archive-project]'),value=select.value;select.innerHTML='<option value="">프로젝트 선택</option>'+projects.map(p=>`<option value="${esc(p.id)}">${esc(p.project_name)}</option>`).join('');select.value=value;},
+      contractRows();
+    },
+    resetContracts(){contractEstimatesReady=false;contractProjects=[];estimatesByProject.clear();legacyContractEstimates=[];packagedEstimateIds.clear();contractRows();},
+    setContractsLoading(value){
+      contractsLoading=value;
+      if(value){contractListError=false;contractStatus.hidden=true;contractStatus.textContent='';}
+      contractRows();
+    },
+    showContractStatus(message){contractListError=Boolean(message);contractStatus.textContent=message;contractStatus.hidden=!message;contractRows();},
     permissions(value){role=value;for(const {panel} of archivePanels){panel.hidden=role!=='admin';if(panel.hidden){panel.open=false;panel.querySelector('ul').textContent='';}}contractRows();const print=document.getElementById('adminPrintActions');if(print)print.hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="everything"]').hidden=role==='staff';document.getElementById('contractProjectFilter').querySelector('[value="unclassified"]').hidden=role==='staff';},
     updateSelection(estimate){if(current?.id!==estimate?.id)oldQuote.open=Boolean(estimate?.id);current=estimate;selected.querySelector('[data-management-title]').textContent=estimate?.projectName||'견적을 선택해 주세요.';
       const a=estimate?.authorship;selected.querySelector('[data-management-meta]').textContent=estimate?`${estimate.clientName||'고객명 없음'} · ${money(estimate.total)} · ${estimateStage(estimate)} · 프로젝트 ${projectFor(estimate)?.status||estimate.status||'미분류'} · 최초 작성 ${a?.creatorName||'작성자 미확인'} · 최종 수정 ${a?.editorName||'수정자 미확인'}`:'';

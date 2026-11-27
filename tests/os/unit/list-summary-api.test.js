@@ -86,6 +86,8 @@ test("package summary preserves search and workflow/issued access checks without
     { ...packageRows[0], id: "package2", preliminary_project_id: "denied-project" },
     { ...packageRows[0], id: "package3", preliminary_project_id: "allowed-project" },
     { ...packageRows[0], id: "package4" },
+    { ...packageRows[0], id: "package5", preliminary_project_id: "allowed-project" },
+    { ...packageRows[0], id: "package6", preliminary_project_id: "denied-project" },
   );
   state.checkContract.mockImplementation(async (_context, project) => {
     if (project === "denied-project") throw new ApiError(403, "denied");
@@ -96,7 +98,7 @@ test("package summary preserves search and workflow/issued access checks without
   const response = await packages(request("contract-packages?summary=1&q=01000000000"));
   expect(response.status).toBe(200);
   const list = await response.json();
-  expect(list.map(row => row.id)).toEqual(["package1", "package3", "package4"]);
+  expect(list.map(row => row.id)).toEqual(["package1", "package3", "package4", "package5"]);
   expect(list[0].contract_info).toMatchObject({ project_name: "Synthetic site", total_amount: 341000 });
   expect(list[2].contract_info).toEqual({ project_name: "Synthetic issued" });
   expect(JSON.stringify(list)).not.toMatch(/content_json|contract_document_versions|PRIVATE_DOCUMENT/);

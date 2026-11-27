@@ -75,21 +75,41 @@ export async function GET(request: NextRequest) {
         return haystack.includes(keyword);
       })
       : rows;
-    const linked = new Set((await issuedLinks()).map(l => l.package_id));
-    const accessible = [];
-    for (const row of filteredRows) {
-      if(row.preliminary_project_id){
-        try{await confirmedContractAccess(context,String(row.preliminary_project_id));accessible.push(row);}catch(error){if(![403,409,423,503].includes((error as {status?:number}).status||0))throw error;}
-        continue;
+    const linked = new Set(filteredRows.some(row => !row.preliminary_project_id)
+      ? (await issuedLinks()).map(l => l.package_id) : []);
+    const projectAccess = new Map<string, ReturnType<typeof confirmedContractAccess>>();
+    const accessibleRow = async (row: Record<string, unknown>) => {
+      if (row.preliminary_project_id) {
+        const projectId = String(row.preliminary_project_id);
+        try {
+          let access = projectAccess.get(projectId);
+          if (!access) {
+            access = confirmedContractAccess(context, projectId);
+            if (summary) projectAccess.set(projectId, access);
+          }
+          await access;
+          return row;
+        } catch (error) {
+          if (![403,409,423,503].includes((error as {status?:number}).status||0)) throw error;
+          return null;
+        }
       }
-      if (!linked.has(String(row.id))) { accessible.push(row); continue; }
+      if (!linked.has(String(row.id))) return row;
       try {
         const issued = await readIssuedPackage(context, String(row.id));
-        accessible.push(summary ? contractPackageListRow(issued) : issued);
+        return summary ? contractPackageListRow(issued) : issued;
       } catch (error) {
         const status = (error as { status?: number }).status;
         if (![403, 423, 503].includes(status || 0) && !/42501|P5F01/.test((error as Error).message)) throw error;
+        return null;
       }
+    };
+    const accessible = [];
+    // Keep ordered results and bound concurrent permission reads, even for long package lists.
+    const concurrency = summary ? 6 : 1;
+    for (let i = 0; i < filteredRows.length; i += concurrency) {
+      const batch = await Promise.all(filteredRows.slice(i, i + concurrency).map(accessibleRow));
+      accessible.push(...batch.filter(row => row !== null));
     }
     return summary ? json(accessible, { headers: { "Cache-Control": "private, no-store" } })
       : json(sanitizePackageList(accessible, context.profile.role));

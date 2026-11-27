@@ -11,16 +11,27 @@ test("login and list navigation with fixed endpoint latency", async () => {
   const profile = testProfile("admin");
   const original = db.handle;
   const project = { id: "40000000-0000-4000-8000-000000000002", project_name: "Synthetic contract", status: "계약" };
+  const legacy = { id: "40000000-0000-4000-8000-000000000003", projectName: "Synthetic legacy", status: "견적" };
   let authMs;
   let loginStart;
+  let pendingListReads = 0;
   db.handle = async request => {
     const path = request.url.pathname;
-    await wait(60);
+    const packageList=path==="/api/os/contract-packages"&&request.url.searchParams.get("summary")==="1";
+    const list = packageList || path === "/api/os/estimates" || path === "/api/os/projects";
+    if (list) pendingListReads++;
+    try {
+      await wait(packageList?800:path==="/api/os/projects"&&request.url.searchParams.get("view")==="management"?350:60);
+    } finally {
+      if (list) pendingListReads--;
+    }
     if (path === "/auth/v1/token") {
       authMs = performance.now() - loginStart;
       return jsonResponse(testSession(profile.role));
     }
     if (path === "/api/os/projects") return jsonResponse([project]);
+    if (path === "/api/os/estimates" && request.method === "GET" && request.url.searchParams.get("view") === "contracts") return jsonResponse([legacy]);
+    if (packageList) return jsonResponse([{ id:"legacy-package", estimate_id:legacy.id, status:"CONTRACTED" }]);
     if (path === "/api/os/estimate-items" && request.url.searchParams.get("view")==="state") return jsonResponse({mode:"OFF"});
     return original(request);
   };
@@ -41,27 +52,37 @@ test("login and list navigation with fixed endpoint latency", async () => {
   );
   const baseline = process.env.AND_OS_LATENCY_BASELINE === "1";
   if (!baseline) {
-    expect(seen("/api/os/estimates")).toBe(false);
     expect(seen("/api/os/contract-packages")).toBe(false);
     expect(seen("/api/os/audit-logs")).toBe(false);
   }
   const clickTab = id => document.querySelector(`[data-tab="${id}"]`).click();
   const listRow = () => document.getElementById("savedEstimateRows").textContent.includes(estimate.projectName);
+  const picker = document.getElementById("projectSearchResults");
+  const pickerReady = () => Array.from(picker.options).some(option => option.value === estimate.id);
+  const pickerTime = await measure(() => picker.dispatchEvent(new Event("focus")), pickerReady);
+  const initialReads = requestLog.requests.filter(({url})=>url.pathname==="/api/os/estimates");
+  if (!baseline) {
+    expect(initialReads).toHaveLength(1);
+    expect(seen("/api/os/contract-packages")).toBe(false);
+    expect(seen("/api/os/projects")).toBe(false);
+  }
   clearRequestLog();
   const quotes = await measure(() => clickTab("quote"), listRow);
   if (!baseline) expect(seen("/api/os/estimates", "contracts")).toBe(false);
-  if (!baseline) expect(requestLog.requests.some(({ url }) => url.pathname === "/api/os/estimates" && url.searchParams.get("summary") === "1")).toBe(true);
+  expect(initialReads[0].url.searchParams.get("summary")).toBe("1");
   clearRequestLog();
   const contracts = await measure(() => clickTab("admin"), () =>
-    document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
-    (!baseline || listRow()));
+    document.getElementById("contractProjectRows").textContent.includes(project.project_name));
+  const legacyRow = () => document.getElementById("contractProjectRows").textContent.includes(legacy.projectName);
+  if (!baseline) expect(legacyRow()).toBe(false);
+  await vi.waitFor(() => expect(legacyRow()).toBe(true), { interval: 5, timeout: 5000 });
   expect(seen("/api/os/estimates", "contracts")).toBe(true);
   if (!baseline) expect(requestLog.requests.some(({ url }) => url.pathname === "/api/os/contract-packages" && !url.searchParams.has("estimateId") && url.searchParams.get("summary") === "1")).toBe(true);
   const contractsAgain = await measure(() => clickTab("admin"), () =>
-    document.getElementById("contractProjectRows").textContent.includes(project.project_name) &&
-    (!baseline || listRow()));
+    document.getElementById("contractProjectRows").textContent.includes(project.project_name));
   const quotesAgain = await measure(() => clickTab("quote"), listRow);
   console.info("WORKSPACE_TIMINGS_MS", JSON.stringify({
-    auth: Math.round(authMs), login, afterAuth: Math.round(login - authMs), quotes, contracts, quotesAgain, contractsAgain,
+    auth: Math.round(authMs), login, afterAuth: Math.round(login - authMs), picker: pickerTime, quotes, contracts, quotesAgain, contractsAgain,
   }));
-});
+  await vi.waitFor(() => expect(pendingListReads).toBe(0), { interval: 20, timeout: 3000 });
+}, 15000);
