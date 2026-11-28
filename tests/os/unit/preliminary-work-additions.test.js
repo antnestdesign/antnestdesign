@@ -260,7 +260,7 @@ test("cabinet checkboxes leave fields visible and preserve quantities when switc
   expect(base.previousElementSibling.contains(get("carpentryMoldingEnabled"))).toBe(true);
 });
 
-test("dry vanity is the last bathroom input, directly above site costs", async()=>{
+test("dry vanity appears directly above manual work, with site costs below", async()=>{
   document.body.innerHTML=readFileSync("public/os-app/index.html","utf8");
   const syncTrade=mountTradeRevisionInputs(document),syncTile=mountBathroomTileInputs(document);
   document.getElementById("sectionBathroomEnabled").checked=true;
@@ -279,7 +279,10 @@ test("dry vanity is the last bathroom input, directly above site costs", async()
   for(const selector of [".bathroom-tile-rooms","[data-site-cost-trade]","[data-item-quote]","[data-manual-works]"]){
     expect(panel.querySelector(selector)?.hidden,selector).toBe(false);
   }
-  expect(dry.nextElementSibling).toBe(panel.querySelector("[data-site-cost-trade]"));
+  const manual=panel.querySelector("[data-manual-works]");
+  expect(manual.querySelector("[data-manual-new]").textContent).toContain("직접 공사 추가");
+  expect(dry.nextElementSibling).toBe(manual);
+  expect(manual.nextElementSibling).toBe(panel.querySelector("[data-site-cost-trade]"));
   const tileFields=[...panel.querySelectorAll(".bathroom-tile-grid [data-tile-field]")].map(field=>field.dataset.tileField);
   expect(tileFields.slice(0,4)).toEqual(["wallLengthMm","wallTile","floorArea","floorTile"]);
   view.destroy();
